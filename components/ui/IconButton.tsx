@@ -1,8 +1,7 @@
 'use client';
 
-import { type ButtonHTMLAttributes, type ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { BUTTON_ICON_SIZES } from './buttonStyles';
 import type { ButtonSize } from './Button';
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -10,24 +9,10 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: ReactNode;
   size?: ButtonSize;
 }
-
-/** Compact action button. The accessible label is required because the icon is not text. */
 export function IconButton({ label, icon, size = 'md', className, title, ...props }: IconButtonProps) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={title}
-      className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-control)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)] transition-colors hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ua-border-focus)] disabled:pointer-events-none disabled:border-[var(--ua-border-subtle)] disabled:bg-[var(--ua-surface-muted)] disabled:text-[var(--ua-text-disabled)]',
-        size === 'sm' && 'h-[var(--ua-control-height-sm)] w-[var(--ua-control-height-sm)]',
-        size === 'md' && 'h-[var(--ua-control-height-md)] w-[var(--ua-control-height-md)]',
-        size === 'lg' && 'h-[var(--ua-control-height-lg)] w-[var(--ua-control-height-lg)]',
-        className,
-      )}
-      {...props}
-    >
-      <span className={cn('shrink-0', BUTTON_ICON_SIZES[size])} aria-hidden="true">{icon}</span>
+    <button type="button" aria-label={label} title={title} className={cn('ua-icon-button', `ua-icon-button--${size}`, className)} {...props}>
+      <span aria-hidden="true">{icon}</span>
     </button>
   );
 }

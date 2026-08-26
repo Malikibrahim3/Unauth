@@ -1,0 +1,133 @@
+@layer components {
+  /*
+   * P07 entry surfaces use the same bright stone / paper / decision-green
+   * language as the authenticated product. A persisted legacy dark preference
+   * must never turn authentication or onboarding into a black surface.
+   */
+  .ua-auth-surface,
+  :root[data-theme="dark"] .ua-auth-surface {
+    color-scheme: light;
+    --ua-canvas: #f4f5f1;
+    --ua-shell: #f1f3ee;
+    --ua-toolbar: #ffffff;
+    --ua-surface-primary: #ffffff;
+    --ua-surface-raised: #ffffff;
+    --ua-surface-overlay: #ffffff;
+    --ua-surface-secondary: #f7f7f4;
+    --ua-surface-muted: #eceee9;
+    --ua-surface-hover: #f0f4ee;
+    --ua-surface-pressed: #e6ece5;
+    --ua-surface-selected: var(--c-EAF0FE, #EEF0F6);
+    --ua-surface-inverse: #1c1d1a;
+    --ua-text-secondary: #535851;
+    --ua-text-tertiary: #686d65;
+    --ua-text-disabled: #92978f;
+    --ua-text-inverse: #ffffff;
+    --ua-text-link: var(--c-2563EB, #1F52C8);
+    --ua-icon-primary: #1c1d1a;
+    --ua-icon-secondary: #535851;
+    --ua-border-hairline: #e4e6df;
+    --ua-border-subtle: #e4e6df;
+    --ua-border-default: #d5d8d0;
+    --ua-border-strong: #8a9188;
+    --ua-border-control: #8a9188;
+    --ua-border-focus: var(--c-2563EB, #1F52C8);
+    --ua-accent-50: var(--c-F5F8FF, #F5F5F7);
+    --ua-accent-100: var(--c-EAF0FE, #EEF0F6);
+    --ua-accent-200: var(--c-C7D9FD, #D7E0F6);
+    --ua-accent-500: var(--c-2563EB, #1F52C8);
+    --ua-accent-600: var(--c-1D4FD7, #1A46AE);
+    --ua-accent-700: var(--c-1D4FD7, #1A46AE);
+    --ua-accent-800: var(--c-12275C, #14285A);
+    --ua-accent-fg: #ffffff;
+    --ua-action-primary: var(--c-2563EB, #1F52C8);
+    --ua-action-primary-hover: var(--c-1D4FD7, #1A46AE);
+    --ua-action-primary-pressed: #0e4a27;
+    --ua-action-primary-fg: #ffffff;
+    --ua-action-commit: #1c1d1a;
+    --ua-action-commit-hover: #2c2e29;
+    --ua-action-commit-pressed: #10110f;
+    --ua-action-commit-fg: #ffffff;
+    --ua-success: #247a48;
+    --ua-success-bg: #eaf7ef;
+    --ua-success-border: #b8ddc7;
+    --ua-confidence-high-bg: #eaf7ef;
+    --ua-warning: #8b5a00;
+    --ua-warning-bg: #fff6df;
+    --ua-warning-border: #e8cf96;
+    --ua-critical: #a6382f;
+    --ua-critical-bg: #fcedeb;
+    --ua-critical-border: #e8bdb8;
+    --ua-risk-critical: #a6382f;
+    --ua-risk-critical-bg: #fcedeb;
+    --ua-risk-critical-border: #e8bdb8;
+    --ua-info: #315fa7;
+    --ua-info-bg: #edf3fc;
+    --ua-info-border: #bdcfea;
+    --ua-neutral: #65756f;
+    --ua-neutral-bg: #eceee9;
+    --ua-neutral-border: #d5d8d0;
+    --ua-shadow-raised: 0 1px 2px rgb(28 29 26 / 5%);
+    --ua-shadow-float: 0 8px 24px rgb(28 29 26 / 11%), 0 2px 6px rgb(28 29 26 / 6%);
+    --ua-shadow-overlay: 0 18px 48px rgb(28 29 26 / 18%);
+    background: var(--ua-canvas);
+    color: var(--ua-text-primary);
+  }
+
+  .ua-public-route {
+    color-scheme: light;
+    min-height: 100dvh;
+    --brand-product: var(--c-2563EB, #1F52C8);
+    --brand-product-hover: var(--c-1D4FD7, #1A46AE);
+    --brand-product-soft: var(--c-EAF0FE, #EEF0F6);
+    --bg-canvas: #f4f5f1;
+    --bg-surface: #ffffff;
+    --bg-surface-alt: #f7f7f4;
+    --bg-surface-sunk: #eceee9;
+    --bg-hover: #f0f4ee;
+    --bg-selected: var(--c-EAF0FE, #EEF0F6);
+    --text: #1c1d1a;
+    --text-primary: #1c1d1a;
+    --text-secondary: #535851;
+    --text-muted: #686d65;
+    --text-subtle: #686d65;
+    --text-disabled: #92978f;
+    --text-link: var(--c-2563EB, #1F52C8);
+    --border-subtle: #e4e6df;
+    --border-default: #d5d8d0;
+    --ua-canvas: #f4f5f1;
+    --ua-shell: #f1f3ee;
+    --ua-surface-primary: #ffffff;
+    --ua-surface-secondary: #f7f7f4;
+    --ua-surface-muted: #eceee9;
+    --ua-text-secondary: #535851;
+    --ua-text-tertiary: #686d65;
+    --ua-text-disabled: #92978f;
+    --ua-text-inverse: #ffffff;
+    --ua-text-link: var(--c-2563EB, #1F52C8);
+    --ua-border-subtle: #e4e6df;
+    --ua-border-default: #d5d8d0;
+    --ua-border-control: #8a9188;
+    --ua-border-focus: var(--c-2563EB, #1F52C8);
+    --ua-action-primary: var(--c-2563EB, #1F52C8);
+    --ua-action-primary-hover: var(--c-1D4FD7, #1A46AE);
+    --ua-action-primary-pressed: #0e4a27;
+    --ua-action-primary-fg: #ffffff;
+    --ua-radius-control: 6px;
+    --ua-radius-surface: 8px;
+    --ua-control-height-sm: 28px;
+    --ua-control-height-md: 36px;
+    --ua-control-height-lg: 40px;
+    background: var(--bg-canvas);
+    color: var(--text);
+  }
+
+  .ua-command-palette__group + .ua-command-palette__group { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--ua-border-subtle); }
+  .ua-command-palette__group h2 { margin: 0; padding: 5px 8px; color: var(--ua-text-tertiary); font-size: var(--ua-text-metadata-size); font-weight: 600; letter-spacing: .02em; }
+  .ua-command-palette__footer a { margin-left: auto; color: var(--ua-text-link); font-weight: 600; }
+  @media (max-width: 767px) {
+    .ua-command-layer { align-items: stretch; padding: 0; }
+    .ua-command-palette { width: 100%; max-height: 100dvh; border: 0; border-radius: 0; }
+    .ua-command-palette__results { max-height: calc(100dvh - 101px); }
+  }
+}

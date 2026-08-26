@@ -10,15 +10,21 @@ import type { ApiKeyRow } from "@/components/settings/apiIntegrationsTypes";
 import { ApiKeysListSection } from "@/components/settings/ApiIntegrationsKeyDialogs";
 import { ApiKeyCreateDialog } from "@/components/settings/ApiKeyCreateDialog";
 import { ApiKeyRevokeDialog } from "@/components/settings/ApiKeyRevokeDialog";
-import { FeatureGate } from "@/components/product/FeatureGate";
+import { OperationalState } from "@/components/ui";
+import styles from '@/components/settings/OperationsSettings.module.css';
 
-export default function ApiIntegrationsAdvancedSection() {
+export default function ApiIntegrationsAdvancedSection({
+  machineAccessEnabled,
+}: {
+  machineAccessEnabled: boolean;
+}) {
   const [state, dispatch] = useReducer(
     apiIntegrationsReducer,
     initialApiIntegrationsState,
   );
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [revokeModalOpen, setRevokeModalOpen] = useState(false);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
 
   const {
     data: keysData,
@@ -26,6 +32,7 @@ export default function ApiIntegrationsAdvancedSection() {
     reload: reloadKeys,
     error: keysError,
   } = useFetchJson<{ keys?: ApiKeyRow[] }>("/api/settings/api-keys", {
+    enabled: machineAccessEnabled,
     parse: async (response) => {
       const body = await response.json();
       if (!response.ok)
@@ -42,7 +49,11 @@ export default function ApiIntegrationsAdvancedSection() {
       const res = await fetch("/api/settings/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: state.keyName.trim() }),
+        body: JSON.stringify({
+          name: state.keyName.trim(),
+          scopes: state.scopes,
+          rateLimitPerMinute: state.rateLimitPerMinute,
+        }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to create key");
@@ -72,7 +83,7 @@ export default function ApiIntegrationsAdvancedSection() {
 
   async function revokeKey(key: ApiKeyRow) {
     dispatch({ type: "patch", patch: { busyId: key.id, message: null } });
-    closeRevokeModal();
+    setRevokeError(null);
     try {
       const res = await fetch(`/api/settings/api-keys/${key.id}`, {
         method: "DELETE",
@@ -86,8 +97,10 @@ export default function ApiIntegrationsAdvancedSection() {
           busyId: null,
         },
       });
+      closeRevokeModal();
       reloadKeys();
     } catch (err) {
+      setRevokeError(err instanceof Error ? err.message : "Failed to revoke key");
       dispatch({
         type: "patch",
         patch: {
@@ -131,47 +144,32 @@ export default function ApiIntegrationsAdvancedSection() {
   }
 
   function openRevokeModal(key: ApiKeyRow) {
+    setRevokeError(null);
     dispatch({ type: "patch", patch: { revokeTarget: key } });
     setRevokeModalOpen(true);
   }
 
   function closeRevokeModal() {
+    setRevokeError(null);
     setRevokeModalOpen(false);
     dispatch({ type: "patch", patch: { revokeTarget: null } });
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>
-          Advanced &amp; optional
-        </h2>
-        <p className="ua-text-caption-role mt-1" style={{ color: "var(--ua-text-secondary)" }}>
-          API keys for custom integrations. Not required for the core Shopify +
-          Gorgias workflow.
-        </p>
-      </div>
+    <div className={styles.stack}>
+      <div className={styles.boundaryNotice}><strong>API keys read data and create imports.</strong> No key can record a merchant decision, publish a rule, write off a recovery or delete a record — those actions require a signed-in person with the permission.</div>
 
       {state.message ? (
         <p
           role={state.message.type === "error" ? "alert" : "status"}
-          className="ua-text-body rounded-md px-3 py-2"
-          style={{
-            background:
-              state.message.type === "error"
-                ? "var(--ua-critical-bg)"
-                : "var(--ua-success-bg)",
-            color:
-              state.message.type === "error"
-                ? "var(--ua-critical)"
-                : "var(--ua-success)",
-          }}
+          className={styles.message}
+          data-tone={state.message.type}
         >
           {state.message.text}
         </p>
       ) : null}
 
-      <FeatureGate entitlement="LIVE_LOOKUP_API" plan="enterprise">
+      {machineAccessEnabled ? (
         <ApiKeysListSection
           keys={keys}
           loading={loading}
@@ -180,9 +178,28 @@ export default function ApiIntegrationsAdvancedSection() {
           onOpenCreateModal={openCreateModal}
           onOpenRevokeModal={openRevokeModal}
         />
-      </FeatureGate>
+      ) : (
+        <section className={styles.card} data-operations-surface="api-access">
+          <OperationalState
+            kind="permission"
+            title="Enterprise API access is not enabled"
+            description="Key creation and existing machine credentials remain unavailable until the workspace has an active or grace-period Enterprise subscription. Signed-in product access does not grant machine access."
+          />
+        </section>
+      )}
 
-      <ApiKeyCreateDialog
+      <section className={styles.card}>
+        <div className={styles.cardHeading}><div><h2>Creating a key</h2><p>Scope it to the least it needs.</p></div></div>
+        <div className={styles.apiLifecycle}>
+          <div><strong>Name and owner</strong><p>A key belongs to the workspace, not a person, but records who created it.</p></div>
+          <div><strong>Scopes</strong><p>Chosen once. Read scopes stay within the selected object families; import is the only write boundary.</p></div>
+          <div><strong>Rate limit</strong><p>Fixed at creation and stated in the API response headers.</p></div>
+          <div><strong>The secret is shown once</strong><p>Unauth stores a hash, not the recoverable key.</p></div>
+        </div>
+        <div className={styles.apiRevealExample}><strong>Reveal-once lifecycle</strong><p>Closing the reveal is final. If the secret is lost, revoke the key and create another — there is no way to recover it.</p></div>
+      </section>
+
+      {machineAccessEnabled ? <ApiKeyCreateDialog
         open={createModalOpen}
         state={state}
         onClose={closeCreateModal}
@@ -196,15 +213,18 @@ export default function ApiIntegrationsAdvancedSection() {
         onKeyNameChange={(value) =>
           dispatch({ type: "patch", patch: { keyName: value } })
         }
-      />
+        onScopesChange={(scopes) => dispatch({ type: 'patch', patch: { scopes } })}
+        onRateLimitChange={(rateLimitPerMinute) => dispatch({ type: 'patch', patch: { rateLimitPerMinute } })}
+      /> : null}
 
-      <ApiKeyRevokeDialog
+      {machineAccessEnabled ? <ApiKeyRevokeDialog
         open={revokeModalOpen}
         revokeTarget={state.revokeTarget}
         busyId={state.busyId}
+        error={revokeError}
         onClose={closeRevokeModal}
         onRevoke={revokeKey}
-      />
+      /> : null}
     </div>
   );
 }

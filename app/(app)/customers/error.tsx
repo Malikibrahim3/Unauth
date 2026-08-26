@@ -9,5 +9,5 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <ErrorBoundaryUI error={error} reset={reset} title="Customer history unavailable" />;
+  return <ErrorBoundaryUI error={error} reset={reset} title="Customer history unavailable" stateId="customers-error" />;
 }

@@ -1,0 +1,527 @@
+@layer components {
+  /*
+   * Dashboard Design Challenge 6 palette bridge.
+   * The handoff's --c-<ORIGINAL_HEX> variables are the authority. All modes
+   * map the same semantic roles; html[data-mode] changes colour only.
+   */
+  html[data-mode] body:has(.ua-app-shell) {
+    background: var(--c-EFF0F3);
+    color: var(--c-101014);
+  }
+
+  /* Public entry routes use the same one-to-one Challenge 6 palette as the
+   * authenticated shell. The doubled class deliberately outranks the retired
+   * P07 compatibility layer imported earlier in the cascade. */
+  html[data-mode] .ua-auth-surface.ua-auth-surface,
+  html[data-mode] .ua-public-route.ua-public-route {
+    color-scheme: inherit;
+    --brand-product: var(--c-2563EB);
+    --brand-product-hover: var(--c-1D4FD7);
+    --brand-product-soft: var(--c-EAF0FE);
+    --bg-canvas: var(--c-EFF0F3);
+    --bg-surface: var(--c-FFFFFF);
+    --bg-surface-alt: var(--c-F7F7F9);
+    --bg-surface-sunk: var(--c-F3F3F5);
+    --bg-hover: var(--c-F1F1F4);
+    --bg-selected: var(--c-EAF0FE);
+    --text: var(--c-101014);
+    --text-primary: var(--c-101014);
+    --text-secondary: var(--c-4A4F57);
+    --text-muted: var(--c-6B6F76);
+    --text-subtle: var(--c-6B6F76);
+    --text-disabled: var(--c-C6C9CE);
+    --text-link: var(--c-2563EB);
+    --border-subtle: var(--c-EDEDF0);
+    --border-default: var(--c-EAEAEE);
+
+    --ua-canvas: var(--c-EFF0F3);
+    --ua-shell: var(--c-FAFAFB);
+    --ua-toolbar: var(--c-FFFFFF);
+    --ua-surface-primary: var(--c-FFFFFF);
+    --ua-surface-raised: var(--c-FCFCFD);
+    --ua-surface-overlay: var(--c-FCFCFD);
+    --ua-surface-secondary: var(--c-F7F7F9);
+    --ua-surface-muted: var(--c-F3F3F5);
+    --ua-surface-hover: var(--c-F1F1F4);
+    --ua-surface-pressed: var(--c-EFEFF2);
+    --ua-surface-selected: var(--c-EAF0FE);
+    --ua-surface-inverse: var(--c-101014);
+    --ua-backdrop: var(--c-10182838);
+
+    --ua-text-primary: var(--c-101014);
+    --ua-text-secondary: var(--c-4A4F57);
+    --ua-text-tertiary: var(--c-6B6F76);
+    --ua-text-disabled: var(--c-C6C9CE);
+    --ua-text-inverse: var(--c-FFFFFF);
+    --ua-text-link: var(--c-2563EB);
+    --ua-icon-primary: var(--c-101014);
+    --ua-icon-secondary: var(--c-8B9099);
+
+    --ua-border-hairline: var(--c-EDEDF0);
+    --ua-border-subtle: var(--c-EDEDF0);
+    --ua-border-default: var(--c-EAEAEE);
+    --ua-border-strong: var(--c-E7E7EA);
+    --ua-border-control: var(--c-EAEAEE);
+    --ua-border-focus: var(--c-2563EB);
+
+    --ua-accent-50: var(--c-F5F8FF);
+    --ua-accent-100: var(--c-EAF0FE);
+    --ua-accent-200: var(--c-C7D9FD);
+    --ua-accent-500: var(--c-2563EB);
+    --ua-accent-600: var(--c-1D4FD7);
+    --ua-accent-700: var(--c-1D4FD7);
+    --ua-accent-800: var(--c-12275C);
+    --ua-accent-fg: var(--c-FFFFFF);
+    --ua-action-primary: var(--c-101014);
+    --ua-action-primary-hover: var(--c-26262C);
+    --ua-action-primary-pressed: var(--c-1E1E24);
+    --ua-action-primary-fg: var(--c-FFFFFF);
+    --ua-action-commit: var(--c-101014);
+    --ua-action-commit-hover: var(--c-26262C);
+    --ua-action-commit-pressed: var(--c-1E1E24);
+    --ua-action-commit-fg: var(--c-FFFFFF);
+
+    --ua-success: var(--c-0A7A53);
+    --ua-success-bg: var(--c-E7F7F0);
+    --ua-success-border: var(--c-E4F2EA);
+    --ua-warning: var(--c-96650E);
+    --ua-warning-bg: var(--c-FDF4E3);
+    --ua-warning-border: var(--c-F2E3C0);
+    --ua-critical: var(--c-B4271B);
+    --ua-critical-bg: var(--c-FDECEA);
+    --ua-critical-border: var(--c-F6CFCB);
+    --ua-info: var(--c-1D4FD7);
+    --ua-info-bg: var(--c-EAF0FE);
+    --ua-info-border: var(--c-C7D9FD);
+    --ua-neutral: var(--c-52565C);
+    --ua-neutral-bg: var(--c-F3F3F5);
+    --ua-neutral-border: var(--c-EAEAEE);
+
+    --ua-shadow-raised: 0 1px 2px var(--c-10182808);
+    --ua-shadow-float: 0 10px 24px -10px var(--c-1018281F);
+    --ua-shadow-overlay: 0 18px 48px var(--c-1018281F);
+    --ua-shadow-focus: 0 0 0 2px var(--c-2563EB);
+    background: var(--c-EFF0F3);
+    color: var(--c-101014);
+  }
+
+  html[data-mode] .ua-app.ua-app-shell[data-color-mode],
+  .ua-app.ua-app-shell[data-color-mode] {
+    color-scheme: inherit;
+
+    --ua-evidence-field: var(--c-EFF0F3);
+    --ua-paper-primary: var(--c-FFFFFF);
+    --ua-paper-raised: var(--c-FCFCFD);
+    --ua-paper-secondary: var(--c-F7F7F9);
+    --ua-paper-muted: var(--c-F3F3F5);
+    --ua-ink-primary: var(--c-101014);
+    --ua-ink-secondary: var(--c-4A4F57);
+    --ua-ink-tertiary: var(--c-6B6F76);
+    --ua-rule-hairline: var(--c-EDEDF0);
+    --ua-rule-default: var(--c-EAEAEE);
+    --ua-signal-copper: var(--c-2563EB);
+    --ua-signal-copper-hover: var(--c-1D4FD7);
+    --ua-signal-copper-soft: var(--c-EAF0FE);
+    --ua-signal-copper-light: var(--c-C7D9FD);
+    --ua-data-petrol: var(--c-101014);
+    --ua-data-slate: var(--c-6B6F76);
+    --ua-graphite: var(--c-101014);
+
+    --ua-nav-background: var(--c-FAFAFB);
+    --ua-nav-hover: var(--c-F1F1F4);
+    --ua-nav-selected: var(--c-101014);
+    --ua-nav-border: var(--c-EDEDF0);
+    --ua-nav-text: var(--c-4A4F57);
+    --ua-nav-text-active: var(--c-FFFFFF);
+    --ua-nav-signal: var(--c-2563EB);
+    --ua-nav-text-muted: var(--c-6B6F76);
+
+    --ua-canvas: var(--c-EFF0F3);
+    --ua-shell: var(--c-FAFAFB);
+    --ua-toolbar: var(--c-FFFFFF);
+    --ua-surface-primary: var(--c-FFFFFF);
+    --ua-surface-raised: var(--c-FCFCFD);
+    --ua-surface-overlay: var(--c-FCFCFD);
+    --ua-surface-secondary: var(--c-F7F7F9);
+    --ua-surface-muted: var(--c-F3F3F5);
+    --ua-surface-hover: var(--c-F1F1F4);
+    --ua-surface-pressed: var(--c-EFEFF2);
+    --ua-surface-selected: var(--c-EAF0FE);
+    --ua-surface-inverse: var(--c-101014);
+    --ua-backdrop: var(--c-10182838);
+
+    --ua-text-primary: var(--c-101014);
+    --ua-text-secondary: var(--c-4A4F57);
+    --ua-text-tertiary: var(--c-6B6F76);
+    --ua-text-disabled: var(--c-C6C9CE);
+    --ua-text-inverse: var(--c-FFFFFF);
+    --ua-text-link: var(--c-2563EB);
+    --ua-icon-primary: var(--c-101014);
+    --ua-icon-secondary: var(--c-8B9099);
+
+    --ua-border-hairline: var(--c-EDEDF0);
+    --ua-border-subtle: var(--c-EDEDF0);
+    --ua-border-default: var(--c-EAEAEE);
+    --ua-border-strong: var(--c-E7E7EA);
+    --ua-border-control: var(--c-EAEAEE);
+    --ua-border-focus: var(--c-2563EB);
+
+    --ua-accent-50: var(--c-F5F8FF);
+    --ua-accent-100: var(--c-EAF0FE);
+    --ua-accent-200: var(--c-C7D9FD);
+    --ua-accent-500: var(--c-2563EB);
+    --ua-accent-600: var(--c-1D4FD7);
+    --ua-accent-700: var(--c-1D4FD7);
+    --ua-accent-800: var(--c-12275C);
+    --ua-accent-fg: var(--c-FFFFFF);
+    --ua-action-primary: var(--c-101014);
+    --ua-action-primary-hover: var(--c-26262C);
+    --ua-action-primary-pressed: var(--c-1E1E24);
+    --ua-action-primary-fg: var(--c-FFFFFF);
+    --ua-action-commit: var(--c-101014);
+    --ua-action-commit-hover: var(--c-26262C);
+    --ua-action-commit-pressed: var(--c-1E1E24);
+    --ua-action-commit-fg: var(--c-FFFFFF);
+    --ua-action-danger-hover: var(--c-C7332A);
+    --ua-action-danger-pressed: var(--c-B4271B);
+
+    --ua-success: var(--c-0A7A53);
+    --ua-success-bg: var(--c-E7F7F0);
+    --ua-success-border: var(--c-E4F2EA);
+    --ua-warning: var(--c-96650E);
+    --ua-warning-bg: var(--c-FDF4E3);
+    --ua-warning-border: var(--c-F2E3C0);
+    --ua-critical: var(--c-B4271B);
+    --ua-critical-bg: var(--c-FDECEA);
+    --ua-critical-border: var(--c-F6CFCB);
+    --ua-info: var(--c-1D4FD7);
+    --ua-info-bg: var(--c-EAF0FE);
+    --ua-info-border: var(--c-C7D9FD);
+    --ua-neutral: var(--c-52565C);
+    --ua-neutral-bg: var(--c-F3F3F5);
+    --ua-neutral-border: var(--c-EAEAEE);
+
+    --ua-chart-primary: var(--c-2563EB);
+    --ua-chart-primary-soft: var(--c-8FAEFF);
+    --ua-chart-neutral-900: var(--c-101014);
+    --ua-chart-neutral-700: var(--c-6B6F76);
+    --ua-chart-neutral-500: var(--c-9AA0A6);
+    --ua-chart-neutral-300: var(--c-D6D8DD);
+    --ua-chart-grid: var(--c-F1F1F4);
+    --ua-chart-track: var(--c-F3F3F5);
+    --ua-chart-ramp-1: var(--c-EAF0FE);
+    --ua-chart-ramp-2: var(--c-C7D9FD);
+    --ua-chart-ramp-3: var(--c-8FAEFF);
+    --ua-chart-ramp-4: var(--c-2563EB);
+
+    --ua-shadow-raised: 0 1px 2px var(--c-10182808);
+    --ua-shadow-float: 0 10px 24px -10px var(--c-1018281F);
+    --ua-shadow-menu: var(--ua-shadow-float);
+    --ua-shadow-overlay: 0 18px 48px var(--c-1018281F);
+    --ua-shadow-focus: 0 0 0 2px var(--c-2563EB);
+
+    /* VP1 §14.3 — interaction is reserved for link, focus and interactive
+     * affordance only (D-5). Selection gets its own axis (D-7) so a selected
+     * row is never indistinguishable from informational status. */
+    --ua-interaction: var(--c-2563EB);
+    --ua-interaction-hover: var(--c-1D4FD7);
+    --ua-interaction-soft: var(--c-EAF0FE);
+    /* VP6 contrast addendum: keep selection a distinct neutral axis. The
+     * existing palette keys clear the 1.5:1 fill and 3:1 border thresholds in
+     * Mocha, Signal and Dark without borrowing an outcome hue. */
+    --ua-selection-fill: var(--c-CDD0D6);
+    --ua-selection-border: var(--c-6F7F86);
+
+    /* VP1 §14.4 — outcome axis. Exactly five roles; each may encode only
+     * one of the canonical outcomes in §15.1 and nothing else. */
+    --ua-outcome-prevented: var(--c-12A672);
+    --ua-outcome-recovered: var(--c-067A53);
+    --ua-outcome-realised: var(--c-B4271B);
+    --ua-outcome-open: var(--c-9AA0A6);
+    --ua-outcome-identified: var(--c-3C4148);
+
+    /* VP1 §14.5 — workflow axis (in-progress state, not a financial
+     * outcome). Escalated is amber, not red (D-3): urgency, not loss. */
+    --ua-workflow-ready: var(--c-1D4FD7);
+    --ua-workflow-active: var(--c-26596B);
+    --ua-workflow-waiting: var(--c-6E737B);
+    --ua-workflow-escalated: var(--c-96650E);
+    --ua-workflow-blocked: var(--c-8E2A1C);
+    --ua-workflow-closed: var(--c-6B6F76);
+    --ua-workflow-ready-bg: color-mix(in srgb, var(--ua-workflow-ready) 12%, var(--ua-surface-primary));
+    --ua-workflow-ready-border: color-mix(in srgb, var(--ua-workflow-ready) 32%, var(--ua-surface-primary));
+    --ua-workflow-active-bg: color-mix(in srgb, var(--ua-workflow-active) 12%, var(--ua-surface-primary));
+    --ua-workflow-active-border: color-mix(in srgb, var(--ua-workflow-active) 32%, var(--ua-surface-primary));
+    --ua-workflow-waiting-bg: color-mix(in srgb, var(--ua-workflow-waiting) 12%, var(--ua-surface-primary));
+    --ua-workflow-waiting-border: color-mix(in srgb, var(--ua-workflow-waiting) 32%, var(--ua-surface-primary));
+    --ua-workflow-escalated-bg: color-mix(in srgb, var(--ua-workflow-escalated) 12%, var(--ua-surface-primary));
+    --ua-workflow-escalated-border: color-mix(in srgb, var(--ua-workflow-escalated) 32%, var(--ua-surface-primary));
+    --ua-workflow-blocked-bg: color-mix(in srgb, var(--ua-workflow-blocked) 12%, var(--ua-surface-primary));
+    --ua-workflow-blocked-border: color-mix(in srgb, var(--ua-workflow-blocked) 32%, var(--ua-surface-primary));
+    --ua-workflow-closed-bg: color-mix(in srgb, var(--ua-workflow-closed) 12%, var(--ua-surface-primary));
+    --ua-workflow-closed-border: color-mix(in srgb, var(--ua-workflow-closed) 32%, var(--ua-surface-primary));
+
+    /* VP1 §14.6 — urgency / severity axis. Shares a red family with
+     * realised loss by design; placement (pill vs mark) disambiguates. */
+    --ua-urgency-breached: var(--c-B4271B);
+    --ua-urgency-approaching: var(--c-96650E);
+    --ua-urgency-none: var(--ua-text-tertiary);
+
+    /* VP1 §14.7 — cause axis. Monochrome ramp off the parent outcome
+     * (D-2); never an independent hue per cause. Defaults to the realised
+     * ramp, the most common cause context (loss breakdowns). */
+    --ua-cause-1: var(--ua-outcome-realised);
+    --ua-cause-2: color-mix(in srgb, var(--ua-outcome-realised) 72%, var(--ua-surface-primary));
+    --ua-cause-3: color-mix(in srgb, var(--ua-outcome-realised) 52%, var(--ua-surface-primary));
+    --ua-cause-4: color-mix(in srgb, var(--ua-outcome-realised) 36%, var(--ua-surface-primary));
+    --ua-cause-5: color-mix(in srgb, var(--ua-outcome-realised) 24%, var(--ua-surface-primary));
+    --ua-cause-other: var(--ua-outcome-open);
+
+    /* VP1 §14.8 — analytical axis. Distinction is carried by lightness and
+     * stroke style, not by hue (D-6: ink-as-petrol accepted in Signal). */
+    --ua-analytical-actual: var(--c-3C4148);
+    --ua-analytical-actual-soft: color-mix(in srgb, var(--ua-analytical-actual) 10%, var(--ua-surface-primary));
+    --ua-analytical-secondary: var(--c-6F7F86);
+    --ua-analytical-comparison: var(--c-9AA0A6);
+    --ua-analytical-forecast: var(--c-B4B8BE);
+    --ua-analytical-reference: var(--c-6E737B);
+    --ua-analytical-selected: var(--ua-interaction);
+    --ua-analytical-remainder: var(--ua-surface-muted);
+    --ua-analytical-stage-1: color-mix(in srgb, var(--ua-analytical-actual) 24%, var(--ua-surface-primary));
+    --ua-analytical-stage-2: color-mix(in srgb, var(--ua-analytical-actual) 44%, var(--ua-surface-primary));
+    --ua-analytical-stage-3: color-mix(in srgb, var(--ua-analytical-actual) 68%, var(--ua-surface-primary));
+    --ua-analytical-stage-4: var(--ua-analytical-actual);
+    --ua-chart-axis: var(--ua-text-tertiary);
+    --ua-chart-zero: var(--ua-border-strong);
+    --ua-chart-annotation: var(--ua-text-secondary);
+
+    /* VP1 §14.9 — data-trust / availability axis. Neutral by construction:
+     * unavailable is never a status colour (the plan's highest-value fix). */
+    --ua-trust-verified: var(--ua-text-primary);
+    --ua-trust-partial: var(--c-96650E);
+    --ua-trust-stale: var(--c-96650E);
+    --ua-trust-unavailable: var(--ua-text-tertiary);
+    --ua-trust-unknown: var(--ua-text-tertiary);
+    --ua-trust-withheld: var(--ua-text-tertiary);
+    --ua-trust-mixed: var(--c-96650E);
+    --ua-verified-zero: var(--ua-text-primary);
+    --ua-trust-pattern-unavailable: var(--ua-border-default);
+
+    /* VP1 §14.10 — source-health axis. Deliberately its own family, not an
+     * alias of --ua-outcome-recovered, so the two can move independently. */
+    --ua-source-connected: var(--c-0A7A53);
+    --ua-source-degraded: var(--c-96650E);
+    --ua-source-error: var(--c-B4271B);
+    --ua-source-not-configured: var(--ua-text-tertiary);
+    --ua-source-observed: var(--ua-text-secondary);
+  }
+
+  html[data-mode] .ua-app.ua-app-shell[data-color-mode] {
+    --ua-risk-critical: var(--ua-critical);
+    --ua-risk-critical-bg: var(--ua-critical-bg);
+    --ua-risk-critical-border: var(--ua-critical-border);
+    --ua-risk-high: var(--ua-critical);
+    --ua-risk-high-bg: var(--ua-critical-bg);
+    --ua-risk-high-border: var(--ua-critical-border);
+    --ua-risk-medium: var(--ua-warning);
+    --ua-risk-medium-bg: var(--ua-warning-bg);
+    --ua-risk-medium-border: var(--ua-warning-border);
+    --ua-risk-low: var(--ua-success);
+    --ua-risk-low-bg: var(--ua-success-bg);
+    --ua-risk-low-border: var(--ua-success-border);
+    --ua-ledger-confirmed: var(--ua-success);
+    --ua-ledger-confirmed-bg: var(--ua-success-bg);
+    --ua-ledger-confirmed-border: var(--ua-success-border);
+    --ua-focus-ring: var(--ua-border-focus);
+    --ua-action-soft: var(--ua-signal-copper-soft);
+    --ua-shadow-1: var(--ua-shadow-raised);
+
+    --background: var(--ua-canvas);
+    --foreground: var(--ua-text-primary);
+    --card: var(--ua-surface-primary);
+    --card-foreground: var(--ua-text-primary);
+    --popover: var(--ua-surface-overlay);
+    --popover-foreground: var(--ua-text-primary);
+    --primary: var(--ua-action-primary);
+    --primary-foreground: var(--ua-action-primary-fg);
+    --secondary: var(--ua-surface-secondary);
+    --secondary-foreground: var(--ua-text-primary);
+    --muted: var(--ua-surface-muted);
+    --muted-foreground: var(--ua-text-secondary);
+    --destructive: var(--ua-critical);
+    --destructive-foreground: var(--ua-text-inverse);
+    --input: var(--ua-border-control);
+    --ring: var(--ua-border-focus);
+
+    background: var(--ua-canvas);
+    color: var(--ua-text-primary);
+  }
+
+  .ua-app[data-color-mode] .ua-app-shell__main,
+  .ua-app[data-color-mode] .ua-app-shell__scroll {
+    background: var(--ua-canvas);
+  }
+
+  .ua-app[data-color-mode] :where(.ua-working-surface, .ua-section-card, .ua-card--panel) {
+    border-color: var(--ua-border-subtle);
+    background: var(--ua-surface-primary);
+    color: var(--ua-text-primary);
+  }
+
+  .ua-app[data-color-mode] :where(input, select, textarea) {
+    border-color: var(--ua-border-control);
+    background: var(--ua-surface-primary);
+    color: var(--ua-text-primary);
+  }
+
+  .ua-app[data-color-mode] :where(input, textarea)::placeholder {
+    color: var(--ua-text-tertiary);
+  }
+
+  .ua-app[data-color-mode] .ua-handoff-settings-nav a {
+    color: var(--ua-text-secondary);
+  }
+
+  .ua-app[data-color-mode] .ua-handoff-settings-nav a:hover {
+    background: var(--ua-surface-hover);
+    color: var(--ua-text-primary);
+  }
+
+  .ua-app[data-color-mode] .ua-handoff-settings-nav a[data-active="true"] {
+    background: var(--ua-action-primary);
+    color: var(--ua-action-primary-fg);
+  }
+
+  .ua-app[data-color-mode] .ua-handoff-settings-nav a svg,
+  .ua-app[data-color-mode] .ua-handoff-settings-nav a[data-active="true"] svg {
+    color: currentColor;
+    opacity: 0.72;
+  }
+
+  .ua-app[data-color-mode] ::selection {
+    background: var(--ua-signal-copper-soft);
+    color: var(--ua-text-primary);
+  }
+
+  .ua-app[data-color-mode] ::-webkit-scrollbar-thumb {
+    background: var(--ua-border-strong);
+  }
+
+  .ua-color-mode-control {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--ua-border-subtle);
+    border-radius: var(--ua-radius-control);
+    background: var(--ua-surface-secondary);
+    color: var(--ua-text-tertiary);
+    font-size: 11px;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+
+  .ua-color-mode-control__label {
+    padding-inline: 6px 4px;
+    font-weight: 500;
+  }
+
+  .ua-color-mode-control button {
+    min-height: 24px;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ua-text-secondary);
+    font: inherit;
+    font-weight: 500;
+  }
+
+  .ua-color-mode-control button:hover {
+    background: var(--ua-surface-hover);
+    color: var(--ua-text-primary);
+  }
+
+  .ua-color-mode-control button[data-active="true"] {
+    border-color: var(--ua-accent-200);
+    background: var(--ua-accent-100);
+    color: var(--ua-accent-800);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ua-accent-200) 45%, transparent);
+  }
+
+  .ua-color-mode-control button:focus-visible {
+    position: relative;
+    z-index: 1;
+  }
+
+  .ua-color-mode-control--compact .ua-color-mode-control__label {
+    padding-inline: 5px 3px;
+  }
+
+  .ua-color-mode-control--compact button {
+    padding-inline: 7px;
+  }
+
+  /* The mode layer is the final authenticated cascade owner, so it commits
+   * the shared ledger-sheet depth after each palette has resolved. */
+  .ua-app.ua-app[data-color-mode] [data-material="ledger-sheet"] {
+    box-shadow: var(--ua-ledger-shadow-rest);
+  }
+
+  .ua-app.ua-app[data-color-mode] [data-material="ledger-sheet"]:has(a, button, input, select, textarea):hover,
+  .ua-app.ua-app[data-color-mode] [data-material="ledger-sheet"]:focus-within {
+    box-shadow: var(--ua-ledger-shadow-hover);
+  }
+
+  /* Challenge 8 shell contract: the product is full-bleed white chrome with
+   * one scroll owner for the working surface. */
+  html[data-mode] body:has(.ua-app-shell) {
+    background: var(--ua-surface-primary);
+  }
+
+  .ua-app.ua-app-shell {
+    min-width: 0;
+    min-height: 100vh;
+    padding: 0;
+    background: var(--ua-surface-primary);
+  }
+
+  .ua-app.ua-app-shell > .ua-app-shell__main {
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+    background: var(--ua-surface-primary);
+  }
+
+  .ua-app.ua-app-shell #app-scroll-container,
+  .ua-app.ua-app-shell .ua-app-shell__scroll {
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--ua-canvas);
+    overscroll-behavior-y: contain;
+  }
+
+  .ua-app :where(button, select, input, [role="button"]) {
+    white-space: nowrap;
+  }
+
+  .ua-app :where(.ua-c6-kpi > strong, .ua-cases-kpi > strong, .ua-handoff-kpi > strong, .ua-figure__value, .ua-metric-group__value, .ua-named-financial__metric strong) {
+    color: var(--c-101014, #101014) !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 1180px) {
+    .ua-app-header .ua-color-mode-control__label {
+      display: none;
+    }
+
+    .ua-app-header .ua-color-mode-control button {
+      padding-inline: 6px;
+    }
+  }
+}

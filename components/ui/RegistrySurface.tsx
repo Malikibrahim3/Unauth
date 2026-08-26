@@ -45,8 +45,12 @@ export interface RegistrySurfaceProps {
   children: ReactNode;
   /** Pagination / page-size footer. */
   pagination?: ReactNode;
+  /** Visible applied filters, saved view, and scope summary when full controls are closed. */
+  appliedSummary?: ReactNode;
   /** Names the registry region for assistive tech (e.g. "Customers"). */
   'aria-label'?: string;
+  /** Let an opted-in persistent DataTable own both scroll axes. */
+  persistentTable?: boolean;
   className?: string;
 }
 
@@ -56,7 +60,9 @@ export function RegistrySurface({
   bulkActions,
   children,
   pagination,
+  appliedSummary,
   'aria-label': ariaLabel,
+  persistentTable = false,
   className,
 }: RegistrySurfaceProps) {
   const lead = bulkActions ?? toolbar;
@@ -72,13 +78,18 @@ export function RegistrySurface({
         <div className="ua-registry-surface__toolbar">
           {lead != null ? <div className="ua-registry-surface__toolbar-lead">{lead}</div> : null}
           {resultCount != null ? (
-            <p className="ua-registry-surface__result-count" role="status" aria-live="polite">
+            <div className="ua-registry-surface__result-count" role="status" aria-live="polite">
               {resultCount}
-            </p>
+            </div>
           ) : null}
         </div>
       ) : null}
-      <div className="ua-registry-surface__body">{children}</div>
+      {appliedSummary != null ? (
+        <div className="ua-registry-surface__applied-summary" role="status" aria-label="Applied filters and scope">
+          {appliedSummary}
+        </div>
+      ) : null}
+      <div className={cn('ua-registry-surface__body', persistentTable && 'ua-registry-surface__body--persistent-table')}>{children}</div>
       {pagination != null ? (
         <div className="ua-registry-surface__pagination">{pagination}</div>
       ) : null}

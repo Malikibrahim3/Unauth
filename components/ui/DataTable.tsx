@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/navigation/AppNavLink";
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
@@ -16,6 +16,8 @@ export interface DataTableColumn<T> {
   sortable?: boolean;
   render: (row: T) => ReactNode;
   width?: string;
+  /** Guarantees a pill/badge column can't clip at 1280px (F-28). */
+  minWidth?: string;
 }
 
 type TableDensity = "metadata" | "default" | "rich" | "two-line";
@@ -49,6 +51,8 @@ interface DataTableProps<T> {
   getRowHref?: (row: T) => string;
   /** Optional real button in the primary identity cell for contextual previews. */
   primaryActionLabel?: (row: T) => string;
+  /** Make this labelled table region the sole scroll owner and retain its headings. */
+  persistentHeader?: boolean;
   'aria-label'?: string;
 }
 
@@ -128,6 +132,7 @@ export function DataTable<T>({
   primaryColumnKey,
   getRowHref,
   primaryActionLabel,
+  persistentHeader = false,
   'aria-label': ariaLabel = 'Data table',
 }: DataTableProps<T>) {
   const totalCols = columns.length + (rowActions ? 1 : 0);
@@ -138,11 +143,13 @@ export function DataTable<T>({
         "ua-data-table",
         `ua-data-table--density-${density}`,
         flush && "ua-data-table--flush",
+        persistentHeader && "ua-data-table--persistent-header",
         className,
       )}
       role="region"
       aria-label={ariaLabel}
       aria-busy={loading || undefined}
+      tabIndex={persistentHeader ? 0 : undefined}
     >
       {loading ? <span className="sr-only" role="status">Loading table</span> : null}
       <table className="ua-data-table__table">
@@ -159,12 +166,12 @@ export function DataTable<T>({
                   (col.kind === "numeric" || col.kind === "currency") && "ua-data-table__header-cell--numeric",
                   col.sortable && onSort && "ua-data-table__header-cell--sortable",
                 )}
-                style={col.width ? { width: col.width } : undefined}
+                style={col.width || col.minWidth ? { width: col.width, minWidth: col.minWidth } : undefined}
               >
                 {col.sortable && onSort ? (
                   <button
                     type="button"
-                    className="inline-flex items-center rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ua-border-focus)]"
+                    className="inline-flex items-center rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--uo-route-border-focus)]"
                     onClick={() => onSort(col.key)}
                     aria-label={`Sort by ${col.headerLabel ?? (typeof col.header === "string" ? col.header : col.key)}${sortKey === col.key ? `, currently ${sortDir === "asc" ? "ascending" : "descending"}` : ""}`}
                   >

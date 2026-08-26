@@ -27,7 +27,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run start',
     url: `${baseURL}/login`,
-    reuseExistingServer: true,
+    reuseExistingServer: process.env.RELEASE_E2E_LOCAL !== '1',
     timeout: 120_000,
   },
   projects: [

@@ -206,6 +206,24 @@ export async function listSupportCasesForCustomerProfile(
   return (data ?? []).map((row) => toPublicSupportCase(row, baseUrls));
 }
 
+export async function listSupportCasesForMerchantCustomer(
+  supabase: unknown,
+  merchantId: string,
+  merchantCustomerId: string,
+): Promise<PublicSupportCaseContext[]> {
+  const client = supabase as TicketListClient;
+  const { data, error } = await client
+    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .select(SAFE_TICKET_COLUMNS)
+    .eq('merchant_id', merchantId)
+    .eq('merchant_customer_id', merchantCustomerId)
+    .order('updated_at_provider', { ascending: false });
+
+  if (error) throw new Error(`list_support_cases_failed: ${error.message}`);
+  const baseUrls = await fetchConnectionBaseUrls(supabase, merchantId);
+  return (data ?? []).map((row) => toPublicSupportCase(row, baseUrls));
+}
+
 export async function listSupportCasesForMerchantClaim(
   supabase: unknown,
   merchantId: string,

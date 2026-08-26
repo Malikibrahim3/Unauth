@@ -1,26 +1,10 @@
 'use client';
 
 import { Suspense, use } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { EvidencePackageForm } from '@/components/evidence/EvidencePackageForm';
-import { PageFrame } from '@/components/ui/PageFrame';
-import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import { ButtonLink, PageFrame } from '@/components/ui';
 import { Bone } from '@/components/ui/LoadingSkeleton';
-
-function ProfileDrawerLink({ profileId, disputedOrder }: { profileId: string; disputedOrder: string }) {
-  const href = disputedOrder
-    ? `/customers/${profileId}?buildEvidence=1&disputedOrder=${encodeURIComponent(disputedOrder)}`
-    : `/customers/${profileId}?buildEvidence=1`;
-  return (
-    <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
-      Prefer the profile view?{' '}
-      <Link href={href} className="ua-text-working-title hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
-        Open as a side panel on the customer profile
-      </Link>
-    </p>
-  );
-}
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -28,26 +12,29 @@ interface PageProps {
 
 function EvidenceNewPageContent({ profileId }: { profileId: string }) {
   const searchParams = useSearchParams();
-  const disputedOrder = searchParams.get('disputedOrder') ?? '';
+  const orderId = searchParams.get('orderId') ?? searchParams.get('disputedOrder') ?? '';
+  const caseId = searchParams.get('caseId') ?? '';
 
   return (
     <PageFrame
-      title="Build evidence package"
-      subtitle="Collect merchant-owned records and prepare a reviewable case package."
-      breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'Profile', href: `/customers/${profileId}` }, { label: 'New evidence' }]}
-      actions={<ProfileDrawerLink profileId={profileId} disputedOrder={disputedOrder} />}
+      title="Build an evidence package"
+      subtitle="Assemble a case-ready bundle from the order, the claim, the source records that exist, and an explicit statement of the ones that do not."
+      breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'Customer', href: `/customers/${profileId}` }, { label: 'New evidence package' }]}
+      showCurrentBreadcrumb
+      actions={<ButtonLink href={`/customers/${profileId}`} variant="secondary" size="sm">Back to customer</ButtonLink>}
+      tabs={<nav className="uo-mini-tabs" aria-label="Evidence package steps"><a href="#select-order" aria-current="step">1 · Select order</a><a href="#review-evidence">2 · Review evidence</a><a href="#package-summary">3 · Confirm package</a></nav>}
+      surfaceId="build-evidence-package"
+      archetype="P8"
     >
-      <AuthenticatedPanel>
-        <EvidencePackageForm profileId={profileId} preselectedOrderId={disputedOrder} showIntro />
-      </AuthenticatedPanel>
+      <EvidencePackageForm profileId={profileId} preselectedOrderId={orderId} caseContextId={caseId} syncOrderToUrl showIntro />
     </PageFrame>
   );
 }
 
 function EvidenceNewLoading() {
   return (
-    <PageFrame title="Build evidence package" subtitle="Loading customer evidence workspace…" breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'Profile' }, { label: 'New evidence' }]}>
-      <AuthenticatedPanel><div className="space-y-4 p-1"><Bone className="h-5 w-52" /><Bone className="h-4 w-full max-w-2xl" /><div className="grid gap-3 border-t border-[var(--ua-border-subtle)] pt-4 sm:grid-cols-2"><Bone className="h-10" /><Bone className="h-10" /></div><Bone className="h-36 w-full" /></div></AuthenticatedPanel>
+    <PageFrame title="Build an evidence package" subtitle="Loading customer evidence workspace…" breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'Customer' }, { label: 'New evidence package' }]} surfaceId="build-evidence-package" archetype="P8">
+      <div data-state-id="evidence-package-builder-loading" className="uo-card p-4"><div className="space-y-4"><Bone className="h-5 w-52" /><Bone className="h-4 w-full max-w-2xl" /><div className="grid gap-3 border-t border-[var(--uo-route-border-subtle)] pt-4 sm:grid-cols-2"><Bone className="h-10" /><Bone className="h-10" /></div><Bone className="h-36 w-full" /></div></div>
     </PageFrame>
   );
 }

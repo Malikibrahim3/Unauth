@@ -59,11 +59,11 @@ export function SidebarAside({
     <aside
       className={cn(
         'ua-app-sidebar relative flex h-full flex-shrink-0 flex-col',
-        'border-r border-[var(--ua-border-subtle)]',
+        'border-r border-[var(--uo-route-border-subtle)]',
         isMobile
           ? 'w-72'
           : cn(
-              'transition-[width] duration-[var(--ua-duration-slow)] ease-[var(--ua-ease-standard)]',
+              'transition-[width] duration-[var(--uo-route-duration-slow)] ease-[var(--uo-route-ease-standard)]',
               'overflow-hidden',
             ),
       )}
@@ -98,11 +98,11 @@ export function SidebarAside({
               aria-label="Collapse sidebar"
               onClick={onToggleCollapse}
               className={cn(
-                'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[var(--ua-radius-control)]',
-                'text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-secondary)]',
-                'hover:bg-[var(--ua-surface-hover)]',
-                'transition-colors duration-[var(--ua-duration-fast)]',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
+                'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[var(--uo-route-radius-control)]',
+                'text-[var(--uo-route-text-tertiary)] hover:text-[var(--uo-route-text-secondary)]',
+                'hover:bg-[var(--uo-route-surface-hover)]',
+                'transition-colors duration-[var(--uo-route-duration-fast)]',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)] focus-visible:outline-offset-2',
               )}
             >
               <ChevronRight className="h-3.5 w-3.5 rotate-180" aria-hidden="true" />
@@ -116,11 +116,11 @@ export function SidebarAside({
             activeMerchantId={activeMerchantId}
           />
         ) : !isCollapsed && merchantName ? (
-          <div className="flex min-h-9 w-full items-center gap-2 rounded-[var(--ua-radius-control)] bg-[var(--ua-surface-hover)] px-2.5 py-1.5" title={merchantName}>
-            <span className="ua-text-working-title flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)]">
+          <div className="flex min-h-9 w-full items-center gap-2 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-surface-hover)] px-2.5 py-1.5" title={merchantName}>
+            <span className="ua-text-working-title flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-primary)] text-[var(--uo-route-text-primary)]">
               {merchantName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
             </span>
-            <span className="ua-text-label min-w-0 truncate leading-tight text-[var(--ua-text-secondary)]">{merchantName}</span>
+            <span className="ua-text-label min-w-0 truncate leading-tight text-[var(--uo-route-text-secondary)]">{merchantName}</span>
           </div>
         ) : null}
 
@@ -129,7 +129,7 @@ export function SidebarAside({
             href="/sources/connected"
             prefetch={false}
             onClick={onCloseMobile}
-            className="flex min-h-7 w-full items-center gap-2 rounded-[var(--ua-radius-control)] px-2.5 py-1 text-[length:var(--ua-text-metadata-size)] font-medium leading-tight text-[var(--ua-text-secondary)] transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]"
+            className="flex min-h-7 w-full items-center gap-2 rounded-[var(--uo-route-radius-control)] px-2.5 py-1 text-[length:var(--uo-route-text-metadata-size)] font-medium leading-tight text-[var(--uo-route-text-secondary)] transition-colors duration-[var(--uo-route-duration-fast)] hover:bg-[var(--uo-route-surface-hover)] hover:text-[var(--uo-route-text-primary)]"
             title={
               allSourcesConnected
                 ? `${connectionState.helpdeskProvider ? providerLabel(connectionState.helpdeskProvider) : 'Helpdesk'} and commerce sources are connected. Review integrations.`
@@ -142,7 +142,7 @@ export function SidebarAside({
             <span
               className="h-1.5 w-1.5 rounded-full shrink-0"
               style={{
-                background: allSourcesConnected ? 'var(--ua-success)' : 'var(--ua-warning)',
+                background: allSourcesConnected ? 'var(--uo-route-success)' : 'var(--uo-route-warning)',
               }}
               aria-hidden="true"
             />
@@ -155,7 +155,7 @@ export function SidebarAside({
             href="/sources/connected"
             prefetch={false}
             onClick={onCloseMobile}
-            className="relative flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold leading-none text-[var(--ua-text-primary)]"
+            className="relative flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--uo-route-surface-selected)] text-[length:var(--uo-route-text-metadata-size)] font-bold leading-none text-[var(--uo-route-text-primary)]"
             title={`${merchantName}. ${sourceHealthText}.`}
             aria-label={`${merchantName}. ${sourceHealthAriaLabel}`}
           >
@@ -166,8 +166,8 @@ export function SidebarAside({
               .slice(0, 2)
               .toUpperCase()}
             <span
-              className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[var(--ua-shell)]"
-              style={{ background: allSourcesConnected ? 'var(--ua-success)' : 'var(--ua-warning)' }}
+              className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[var(--uo-route-shell)]"
+              style={{ background: allSourcesConnected ? 'var(--uo-route-success)' : 'var(--uo-route-warning)' }}
               aria-hidden="true"
             />
           </Link>
@@ -198,12 +198,12 @@ export function SidebarAside({
 
       <div
         className={cn(
-          'flex flex-shrink-0 flex-col border-t border-[var(--ua-border-subtle)]',
+          'flex flex-shrink-0 flex-col border-t border-[var(--uo-route-border-subtle)]',
           isCollapsed ? 'items-center gap-1 p-2.5' : 'gap-0.5 p-2.5',
         )}
       >
         {!isCollapsed ? (
-          <div className="px-2 py-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)] truncate">
+          <div className="px-2 py-1 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)] truncate">
             <span className="block truncate" title={userName ?? userEmail}>
               {userName ?? 'Workspace operator'}
             </span>
@@ -216,14 +216,14 @@ export function SidebarAside({
           title={isCollapsed ? 'Help' : undefined}
           onClick={onCloseMobile}
           className={cn(
-            'flex h-8 items-center gap-3 rounded-[var(--ua-radius-control)] px-2',
-            'text-[length:var(--ua-text-dense-size)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
-            'transition-colors duration-[var(--ua-duration-fast)]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
+            'flex h-8 items-center gap-3 rounded-[var(--uo-route-radius-control)] px-2',
+            'text-[length:var(--uo-route-text-dense-size)] text-[var(--uo-route-text-secondary)] hover:bg-[var(--uo-route-surface-hover)] hover:text-[var(--uo-route-text-primary)]',
+            'transition-colors duration-[var(--uo-route-duration-fast)]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
           )}
         >
-          <HelpCircle className="h-4 w-4 flex-shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
+          <HelpCircle className="h-4 w-4 flex-shrink-0 text-[var(--uo-route-text-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Help</span>}
         </Link>
 
@@ -232,14 +232,14 @@ export function SidebarAside({
           onClick={onSignOut}
           title={isCollapsed ? 'Sign out' : undefined}
           className={cn(
-            'flex h-8 w-full items-center gap-3 rounded-[var(--ua-radius-control)] px-2',
-            'text-[length:var(--ua-text-dense-size)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
-            'transition-colors duration-[var(--ua-duration-fast)]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
+            'flex h-8 w-full items-center gap-3 rounded-[var(--uo-route-radius-control)] px-2',
+            'text-[length:var(--uo-route-text-dense-size)] text-[var(--uo-route-text-secondary)] hover:bg-[var(--uo-route-surface-hover)] hover:text-[var(--uo-route-text-primary)]',
+            'transition-colors duration-[var(--uo-route-duration-fast)]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
           )}
         >
-          <LogOut className="h-4 w-4 flex-shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
+          <LogOut className="h-4 w-4 flex-shrink-0 text-[var(--uo-route-text-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Sign out</span>}
         </button>
 
@@ -254,7 +254,7 @@ export function SidebarAside({
                 key={href}
                 href={href}
                 prefetch={false}
-                className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)] transition-colors hover:text-[var(--ua-text-secondary)] hover:underline"
+                className="text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)] transition-colors hover:text-[var(--uo-route-text-secondary)] hover:underline"
               >
                 {label}
               </Link>
@@ -269,9 +269,9 @@ export function SidebarAside({
             onClick={onToggleCollapse}
             className={cn(
               'mt-1 flex h-7 w-7 items-center justify-center rounded-sm',
-              'text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-secondary)]',
-              'transition-colors duration-[var(--ua-duration-fast)]',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
+              'text-[var(--uo-route-text-tertiary)] hover:text-[var(--uo-route-text-secondary)]',
+              'transition-colors duration-[var(--uo-route-duration-fast)]',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)] focus-visible:outline-offset-2',
             )}
           >
             <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />

@@ -10,7 +10,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { TABLES } from '@/lib/supabase/tables';
-import type { WorkDueBandKey } from '@/lib/work/store';
+import type { WorkAgeBandKey, WorkDueBandKey } from '@/lib/work/store';
 
 export const EXCEPTION_TYPES = [
   'unmatched_refund', 'ambiguous_replacement', 'conflicting_financials',
@@ -38,6 +38,20 @@ export type ExceptionListRow = {
   state_version?: number | null;
   created_at: string;
   resolved_at: string | null;
+};
+
+export type ReconciliationPageResult = {
+  rows: ExceptionListRow[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  status: 'open' | 'resolved' | 'dismissed' | 'all';
+  source: string | null;
+  currency: string | null;
+  stableOrder: 'created_at_desc_id_desc';
+  contract: 'canonical' | 'compatibility';
+  limitation: string | null;
 };
 
 export const raiseExceptionSchema = z.object({
@@ -99,7 +113,7 @@ export async function raiseException(client: SupabaseClient, merchantId: string,
 export async function listExceptions(
   client: SupabaseClient,
   merchantId: string,
-  options: { status?: string; caseId?: string; limit?: number; offset?: number; dueBefore?: string; dueAfter?: string; dueIsNull?: boolean } = {},
+  options: { status?: string; caseId?: string; limit?: number; offset?: number; dueBefore?: string; dueAfter?: string; dueIsNull?: boolean; createdBefore?: string; createdAfter?: string } = {},
 ): Promise<ExceptionListRow[]> {
   async function run(selection: string, applyDeadlineFilters = true) {
     let query = client
@@ -113,6 +127,8 @@ export async function listExceptions(
       if (options.dueAfter) query = query.gte('due_at', options.dueAfter);
       if (options.dueIsNull) query = query.is('due_at', null);
     }
+    if (options.createdBefore) query = query.lt('created_at', options.createdBefore);
+    if (options.createdAfter) query = query.gte('created_at', options.createdAfter);
     const offset = options.offset ?? 0;
     const limit = options.limit ?? 100;
     return query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
@@ -130,6 +146,136 @@ export async function listExceptions(
   }
   if (extended.error) throw new Error(`case_exceptions_list_failed: ${extended.error.message}`);
   return (extended.data ?? []) as unknown as ExceptionListRow[];
+}
+
+/** Exact server-backed reconciliation paging. The canonical function has no
+ * first-100 reachability cap and returns the stable total with every page. */
+export async function listReconciliationPage(
+  client: SupabaseClient,
+  merchantId: string,
+  input: {
+    status?: 'open' | 'resolved' | 'dismissed' | 'all';
+    source?: string | null;
+    currency?: string | null;
+    search?: string | null;
+    page?: number;
+    pageSize?: number;
+  } = {},
+): Promise<ReconciliationPageResult> {
+  const status = input.status ?? 'open';
+  const page = Math.max(1, Math.trunc(input.page ?? 1));
+  const pageSize = Math.min(100, Math.max(1, Math.trunc(input.pageSize ?? 25)));
+  const currency = input.currency && /^[A-Za-z]{3}$/.test(input.currency)
+    ? input.currency.toUpperCase()
+    : null;
+  const rpcClient = client as unknown as {
+    rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  };
+  const rpc = await rpcClient.rpc('reconciliation_page_v1', {
+    p_merchant_id: merchantId,
+    p_status: status,
+    p_source: input.source?.trim() || null,
+    p_currency: currency,
+    p_search: input.search?.trim() || null,
+    p_page: page,
+    p_page_size: pageSize,
+  });
+  if (!rpc.error && rpc.data && typeof rpc.data === 'object') {
+    const payload = rpc.data as Record<string, unknown>;
+    return {
+      rows: (Array.isArray(payload.rows) ? payload.rows : []) as ExceptionListRow[],
+      page: Number(payload.page) || page,
+      pageSize: Number(payload.page_size) || pageSize,
+      totalCount: Number(payload.total_count) || 0,
+      totalPages: Math.max(1, Number(payload.total_pages) || 1),
+      status,
+      source: input.source?.trim() || null,
+      currency,
+      stableOrder: 'created_at_desc_id_desc',
+      contract: 'canonical',
+      limitation: null,
+    };
+  }
+  if (!rpc.error || !/reconciliation_page_v1|schema cache|function .* does not exist/i.test(rpc.error.message)) {
+    throw new Error(`reconciliation_page_failed: ${rpc.error?.message ?? 'invalid response'}`);
+  }
+
+  const offset = (page - 1) * pageSize;
+  let query = client
+    .from(TABLES.CASE_EXCEPTIONS)
+    .select('id,support_payout_case_id,exception_type,confidence,status,title,detail,context,source_system,assigned_to,assigned_at,priority,due_at,deadline_kind,state_version,created_at,resolved_at', { count: 'exact' })
+    .eq('merchant_id', merchantId);
+  if (status !== 'all') query = query.eq('status', status);
+  if (input.source?.trim()) query = query.eq('source_system', input.source.trim());
+  if (input.search?.trim()) {
+    const term = input.search.trim().replace(/[,%()]/g, '');
+    query = query.or(`title.ilike.%${term}%,detail.ilike.%${term}%`);
+  }
+  const fallback = await query
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(offset, offset + pageSize - 1);
+  if (fallback.error) throw new Error(`reconciliation_page_failed: ${fallback.error.message}`);
+  const raw = (fallback.data ?? []) as unknown as ExceptionListRow[];
+  const rows = currency
+    ? raw.filter((row) => {
+      const context = row.context ?? {};
+      const sourceContext = context.source && typeof context.source === 'object' ? context.source as Record<string, unknown> : {};
+      const ledgerContext = context.ledger && typeof context.ledger === 'object' ? context.ledger as Record<string, unknown> : {};
+      return [context.currency, sourceContext.currency, ledgerContext.currency]
+        .some((value) => typeof value === 'string' && value.toUpperCase() === currency);
+    })
+    : raw;
+  const totalCount = fallback.count ?? raw.length;
+  return {
+    rows,
+    page,
+    pageSize,
+    totalCount,
+    totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
+    status,
+    source: input.source?.trim() || null,
+    currency,
+    stableOrder: 'created_at_desc_id_desc',
+    contract: 'compatibility',
+    limitation: currency
+      ? 'Currency filtering is page-local until the MR4 forward migration is installed; totals are withheld.'
+      : 'MR4 canonical reconciliation paging is pending on this database.',
+  };
+}
+
+export async function countOpenExceptionAgeBands(
+  client: SupabaseClient,
+  merchantId: string,
+  asOf: Date,
+): Promise<Record<WorkAgeBandKey, number>> {
+  const dayOne = new Date(asOf.getTime() - 86_400_000).toISOString();
+  const dayFour = new Date(asOf.getTime() - 4 * 86_400_000).toISOString();
+  const dayEight = new Date(asOf.getTime() - 8 * 86_400_000).toISOString();
+  const count = async (createdAfter?: string, createdBefore?: string) => {
+    let query = client
+      .from(TABLES.CASE_EXCEPTIONS)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId)
+      .eq('status', 'open');
+    if (createdAfter) query = query.gte('created_at', createdAfter);
+    if (createdBefore) query = query.lt('created_at', createdBefore);
+    const result = await query;
+    if (result.error) throw new Error(`case_exception_age_count_failed: ${result.error.message}`);
+    return result.count ?? 0;
+  };
+  const [newest, days1to3, days4to7, oldest] = await Promise.all([
+    count(dayOne),
+    count(dayFour, dayOne),
+    count(dayEight, dayFour),
+    count(undefined, dayEight),
+  ]);
+  return {
+    'age-0-1': newest,
+    'age-1-3': days1to3,
+    'age-4-7': days4to7,
+    'age-8-plus': oldest,
+  };
 }
 
 /** Claim or release an exception. Assignment is intentionally separate from its

@@ -14,7 +14,7 @@ export async function POST(
 ) {
   const { provider: providerId } = await params;
   const provider = requireIntegrationProvider(providerId);
-  if (provider.buildStatus === 'slot_only') {
+  if (provider.codeMaturity === 'slot_only') {
     return NextResponse.json({ error: 'Provider is available on request and is not connected.' }, { status: 400 });
   }
 

@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import ClaimReviewPanel from '@/components/claims/ClaimReviewPanel';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { getRequestServiceClient, getRequestUser, requirePagePermission } from '@/lib/auth/requestContext';
@@ -6,13 +6,21 @@ import { authorizeClaimForMerchant, fetchClaimById } from '@/lib/claims/access';
 import { TABLES } from '@/lib/supabase/tables';
 import type { CaseFinancialSummary } from '@/components/claims/payout/CaseFinancialHistoryCard';
 import type { ClaimRecord } from '@/components/claims/claimReviewTypes';
+import { computeClaimDecision } from '@/lib/claims/decision/evaluate';
+import { getRecoveryCaseForSupportPayoutCase } from '@/lib/recoveries/store';
+import { loadCaseEvidenceFile } from '@/lib/claims/caseEvidenceFile';
+import { trustedFinancialStatesByCurrency } from '@/lib/finance/caseFinancialTruth';
 
 export async function CaseDetailRoute({
   claimId,
-  caseBasePath = '/cases',
+  caseBackHref = '/cases',
+  initialTab,
+  investigationId,
 }: {
   claimId: string;
-  caseBasePath?: '/cases';
+  caseBackHref?: string;
+  initialTab?: 'evidence' | 'responsibility' | 'recovery' | 'activity' | null;
+  investigationId?: string | null;
 }) {
   const user = await getRequestUser();
   if (!user) redirect('/login');
@@ -25,9 +33,9 @@ export async function CaseDetailRoute({
   if (!ctx) redirect('/overview');
 
   const loaded = authorizeClaimForMerchant(claimRow, ctx.merchantId);
-  if (!loaded.claim) redirect(caseBasePath);
+  if (!loaded.claim) notFound();
 
-  const [canManage, sourceOrderResult, identityStateResult, financialResult] = await Promise.all([
+  const [canManage, sourceOrderResult, identityStateResult, financialResult, financialEntriesResult, claimEventsResult, computedDecision, recoveryCase, caseEvidenceFile] = await Promise.all([
     hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS),
     loaded.claim.source_order_id
       ? serviceClient
@@ -47,10 +55,24 @@ export async function CaseDetailRoute({
       : Promise.resolve({ data: null, error: null }),
     serviceClient
       .from(TABLES.CASE_FINANCIAL_SUMMARIES)
-      .select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,prevented_minor,written_off_minor,known_states,updated_at')
+      .select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,prevented_minor,written_off_minor,updated_at')
       .eq('merchant_id', ctx.merchantId)
       .eq('support_payout_case_id', claimId)
       .order('currency', { ascending: true }),
+    serviceClient
+      .from(TABLES.CASE_FINANCIAL_ENTRIES)
+      .select('currency,state,amount_minor,source_record_id,case_outcome_event_id,provider_credit_record_id')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('support_payout_case_id', claimId),
+    serviceClient
+      .from('claim_events')
+      .select('id,event_type,created_at,actor_user_id,metadata')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('claim_id', claimId)
+      .order('created_at', { ascending: false }),
+    computeClaimDecision({ client: serviceClient, merchantId: ctx.merchantId, claimId }),
+    getRecoveryCaseForSupportPayoutCase(serviceClient, ctx.merchantId, claimId),
+    loadCaseEvidenceFile(serviceClient, ctx.merchantId, claimId),
   ]);
 
   const sourceCustomerId = sourceOrderResult.data?.source_customer_id ?? null;
@@ -78,17 +100,44 @@ export async function CaseDetailRoute({
     created_at: loaded.claim.created_at ?? null,
     updated_at: loaded.claim.updated_at ?? null,
     assigned_to: loaded.claim.assigned_to ?? null,
+    assigned_to_name: loaded.claim.assigned_to === user.id
+      ? String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? '').trim() || 'Assigned to you'
+      : loaded.claim.assigned_to ? 'Assigned teammate' : null,
+    events: claimEventsResult.data ?? [],
   };
 
+  const initialDecisionData = computedDecision ? {
+    evaluation: computedDecision.evaluation,
+    ruleCount: computedDecision.ruleCount,
+    evaluatedAt: computedDecision.evaluatedAt,
+    payoutCase: computedDecision.payoutCase,
+    recoveryCase,
+    readOnly: true,
+  } : null;
+  const knownStatesByCurrency = trustedFinancialStatesByCurrency(
+    financialEntriesResult.data ?? [],
+    { merchantDecisionRecorded: Boolean(caseEvidenceFile?.decisions.length) },
+  );
+  const financialSummaries = ((financialResult.data ?? []) as Array<Omit<CaseFinancialSummary, 'known_states'>>).map((summary) => ({
+    ...summary,
+    known_states: knownStatesByCurrency[String(summary.currency).toUpperCase()] ?? [],
+  })) as CaseFinancialSummary[];
+
   return (
+    <div data-surface-id="case-review-workbench" data-archetype="P8">
     <ClaimReviewPanel
       profileId={loaded.claim.identity_id ?? ''}
       sourceCustomerId={sourceCustomerId}
       initialClaimId={claimId}
       initialClaim={initialClaim}
+      initialDecisionData={initialDecisionData}
       canManage={canManage}
-      financialSummaries={(financialResult.data ?? []) as CaseFinancialSummary[]}
-      caseBasePath={caseBasePath}
+      financialSummaries={financialSummaries}
+      caseBackHref={caseBackHref}
+      initialTab={initialTab}
+      investigationId={investigationId}
+      caseEvidenceFile={caseEvidenceFile}
     />
+    </div>
   );
 }

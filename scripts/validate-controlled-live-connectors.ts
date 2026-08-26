@@ -1,3 +1,5 @@
+import './e2e/helpers/loadEnv'; // MUST be first — app env validates at import time.
+
 import { createServiceClient } from '@/lib/supabase/server';
 import { verifyMerchantLiveConnections } from '@/lib/connections/liveVerification';
 import { runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';

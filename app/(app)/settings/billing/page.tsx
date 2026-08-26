@@ -1,12 +1,11 @@
 import { Suspense } from 'react';
 import BillingSettingsClient from '@/components/billing/BillingSettingsClient';
-import { FormPageLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
 
 export const dynamic = 'force-dynamic';
 
 export default function BillingSettingsPage() {
   return (
-    <Suspense fallback={<FormPageLoadingSkeleton />}>
+    <Suspense fallback={<div className="ua-route-readiness" role="status" aria-label="Loading billing">Loading billing…</div>}>
       <BillingSettingsClient />
     </Suspense>
   );

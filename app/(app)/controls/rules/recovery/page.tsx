@@ -2,12 +2,9 @@ import { redirect } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getRequestUser } from '@/lib/auth/requestContext';
 import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { WorkbenchPage } from '@/components/ui';
+import { ButtonLink, PageFrame } from '@/components/ui';
 import { listPartnerRecoveryRules, listPartners } from '@/lib/partners/store';
 import { RecoveryRulebookClient } from '@/components/rules/RecoveryRulebookClient';
-import { formatNumber } from '@/lib/utils/format';
-import { TABLES } from '@/lib/supabase/tables';
-import { isInvestigationEmailDispatchEnabled } from '@/lib/investigations/flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,33 +16,31 @@ export default async function RecoveryRulesPage() {
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_SETTINGS);
   if (denied) redirect('/overview');
 
-  const [partners, rules, canManage, merchantSettings] = await Promise.all([
+  const [partners, rules, canManage] = await Promise.all([
     listPartners(serviceClient, ctx.merchantId),
     listPartnerRecoveryRules(serviceClient, ctx.merchantId),
     hasPermission(serviceClient, ctx, PERMISSIONS.MANAGE_SETTINGS),
-    serviceClient
-      .from(TABLES.MERCHANTS)
-      .select('investigation_response_sla_hours,investigation_reply_to,investigation_email_enabled')
-      .eq('id', ctx.merchantId)
-      .single(),
   ]);
-  if (merchantSettings.error) {
-    throw new Error(`Unable to load investigation settings: ${merchantSettings.error.message}`);
-  }
 
   return (
-    <WorkbenchPage
-      title="Recovery rules"
-      subtitle={`Define who can own recovery routes · ${formatNumber(partners.length)} partners · ${formatNumber(rules.filter((rule) => rule.active).length)} active rules · ${formatNumber(new Set(rules.flatMap((rule) => rule.required_evidence)).size)} evidence routes`}
-      main={(
+    <PageFrame
+      title="Recovery rulebook"
+      subtitle="Partner agreements turned into consistent recovery instructions: who to claim from, which evidence they require, how long the window is, and what happens when no agreement exists."
+      breadcrumbs={[
+        { label: 'Controls', href: '/controls' },
+        { label: 'Payout rules', href: '/controls/rules' },
+        { label: 'Recovery rulebook' },
+      ]}
+      showCurrentBreadcrumb
+      actions={canManage ? <><ButtonLink href="/controls/rules/recovery?modal=partner" variant="secondary" size="sm">New partner</ButtonLink><ButtonLink href="/controls/rules/recovery?modal=rule" variant="primary" size="sm">New recovery rule</ButtonLink></> : undefined}
+      surfaceId="recovery-rulebook"
+      archetype="P8"
+    >
         <RecoveryRulebookClient
           partners={partners}
           rules={rules}
           canManage={canManage}
-          investigationSettings={merchantSettings.data}
-          emailDispatchAvailable={isInvestigationEmailDispatchEnabled()}
         />
-      )}
-    />
+    </PageFrame>
   );
 }

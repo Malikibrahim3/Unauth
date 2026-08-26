@@ -1,4 +1,4 @@
-import { SettingsListLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
+import { SettingsRouteLoading } from '@/components/settings/SettingsRouteLoading';
 export default function Loading() {
-  return <SettingsListLoadingSkeleton />;
+  return <SettingsRouteLoading title="Team" layout="wide" />;
 }

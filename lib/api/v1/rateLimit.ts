@@ -39,12 +39,7 @@ export async function incrementAndCheckApiKeyMinuteLimit(
   );
 
   if (error) {
-    console.error('[api-rate-limit] minute limiter DB error; failing open', {
-      keyId,
-      code: error.code,
-      message: error.message,
-    });
-    return { allowed: true, count: 0 };
+    throw new Error(`API key rate limit check failed: ${error.message}`);
   }
 
   const count = newCount as number;

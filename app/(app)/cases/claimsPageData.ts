@@ -90,6 +90,12 @@ export type ClaimRow = {
   investigation_next_due_at?: string | null;
   investigation_evidence_gap?: string | null;
   investigation_latest_response?: string | null;
+  evidence_posture?: 'strong' | 'contestable' | 'insufficient' | 'not_assessable' | 'unavailable' | null;
+  apparent_responsibility?: string | null;
+  claim_readiness?: string | null;
+  claim_deadline?: string | null;
+  provider_position?: string | null;
+  money_outcome?: string | null;
 };
 
 export type CustomerProfileSummary = {
@@ -106,4 +112,3 @@ export type EvidencePackageRow = {
   reference_number: string;
   generated_at: string;
 };
-

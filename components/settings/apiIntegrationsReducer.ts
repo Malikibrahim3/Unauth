@@ -1,4 +1,5 @@
 import type { ApiKeyRow } from '@/components/settings/apiIntegrationsTypes';
+import type { ApiRateLimit, ApiScope } from '@/lib/api/accessPolicy';
 
 export type ApiIntegrationsState = {
   keyName: string;
@@ -9,6 +10,8 @@ export type ApiIntegrationsState = {
   busyId: string | null;
   message: { type: 'success' | 'error'; text: string } | null;
   copied: boolean;
+  scopes: ApiScope[];
+  rateLimitPerMinute: ApiRateLimit;
 };
 
 export type ApiIntegrationsAction =
@@ -24,6 +27,8 @@ export const initialApiIntegrationsState: ApiIntegrationsState = {
   busyId: null,
   message: null,
   copied: false,
+  scopes: ['customers:read'],
+  rateLimitPerMinute: 30,
 };
 
 export function apiIntegrationsReducer(
@@ -40,6 +45,8 @@ export function apiIntegrationsReducer(
         createdWidgetToken: null,
         keyName: '',
         copied: false,
+        scopes: ['customers:read'],
+        rateLimitPerMinute: 30,
       };
     default:
       return state;

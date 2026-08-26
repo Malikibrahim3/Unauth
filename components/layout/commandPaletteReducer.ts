@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { SearchApiType, SearchResultType } from '@/lib/search/access';
 
 export interface CustomerResult {
   id: string;
@@ -9,12 +10,13 @@ export interface CustomerResult {
 }
 
 export interface UnifiedResult {
-  type: 'customer' | 'order' | 'case' | 'ticket' | 'shipment' | 'transaction' | 'recovery';
+  type: SearchResultType;
   id: string;
   label: string;
   sublabel?: string;
   href: string;
   riskLevel?: string;
+  source?: string;
 }
 
 export type CommandPaletteState = {
@@ -24,13 +26,15 @@ export type CommandPaletteState = {
   unifiedResults: UnifiedResult[];
   searchingCustomers: boolean;
   searchError: string | null;
+  partialFailures: string[];
+  restrictedTypes: SearchApiType[];
 };
 
 export type CommandPaletteAction =
   | { type: 'setQuery'; query: string }
   | { type: 'setActiveIdx'; activeIdx: number }
   | { type: 'searchStart' }
-  | { type: 'searchSuccess'; customerResults: CustomerResult[]; unifiedResults: UnifiedResult[] }
+  | { type: 'searchSuccess'; customerResults: CustomerResult[]; unifiedResults: UnifiedResult[]; partialFailures: string[]; restrictedTypes: SearchApiType[] }
   | { type: 'searchFailure'; error: string }
   | { type: 'searchClear' }
   | { type: 'reset' };
@@ -42,6 +46,8 @@ export const initialCommandPaletteState: CommandPaletteState = {
   unifiedResults: [],
   searchingCustomers: false,
   searchError: null,
+  partialFailures: [],
+  restrictedTypes: [],
 };
 
 export function commandPaletteReducer(
@@ -54,17 +60,37 @@ export function commandPaletteReducer(
     case 'setActiveIdx':
       return { ...state, activeIdx: action.activeIdx };
     case 'searchStart':
-      return { ...state, searchingCustomers: true, searchError: null };
+      return {
+        ...state,
+        activeIdx: 0,
+        customerResults: [],
+        unifiedResults: [],
+        searchingCustomers: true,
+        searchError: null,
+        partialFailures: [],
+        restrictedTypes: [],
+      };
     case 'searchSuccess':
       return {
         ...state,
         searchingCustomers: false,
         customerResults: action.customerResults,
         unifiedResults: action.unifiedResults,
+        partialFailures: action.partialFailures,
+        restrictedTypes: action.restrictedTypes,
         searchError: null,
       };
     case 'searchFailure':
-      return { ...state, searchingCustomers: false, searchError: action.error };
+      return {
+        ...state,
+        activeIdx: 0,
+        customerResults: [],
+        unifiedResults: [],
+        searchingCustomers: false,
+        searchError: action.error,
+        partialFailures: [],
+        restrictedTypes: [],
+      };
     case 'searchClear':
       return {
         ...state,
@@ -72,6 +98,8 @@ export function commandPaletteReducer(
         customerResults: [],
         unifiedResults: [],
         searchError: null,
+        partialFailures: [],
+        restrictedTypes: [],
       };
     case 'reset':
       return initialCommandPaletteState;
@@ -101,4 +129,5 @@ export type NavItem = {
   description: string;
   href: string;
   icon: ReactNode;
+  group?: string;
 };

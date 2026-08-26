@@ -124,11 +124,11 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           alt="Zendesk"
           width={40}
           height={40}
-          className="h-9 w-9 shrink-0 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] object-contain p-1"
+          className="h-9 w-9 shrink-0 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-subtle)] object-contain p-1"
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
               Zendesk
             </p>
             {!statusLoading ? (
@@ -136,11 +136,11 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
             ) : null}
           </div>
           {allDone ? (
-            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--uo-route-text-secondary)' }}>
               Sidebar app verified · Ticket sync active
             </p>
           ) : sidebarVerified ? (
-            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--uo-route-text-secondary)' }}>
               Sidebar verified · Add API token below to sync ticket history
             </p>
           ) : null}
@@ -150,7 +150,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       {/* Setup steps */}
       <Card unstyled variant="panel" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
-          <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label" style={{ color: 'var(--uo-route-text-secondary)' }}>
             Setup steps
           </p>
         </div>
@@ -164,36 +164,36 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
             <div
               key={step.number}
               className="flex gap-3 px-4 py-3"
-              style={{ borderColor: 'var(--ua-border-default)' }}
+              style={{ borderColor: 'var(--uo-route-border-default)' }}
             >
               <div
                 className="ua-text-label flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-bold mt-0.5"
                 style={{
                   background: isDone
-                    ? 'color-mix(in srgb, var(--ua-success) 15%, transparent)'
-                    : 'color-mix(in srgb, var(--ua-text-secondary) 10%, transparent)',
-                  color: isDone ? 'var(--ua-success)' : 'var(--ua-text-secondary)',
+                    ? 'color-mix(in srgb, var(--uo-route-success) 15%, transparent)'
+                    : 'color-mix(in srgb, var(--uo-route-text-secondary) 10%, transparent)',
+                  color: isDone ? 'var(--uo-route-success)' : 'var(--uo-route-text-secondary)',
                 }}
               >
                 {isDone ? <CheckCircle2 className="h-3.5 w-3.5" /> : <span>{step.number}</span>}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
+                <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
                   {step.title}
                 </p>
                 {step.number === 4 ? (
-                  <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+                  <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--uo-route-text-secondary)' }}>
                     When prompted, paste a key from{' '}
                     <Link
                       href="/sources/connected"
                       className="underline"
-                      style={{ color: 'var(--ua-action-primary)' }}
+                      style={{ color: 'var(--uo-route-action-primary)' }}
                     >
                       Settings, then Integrations, then API keys
                     </Link>
                   </p>
                 ) : step.detail ? (
-                  <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+                  <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--uo-route-text-secondary)' }}>
                     {step.detail}
                   </p>
                 ) : null}
@@ -208,8 +208,8 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         <a
           href={ZENDESK_ZIP_PATH}
           download="unauth-zendesk-app.zip"
-          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3"
-          style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--uo-route-radius-control)] px-3"
+          style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
         >
           <Download className="h-4 w-4" />
           Download Zendesk app (.zip)
@@ -218,12 +218,12 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           type="button"
           onClick={() => void verifyInstall()}
           disabled={verifying || sidebarVerified}
-          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 disabled:opacity-60"
-          style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
+          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--uo-route-radius-control)] border px-3 disabled:opacity-60"
+          style={{ borderColor: 'var(--uo-route-border-default)', color: 'var(--uo-route-text-primary)' }}
         >
           {sidebarVerified ? (
             <>
-              <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--ua-success)' }} />
+              <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--uo-route-success)' }} />
               Sidebar verified
             </>
           ) : verifying ? (
@@ -236,8 +236,8 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           href="https://support.zendesk.com/hc/en-us/articles/4408843303194"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-medium"
-          style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
+          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--uo-route-radius-control)] border px-3 text-[length:var(--uo-route-text-metadata-size)] font-medium"
+          style={{ borderColor: 'var(--uo-route-border-default)', color: 'var(--uo-route-text-secondary)' }}
         >
           Zendesk docs
           <ExternalLink className="h-3.5 w-3.5" />
@@ -249,9 +249,9 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           variant="panel"
           className="ua-text-body px-4 py-3"
           style={{
-            borderColor: 'color-mix(in srgb, var(--ua-risk-critical) 30%, var(--ua-border-default))',
-            background: 'color-mix(in srgb, var(--ua-risk-critical) 6%, var(--ua-surface-primary))',
-            color: 'var(--ua-text-primary)',
+            borderColor: 'color-mix(in srgb, var(--uo-route-risk-critical) 30%, var(--uo-route-border-default))',
+            background: 'color-mix(in srgb, var(--uo-route-risk-critical) 6%, var(--uo-route-surface-primary))',
+            color: 'var(--uo-route-text-primary)',
           }}
         >
           {verifyError}
@@ -259,12 +259,12 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       ) : null}
 
       {/* Ticket sync section */}
-      <div className="space-y-2.5 border-t border-[var(--ua-border-subtle)] pt-3">
+      <div className="space-y-2.5 border-t border-[var(--uo-route-border-subtle)] pt-3">
         <div>
-          <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
+          <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
             Ticket sync
           </p>
-          <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--uo-route-text-secondary)' }}>
             Connect your Zendesk account to import ticket history and link support conversations to customer profiles.
           </p>
         </div>

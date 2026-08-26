@@ -8,8 +8,8 @@
 .stackOverview {
   min-width: 0;
   padding: 14px;
-  border-top: 1px solid var(--ua-border-default);
-  border-bottom: 1px solid var(--ua-border-default);
+  border-top: 1px solid var(--uo-route-border-default);
+  border-bottom: 1px solid var(--uo-route-border-default);
   background: transparent;
 }
 
@@ -24,7 +24,7 @@
 
 .stackTitle {
   margin: 0;
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
@@ -33,13 +33,13 @@
 .stackDescription {
   max-width: 68ch;
   margin: 2px 0 0;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 12px;
   line-height: 17px;
 }
 
 .stackCoverage {
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 11px;
   font-weight: 600;
   line-height: 16px;
@@ -52,16 +52,16 @@
   margin: 0;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
+  border: 1px solid var(--uo-route-border-default);
+  border-radius: var(--uo-route-radius-surface);
   list-style: none;
 }
 
 .stackStep {
   min-width: 0;
   padding: 12px;
-  border-bottom: 1px solid var(--ua-border-subtle);
-  background: var(--ua-surface-primary);
+  border-bottom: 1px solid var(--uo-route-border-subtle);
+  background: var(--uo-route-surface-primary);
 }
 
 .stackStep:last-child {
@@ -82,9 +82,9 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--ua-border-strong);
+  border: 1px solid var(--uo-route-border-strong);
   border-radius: 50%;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -99,7 +99,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--ua-text-tertiary);
+  color: var(--uo-route-text-tertiary);
   font-size: 10px;
   font-weight: 600;
   line-height: 14px;
@@ -109,29 +109,29 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ua-border-strong);
+  background: var(--uo-route-border-strong);
   content: "";
 }
 
 .stackState_connected {
-  color: var(--ua-success);
+  color: var(--uo-route-success);
 }
 
 .stackState_connected::before {
-  background: var(--ua-success);
+  background: var(--uo-route-success);
 }
 
 .stackState_available {
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
 }
 
 .stackState_available::before {
-  background: var(--ua-action-primary);
+  background: var(--uo-route-action-primary);
 }
 
 .stackStepTitle {
   margin: 0;
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 12px;
   font-weight: 600;
   line-height: 17px;
@@ -139,14 +139,14 @@
 
 .stackStepText {
   margin: 3px 0 0;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 11px;
   line-height: 15px;
 }
 
 .stackNote {
   margin: 10px 0 0;
-  color: var(--ua-text-tertiary);
+  color: var(--uo-route-text-tertiary);
   font-size: 11px;
   line-height: 15px;
 }
@@ -158,8 +158,8 @@
   justify-content: space-between;
   gap: 10px 16px;
   padding: 10px 14px;
-  border-top: 1px solid var(--ua-border-default);
-  border-bottom: 1px solid var(--ua-border-subtle);
+  border-top: 1px solid var(--uo-route-border-default);
+  border-bottom: 1px solid var(--uo-route-border-subtle);
   background: transparent;
 }
 
@@ -169,19 +169,19 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 12px;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 13px;
   line-height: 18px;
 }
 
 .summaryCopy strong {
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .summaryMeta {
-  color: var(--ua-text-tertiary);
+  color: var(--uo-route-text-tertiary);
   font-size: 11px;
   line-height: 14px;
 }
@@ -192,10 +192,10 @@
   align-items: flex-start;
   gap: 9px;
   padding: 11px 14px;
-  border: 1px solid var(--ua-warning-border);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-warning-bg);
-  color: var(--ua-text-primary);
+  border: 1px solid var(--uo-route-warning-border);
+  border-radius: var(--uo-route-radius-surface);
+  background: var(--uo-route-warning-bg);
+  color: var(--uo-route-text-primary);
 }
 
 .attentionIcon {
@@ -205,10 +205,10 @@
   height: 28px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--ua-warning-border);
-  border-radius: var(--ua-radius-control);
-  background: var(--ua-surface-primary);
-  color: var(--ua-warning);
+  border: 1px solid var(--uo-route-warning-border);
+  border-radius: var(--uo-route-radius-control);
+  background: var(--uo-route-surface-primary);
+  color: var(--uo-route-warning);
 }
 
 .attentionBody {
@@ -218,7 +218,7 @@
 
 .attentionTitle {
   margin: 0;
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 18px;
@@ -226,7 +226,7 @@
 
 .attentionText {
   margin: 2px 0 0;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 12px;
   line-height: 16px;
 }
@@ -235,7 +235,7 @@
   display: grid;
   gap: 8px;
   padding: 10px;
-  border-bottom: 1px solid var(--ua-border-subtle);
+  border-bottom: 1px solid var(--uo-route-border-subtle);
   background: transparent;
 }
 
@@ -261,15 +261,15 @@
   top: 50%;
   left: 11px;
   pointer-events: none;
-  color: var(--ua-icon-secondary);
+  color: var(--uo-route-icon-secondary);
   transform: translateY(-50%);
 }
 
 .surface {
   min-width: 0;
   overflow: hidden;
-  border-top: 1px solid var(--ua-border-default);
-  border-bottom: 1px solid var(--ua-border-default);
+  border-top: 1px solid var(--uo-route-border-default);
+  border-bottom: 1px solid var(--uo-route-border-default);
   background: transparent;
 }
 
@@ -286,7 +286,7 @@
   justify-content: space-between;
   gap: 8px 14px;
   padding: 13px 14px;
-  border-bottom: 1px solid var(--ua-border-subtle);
+  border-bottom: 1px solid var(--uo-route-border-subtle);
 }
 
 .groupHeading {
@@ -309,9 +309,9 @@
   align-items: center;
   margin-top: 2px;
   padding: 0 7px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-control);
-  color: var(--ua-text-tertiary);
+  border: 1px solid var(--uo-route-border-default);
+  border-radius: var(--uo-route-radius-control);
+  color: var(--uo-route-text-tertiary);
   font-size: 10px;
   font-weight: 600;
   line-height: 14px;
@@ -319,7 +319,7 @@
 
 .surfaceTitle {
   margin: 0;
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
@@ -327,13 +327,13 @@
 
 .surfaceDescription {
   margin: 2px 0 0;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 12px;
   line-height: 16px;
 }
 
 .surfaceMeta {
-  color: var(--ua-text-tertiary);
+  color: var(--uo-route-text-tertiary);
   font-size: 11px;
   line-height: 14px;
   font-variant-numeric: tabular-nums;
@@ -347,9 +347,9 @@
 .tableHeader {
   display: none;
   padding: 9px 14px;
-  border-bottom: 1px solid var(--ua-border-subtle);
-  background: var(--ua-surface-secondary);
-  color: var(--ua-text-tertiary);
+  border-bottom: 1px solid var(--uo-route-border-subtle);
+  background: var(--uo-route-surface-secondary);
+  color: var(--uo-route-text-tertiary);
   font-size: 11px;
   font-weight: 600;
   line-height: 14px;
@@ -365,7 +365,7 @@
   display: grid;
   gap: 9px;
   padding: 12px 14px;
-  border-bottom: 1px solid var(--ua-border-subtle);
+  border-bottom: 1px solid var(--uo-route-border-subtle);
 }
 
 .connectionRow:last-child {
@@ -390,7 +390,7 @@
 }
 
 .providerLink {
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 18px;
@@ -405,7 +405,7 @@
 .providerMeta,
 .cellText {
   overflow: hidden;
-  color: var(--ua-text-tertiary);
+  color: var(--uo-route-text-tertiary);
   font-size: 11px;
   line-height: 15px;
   text-overflow: ellipsis;
@@ -419,7 +419,7 @@
 .coverageText {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 12px;
   line-height: 17px;
   -webkit-box-orient: vertical;
@@ -438,7 +438,7 @@
 
 .mobileLabel {
   margin-right: 4px;
-  color: var(--ua-text-tertiary);
+  color: var(--uo-route-text-tertiary);
   font-size: 10px;
   font-weight: 500;
 }
@@ -453,16 +453,16 @@
   align-items: center;
   justify-content: center;
   padding: 0 9px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-control);
-  color: var(--ua-text-primary);
+  border: 1px solid var(--uo-route-border-default);
+  border-radius: var(--uo-route-radius-control);
+  color: var(--uo-route-text-primary);
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
 }
 
 .actionLink:hover {
-  background: var(--ua-surface-hover);
+  background: var(--uo-route-surface-hover);
 }
 
 .cardGrid {
@@ -483,14 +483,14 @@
   flex-direction: column;
   gap: 11px;
   padding: 14px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
+  border: 1px solid var(--uo-route-border-default);
+  border-radius: var(--uo-route-radius-surface);
+  background: var(--uo-route-surface-primary);
 }
 
 .catalogueCard:hover {
-  border-color: var(--ua-border-strong);
-  background: var(--ua-surface-hover);
+  border-color: var(--uo-route-border-strong);
+  background: var(--uo-route-surface-hover);
 }
 
 .catalogueHeader {
@@ -510,7 +510,7 @@
 
 .catalogueName {
   margin: 0;
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
@@ -519,7 +519,7 @@
 
 .catalogueCategory {
   margin: 2px 0 0;
-  color: var(--ua-text-tertiary);
+  color: var(--uo-route-text-tertiary);
   font-size: 11px;
   line-height: 14px;
 }
@@ -527,7 +527,7 @@
 .catalogueDescription {
   min-height: 51px;
   margin: 0;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 12px;
   line-height: 17px;
 }
@@ -546,27 +546,27 @@
   align-items: center;
   justify-content: center;
   padding: 0 11px;
-  border-radius: var(--ua-radius-control);
-  background: var(--ua-action-primary);
-  color: var(--ua-action-primary-fg);
+  border-radius: var(--uo-route-radius-control);
+  background: var(--uo-route-action-primary);
+  color: var(--uo-route-action-primary-fg);
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
 }
 
 .catalogueLink:hover {
-  background: var(--ua-action-primary-hover);
+  background: var(--uo-route-action-primary-hover);
 }
 
 .catalogueSecondary {
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 11px;
   font-weight: 600;
   line-height: 15px;
 }
 
 .catalogueSecondary:hover {
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -586,7 +586,7 @@
 
 .subsectionTitle {
   margin: 0;
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 18px;
@@ -594,7 +594,7 @@
 
 .subsectionDescription {
   margin: 0;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 11px;
   line-height: 15px;
 }
@@ -607,9 +607,9 @@
   gap: 10px 16px;
   margin: 12px;
   padding: 12px 14px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-secondary);
+  border: 1px solid var(--uo-route-border-default);
+  border-radius: var(--uo-route-radius-surface);
+  background: var(--uo-route-surface-secondary);
 }
 
 .importCalloutCopy {
@@ -618,7 +618,7 @@
 
 .importCalloutTitle {
   margin: 0;
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 13px;
   font-weight: 600;
   line-height: 18px;
@@ -626,14 +626,14 @@
 
 .importCalloutText {
   margin: 2px 0 0;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 12px;
   line-height: 16px;
 }
 
 .empty {
   padding: 26px 16px;
-  color: var(--ua-text-secondary);
+  color: var(--uo-route-text-secondary);
   font-size: 13px;
   line-height: 18px;
   text-align: center;
@@ -670,7 +670,7 @@
   }
 
   .stackStep {
-    border-right: 1px solid var(--ua-border-subtle);
+    border-right: 1px solid var(--uo-route-border-subtle);
   }
 
   .stackStep:nth-child(2n) {
@@ -691,7 +691,7 @@
 
   .stackStep {
     grid-column: auto;
-    border-right: 1px solid var(--ua-border-subtle);
+    border-right: 1px solid var(--uo-route-border-subtle);
     border-bottom: 0;
   }
 
@@ -700,7 +700,7 @@
   }
 
   .stackStep:nth-child(2n) {
-    border-right: 1px solid var(--ua-border-subtle);
+    border-right: 1px solid var(--uo-route-border-subtle);
   }
 
   .stackStep:last-child {

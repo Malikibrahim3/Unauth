@@ -40,7 +40,15 @@ export default async function AuditTrailPage() {
   return (
     <SettingsPageShell
       title="Audit trail"
-      subtitle="Review merchant-scoped user actions and claim lifecycle events with actor attribution."
+      subtitle="Who did what, to which object, when, and with which permission — including everything automation did and did not do."
+      surfaceId="audit-trail"
+      layout="wide"
+      truth={{
+        access: "Members with View audit trail permission",
+        currentState: "Immutable workspace events, newest first, with retained actor and object context where available",
+        saveBehavior: "Read and export only; audit events cannot be edited from this page",
+        impact: "Filters change the view and export scope, never the underlying history",
+      }}
     >
       <AuditTrailClient actorsByUserId={actorsByUserId} />
     </SettingsPageShell>

@@ -81,9 +81,9 @@ export function Tooltip({ content, children, delay = 300, className }: TooltipPr
           role="tooltip"
           aria-hidden={phase === 'exiting' ? true : undefined}
           className={cn(
-            'pointer-events-none fixed z-[var(--ua-z-tooltip)] max-w-[280px]',
-            'rounded-[var(--ua-radius-xs)] bg-[var(--ua-text-primary)] px-[var(--ua-space-2)] py-[var(--ua-space-1)] text-meta text-[var(--ua-text-inverse)]',
-            'whitespace-normal shadow-[var(--ua-shadow-float)]',
+            'pointer-events-none fixed z-[var(--uo-route-z-tooltip)] max-w-[280px]',
+            'rounded-[var(--uo-route-radius-xs)] bg-[var(--uo-route-text-primary)] px-[var(--uo-route-space-2)] py-[var(--uo-route-space-1)] text-meta text-[var(--uo-route-text-inverse)]',
+            'whitespace-normal shadow-[var(--uo-route-shadow-float)]',
             className,
           )}
           style={{
@@ -91,7 +91,7 @@ export function Tooltip({ content, children, delay = 300, className }: TooltipPr
             top: position.top,
             opacity: isOpen ? 1 : 0,
             transform: `translate(-50%, calc(-100% + ${isOpen ? 0 : 2}px))`,
-            transition: motionAllowed ? `opacity ${duration}ms var(--ua-ease-standard), transform ${duration}ms var(--ua-ease-standard)` : 'none',
+            transition: motionAllowed ? `opacity ${duration}ms var(--uo-route-ease-standard), transform ${duration}ms var(--uo-route-ease-standard)` : 'none',
           }}
         >
           {content}

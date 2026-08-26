@@ -6,6 +6,7 @@ const CORE_ROUTES = [
   "/cases",
   "/financials/losses",
   "/financials/recovery",
+  "/financials/reconciliation",
   "/customers",
   "/controls/rules",
   "/controls/flows",
@@ -117,12 +118,10 @@ test.describe("release accessibility and responsive gates", () => {
       for (const viewport of VIEWPORTS) {
         await page.setViewportSize(viewport);
         if (viewport.width < 1024) {
-          // The current shell reflows at narrow widths; the old blocking
-          // desktop-required boundary is retained only as a compatibility
-          // selector and must not gate the product.
-          await expect(page.locator(".ua-desktop-required")).toHaveCount(0);
-          await expect(page.locator(".ua-desktop-product")).toBeVisible();
-          await expect(page.locator("main")).toBeVisible();
+          await expect(page.locator(".ua-desktop-required")).toBeVisible();
+          await expect(page.getByRole("heading", { name: "Unauth requires a desktop" })).toBeVisible();
+          await expect(page.locator(".ua-desktop-product")).toBeHidden();
+          continue;
         } else {
           await expect(page.locator(".ua-desktop-required")).toBeHidden();
           await expect(page.locator(".ua-desktop-product")).toBeVisible();
@@ -181,13 +180,13 @@ test.describe("release accessibility and responsive gates", () => {
     page,
   }) => {
     await page.goto("/overview");
-    await page.getByRole("button", { name: "Search (⌘K)" }).click();
+    await page.getByRole("button", { name: "Search and navigate" }).click();
     await expect(
-      page.getByRole("dialog", { name: "Command palette" }),
+      page.getByRole("dialog", { name: "Search and navigate" }),
     ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(
-      page.getByRole("dialog", { name: "Command palette" }),
+      page.getByRole("dialog", { name: "Search and navigate" }),
     ).toHaveCount(0);
   });
 });

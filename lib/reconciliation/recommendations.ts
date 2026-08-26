@@ -177,9 +177,19 @@ function hasCarrierException(input: ReconciliationInput): string[] {
 
 function hasInconsistentPod(input: ReconciliationInput): string[] {
   return factIds(input.facts, (fact) =>
-    normalise(fact.evidenceType) === 'human_finding'
-      && normalise(fact.value?.finding as string | undefined) === 'inconsistent',
+    ['pod_conflict', 'delivery_conflict'].includes(normalise(fact.evidenceType))
+      || (normalise(fact.evidenceType) === 'human_finding'
+        && normalise(fact.value?.finding as string | undefined) === 'inconsistent'),
   );
+}
+
+function factsOfType(input: ReconciliationInput, ...types: string[]): string[] {
+  const wanted = new Set(types.map(normalise));
+  return factIds(input.facts, (fact) => wanted.has(normalise(fact.evidenceType)));
+}
+
+function conflictingFacts(input: ReconciliationInput): string[] {
+  return factIds(input.facts, (fact) => Array.isArray(fact.conflicts) && fact.conflicts.length > 0);
 }
 
 function claimIsMissingItem(input: ReconciliationInput): boolean {
@@ -311,6 +321,45 @@ export function recommendResponsibility(
 
   const exceptionEvidence = hasCarrierException(input);
   const inconsistentPod = hasInconsistentPod(input);
+  const lineageConflicts = conflictingFacts(input);
+  if (lineageConflicts.length > 0) {
+    return baseRecommendation(input, 'responsibility', {
+      resultCode: 'unresolved',
+      assessmentState: 'unresolved',
+      headline: 'Responsibility unresolved — source records conflict.',
+      explanation: 'The linked source lineage contains conflicting records. The case remains unresolved until the conflict is reviewed; copied or repeated records do not become stronger evidence by repetition.',
+      reasonCodes: ['conflicting_source_lineage'],
+      supportingEvidenceIds: [],
+      conflictingEvidenceIds: lineageConflicts,
+      missingEvidence: ['source lineage review and an authoritative correction'],
+    });
+  }
+  const merchantFault = factsOfType(input, 'merchant_fault', 'store_instruction_error', 'merchant_instruction_error', 'wrong_address_instruction');
+  if (merchantFault.length > 0) {
+    return baseRecommendation(input, 'responsibility', {
+      resultCode: 'merchant_side_likely',
+      assessmentState: 'likely',
+      headline: 'Merchant-side responsibility appears likely, not confirmed.',
+      explanation: 'The source record identifies an instruction or merchant-controlled cause before provider custody. Merchant confirmation remains a separate decision boundary.',
+      reasonCodes: ['merchant_controlled_instruction_failure'],
+      supportingEvidenceIds: merchantFault,
+      conflictingEvidenceIds: [],
+      missingEvidence: ['merchant confirmation or corrective source record'],
+    });
+  }
+  const fulfilmentFault = factsOfType(input, 'short_pick', 'mispick', 'warehouse_missing_item', 'three_pl_short_pick', 'three_pl_pack_failure');
+  if (fulfilmentFault.length > 0) {
+    return baseRecommendation(input, 'responsibility', {
+      resultCode: 'fulfilment_side_likely',
+      assessmentState: 'likely',
+      headline: 'Fulfilment-side responsibility appears likely, not confirmed.',
+      explanation: 'A 3PL or warehouse source record identifies a short pick, mispick, or pack failure before carrier custody. The merchant must still confirm the responsibility decision.',
+      reasonCodes: ['fulfilment_controlled_pick_pack_failure'],
+      supportingEvidenceIds: fulfilmentFault,
+      conflictingEvidenceIds: [],
+      missingEvidence: ['warehouse investigation response or merchant confirmation'],
+    });
+  }
   if (exceptionEvidence.length > 0 || inconsistentPod.length > 0) {
     return baseRecommendation(input, 'responsibility', {
       resultCode: 'carrier_side_likely',
@@ -403,6 +452,21 @@ export function recommendRecovery(
       supportingEvidenceIds: responsibility.supportingEvidenceIds,
       conflictingEvidenceIds: [],
       missingEvidence: [],
+      contractVersionId: input.recoveryContract?.ruleVersionId ?? null,
+      policySnapshot: input.recoveryContract?.snapshot ?? null,
+    });
+  }
+
+  if (['merchant_side_likely', 'customer_side_likely'].includes(responsibility.resultCode)) {
+    return baseRecommendation(input, 'recovery', {
+      resultCode: 'none',
+      assessmentState: 'not_applicable',
+      headline: 'No external provider recovery route is recommended.',
+      explanation: 'The apparent cause is not currently a provider-side loss. The merchant decision and any internal corrective action remain separate from an external claim.',
+      reasonCodes: ['provider_liability_not_established'],
+      supportingEvidenceIds: responsibility.supportingEvidenceIds,
+      conflictingEvidenceIds: responsibility.conflictingEvidenceIds,
+      missingEvidence: responsibility.missingEvidence,
       contractVersionId: input.recoveryContract?.ruleVersionId ?? null,
       policySnapshot: input.recoveryContract?.snapshot ?? null,
     });

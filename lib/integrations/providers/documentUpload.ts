@@ -6,7 +6,7 @@ export const documentUploadProvider: IntegrationProvider = {
   logoSrc: '/providers/document-upload.svg',
   category: 'documents',
   authMode: 'manual_upload',
-  buildStatus: 'live',
+  codeMaturity: 'complete',
   description: 'Merchant-approved carrier, 3PL, supplier, and insurance terms.',
   setupHref: '/settings/legal/agreements',
   evidenceCapabilities: ['contract_terms', 'recovery_deadline'],

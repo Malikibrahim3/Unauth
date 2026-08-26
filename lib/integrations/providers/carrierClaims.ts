@@ -6,7 +6,7 @@ export const carrierClaimsProvider: IntegrationProvider = {
   logoSrc: '/providers/carrier-claims.svg',
   category: 'carrier',
   authMode: 'oauth',
-  buildStatus: 'slot_only',
+  codeMaturity: 'slot_only',
   description: 'Carrier claim submission, claim outcome, and recovery payment status.',
   evidenceCapabilities: [
     'carrier_claim_submission_status',

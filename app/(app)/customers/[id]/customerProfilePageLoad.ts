@@ -20,6 +20,8 @@ import type { ConnectionState } from "@/lib/connections/getConnectionState";
 import {
   CLAIM_TYPE_LABELS,
   firstArrayValue,
+  linkageIndicatorBasis,
+  type CustomerDataCoverage,
   type RoadmapTransaction,
 } from "@/app/(app)/customers/[id]/customerProfilePageLabels";
 import {
@@ -33,7 +35,7 @@ import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadma
 import type { EvidenceLevel, ScoreFactor } from "@/lib/engine/evidence/score";
 import type { ConfidenceGrade } from "@/lib/engine/weights";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
-import { dominantCurrency } from "@/lib/utils/format";
+import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
 import {
   loadMerchantCustomerHistory,
   resolveMerchantCustomerId,
@@ -44,6 +46,7 @@ import {
 } from "@/lib/relationships/sourceLinking";
 
 export type CustomerProfileSearchParams = {
+  tab?: string;
   audit?: string;
   view_token?: string;
   buildEvidence?: string;
@@ -98,7 +101,8 @@ export type CustomerProfileDisplay = {
 export type LinkedAccountRow = {
   entityType: string;
   entityValue: string;
-  confidence: number;
+  linkageIndicatorPercent: number;
+  basis: string;
 };
 
 export type IdentitySignalRow = {
@@ -149,15 +153,16 @@ export type CustomerProfilePageViewProps = {
   profile: CustomerProfileDisplay;
   displayName: string;
   profileGrade: ConfidenceGradeValue;
-  hasCleanRecord: boolean;
-  merchantClaimCount: number;
-  merchantChargebackCount: number;
-  merchantOrderCount: number;
-  localClaimRatePct: number;
+  hasCleanRecord: boolean | null;
+  orderCoverage: CustomerDataCoverage;
+  caseCoverage: CustomerDataCoverage;
+  merchantClaimCount: number | null;
+  merchantChargebackCount: number | null;
+  merchantOrderCount: number | null;
   isEligibleForEvidence: boolean;
-  totalOrderValue: number;
-  totalRefundedValue: number;
-  displayCurrency: string;
+  totalOrderValue: number | null;
+  totalRefundedValue: number | null;
+  displayCurrency: string | null;
   merchantsSeen: number;
   profileWideOrders: number;
   localOrderSharePct: number;
@@ -175,7 +180,7 @@ export type CustomerProfilePageViewProps = {
   linkedAccounts: LinkedAccountRow[];
   merchantSignalPills: MerchantSignalPill[];
   activityLog: ActivityLogEntry[];
-  openClaimCount: number;
+  openClaimCount: number | null;
   latestClaim: ClaimSummaryRow | null;
   merchantRefundRate: number;
   evidenceDisplay: CustomerEvidenceDisplay | null;
@@ -492,40 +497,75 @@ export async function loadCustomerProfilePage(
   const orderSelect =
     "id, external_id, order_number, source_customer_id, merchant_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id";
   let orderRows: SourceOrderRow[] = [];
+  let orderCoverage: CustomerDataCoverage = "unavailable";
   if (merchantCustomerId) {
     const canonicalOrders = (await svc
       .from("source_orders")
-      .select(orderSelect)
+      .select(orderSelect, { count: "exact" })
       .eq("merchant_id", merchantId)
       .eq("merchant_customer_id", merchantCustomerId)
       .order("placed_at", { ascending: true })
-      .limit(2000)) as unknown as { data: SourceOrderRow[] | null; error?: { message: string } | null };
+      .limit(2000)) as unknown as { data: SourceOrderRow[] | null; error: { message: string } | null; count: number | null };
     orderRows = canonicalOrders.data ?? [];
+    orderCoverage = !canonicalOrders.error
+      && canonicalOrders.count != null
+      && orderRows.length === canonicalOrders.count
+      ? "complete"
+      : orderRows.length > 0
+        ? "partial"
+        : "unavailable";
     if (canonicalOrders.error) {
       const legacyOrders = (await svc
         .from("source_orders")
         .select(
           "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id",
+          { count: "exact" },
         )
         .eq("merchant_id", merchantId)
         .in("source_customer_id", identityCustomerIds)
         .order("placed_at", { ascending: true })
-        .limit(2000)) as unknown as { data: SourceOrderRow[] | null };
+        .limit(2000)) as unknown as { data: SourceOrderRow[] | null; error: { message: string } | null; count: number | null };
       orderRows = legacyOrders.data ?? [];
+      orderCoverage = !legacyOrders.error
+        && legacyOrders.count != null
+        && orderRows.length === legacyOrders.count
+        ? "complete"
+        : orderRows.length > 0
+          ? "partial"
+          : "unavailable";
     }
   } else {
     const legacyOrders = (await svc
       .from("source_orders")
       .select(
         "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id",
+        { count: "exact" },
       )
       .eq("merchant_id", merchantId)
       .in("source_customer_id", identityCustomerIds)
       .order("placed_at", { ascending: true })
-      .limit(2000)) as unknown as { data: SourceOrderRow[] | null };
+      .limit(2000)) as unknown as { data: SourceOrderRow[] | null; error: { message: string } | null; count: number | null };
     orderRows = legacyOrders.data ?? [];
+    orderCoverage = !legacyOrders.error
+      && legacyOrders.count != null
+      && orderRows.length === legacyOrders.count
+      ? "complete"
+      : orderRows.length > 0
+        ? "partial"
+        : "unavailable";
+  }
+  if (!connectionState.orderSourceConnected && orderCoverage === "complete") {
+    orderCoverage = orderRows.length > 0 ? "partial" : "unavailable";
   }
   const orders = orderRows;
+  const ordersWithFinancialContext = orders.filter((order) =>
+    order.total_price != null
+    && Number.isFinite(Number(order.total_price))
+    && normaliseCurrencyOrNull(order.currency),
+  );
+  if (orderCoverage === "complete" && ordersWithFinancialContext.length !== orders.length) {
+    orderCoverage = ordersWithFinancialContext.length > 0 ? "partial" : "unavailable";
+  }
 
   // Shipping addresses for the orders (atomic in v2; render as one string).
   const addressIds = uniqueNonEmpty(orders.map((o) => o.shipping_address_id));
@@ -545,33 +585,60 @@ export async function loadCustomerProfilePage(
   // Own-store claims (layer 4, merchant-scoped, linked through orders).
   const orderIds = orders.map((o) => o.id);
   let claimRows: ClaimRow[] = [];
+  const caseReadCoverage: CustomerDataCoverage[] = [];
   if (orderIds.length > 0) {
-    const { data } = (await svc
+    const { data, error, count } = (await svc
       .from(TABLES.MERCHANT_CLAIMS)
       .select(
         "id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at",
+        { count: "exact" },
       )
       .eq("merchant_id", merchantId)
       .in("source_order_id", orderIds)
       .order("updated_at", { ascending: false })
-      .limit(200)) as unknown as { data: ClaimRow[] | null };
+      .limit(200)) as unknown as { data: ClaimRow[] | null; error: { message: string } | null; count: number | null };
     claimRows = data ?? [];
+    caseReadCoverage.push(!error && count != null && claimRows.length === count
+      ? "complete"
+      : claimRows.length > 0
+        ? "partial"
+        : "unavailable");
   }
   if (merchantCustomerId) {
-    const { data: canonicalClaimRows } = (await svc
+    const { data: canonicalClaimRows, error: canonicalClaimError, count: canonicalClaimCount } = (await svc
       .from(TABLES.MERCHANT_CLAIMS)
       .select(
         "id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at",
+        { count: "exact" },
       )
       .eq("merchant_id", merchantId)
       .eq("merchant_customer_id", merchantCustomerId)
       .order("updated_at", { ascending: false })
-      .limit(500)) as unknown as { data: ClaimRow[] | null };
+      .limit(500)) as unknown as { data: ClaimRow[] | null; error: { message: string } | null; count: number | null };
+    caseReadCoverage.push(!canonicalClaimError
+      && canonicalClaimCount != null
+      && (canonicalClaimRows ?? []).length === canonicalClaimCount
+      ? "complete"
+      : (canonicalClaimRows ?? []).length > 0
+        ? "partial"
+        : "unavailable");
     const byId = new Map(claimRows.map((claim) => [claim.id, claim]));
     for (const claim of canonicalClaimRows ?? []) byId.set(claim.id, claim);
     claimRows = [...byId.values()].sort((a, b) =>
       String(b.updated_at).localeCompare(String(a.updated_at)),
     );
+  }
+  let caseCoverage: CustomerDataCoverage = caseReadCoverage.length === 0
+    ? orderCoverage === "complete"
+      ? "complete"
+      : "unavailable"
+    : caseReadCoverage.every((coverage) => coverage === "complete")
+      ? "complete"
+      : claimRows.length > 0
+        ? "partial"
+        : "unavailable";
+  if (!connectionState.helpdesk && caseCoverage === "complete") {
+    caseCoverage = claimRows.length > 0 ? "partial" : "unavailable";
   }
 
   const claimsByOrder = new Map<string, ClaimRow[]>();
@@ -772,15 +839,24 @@ export async function loadCustomerProfilePage(
     (sum, s) => sum + (s.ordersCount ?? 0),
     0,
   );
-  const merchantOrderCount = Math.max(
+  const observedMerchantOrderCount = Math.max(
     orders.length,
     siblingOrdersCountSum,
     customer.orders_count ?? 0,
   );
-  const merchantClaimCount = claimRows.length;
-  const merchantChargebacks = claimRows.filter(
+  const merchantOrderCount = observedMerchantOrderCount > 0 || orderCoverage === "complete"
+    ? observedMerchantOrderCount
+    : null;
+  const observedMerchantClaimCount = claimRows.length;
+  const merchantClaimCount = observedMerchantClaimCount > 0 || caseCoverage === "complete"
+    ? observedMerchantClaimCount
+    : null;
+  const observedMerchantChargebacks = claimRows.filter(
     (c) => c.claim_type === "chargeback",
   ).length;
+  const merchantChargebacks = observedMerchantChargebacks > 0 || caseCoverage === "complete"
+    ? observedMerchantChargebacks
+    : null;
 
   const placedAts = uniqueNonEmpty(orders.map((o) => o.placed_at)).sort();
   const firstSeenLocal =
@@ -798,20 +874,20 @@ export async function loadCustomerProfilePage(
     primary_email: customer.email,
     // Identity confidence grade (displayed as confidence, never a verdict).
     risk_level: network?.confidenceGrade ?? "none",
-    total_orders: Math.max(network?.totalOrders ?? 0, merchantOrderCount),
+    total_orders: Math.max(network?.totalOrders ?? 0, observedMerchantOrderCount),
     total_refund_claims: Math.max(
       network?.totalClaims ?? 0,
-      merchantClaimCount,
+      observedMerchantClaimCount,
     ),
     total_chargebacks: Math.max(
       network?.totalChargebacks ?? 0,
-      merchantChargebacks,
+      observedMerchantChargebacks,
     ),
     total_merchants_seen_at: Math.max(network?.merchantCount ?? 1, 1),
     sibling_count: siblingCount,
     refund_rate:
       network?.claimRate ??
-      (merchantOrderCount > 0 ? merchantClaimCount / merchantOrderCount : 0),
+      (observedMerchantOrderCount > 0 ? observedMerchantClaimCount / observedMerchantOrderCount : 0),
     fastest_claim_days: network?.fastestClaimDays ?? null,
     avg_claim_days: null,
     refund_acceleration_score: 0,
@@ -954,21 +1030,24 @@ export async function loadCustomerProfilePage(
       linkedAccounts.push({
         entityType: "email",
         entityValue: `${emailSet.size} email addresses observed`,
-        confidence: Math.min(90, 40 + emailSet.size * 10),
+        linkageIndicatorPercent: Math.min(90, 40 + emailSet.size * 10),
+        basis: linkageIndicatorBasis({ identifierCount: emailSet.size, signalLabel: "email", observedOrderCount: transactions.length }),
       });
     }
     if (cardSet.size > 1) {
       linkedAccounts.push({
         entityType: "card",
         entityValue: `${cardSet.size} payment cards observed`,
-        confidence: Math.min(85, 35 + cardSet.size * 10),
+        linkageIndicatorPercent: Math.min(85, 35 + cardSet.size * 10),
+        basis: linkageIndicatorBasis({ identifierCount: cardSet.size, signalLabel: "card", observedOrderCount: transactions.length }),
       });
     }
     if (ipSet.size > 1) {
       linkedAccounts.push({
         entityType: "ip",
         entityValue: `${ipSet.size} IP addresses observed`,
-        confidence: Math.min(75, 25 + ipSet.size * 8),
+        linkageIndicatorPercent: Math.min(75, 25 + ipSet.size * 8),
+        basis: linkageIndicatorBasis({ identifierCount: ipSet.size, signalLabel: "IP address", observedOrderCount: transactions.length }),
       });
     }
   }
@@ -1021,20 +1100,33 @@ export async function loadCustomerProfilePage(
   const isEligibleForEvidence =
     transactions.some((tx) => tx.refund_claimed || tx.chargeback_filed) ||
     profile.total_chargebacks > 0;
-  const totalOrderValue = orders.reduce(
-    (sum, order) => sum + (Number(order.total_price) || 0),
-    0,
+  const financialCurrencies = new Set(
+    ordersWithFinancialContext.flatMap((order) => {
+      const currency = normaliseCurrencyOrNull(order.currency);
+      return currency ? [currency] : [];
+    }),
   );
-  const totalRefundedValue = transactions
-    .filter((tx) => tx.refund_claimed || tx.chargeback_filed)
-    .reduce((sum, tx) => sum + (Number(tx.order_value) || 0), 0);
-  const displayCurrency = dominantCurrency(orders, 'GBP');
+  const displayCurrency = financialCurrencies.size === 1 ? [...financialCurrencies][0] : null;
+  const totalOrderValue = displayCurrency
+    ? ordersWithFinancialContext.reduce((sum, order) => sum + Number(order.total_price), 0)
+    : null;
+  const caseTransactions = transactions.filter((tx) => tx.refund_claimed || tx.chargeback_filed);
+  const caseTransactionValues = caseTransactions.filter((tx) =>
+    tx.order_value != null
+    && Number.isFinite(Number(tx.order_value))
+    && normaliseCurrencyOrNull(tx.currency) === displayCurrency,
+  );
+  const totalRefundedValue = displayCurrency
+    && caseTransactionValues.length === caseTransactions.length
+    ? caseTransactionValues.reduce((sum, tx) => sum + Number(tx.order_value), 0)
+    : null;
   const merchantRefundRate =
-    merchantOrderCount > 0
-      ? Math.round((merchantClaimCount / merchantOrderCount) * 100)
+    observedMerchantOrderCount > 0
+      ? Math.round((observedMerchantClaimCount / observedMerchantOrderCount) * 100)
       : Math.round(profile.refund_rate * 100);
-  const hasCleanRecord =
-    merchantClaimCount === 0 && profile.total_chargebacks === 0;
+  const hasCleanRecord = caseCoverage === "complete"
+    ? observedMerchantClaimCount === 0 && profile.total_chargebacks === 0
+    : null;
   const identitySignals: string[] = [];
 
   const density = Array.from({ length: 12 }, () => 0);
@@ -1068,11 +1160,11 @@ export async function loadCustomerProfilePage(
   });
 
   const merchantNarrative = buildBehavioralNarrative({
-    totalOrders: merchantOrderCount,
-    totalRefundClaims: merchantClaimCount,
+    totalOrders: observedMerchantOrderCount,
+    totalRefundClaims: observedMerchantClaimCount,
     refundRate:
-      merchantOrderCount > 0
-        ? merchantClaimCount / merchantOrderCount
+      observedMerchantOrderCount > 0
+        ? observedMerchantClaimCount / observedMerchantOrderCount
         : profile.refund_rate,
     fastestClaimDays: profile.fastest_claim_days,
     avgClaimDays: profile.avg_claim_days,
@@ -1103,20 +1195,19 @@ export async function loadCustomerProfilePage(
         updated_at: claim.updated_at,
       };
     });
-  const openClaimCount = claimSummaryRows.filter((claim) =>
+  const observedOpenClaimCount = claimSummaryRows.filter((claim) =>
     ACTIVE_CLAIM_STATUSES.includes(
       claim.status as (typeof ACTIVE_CLAIM_STATUSES)[number],
     ),
   ).length;
+  const openClaimCount = observedOpenClaimCount > 0 || caseCoverage === "complete"
+    ? observedOpenClaimCount
+    : null;
   const latestClaim = claimSummaryRows[0] ?? null;
   const profileWideOrders = Math.max(0, profile.total_orders);
   const merchantsSeen = Math.max(1, profile.total_merchants_seen_at);
   const localOrderSharePct =
-    profileWideOrders > 0 ? (merchantOrderCount / profileWideOrders) * 100 : 0;
-  const localClaimRatePct =
-    merchantOrderCount > 0
-      ? (merchantClaimCount / merchantOrderCount) * 100
-      : 0;
+    profileWideOrders > 0 ? (observedMerchantOrderCount / profileWideOrders) * 100 : 0;
   const networkChargebackRatePct =
     profileWideOrders > 0
       ? (profile.total_chargebacks / profileWideOrders) * 100
@@ -1160,10 +1251,11 @@ export async function loadCustomerProfilePage(
     displayName,
     profileGrade,
     hasCleanRecord,
+    orderCoverage,
+    caseCoverage,
     merchantClaimCount,
     merchantChargebackCount: merchantChargebacks,
     merchantOrderCount,
-    localClaimRatePct,
     isEligibleForEvidence,
     totalOrderValue,
     totalRefundedValue,

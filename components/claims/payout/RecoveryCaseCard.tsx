@@ -84,7 +84,7 @@ export function RecoveryCaseCard({
         <div>
           <p
             className="text-caption font-semibold"
-            style={{ color: "var(--ua-text-secondary)" }}
+            style={{ color: "var(--uo-route-text-secondary)" }}
           >
             Recovery / Chase-Up
           </p>
@@ -126,7 +126,7 @@ export function RecoveryCaseCard({
               </p>
               <p
                 className="ua-text-working-title"
-                style={{ color: "var(--ua-text-primary)" }}
+                style={{ color: "var(--uo-route-text-primary)" }}
               >
                 {RECOVERY_STATUS_LABELS[recoveryCase.status]}
               </p>
@@ -137,7 +137,7 @@ export function RecoveryCaseCard({
               </p>
               <p
                 className="ua-text-working-title"
-                style={{ color: "var(--ua-text-primary)" }}
+                style={{ color: "var(--uo-route-text-primary)" }}
               >
                 {RECOVERY_OWNER_LABELS[recoveryCase.owner_type]}
               </p>
@@ -146,7 +146,7 @@ export function RecoveryCaseCard({
               <p className="ua-text-metadata">
                 {financialStageLabel('eligible_recovery')}
               </p>
-              <p className="font-sans tabular-nums" style={{ color: "var(--ua-text-primary)" }}>
+              <p className="font-sans tabular-nums" style={{ color: "var(--uo-route-text-primary)" }}>
                 {formatCurrencyNullable(
                   recoveryCase.estimated_recoverable_max,
                   recoveryCase.currency,
@@ -157,7 +157,7 @@ export function RecoveryCaseCard({
               <p className="ua-text-metadata">
                 Deadline
               </p>
-              <p style={{ color: "var(--ua-text-primary)" }}>
+              <p style={{ color: "var(--uo-route-text-primary)" }}>
                 {dateLabel(recoveryCase.deadline_at)}
               </p>
             </div>
@@ -165,7 +165,7 @@ export function RecoveryCaseCard({
               <p className="ua-text-metadata">
                 Provider claim
               </p>
-              <p className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>
+              <p className="ua-text-working-title" style={{ color: "var(--uo-route-text-primary)" }}>
                 {(recoveryCase.provider_claim_stage ?? 'prepared').replaceAll('_', ' ')}
               </p>
             </div>
@@ -196,7 +196,7 @@ export function RecoveryCaseCard({
           <Link
             href="/financials/recovery"
             className="ua-text-working-title mt-4 inline-flex items-center gap-1.5 hover:underline"
-            style={{ color: "var(--ua-action-primary)" }}
+            style={{ color: "var(--uo-route-action-primary)" }}
           >
             Open recovery board{" "}
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -207,7 +207,7 @@ export function RecoveryCaseCard({
           <div>
             <p
               className="ua-text-working-title"
-              style={{ color: "var(--ua-text-primary)" }}
+              style={{ color: "var(--uo-route-text-primary)" }}
             >
               Recovery case can be opened
             </p>
@@ -231,7 +231,7 @@ export function RecoveryCaseCard({
               </div>
             </div>
           ) : null}
-          <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+          <p className="text-xs" style={{ color: "var(--uo-route-text-tertiary)" }}>
             Confirm responsibility and a canonical loss, then explicitly open
             the internal recovery handoff. Unauth will not submit a provider
             claim automatically.
@@ -243,16 +243,16 @@ export function RecoveryCaseCard({
           ) : null}
         </div>
       ) : loading ? (
-        <p className="ua-text-body mt-4" style={{ color: "var(--ua-text-secondary)" }}>
+        <p className="ua-text-body mt-4" style={{ color: "var(--uo-route-text-secondary)" }}>
           Loading recovery route…
         </p>
       ) : preventionOnly ? (
-        <p className="ua-text-body mt-4" style={{ color: "var(--ua-text-secondary)" }}>
+        <p className="ua-text-body mt-4" style={{ color: "var(--uo-route-text-secondary)" }}>
           Prevention opportunity: this loss appears unrecoverable but can inform
           future policy or partner review.
         </p>
       ) : (
-        <p className="ua-text-body mt-4" style={{ color: "var(--ua-text-secondary)" }}>
+        <p className="ua-text-body mt-4" style={{ color: "var(--uo-route-text-secondary)" }}>
           No external recovery route currently identified.
         </p>
       )}

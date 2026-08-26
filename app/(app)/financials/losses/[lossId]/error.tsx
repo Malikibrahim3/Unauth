@@ -15,6 +15,7 @@ export default function Error({
       reset={reset}
       digest={error.digest}
       fallbackHref="/financials/losses"
+      stateId="loss-detail-error"
     />
   );
 }

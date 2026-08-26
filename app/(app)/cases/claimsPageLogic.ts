@@ -7,6 +7,115 @@ import {
   type PayoutCaseStatus,
 } from '@/lib/payouts/types';
 import { formatDateAbsolute } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
+import { normaliseCurrencyOrNull } from '@/lib/canonical/money';
+import type { ClaimMetricCoverage, ClaimQueueCounts } from '@/lib/claims/queueCounts';
+import type { ClaimsListView } from '@/lib/claims/claimsQueueUi';
+
+export type CasesSummaryMetric = {
+  state: 'complete_zero' | 'complete_value' | 'partial_positive' | 'unavailable' | 'mixed_currency';
+  label: string;
+};
+
+export type CasesSummary = {
+  active: CasesSummaryMetric;
+  unread: CasesSummaryMetric;
+  readyForDecision: CasesSummaryMetric;
+  atRisk: CasesSummaryMetric;
+};
+
+function countSummary(value: number, coverage: ClaimMetricCoverage): CasesSummaryMetric {
+  if (coverage === 'complete') {
+    return {
+      state: value === 0 ? 'complete_zero' : 'complete_value',
+      label: formatNumber(value),
+    };
+  }
+  if (value > 0) {
+    return { state: 'partial_positive', label: `${formatNumber(value)} observed · partial` };
+  }
+  return { state: 'unavailable', label: 'Unavailable' };
+}
+
+export function buildCasesSummary(input: {
+  counts: ClaimQueueCounts;
+  coverageByMetric: Record<keyof ClaimQueueCounts, ClaimMetricCoverage>;
+  atRiskRows: Array<{ amount_at_risk: number | null; currency: string | null }>;
+  atRiskCoverage: ClaimMetricCoverage;
+}): CasesSummary {
+  const currencyGroups = new Map<string, { total: number; count: number }>();
+  let incompleteMoneyRows = 0;
+  for (const row of input.atRiskRows) {
+    const currency = normaliseCurrencyOrNull(row.currency);
+    if (row.amount_at_risk == null || !Number.isFinite(row.amount_at_risk) || !currency) {
+      incompleteMoneyRows += 1;
+      continue;
+    }
+    const group = currencyGroups.get(currency) ?? { total: 0, count: 0 };
+    group.total += row.amount_at_risk;
+    group.count += 1;
+    currencyGroups.set(currency, group);
+  }
+
+  const rankedCurrencies = [...currencyGroups.entries()].sort((a, b) =>
+    b[1].count - a[1].count || a[0].localeCompare(b[0]),
+  );
+  const [dominant] = rankedCurrencies;
+  let atRisk: CasesSummaryMetric;
+  if (rankedCurrencies.length > 1 && dominant) {
+    const excludedCount = rankedCurrencies.slice(1).reduce((total, [, group]) => total + group.count, 0) + incompleteMoneyRows;
+    atRisk = {
+      state: 'mixed_currency',
+      label: `${formatCurrencyNullable(dominant[1].total, dominant[0])} in ${dominant[0]} · ${formatNumber(excludedCount)} case${excludedCount === 1 ? '' : 's'} in other currencies excluded${input.atRiskCoverage === 'complete' && incompleteMoneyRows === 0 ? '' : ' · partial'}`,
+    };
+  } else if (dominant && dominant[1].total > 0) {
+    const complete = input.atRiskCoverage === 'complete' && incompleteMoneyRows === 0;
+    atRisk = {
+      state: complete ? 'complete_value' : 'partial_positive',
+      label: `${formatCurrencyNullable(dominant[1].total, dominant[0])}${complete ? '' : ' observed · partial'}`,
+    };
+  } else if (dominant && input.atRiskCoverage === 'complete' && incompleteMoneyRows === 0) {
+    atRisk = { state: 'complete_zero', label: formatCurrencyNullable(0, dominant[0]) };
+  } else {
+    atRisk = { state: 'unavailable', label: 'Unavailable' };
+  }
+
+  return {
+    active: countSummary(input.counts.active, input.coverageByMetric.active),
+    unread: countSummary(input.counts.unread, input.coverageByMetric.unread),
+    readyForDecision: countSummary(input.counts.readyForDecision, input.coverageByMetric.readyForDecision),
+    atRisk,
+  };
+}
+
+export function coverageForClaimsListView(
+  view: ClaimsListView,
+  coverage: Record<keyof ClaimQueueCounts, ClaimMetricCoverage>,
+): ClaimMetricCoverage {
+  switch (view.kind) {
+    case 'active': return coverage.active;
+    case 'unread': return coverage.unread;
+    case 'assigned_me': return coverage.assignedToMe;
+    case 'unassigned': return coverage.unassigned;
+    case 'snoozed': return coverage.snoozed;
+    case 'history': return coverage.resolved;
+    case 'sla': return view.sla === 'overdue' ? coverage.overdue : coverage.active;
+    case 'workflow':
+      if (view.workflow === 'needs_evidence') return coverage.awaitingEvidence;
+      if (view.workflow === 'awaiting_carrier') return coverage.awaitingCarrier;
+      if (view.workflow === 'awaiting_3pl') return coverage.awaiting3pl;
+      if (view.workflow === 'awaiting_supplier') return coverage.awaitingSupplier;
+      if (view.workflow === 'ready_for_decision') return coverage.readyForDecision;
+      if (view.workflow === 'manual_review') return coverage.manualReview;
+      if (view.workflow === 'closed') return coverage.closed;
+      return coverage.active;
+    case 'status':
+      if (view.status === 'open') return coverage.open;
+      if (view.status === 'pending') return coverage.awaitingInfo;
+      if (view.status === 'escalated') return coverage.escalated;
+      return coverage.active;
+  }
+}
 
 export type ClaimEvidenceStatus = {
   evidenceStatus: string;

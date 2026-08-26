@@ -16,6 +16,7 @@ export default function Error({
       title="Overview unavailable"
       description="We could not load the financial overview. Try again, or continue to the work queue."
       fallbackHref="/work"
+      stateId="overview-error"
     />
   );
 }

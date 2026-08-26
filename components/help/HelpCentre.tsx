@@ -1,117 +1,65 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, LifeBuoy, Search } from 'lucide-react';
-import { InsetGroup, Input, Surface } from '@/components/ui';
+import { useEffect, useMemo, useState } from 'react';
+import { HELP_ARTICLES } from '@/lib/help/registry';
+import styles from './HelpOperations.module.css';
 
-type HelpArticle = {
-  id: string;
-  title: string;
-  summary: string;
-  keywords: string;
-  steps: string[];
-  action: { href: string; label: string };
-};
+const CATEGORY_ORDER = ['Activate', 'Operate', 'Recover', 'Administer'] as const;
 
-const ARTICLES: HelpArticle[] = [
-  {
-    id: 'review-a-case',
-    title: 'Review a case',
-    summary: 'Move from queue context to evidence, a merchant decision, and any recovery follow-up.',
-    keywords: 'cases evidence recommendation decision work queue',
-    steps: [
-      'Open the case from Work or Cases and confirm the linked customer, order, and parcel context.',
-      'Review source facts and evidence readiness before considering the recommendation.',
-      'Record the merchant decision, then use the case timeline to follow resulting customer and recovery work.',
-    ],
-    action: { href: '/cases', label: 'Open cases' },
-  },
-  {
-    id: 'configure-rules',
-    title: 'Configure merchant rules',
-    summary: 'Use transparent policy checks to guide recommendations without removing merchant control.',
-    keywords: 'rules recommendations policy drafts publishing settings',
-    steps: [
-      'Create or update a rule using the visible When, If, and Recommend sequence.',
-      'Review the draft and its explanation before publishing a new version.',
-      'A published rule can guide a recommendation; it never makes the final customer or financial decision for you.',
-    ],
-    action: { href: '/controls/rules', label: 'Open rules' },
-  },
-  {
-    id: 'follow-a-recovery',
-    title: 'Follow a recovery',
-    summary: 'Track evidence, ownership, deadlines, correspondence, and reconciled recovery outcomes.',
-    keywords: 'recovery losses deadlines correspondence outcomes',
-    steps: [
-      'Start from a source-backed loss and confirm the evidence required for the recovery route.',
-      'Use the recovery board to find the current owner, deadline, and next action.',
-      'Only a reconciled provider credit reduces net unrecovered loss; keep external correspondence in the record timeline.',
-    ],
-    action: { href: '/financials/recovery', label: 'Open recovery board' },
-  },
-  {
-    id: 'connect-sources',
-    title: 'Connect data sources',
-    summary: 'Set up the approved commerce and support sources that supply operational context.',
-    keywords: 'integrations shopify helpdesk source connection sync',
-    steps: [
-      'Open Integrations to review connected source status and freshness.',
-      'Choose the provider setup task that matches the source you need to connect or repair.',
-      'A disconnected source can make records incomplete; it does not prove that a missing value is zero.',
-    ],
-    action: { href: '/sources/connected', label: 'Open integrations' },
-  },
-];
+export function HelpCentre({ initialQuery = '' }: { initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery);
+  const articles = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return HELP_ARTICLES;
+    return HELP_ARTICLES.filter((article) => [article.category, article.title, article.summary, article.lead, ...article.keywords].join(' ').toLowerCase().includes(term));
+  }, [query]);
 
-export function HelpCentre() {
-  const [query, setQuery] = useState('');
-  const normalizedQuery = query.trim().toLowerCase();
-  const articles = useMemo(
-    () => ARTICLES.filter((article) => !normalizedQuery || `${article.title} ${article.summary} ${article.keywords}`.toLowerCase().includes(normalizedQuery)),
-    [normalizedQuery],
-  );
+  useEffect(() => {
+    const term = query.trim();
+    window.history.replaceState(null, '', term ? `/help?q=${encodeURIComponent(term)}` : '/help');
+  }, [query]);
 
   return (
-    <Surface structure="working" className="overflow-hidden">
-      <div className="border-b border-[var(--ua-border-subtle)] px-5 py-4">
-        <label htmlFor="help-search" className="sr-only">Search help</label>
-        <div className="relative max-w-xl">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ua-icon-secondary)]" aria-hidden="true" />
-          <Input id="help-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search help" className="pl-9" />
+    <div className={styles.help} data-surface-id="help-index" data-operations-surface="help">
+      <section className={styles.searchCard}>
+        <div className={styles.searchRow}>
+          <label><span className="sr-only">Search the guides</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={'Search the guides — try "unavailable", "write off" or "chargeback"'} /></label>
+          <a href="mailto:support@unauth.app" className={styles.button}>Contact support</a>
         </div>
+        <div className={styles.common}><span>Common:</span><Link href="/help/activation">Complete activation</Link><Link href="/help/source-repair">Repair a source</Link><Link href="/help/case-investigation">Investigate a Case</Link><Link href="/help/privacy-requests">Handle a privacy request</Link></div>
+      </section>
+      {articles.length ? <div className={styles.groupGrid}>{CATEGORY_ORDER.map((category) => {
+        const categoryArticles = articles.filter((article) => article.category === category);
+        if (!categoryArticles.length) return null;
+        return <section className={styles.guideCard} key={category}><div className={styles.guideTitle}><h2 className="ua-text-working-title">{category}</h2><span>{categoryArticles.length} {categoryArticles.length === 1 ? 'guide' : 'guides'}</span></div><nav aria-label={category}>{categoryArticles.map((article) => <Link href={`/help/${article.slug}`} key={article.slug}><span><strong>{article.title}</strong><small>{article.summary}</small></span><i>›</i></Link>)}</nav></section>;
+      })}</div> : <section className={styles.empty}><h2>No guide matches “{query}”</h2><p>Try activation, source, Work, Case, recovery, reconciliation, roles, privacy, or API.</p><button type="button" onClick={() => setQuery('')}>Clear search</button></section>}
+      <section className={styles.supportCard}><div><h2>Still stuck?</h2><p>Include the workspace name, object reference, error code, and time. Do not email secrets, customer contact details, addresses, or ticket bodies.</p></div><span /><a href="mailto:support@unauth.app" className={styles.button}>Contact support</a><Link href="/sources/connected" className={styles.primary}>Check source health</Link></section>
+    </div>
+  );
+}
+
+export function PrintButton() {
+  return <button type="button" className="ua-button ua-button--secondary ua-button--sm" onClick={() => window.print()}>Print</button>;
+}
+
+export function ArticleFeedback({ articleSlug = 'general' }: { articleSlug?: string }) {
+  const [answer, setAnswer] = useState<'yes' | 'no' | null>(null);
+
+  function recordAnswer(next: 'yes' | 'no') {
+    setAnswer(next);
+    window.localStorage.setItem(`unauth.help.${articleSlug}.feedback`, next);
+  }
+
+  return (
+    <>
+      <div role="group" aria-label="Was this article useful?">
+        <button type="button" aria-pressed={answer === 'yes'} onClick={() => recordAnswer('yes')}>Yes</button>
+        <button type="button" aria-pressed={answer === 'no'} onClick={() => recordAnswer('no')}>No</button>
       </div>
-      <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="min-w-0 divide-y divide-[var(--ua-border-subtle)]">
-          <section className="px-5 py-4" aria-labelledby="help-guides">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-[var(--ua-icon-secondary)]" aria-hidden="true" />
-              <h2 id="help-guides" className="ua-text-working-title text-[var(--ua-text-primary)]">Guides</h2>
-            </div>
-            <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">Choose a guide to jump to its anchored instructions.</p>
-            {articles.length ? <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
-              {articles.map((article) => <li key={article.id}><a href={`#${article.id}`} className="flex items-center justify-between gap-3 px-1 py-3 text-left hover:text-[var(--ua-text-link)] focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]"><span><span className="ua-text-working-title block text-[var(--ua-text-primary)]">{article.title}</span><span className="ua-text-dense mt-0.5 block text-[var(--ua-text-secondary)]">{article.summary}</span></span><span className="ua-text-label shrink-0 text-[var(--ua-text-link)]">Read</span></a></li>)}
-            </ul> : <p role="status" className="ua-text-body mt-3 text-[var(--ua-text-secondary)]">No guide matches “{query}”. Try cases, rules, recovery, or integrations.</p>}
-          </section>
-          <div>
-            {articles.map((article) => <article id={article.id} key={article.id} className="scroll-mt-6 px-5 py-5" aria-labelledby={`${article.id}-title`}>
-              <h2 id={`${article.id}-title`} className="ua-text-section-title text-[var(--ua-text-primary)]">{article.title}</h2>
-              <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">{article.summary}</p>
-              <ol className="ua-text-body mt-3 list-decimal space-y-2 pl-5 leading-5 text-[var(--ua-text-secondary)]">{article.steps.map((step) => <li key={step}>{step}</li>)}</ol>
-              <Link href={article.action.href} className="ua-text-working-title mt-4 inline-flex text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">{article.action.label}</Link>
-            </article>)}
-          </div>
-        </div>
-        <aside className="border-t border-[var(--ua-border-subtle)] p-5 lg:border-l lg:border-t-0" aria-labelledby="help-support">
-          <InsetGroup className="p-4">
-            <LifeBuoy className="h-5 w-5 text-[var(--ua-icon-secondary)]" aria-hidden="true" />
-            <h2 id="help-support" className="ua-text-working-title mt-3 text-[var(--ua-text-primary)]">Need support?</h2>
-            <p className="ua-text-body mt-1 leading-5 text-[var(--ua-text-secondary)]">For account-specific help, email the Unauth support team. Include the case or recovery link when it is safe to share.</p>
-            <a href="mailto:support@unauth.app" className="ua-text-working-title mt-4 inline-flex text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">Email support</a>
-          </InsetGroup>
-        </aside>
-      </div>
-    </Surface>
+      <p role="status" aria-live="polite">
+        {answer ? 'Thanks — your response was saved in this browser.' : 'Feedback is not attached to your workspace data.'}
+      </p>
+    </>
   );
 }

@@ -1,0 +1,147 @@
+.uo-product,
+.uo-entry {
+  color-scheme: dark;
+  --uo-raw-8B9099: #A09586; /* fg-icon */
+  --uo-raw-5F6570: #AFA598; /* fg-label */
+  --uo-raw-FFFFFF: #1B1917; /* surface */
+  --uo-raw-101014: #F2EAE0; /* fg-ink */
+  --uo-raw-4A4F57: #C3B9AD; /* fg-body */
+  --uo-raw-6B6F76: #A69B8E; /* fg-muted */
+  --uo-raw-F1F1F4: #26221D; /* fill-hover */
+  --uo-raw-EAEAEE: #302B24; /* border */
+  --uo-raw-FAFAFB: #171512; /* surface-rail */
+  --uo-raw-EDEDF0: #2B261F; /* border-subtle */
+  --uo-raw-9AA0A6: #A99E90; /* fg-icon-quiet */
+  --uo-raw-10182808: #00000073; /* shadow-xs */
+  --uo-raw-F7F7F9: #1F1C18; /* surface-subtle */
+  --uo-raw-2563EB: #7AA2FF; /* accent */
+  --uo-raw-0A7A53: #71E8BF; /* positive */
+  --uo-raw-F3F3F5: #24201C; /* fill-muted */
+  --uo-raw-B4271B: #DC7067; /* critical */
+  --uo-raw-96650E: #E5B96B; /* warning */
+  --uo-raw-F4F4F6: #231F1B; /* surface-subtle-3 */
+  --uo-raw-E0A63D: #E3AE4F; /* warning-strong */
+  --uo-raw-1D4FD7: #93B4FF; /* accent-hover */
+  --uo-raw-C6C9CE: #4E453A; /* fg-disabled */
+  --uo-raw-DCDDE2: #3D362D; /* border-emphasis */
+  --uo-raw-DBE7FE: #162646; /* accent-tint */
+  --uo-raw-E7E7EA: #332D25; /* border-strong */
+  --uo-raw-12A672: #67E3B7; /* positive-strong */
+  --uo-raw-FDF4E3: #423317; /* warning-tint */
+  --uo-raw-EFF0F3: #100F0D; /* canvas */
+  --uo-raw-FDECEA: #3F1C18; /* critical-tint */
+  --uo-raw-E7F7F0: #213A2F; /* positive-tint */
+  --uo-raw-26262C: #E5DDD2; /* fg-ink-soft */
+  --uo-raw-E0483D: #E3594F; /* critical-strong */
+  --uo-raw-7FA6FF: #3371FF; /* accent-light */
+  --uo-raw-1018281F: #00000091; /* shadow-lg */
+  --uo-raw-8FAEFF: #336BFF;
+  --uo-raw-EAF0FE: #162341; /* accent-tint-soft */
+  --uo-raw-B4B8BE: #635A4C; /* fg-faint */
+  --uo-raw-3C4148: #CFC6BA; /* fg-body-strong */
+  --uo-raw-D6D8DD: #423A31; /* border-emphasis-2 */
+  --uo-raw-EFEFF2: #27231E; /* fill-hover-3 */
+  --uo-raw-F5F8FF: #132040; /* accent-tint-faint */
+  --uo-raw-52565C: #BAB0A4; /* fg-secondary */
+  --uo-raw-F5F5F7: #221E1A; /* surface-subtle-2 */
+  --uo-raw-7A5209: #E9BE71;
+  --uo-raw-F6CFCB: #46221F; /* critical-border */
+  --uo-raw-1018280F: #0000007D; /* shadow-sm */
+  --uo-raw-B8BCC2: #5F5649; /* fg-faint-2 */
+  --uo-raw-E4F2EA: #26372D; /* positive-tint-2 */
+  --uo-raw-F1857A: #EC5646;
+  --uo-raw-10182838: #000000A6; /* scrim */
+  --uo-raw-F4FBF7: #1F3529;
+  --uo-raw-FCFCFD: #1E1B18; /* surface-raised */
+  --uo-raw-E7E9EE: #332D25; /* border-strong-2 */
+  --uo-raw-F0F0F3: #27231E; /* fill-hover-2 */
+  --uo-raw-F6D4D0: #44231F;
+  --uo-raw-10101433: #00000080;
+  --uo-raw-C7332A: #DB5E57;
+  --uo-raw-F2E3C0: #483C22; /* warning-border */
+  --uo-raw-FDF8EC: #3E3318;
+  --uo-raw-9CA0A8: #ABA093; /* fg-icon-3 */
+  --uo-raw-FFFFFFF2: #1B1917F2;
+  --uo-raw-10101466: #000000A6;
+  --uo-raw-10182814: #00000087;
+  --uo-raw-C7D9FD: #18294B;
+  --uo-raw-D9A03C: #DEAC54;
+  --uo-raw-067A53: #6EECC2;
+  --uo-raw-12275C: #839CDD;
+  --uo-raw-1D3E8F: #7592D8;
+  --uo-raw-3A3A40: #DDD4C9;
+  --uo-raw-7A93C7: #6F8AC3;
+  --uo-raw-8E939B: #A49A8B; /* fg-icon-2 */
+  --uo-raw-A6ABB2: #B2A79A;
+  --uo-raw-D9573F: #DD6A55;
+  --uo-raw-DCE4F5: #212A3E;
+  --uo-raw-F0C8C3: #462723;
+  --uo-raw-F7F9FF: #121E3F;
+  --uo-raw-0B8A5F: #6DE8BE;
+  --uo-raw-1018282E: #0000009B;
+  --uo-raw-1E1E24: #EDE5DA;
+  --uo-raw-3F444B: #CCC3B7;
+  --uo-raw-4ADE9E: #52E0A3;
+  --uo-raw-4E86F7: #8FB2FF;
+  --uo-raw-5FCE9E: #63CFA0;
+  --uo-raw-6E737B: #A2988B;
+  --uo-raw-93B4FB: #3A76F8;
+  --uo-raw-A9ADB5: #6B6254;
+  --uo-raw-C98A14: #E2B45D;
+  --uo-raw-CDD0D6: #494036;
+  --uo-raw-D9DAE0: #3C352C;
+  --uo-raw-DDDFE4: #3A342B;
+  --uo-raw-EFC069: #EBB247;
+  --uo-raw-FBFCFF: #121D3E;
+  --uo-raw-FF9E93: #FF4833;
+  --uo-raw-0A3A28: #8BE2C1;
+  --uo-raw-0E4A32: #87DFBC;
+  --uo-raw-191C1A: #F2EAE0; /* fg-ink-alt */
+  --uo-raw-191C1A14: #00000087;
+  --uo-raw-191C1A33: #00000091;
+  --uo-raw-191C1A38: #0000009B;
+  --uo-raw-26596B: #89BBCD;
+  --uo-raw-2A2E2B: #E5DDD2;
+  --uo-raw-2F7A55: #86C8A8;
+  --uo-raw-3D423E: #BCB6AF;
+  --uo-raw-5C4210: #DFBF81;
+  --uo-raw-5F6560: #A2998F;
+  --uo-raw-6F746E: #968D81;
+  --uo-raw-6F7F86: #8F8479;
+  --uo-raw-7FA98F: #85AD94;
+  --uo-raw-8C918B: #7E7469;
+  --uo-raw-8E2A1C: #D98175;
+  --uo-raw-8E4B18: #DCA073;
+  --uo-raw-9A8154: #B7A27B;
+  --uo-raw-9A9E97: #72695F;
+  --uo-raw-9AA6AA: #6B6359;
+  --uo-raw-A7ABA4: #665E55;
+  --uo-raw-A8412C: #D08272;
+  --uo-raw-B07A16: #E0B566;
+  --uo-raw-B9C0BB: #524C45;
+  --uo-raw-BFD3C6: #86AC93;
+  --uo-raw-C6C3B6: #514B44;
+  --uo-raw-C6D6CB: #433D37;
+  --uo-raw-C9CFC7: #45403A;
+  --uo-raw-D6D3CA: #413B35;
+  --uo-raw-D8A54A: #DBAC57;
+  --uo-raw-D8E6DC: #2D3930;
+  --uo-raw-DDDACF: #3B3631;
+  --uo-raw-DDE4DE: #322D29;
+  --uo-raw-E3E1D9: #342F2A;
+  --uo-raw-E7EFE9: #29342C;
+  --uo-raw-E9E7E0: #2E2A25;
+  --uo-raw-EAF2EC: #28332B;
+  --uo-raw-EBD9B4: #4A3E26;
+  --uo-raw-EBE9E2: #35332B;
+  --uo-raw-EDEBE4: #35322A;
+  --uo-raw-F0EEE8: #343129;
+  --uo-raw-F1F0EB: #25221E;
+  --uo-raw-F1F0EBF2: #221E1AF2;
+  --uo-raw-F2F0EA: #333028;
+  --uo-raw-F4F2EC: #333026;
+  --uo-raw-F7EBDC: #3F311F;
+  --uo-raw-F7F6F2: #312F26;
+  --uo-raw-FAF9F5: #322F22;
+  --uo-raw-FBF3E4: #3F331B;
+}

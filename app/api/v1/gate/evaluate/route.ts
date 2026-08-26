@@ -32,7 +32,7 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const auth = await validateApiKey(request);
+  const auth = await validateApiKey(request, 'cases:write');
   if (!isValidatedApiKey(auth)) return auth;
   if (!isPublicClaimGateEnabled()) {
     return NextResponse.json(publicClaimGateUnavailableBody(), {

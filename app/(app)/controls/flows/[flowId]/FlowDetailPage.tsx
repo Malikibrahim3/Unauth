@@ -15,7 +15,6 @@ import {
 } from "@/components/rules/FlowVersionWorkbench";
 import { SetBreadcrumbLabel } from "@/components/layout/SetBreadcrumbLabel";
 import { PageFrame } from "@/components/ui/PageFrame";
-import { env } from "@/lib/utils/env";
 
 export const dynamic = "force-dynamic";
 
@@ -51,16 +50,13 @@ export default async function FlowDetail({
   const versions = (versionsResult.data ??
     []) as unknown as WorkflowVersionRecord[];
   return (
-    <PageFrame>
+    <PageFrame surfaceId="flow-version-workbench" archetype="P8">
       <SetBreadcrumbLabel label={current.name} />
-      <div className="pt-5">
-        <FlowVersionWorkbench
-          versions={versions}
-          currentId={id}
-          canManage={canManage}
-          publicationEnabled={env.WORKFLOW_PUBLICATION_ENABLED === "true"}
-        />
-      </div>
+      <FlowVersionWorkbench
+        versions={versions}
+        currentId={id}
+        canManage={canManage}
+      />
     </PageFrame>
   );
 }

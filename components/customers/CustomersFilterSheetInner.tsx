@@ -1,10 +1,10 @@
 'use client';
 
 import { useRouter, type ReadonlyURLSearchParams } from 'next/navigation';
-import { useCallback, useTransition, useRef } from 'react';
-import { X } from 'lucide-react';
+import { useCallback, useTransition, useRef, useState } from 'react';
+import { ListFilter, X } from 'lucide-react';
 import { labelFor } from '@/lib/copy/labels';
-import { Button, Select } from '@/components/ui';
+import { Button, Drawer, Select } from '@/components/ui';
 
 function buildCustomersHref(
   searchParams: URLSearchParams,
@@ -27,6 +27,18 @@ const SORT_OPTIONS = [
   { value: 'name', label: 'Sort: Name A–Z' },
 ] as const;
 
+const RISK_OPTIONS = [
+  { value: '', label: 'All case signals' },
+  { value: 'case_history', label: 'Any case history' },
+  { value: 'refund', label: 'Refund history' },
+  { value: 'chargeback', label: 'Chargeback history' },
+] as const;
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'All statuses' },
+  { value: 'open_cases', label: 'Open cases' },
+] as const;
+
 export function CustomersFilterSheetInner({
   searchParams,
 }: {
@@ -34,6 +46,7 @@ export function CustomersFilterSheetInner({
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const updateParam = useCallback(
     (key: string, value: string) => {
@@ -62,24 +75,27 @@ export function CustomersFilterSheetInner({
 
   const hasAnyFilter =
     searchParams.toString().length > 0 &&
-    ![...searchParams.keys()].every((p) => p === 'sort');
+    ![...searchParams.keys()].every((p) => ['sort', 'selected', 'page', 'pageSize'].includes(p));
 
   const currentSort = searchParams.get('sort') ?? 'recent';
   const sortValue = SORT_OPTIONS.some((o) => o.value === currentSort) ? currentSort : 'recent';
 
+  const activeFilterCount = Number(Boolean(searchParams.get('risk'))) + Number(Boolean(searchParams.get('status')));
+
   return (
-    <div className="grid w-full grid-cols-1 gap-2 xl:grid-cols-[minmax(300px,1fr)_220px_auto]">
+    <div className="uo-customer-filter-shell">
+      <div className="uo-customer-filter-bar">
       <input
-        key={searchParams.get('q')}
+        key={searchParams.get('search') ?? searchParams.get('q')}
         type="search"
         aria-label={`Search by ${labelFor('email').toLowerCase()}, ${labelFor('name').toLowerCase()}, or order reference`}
         placeholder={`Search by ${labelFor('email').toLowerCase()}, ${labelFor('name').toLowerCase()}, or order reference…`}
-        defaultValue={searchParams.get('q') ?? ''}
-        onChange={(e) => makeDebounced('q', 2)(e.target.value)}
-        className="h-9 min-w-[280px] rounded-md px-3 text-[length:var(--ua-text-dense-size)] focus:outline-none"
-        style={{ background: 'var(--ua-surface-primary)', border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
-        onFocus={(e) => { e.target.style.borderColor = 'var(--ua-border-strong)'; e.target.style.outline = '2px solid var(--ua-border-focus)'; e.target.style.outlineOffset = '2px'; }}
-        onBlur={(e) => { e.target.style.borderColor = 'var(--ua-border-default)'; e.target.style.outline = 'none'; }}
+        defaultValue={searchParams.get('search') ?? searchParams.get('q') ?? ''}
+        onChange={(e) => makeDebounced('search', 2)(e.target.value)}
+        className="h-9 min-w-[280px] rounded-md px-3 text-[length:var(--uo-route-text-dense-size)] focus:outline-none"
+        style={{ background: 'var(--uo-route-surface-primary)', border: '1px solid var(--uo-route-border-default)', color: 'var(--uo-route-text-primary)' }}
+        onFocus={(e) => { e.target.style.borderColor = 'var(--uo-route-border-strong)'; e.target.style.outline = '2px solid var(--uo-route-border-focus)'; e.target.style.outlineOffset = '2px'; }}
+        onBlur={(e) => { e.target.style.borderColor = 'var(--uo-route-border-default)'; e.target.style.outline = 'none'; }}
       />
 
       <Select
@@ -92,11 +108,45 @@ export function CustomersFilterSheetInner({
         ))}
       </Select>
 
+      <Button type="button" variant="secondary" size="md" onClick={() => setFiltersOpen(true)} aria-expanded={filtersOpen}>
+        <ListFilter size={14} aria-hidden="true" /> Filters{activeFilterCount ? ` · ${activeFilterCount}` : ''}
+      </Button>
+
       {hasAnyFilter && (
         <Button onClick={handleClearAll} variant="secondary" size="md" className="gap-1">
           <X size={12} /> Clear
         </Button>
       )}
+      </div>
+
+      {(searchParams.get('risk') || searchParams.get('status')) ? (
+        <div className="uo-customer-applied-filters" role="status" aria-label="Applied customer filters">
+          <span>Applied</span>
+          {searchParams.get('risk') ? <button type="button" onClick={() => updateParam('risk', '')}>{RISK_OPTIONS.find((option) => option.value === searchParams.get('risk'))?.label ?? searchParams.get('risk')} <X size={11} aria-hidden="true" /></button> : null}
+          {searchParams.get('status') ? <button type="button" onClick={() => updateParam('status', '')}>{STATUS_OPTIONS.find((option) => option.value === searchParams.get('status'))?.label ?? searchParams.get('status')} <X size={11} aria-hidden="true" /></button> : null}
+        </div>
+      ) : null}
+
+      <Drawer open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filter customers by operational context" width="min(420px, 100vw)" overlayId="customer-filter-drawer">
+        <div className="uo-customer-filter-drawer">
+          <section>
+            <div><h3>Which records matter?</h3><p>Case signals describe recorded history; they do not assign responsibility.</p></div>
+            <Select aria-label="Filter customers by case signal" value={searchParams.get('risk') ?? ''} onChange={(event) => updateParam('risk', event.target.value)}>
+              {RISK_OPTIONS.map(({ value, label }) => <option key={value || 'all'} value={value}>{label}</option>)}
+            </Select>
+          </section>
+          <section>
+            <div><h3>Who needs attention now?</h3><p>Open cases are active work, separate from the customer’s full history.</p></div>
+            <Select aria-label="Filter customers by status" value={searchParams.get('status') ?? ''} onChange={(event) => updateParam('status', event.target.value)}>
+              {STATUS_OPTIONS.map(({ value, label }) => <option key={value || 'all'} value={value}>{label}</option>)}
+            </Select>
+          </section>
+          <div className="uo-customer-filter-drawer__actions">
+            {activeFilterCount ? <Button type="button" variant="secondary" onClick={handleClearAll}>Clear filters</Button> : null}
+            <Button type="button" onClick={() => setFiltersOpen(false)}>Show customers</Button>
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 }

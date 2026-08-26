@@ -26,7 +26,7 @@ export function SlaBadge({ claim }: { claim: ClaimRecord }) {
 
 export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="ua-text-label block mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
+    <label htmlFor={htmlFor} className="ua-text-label block mb-1" style={{ color: 'var(--uo-route-text-secondary)' }}>
       {children}
     </label>
   );
@@ -54,7 +54,7 @@ export function RailSection({
       variant="panel"
       className={`overflow-hidden p-0 ${id === 'manage' ? 'ua-focal-panel rounded-none border-x-0 shadow-none' : ''}`}
       style={{
-        borderColor: highlighted ? 'var(--ua-text-primary)' : 'var(--ua-border-subtle)',
+        borderColor: highlighted ? 'var(--uo-route-text-primary)' : 'var(--uo-route-border-subtle)',
         boxShadow: undefined,
       }}
     >
@@ -62,11 +62,11 @@ export function RailSection({
         type="button"
         onClick={() => onToggle(id)}
         className="flex w-full items-center justify-between px-4 py-3 text-left"
-        style={{ background: 'var(--ua-surface-primary)' }}
+        style={{ background: 'var(--uo-route-surface-primary)' }}
         aria-expanded={open}
       >
         <span className="flex items-center gap-1.5 min-w-0">
-          <span className="ua-text-working-title truncate" style={{ color: 'var(--ua-text-primary)' }}>{title}</span>
+          <span className="ua-text-working-title truncate" style={{ color: 'var(--uo-route-text-primary)' }}>{title}</span>
           {badge}
         </span>
         {/* Styled disclosure, not a raw triangle glyph (C11) — matches
@@ -74,12 +74,12 @@ export function RailSection({
         <ChevronDown
           size={14}
           aria-hidden="true"
-          className="shrink-0 ml-2 transition-transform duration-[var(--ua-duration-fast)]"
-          style={{ transform: open ? 'rotate(180deg)' : undefined, color: 'var(--ua-icon-secondary)' }}
+          className="shrink-0 ml-2 transition-transform duration-[var(--uo-route-duration-fast)]"
+          style={{ transform: open ? 'rotate(180deg)' : undefined, color: 'var(--uo-route-icon-secondary)' }}
         />
       </button>
       {open && (
-        <div className="border-t px-4 pb-4 pt-4" style={{ borderColor: 'var(--ua-border-subtle)' }}>
+        <div className="border-t px-4 pb-4 pt-4" style={{ borderColor: 'var(--uo-route-border-subtle)' }}>
           {children}
         </div>
       )}
@@ -90,8 +90,8 @@ export function RailSection({
 export function CaseIntelTile({ label, children }: { label: string; children: ReactNode }) {
   return (
     <Card unstyled variant="muted" className="min-w-0 px-3 py-2.5">
-      <p className="ua-text-label mb-1" style={{ color: 'var(--ua-text-secondary)' }}>{label}</p>
-      <div className="ua-text-dense leading-snug" style={{ color: 'var(--ua-text-primary)' }}>{children}</div>
+      <p className="ua-text-label mb-1" style={{ color: 'var(--uo-route-text-secondary)' }}>{label}</p>
+      <div className="ua-text-dense leading-snug" style={{ color: 'var(--uo-route-text-primary)' }}>{children}</div>
     </Card>
   );
 }
@@ -201,9 +201,9 @@ export function ClaimLifecycleStatusBar({
             onClick={() => setStatusToSet(item.value)}
             className="ua-text-label rounded-md border px-2 py-0.5 disabled:opacity-50"
             style={{
-              borderColor: statusToSet === item.value ? 'var(--ua-action-primary)' : 'var(--ua-border-subtle)',
-              background: 'var(--ua-surface-primary)',
-              color: statusToSet === item.value ? 'var(--ua-action-primary)' : 'var(--ua-text-secondary)',
+              borderColor: statusToSet === item.value ? 'var(--uo-route-action-primary)' : 'var(--uo-route-border-subtle)',
+              background: 'var(--uo-route-surface-primary)',
+              color: statusToSet === item.value ? 'var(--uo-route-action-primary)' : 'var(--uo-route-text-secondary)',
             }}
           >
             {item.label}

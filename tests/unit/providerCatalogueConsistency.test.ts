@@ -37,7 +37,7 @@ function providerWith(
     name: 'Proof fixture',
     category: 'commerce',
     authMode: 'oauth',
-    buildStatus: 'live',
+    codeMaturity: 'complete',
     evidenceCapabilities: ['order_value'],
     lifecycle,
     ...overrides,
@@ -171,14 +171,14 @@ describe('controlled runtime proof is distinct and mandatory for Live', () => {
 
 describe('planned providers cannot expose a functional Connect action', () => {
   it('assertLiveProvider throws and the stage remains planned for every slot_only provider', () => {
-    for (const provider of INTEGRATION_PROVIDERS.filter((p) => p.buildStatus === 'slot_only')) {
+    for (const provider of INTEGRATION_PROVIDERS.filter((p) => p.codeMaturity === 'slot_only')) {
       expect(() => assertLiveProvider(provider)).toThrow('provider_is_slot_only');
       expect(deriveProviderDisplayStage(provider)).toBe('planned');
     }
   });
 
   it('assertLiveProvider keeps genuinely offered non-slot providers connectable', () => {
-    for (const provider of INTEGRATION_PROVIDERS.filter((p) => p.buildStatus !== 'slot_only')) {
+    for (const provider of INTEGRATION_PROVIDERS.filter((p) => p.codeMaturity !== 'slot_only')) {
       expect(() => assertLiveProvider(provider)).not.toThrow();
     }
   });
@@ -192,10 +192,19 @@ describe('planned providers cannot expose a functional Connect action', () => {
       path.join(process.cwd(), 'app/(app)/sources/SourceConnectionsPage.tsx'),
       'utf-8',
     );
-    expect(detailPage).toMatch(/item\.stage === ["']planned["']\s*\?/);
-    expect(detailPage).toContain('<ConnectionActions');
-    expect(listPage).toMatch(/item\.stage === ["']planned["']/);
-    expect(listPage).toContain('item.stage !== "planned"');
+    const detailActions = fs.readFileSync(
+      path.join(process.cwd(), 'components/sources/SourceConnectionActionsOperations.tsx'),
+      'utf-8',
+    );
+    const catalogueSurface = fs.readFileSync(
+      path.join(process.cwd(), 'components/sources/SourcesOperations.tsx'),
+      'utf-8',
+    );
+    expect(detailPage).toContain("planned={item.stage === 'planned'}");
+    expect(detailPage).toContain('<SourceConnectionActionsOperations');
+    expect(detailActions).toContain('if (planned)');
+    expect(catalogueSurface).toContain("item.stage !== 'planned'");
+    expect(listPage).toContain('<SourcesOperations');
   });
 });
 
@@ -211,7 +220,7 @@ describe('capability rendering matches the evidence model', () => {
 
   it('the detail page names pending runtime verification and renders every evidence field', () => {
     const detailPage = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/sources/[sourceId]/SourceDetailPage.tsx'),
+      path.join(process.cwd(), 'components/sources/SourceDetailOperations.tsx'),
       'utf-8',
     );
     expect(detailPage).toContain('Runtime verification pending');

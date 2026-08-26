@@ -12,8 +12,8 @@ import {
   RefreshCw,
   Send,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { Bone, Button, Card, Input, Modal, Select, StatusBadge, Textarea } from '@/components/ui';
+import { useEffect, useRef, useState } from 'react';
+import { BeforeYouConfirm, Bone, Button, Card, Input, Modal, Select, StatusBadge, Textarea } from '@/components/ui';
 import {
   InvestigationRequestDialog,
   type InvestigationPartnerOption,
@@ -125,6 +125,18 @@ function InvestigationActionDialog({
   const canSubmit = !busy
     && sendFieldsValid
     && (!noteRequired || note.trim().length >= 5);
+  const externalAction = kind === 'send-email'
+    ? `Yes. An email leaves Unauth for ${investigation.recipient ?? 'the recorded recipient'}.`
+    : kind === 'mark-sent'
+      ? 'Already occurred outside Unauth. This records the supplied channel and reference.'
+      : 'None. This records an internal investigation transition only.';
+  const appendedRecord = kind === 'send-email' || kind === 'mark-sent'
+    ? `A sent transition and response-due work item${dueAt ? ` for ${dueAt.replace('T', ' ')}` : ''}.`
+    : kind === 'chase'
+      ? 'A chase transition and the revised response deadline.'
+      : kind === 'cancel'
+        ? 'A cancellation transition with its rationale.'
+        : 'A closure transition; provider silence remains a neutral fact.';
 
   async function submit() {
     if (!canSubmit) return;
@@ -192,6 +204,7 @@ function InvestigationActionDialog({
       open
       onClose={onClose}
       title={title}
+      overlayId="investigation-lifecycle-action-modal"
       size="md"
       closeOnBackdrop={!busy}
       footer={(
@@ -210,15 +223,15 @@ function InvestigationActionDialog({
     >
       <div className="space-y-4">
         {error ? (
-          <div role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
+          <div role="alert" className="ua-text-body rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3 text-[var(--uo-route-risk-critical)]">
             {error}
           </div>
         ) : null}
         {kind === 'send-email' ? (
           <>
-            <div className="ua-text-caption-role rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
-              <p><span className="font-semibold text-[var(--ua-text-primary)]">To:</span> {investigation.recipient}</p>
-              <p className="mt-1"><span className="font-semibold text-[var(--ua-text-primary)]">Subject:</span> {investigation.subject}</p>
+            <div className="ua-text-caption-role rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-muted)] p-3">
+              <p><span className="font-semibold text-[var(--uo-route-text-primary)]">To:</span> {investigation.recipient}</p>
+              <p className="mt-1"><span className="font-semibold text-[var(--uo-route-text-primary)]">Subject:</span> {investigation.subject}</p>
               <p className="mt-2">The request becomes waiting only after the email provider returns an acceptance ID.</p>
             </div>
             <label className="ua-text-body block font-medium">
@@ -307,10 +320,17 @@ function InvestigationActionDialog({
           </label>
         ) : null}
         {kind === 'close' && investigation.status === 'waiting_response' ? (
-          <p className="ua-text-caption-role rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
+          <p className="ua-text-caption-role rounded-md border border-[var(--uo-route-warning-border)] bg-[var(--uo-route-warning-bg)] p-3 text-[var(--uo-route-warning)]">
             Provider silence is recorded as “no response” and remains neutral. It does not assign responsibility.
           </p>
         ) : null}
+        <BeforeYouConfirm
+          objectSummary={`${investigation.id} · investigation transition`}
+          valueSummary="No financial value changes."
+          externalAction={externalAction}
+          reversible="Append-only. A later transition may supersede this state; this record remains visible."
+          appendOnly={appendedRecord}
+        />
       </div>
     </Modal>
   );
@@ -320,10 +340,12 @@ export function CaseInvestigationsCard({
   caseId,
   canManage,
   onRecommendationRefresh,
+  focusedInvestigationId,
 }: {
   caseId: string;
   canManage: boolean;
   onRecommendationRefresh?: () => void;
+  focusedInvestigationId?: string | null;
 }) {
   const url = `/api/claims/${encodeURIComponent(caseId)}/investigations`;
   const { data, loading, error, reload } = useFetchJson<InvestigationsPayload>(url);
@@ -355,6 +377,14 @@ export function CaseInvestigationsCard({
   const emailReady = data?.settings.email_enabled === true
     && data.settings.reply_to_configured;
 
+  useEffect(() => {
+    if (!focusedInvestigationId || loading || !data) return;
+    const target = document.getElementById(`investigation-${focusedInvestigationId}`);
+    if (!target) return;
+    target.focus({ preventScroll: true });
+    target.scrollIntoView?.({ block: 'center', behavior: 'auto' });
+  }, [data, focusedInvestigationId, loading]);
+
   return (
     <Card
       unstyled
@@ -365,10 +395,10 @@ export function CaseInvestigationsCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">
+          <p className="text-[length:var(--uo-route-text-metadata-size)] font-semibold text-[var(--uo-route-text-secondary)]">
             Investigations
           </p>
-          <h2 className="ua-text-section-title mt-1 text-[var(--ua-text-primary)]">
+          <h2 className="ua-text-section-title mt-1 text-[var(--uo-route-text-primary)]">
             Resolve the material evidence gap
           </h2>
           <p className="ua-text-caption-role mt-1 max-w-2xl leading-relaxed">
@@ -387,7 +417,7 @@ export function CaseInvestigationsCard({
       </div>
 
       {message ? (
-        <div role="status" className="ua-text-caption-role mt-3 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
+        <div role="status" className="ua-text-caption-role mt-3 rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-muted)] p-3">
           {message}
         </div>
       ) : null}
@@ -398,8 +428,8 @@ export function CaseInvestigationsCard({
           <Bone className="h-16" />
         </div>
       ) : error ? (
-        <div role="alert" className="mt-4 rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3">
-          <p className="ua-text-body text-[var(--ua-risk-critical)]">
+        <div role="alert" className="mt-4 rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3">
+          <p className="ua-text-body text-[var(--uo-route-risk-critical)]">
             Investigation details are unavailable. No action has been taken.
           </p>
           <Button className="mt-3" size="sm" variant="secondary" leadingIcon={<RefreshCw />} onClick={reload}>
@@ -417,7 +447,7 @@ export function CaseInvestigationsCard({
                 ['Review', data.aggregate.awaitingReview],
               ].map(([label, value]) => (
                 <Card key={String(label)} unstyled variant="muted" className="p-2.5">
-                  <p className="ua-text-section-title text-[var(--ua-text-primary)]">{value}</p>
+                  <p className="ua-text-section-title text-[var(--uo-route-text-primary)]">{value}</p>
                   <p className="ua-text-metadata">{label}</p>
                 </Card>
               ))}
@@ -428,12 +458,12 @@ export function CaseInvestigationsCard({
             <Card unstyled variant="muted" className="mt-4 p-4">
               {data?.recommendation ? (
                 <div className="flex items-start gap-3">
-                  <FileSearch className="mt-0.5 shrink-0 text-[var(--ua-action-primary)]" size={18} aria-hidden="true" />
+                  <FileSearch className="mt-0.5 shrink-0 text-[var(--uo-route-action-primary)]" size={18} aria-hidden="true" />
                   <div className="min-w-0">
-                    <p className="ua-text-working-title text-[var(--ua-text-primary)]">
+                    <p className="ua-text-working-title text-[var(--uo-route-text-primary)]">
                       Recommended: ask {data.recommendation.targetName ?? targetLabel(data.recommendation.targetType)}
                     </p>
-                    <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">
+                    <p className="ua-text-body mt-1 text-[var(--uo-route-text-secondary)]">
                       {data.recommendation.evidenceGap}
                     </p>
                     <p className="ua-text-caption-role mt-2">
@@ -447,7 +477,7 @@ export function CaseInvestigationsCard({
                   </div>
                 </div>
               ) : (
-                <p className="ua-text-body text-[var(--ua-text-secondary)]">
+                <p className="ua-text-body text-[var(--uo-route-text-secondary)]">
                   No investigation has been recorded for this case. Start one when a material factual question remains.
                 </p>
               )}
@@ -462,7 +492,9 @@ export function CaseInvestigationsCard({
                     key={investigation.id}
                     id={`investigation-${investigation.id}`}
                     variant="muted"
-                    className="scroll-mt-24 p-3.5"
+                    className={`scroll-mt-24 p-3.5 ${focusedInvestigationId === investigation.id ? 'outline outline-2 outline-offset-2 outline-[var(--uo-route-action-primary)]' : ''}`}
+                    tabIndex={-1}
+                    data-focused={focusedInvestigationId === investigation.id ? 'true' : undefined}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -472,20 +504,20 @@ export function CaseInvestigationsCard({
                             value={overdue ? 'overdue' : investigation.status}
                           />
                           {investigation.is_primary ? (
-                            <span className="rounded-full border border-[var(--ua-border-default)] px-2 py-0.5 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-secondary)]">
+                            <span className="rounded-full border border-[var(--uo-route-border-default)] px-2 py-0.5 text-[length:var(--uo-route-text-metadata-size)] font-medium text-[var(--uo-route-text-secondary)]">
                               Primary
                             </span>
                           ) : null}
                         </div>
-                        <p className="ua-text-working-title mt-2 text-[var(--ua-text-primary)]">
+                        <p className="ua-text-working-title mt-2 text-[var(--uo-route-text-primary)]">
                           {investigation.target_name ?? targetLabel(investigation.target_type)}
                         </p>
-                        <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">
+                        <p className="ua-text-body mt-1 text-[var(--uo-route-text-secondary)]">
                           {investigation.evidence_gap}
                         </p>
                       </div>
                       {investigation.due_at && investigation.status === 'waiting_response' ? (
-                        <div className={`ua-text-dense flex items-center gap-1.5 ${overdue ? 'text-[var(--ua-risk-critical)]' : 'text-[var(--ua-text-secondary)]'}`}>
+                        <div className={`ua-text-dense flex items-center gap-1.5 ${overdue ? 'text-[var(--uo-route-risk-critical)]' : 'text-[var(--uo-route-text-secondary)]'}`}>
                           {overdue ? <AlertTriangle size={14} aria-hidden="true" /> : <Clock3 size={14} aria-hidden="true" />}
                           <time dateTime={investigation.due_at}>
                             {overdue ? 'Overdue ' : 'Due '}{formatDateTime(investigation.due_at)}
@@ -495,20 +527,20 @@ export function CaseInvestigationsCard({
                     </div>
 
                     {investigation.response_summary ? (
-                      <div className="mt-3 rounded-md border border-[var(--ua-info-border)] bg-[var(--ua-info-bg)] p-3">
-                        <p className="ua-text-working-title flex items-center gap-2 text-[var(--ua-info)]">
+                      <div className="mt-3 rounded-md border border-[var(--uo-route-info-border)] bg-[var(--uo-route-info-bg)] p-3">
+                        <p className="ua-text-working-title flex items-center gap-2 text-[var(--uo-route-info)]">
                           <CheckCircle2 size={14} aria-hidden="true" />
                           Latest response
                         </p>
-                        <p className="ua-text-body mt-1 text-[var(--ua-text-primary)]">
+                        <p className="ua-text-body mt-1 text-[var(--uo-route-text-primary)]">
                           {investigation.response_summary}
                         </p>
                       </div>
                     ) : null}
 
                     {investigation.status === 'draft' ? (
-                      <div className="mt-3 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-3">
-                        <p className="ua-text-working-title text-[var(--ua-text-primary)]">
+                      <div className="mt-3 rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] p-3">
+                        <p className="ua-text-working-title text-[var(--uo-route-text-primary)]">
                           {investigation.subject}
                         </p>
                         <p className="ua-text-caption-role mt-2 whitespace-pre-wrap leading-relaxed">

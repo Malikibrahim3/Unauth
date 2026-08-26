@@ -16,6 +16,7 @@ export default function CaseDetailError({
       reset={reset}
       digest={error.digest}
       fallbackHref="/cases"
+      stateId="case-error"
     />
   );
 }

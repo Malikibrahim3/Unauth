@@ -24,7 +24,7 @@ async function POSTHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const authResult = await validateApiKey(request);
+  const authResult = await validateApiKey(request, 'evidence:read');
   if (!isValidatedApiKey(authResult)) return withV1Cors(authResult, request);
 
   const { id } = await params;

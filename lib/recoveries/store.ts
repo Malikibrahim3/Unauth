@@ -11,10 +11,37 @@ import {
   type RecoveryCaseStatus,
 } from '@/lib/recoveries/types';
 import { eventTypeForStatus } from '@/lib/recoveries/status';
+import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
 
 const recoveryCaseStatusSchema = z.enum(RECOVERY_CASE_STATUSES);
 const recoveryOwnerTypeSchema = z.enum(RECOVERY_OWNER_TYPES);
 const recoveryTypeSchema = z.enum(RECOVERY_TYPES);
+
+export const RECOVERY_BOARD_STAGES = [
+  'all',
+  'ready_to_file',
+  'filed',
+  'partner_responded',
+  'received',
+  'reconciled',
+  'closed',
+] as const;
+export type RecoveryBoardStage = (typeof RECOVERY_BOARD_STAGES)[number];
+
+export type RecoveryPageResult = {
+  rows: RecoveryCase[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  stage: RecoveryBoardStage;
+  currency: string | null;
+  availableCurrencies: string[];
+  stageCounts: Partial<Record<Exclude<RecoveryBoardStage, 'all'>, number>>;
+  stableOrder: 'updated_at_desc_id_desc';
+  source: 'canonical' | 'compatibility';
+  limitation: string | null;
+};
 
 export const createRecoveryCaseSchema = z.object({
   merchant_id: z.string().uuid(),
@@ -51,6 +78,27 @@ export type CreateRecoveryCaseInput = z.input<typeof createRecoveryCaseSchema>;
 
 function mapRecoveryCase(row: unknown): RecoveryCase {
   const r = row as RecoveryCase;
+  const legacySoughtMinor = Math.round(recoverySoughtAmount({
+    merchant_loss_amount: Number(r.merchant_loss_amount ?? 0),
+    eligible_loss_amount: r.eligible_loss_amount == null ? null : Number(r.eligible_loss_amount),
+    estimated_recoverable_max: r.estimated_recoverable_max == null ? null : Number(r.estimated_recoverable_max),
+    amount_recovered: r.amount_recovered == null ? null : Number(r.amount_recovered),
+  }) * 100);
+  const recoveredMinor = Math.max(
+    Number(r.amount_recovered_minor ?? 0),
+    Math.round(Number(r.amount_recovered ?? 0) * 100),
+  );
+  const soughtMinor = Math.max(Number(r.amount_sought_minor ?? 0), legacySoughtMinor, recoveredMinor);
+  const approvedMinor = Number(r.amount_approved_minor ?? 0) > 0
+    ? Number(r.amount_approved_minor)
+    : ['approved', 'partially_approved', 'paid'].includes(r.status)
+      ? soughtMinor
+      : 0;
+  const writtenOffMinor = Number(r.amount_written_off_minor ?? 0) > 0
+    ? Number(r.amount_written_off_minor)
+    : r.status === 'closed_unrecoverable'
+      ? Math.max(0, soughtMinor - recoveredMinor)
+      : 0;
   return {
     ...r,
     provider_claim_stage: r.provider_claim_stage ?? 'prepared',
@@ -59,10 +107,10 @@ function mapRecoveryCase(row: unknown): RecoveryCase {
     estimated_recoverable_min: r.estimated_recoverable_min == null ? null : Number(r.estimated_recoverable_min),
     estimated_recoverable_max: r.estimated_recoverable_max == null ? null : Number(r.estimated_recoverable_max),
     amount_recovered: r.amount_recovered == null ? null : Number(r.amount_recovered),
-    amount_sought_minor: Number(r.amount_sought_minor ?? 0),
-    amount_approved_minor: Number(r.amount_approved_minor ?? 0),
-    amount_recovered_minor: Number(r.amount_recovered_minor ?? 0),
-    amount_written_off_minor: Number(r.amount_written_off_minor ?? 0),
+    amount_sought_minor: soughtMinor,
+    amount_approved_minor: approvedMinor,
+    amount_recovered_minor: recoveredMinor,
+    amount_written_off_minor: writtenOffMinor,
     excluded_costs: Array.isArray(r.excluded_costs) ? r.excluded_costs : [],
   };
 }
@@ -87,6 +135,107 @@ export async function listRecoveryCases(
   const { data, error } = await query;
   if (error) throw new Error(`Failed to list recovery cases: ${error.message}`);
   return (data ?? []).map(mapRecoveryCase);
+}
+
+function boardStageStatuses(stage: RecoveryBoardStage): RecoveryCaseStatus[] | null {
+  if (stage === 'ready_to_file') return ['draft', 'evidence_needed', 'ready_to_submit'];
+  if (stage === 'filed') return ['submitted', 'waiting_response', 'chase_due'];
+  if (stage === 'partner_responded') return ['approved', 'partially_approved', 'rejected', 'appealed'];
+  if (stage === 'closed') return ['closed_unrecoverable'];
+  return null;
+}
+
+/** Stable, exact server paging for the active Recovery board. */
+export async function listRecoveryCasesPage(
+  client: SupabaseClient,
+  merchantId: string,
+  input: {
+    stage?: RecoveryBoardStage;
+    currency?: string | null;
+    search?: string | null;
+    page?: number;
+    pageSize?: number;
+  } = {},
+): Promise<RecoveryPageResult> {
+  const stage = RECOVERY_BOARD_STAGES.includes(input.stage ?? 'all') ? input.stage ?? 'all' : 'all';
+  const page = Math.max(1, Math.trunc(input.page ?? 1));
+  const pageSize = Math.min(100, Math.max(1, Math.trunc(input.pageSize ?? 25)));
+  const currency = input.currency && /^[A-Za-z]{3}$/.test(input.currency)
+    ? input.currency.toUpperCase()
+    : null;
+  const rpc = await client.rpc('recovery_page_v1' as never, {
+    p_merchant_id: merchantId,
+    p_stage: stage,
+    p_currency: currency,
+    p_search: input.search?.trim() || null,
+    p_page: page,
+    p_page_size: pageSize,
+  } as never);
+  if (!rpc.error && rpc.data && typeof rpc.data === 'object') {
+    const payload = rpc.data as unknown as Record<string, unknown>;
+    const rawRows = Array.isArray(payload.rows) ? payload.rows : [];
+    const rawCounts = payload.stage_counts && typeof payload.stage_counts === 'object'
+      ? payload.stage_counts as Record<string, unknown>
+      : {};
+    return {
+      rows: rawRows.map(mapRecoveryCase),
+      page: Number(payload.page) || page,
+      pageSize: Number(payload.page_size) || pageSize,
+      totalCount: Number(payload.total_count) || 0,
+      totalPages: Math.max(1, Number(payload.total_pages) || 1),
+      stage,
+      currency,
+      availableCurrencies: Array.isArray(payload.available_currencies)
+        ? payload.available_currencies.map(String).filter((value) => /^[A-Z]{3}$/.test(value))
+        : currency ? [currency] : [],
+      stageCounts: Object.fromEntries(
+        Object.entries(rawCounts).map(([key, value]) => [key, Number(value) || 0]),
+      ),
+      stableOrder: 'updated_at_desc_id_desc',
+      source: 'canonical',
+      limitation: null,
+    };
+  }
+  if (!rpc.error || !/recovery_page_v1|schema cache|function .* does not exist/i.test(rpc.error.message)) {
+    throw new Error(`Failed to page recovery cases: ${rpc.error?.message ?? 'invalid response'}`);
+  }
+
+  // Rolling-deploy compatibility. It remains exact for the requested query,
+  // but stage counts are withheld until the MR4 function is installed.
+  let query = client
+    .from(TABLES.RECOVERY_CASES)
+    .select('*, partner:partners(*)', { count: 'exact' })
+    .eq('merchant_id', merchantId);
+  if (currency) query = query.eq('currency', currency);
+  const statuses = boardStageStatuses(stage);
+  if (statuses) query = query.in('status', statuses);
+  if (stage === 'received') query = query.gt('amount_recovered_minor', 0).neq('claim_readiness', 'reconciled');
+  if (stage === 'reconciled') query = query.eq('claim_readiness', 'reconciled');
+  if (input.search?.trim()) {
+    const term = input.search.trim().replace(/[,%()]/g, '');
+    query = query.or(`id.ilike.%${term}%,support_payout_case_id.ilike.%${term}%`);
+  }
+  const offset = (page - 1) * pageSize;
+  const fallback = await query
+    .order('updated_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(offset, offset + pageSize - 1);
+  if (fallback.error) throw new Error(`Failed to page recovery cases: ${fallback.error.message}`);
+  const totalCount = fallback.count ?? (fallback.data ?? []).length;
+  return {
+    rows: (fallback.data ?? []).map(mapRecoveryCase),
+    page,
+    pageSize,
+    totalCount,
+    totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
+    stage,
+    currency,
+    availableCurrencies: currency ? [currency] : [...new Set((fallback.data ?? []).map((row) => String(row.currency).toUpperCase()))].sort(),
+    stageCounts: {},
+    stableOrder: 'updated_at_desc_id_desc',
+    source: 'compatibility',
+    limitation: 'MR4 recovery stage totals are unavailable until the forward migration is installed.',
+  };
 }
 
 export async function getRecoveryCase(
@@ -247,6 +396,9 @@ export async function updateRecoveryCaseStatus(
 ): Promise<RecoveryCase> {
   const existing = await getRecoveryCase(client, input.merchantId, input.recoveryCaseId);
   if (!existing) throw new Error('Recovery case not found');
+  if (input.status === 'ready_to_submit' && (!existing.evidence_complete || existing.evidence_missing.length > 0)) {
+    throw new Error('Required recovery evidence is incomplete');
+  }
   const { error } = await client.rpc('transition_recovery_case', {
     p_merchant_id: input.merchantId,
     p_recovery_case_id: input.recoveryCaseId,

@@ -30,7 +30,7 @@ export const SIGNAL_META: Record<SignalType, SignalMeta> = {
   shared_ip: { tone: 'info' },
   shared_device: { tone: 'warning' },
   refund_velocity: { tone: 'danger' },
-  chargeback_after_delivery: { tone: 'critical' },
+  chargeback_after_delivery: { tone: 'danger' },
   item_not_received_repeat: { tone: 'danger' },
   address_mismatch: { tone: 'warning' },
   name_variant: { tone: 'info' },

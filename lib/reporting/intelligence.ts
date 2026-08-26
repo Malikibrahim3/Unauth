@@ -7,6 +7,10 @@ import {
   normalizeLegacyClaimStatus,
 } from '@/lib/claims/statusMachine';
 import { getClaimSlaState } from '@/lib/claims/sla';
+import {
+  loadCanonicalFinancialAggregate,
+  type CanonicalCurrencyAggregate,
+} from '@/lib/financial/canonicalAggregates';
 
 export const REPORT_RANGES = ['7d', '30d', '90d', 'all'] as const;
 export type ReportRange = (typeof REPORT_RANGES)[number];
@@ -42,6 +46,7 @@ export type MoneyBridge = {
   knownStates:string[];
   caseIds:string[];
   caseIdsByState?:Partial<Record<FinancialReportMetric,string[]>>;
+  caseCountsByState?:Partial<Record<FinancialReportMetric,number>>;
 };
 export type RankedRow = { key:string; label:string; count:number; amountMinor:number; currency:string; href:string; recordIds:string[] };
 export type CoverageRow = {
@@ -87,6 +92,8 @@ export type FinancialConfidence = {
   affectedCurrencies:string[];
   affectedMetrics:FinancialReportMetric[];
   excludedRecordCount:number;
+  currencyExcludedRecordCount:number;
+  unreconciledExcludedRecordCount:number;
 };
 export type IntelligenceReport = {
   range:ReportRange;
@@ -100,6 +107,13 @@ export type IntelligenceReport = {
   coverage:CoverageRow[];
   reconciliation:{ok:boolean;issues:string[];confidence:FinancialConfidence};
   recordCount:number;
+  financialScope?:{
+    definitionVersion:string;
+    timeBasis:'case_submitted_at';
+    mixedCurrencyPolicy:'separated';
+    unknownPolicy:'withheld_not_zero';
+    source:'canonical'|'compatibility';
+  };
 };
 export type DashboardPeriodComparison = {
   range: Exclude<ReportRange, 'all'>;
@@ -109,7 +123,10 @@ export type DashboardPeriodComparison = {
   trend: ReportTrendPoint[];
 };
 
-type Client={from:(table:string)=>any};
+type Client={
+  from:(table:string)=>any;
+  rpc?:(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:{message:string}|null}>;
+};
 const RANGE_DAYS:Record<Exclude<ReportRange,'all'>,number>={ '7d':7,'30d':30,'90d':90 };
 export function parseReportRange(value:string|undefined):ReportRange{return REPORT_RANGES.includes(value as ReportRange)?value as ReportRange:'30d'}
 export function reportCutoff(range:ReportRange, asOf=now()):string|null { if(range==='all')return null; return new Date(asOf.getTime()-RANGE_DAYS[range]*86400000).toISOString(); }
@@ -246,7 +263,11 @@ export function financialMetricCaseIds(bridge:MoneyBridge, metric:FinancialRepor
   return bridge.caseIdsByState?.[metric] ?? [];
 }
 
-export function financialReportRecordsHref(input:{range:ReportRange;currency:string;metric:FinancialReportMetric;category?:string;timezone?:string}):string {
+export function financialMetricCaseCount(bridge:MoneyBridge, metric:FinancialReportMetric):number {
+  return bridge.caseCountsByState?.[metric] ?? financialMetricCaseIds(bridge, metric).length;
+}
+
+export function financialReportRecordsHref(input:{range:ReportRange;currency:string;metric:FinancialReportMetric;category?:string;timezone?:string;from?:string;to?:string}):string {
   const params = new URLSearchParams({
     kind: 'case',
     dimension: input.category ? 'category' : 'financial',
@@ -256,6 +277,8 @@ export function financialReportRecordsHref(input:{range:ReportRange;currency:str
   });
   if (input.category) params.set('value', input.category);
   if (input.timezone) params.set('timezone', normalizeReportTimezone(input.timezone));
+  if (input.from) params.set('from', input.from);
+  if (input.to) params.set('to', input.to);
   return `/financials/reports/records?${params.toString()}`;
 }
 
@@ -274,7 +297,7 @@ export function aggregateMoneyBridges(rows:Array<Record<string,unknown>>):MoneyB
       currency,requestedMinor:0,exposedMinor:0,approvedMinor:0,paidMinor:0,
       estimatedLossMinor:0,preventedMinor:0,realisedLossMinor:0,
       recoverableMinor:0,recoveredMinor:0,outstandingMinor:0,
-      writtenOffMinor:0,finalNetLossMinor:0,knownStates:[],caseIds:[],caseIdsByState:{},
+      writtenOffMinor:0,finalNetLossMinor:0,knownStates:[],caseIds:[],caseIdsByState:{},caseCountsByState:{},
     };
     if(rowStates.has('requested'))bridge.requestedMinor+=Number(row.requested_minor||0);
     if(rowStates.has('exposed'))bridge.exposedMinor+=Number(row.exposed_minor||0);
@@ -334,8 +357,36 @@ export function aggregateMoneyBridges(rows:Array<Record<string,unknown>>):MoneyB
       [...(casesByStateByCurrency.get(bridge.currency)??new Map()).entries()]
         .map(([state,caseIds])=>[state,[...caseIds].sort()]),
     );
+    bridge.caseCountsByState=Object.fromEntries(
+      Object.entries(bridge.caseIdsByState ?? {}).map(([state, caseIds]) => [state, caseIds?.length ?? 0]),
+    );
   }
   return[...byCurrency.values()].sort((a,b)=>a.currency.localeCompare(b.currency));
+}
+
+function applyCanonicalCurrencyAggregate(
+  canonical: CanonicalCurrencyAggregate,
+  compatibility: MoneyBridge | undefined,
+): MoneyBridge {
+  return {
+    currency: canonical.currency,
+    requestedMinor: canonical.requestedMinor,
+    exposedMinor: canonical.exposedMinor,
+    approvedMinor: canonical.approvedMinor,
+    paidMinor: canonical.paidMinor,
+    estimatedLossMinor: canonical.estimatedLossMinor,
+    preventedMinor: canonical.preventedMinor,
+    realisedLossMinor: canonical.confirmedLossMinor,
+    recoverableMinor: canonical.recoverableMinor,
+    recoveredMinor: canonical.recoveredMinor,
+    outstandingMinor: canonical.outstandingMinor,
+    writtenOffMinor: canonical.writtenOffMinor,
+    finalNetLossMinor: canonical.finalNetLossMinor,
+    knownStates: canonical.knownStates,
+    caseIds: compatibility?.caseIds ?? [],
+    caseIdsByState: compatibility?.caseIdsByState ?? {},
+    caseCountsByState: canonical.caseCountsByState,
+  };
 }
 
 export function buildReportTrend(
@@ -384,6 +435,30 @@ export function buildReportTrend(
   return [...trendMap.values()].sort((a, b) => a.currency.localeCompare(b.currency) || a.date.localeCompare(b.date));
 }
 
+export function dashboardTrendMismatches(
+  bridge: MoneyBridge,
+  trend: ReportTrendPoint[],
+): FinancialReportMetric[] {
+  const points = trend.filter((point) => point.currency === bridge.currency);
+  const totals = points.reduce(
+    (result, point) => ({
+      exposed: result.exposed + point.exposureMinor,
+      prevented: result.prevented + point.preventedMinor,
+      recovered: result.recovered + point.recoveredMinor,
+      confirmed_loss: result.confirmed_loss + point.realisedLossMinor,
+    }),
+    { exposed: 0, prevented: 0, recovered: 0, confirmed_loss: 0 },
+  );
+  const expected = {
+    exposed: bridge.exposedMinor,
+    prevented: bridge.preventedMinor,
+    recovered: bridge.recoveredMinor,
+    confirmed_loss: bridge.realisedLossMinor,
+  };
+  return (Object.keys(expected) as Array<keyof typeof expected>)
+    .filter((metric) => totals[metric] !== expected[metric]);
+}
+
 /**
  * The reconstructed production baseline does not yet have the later
  * `case_financial_summaries.known_states` projection column. Derive the
@@ -395,6 +470,10 @@ async function attachKnownFinancialStates(
   client: Client,
   merchantId: string,
   financialRows: Array<Record<string, any>>,
+  preloadedEntries?: {
+    data: Array<Record<string, any>> | null;
+    error: { message?: string } | null;
+  },
 ): Promise<Array<Record<string, any>>> {
   if (!financialRows.length) return financialRows;
   const caseIds = financialRows
@@ -402,11 +481,11 @@ async function attachKnownFinancialStates(
     .filter((value): value is string => Boolean(value));
   if (!caseIds.length) return financialRows.map((row) => ({ ...row, known_states: [] }));
 
-  const { data: entryData, error } = await client
-    .from(TABLES.CASE_FINANCIAL_ENTRIES)
-    .select('support_payout_case_id,currency,state')
-    .eq('merchant_id', merchantId)
-    .in('support_payout_case_id', caseIds);
+  const { data: entryData, error } = preloadedEntries ?? await client
+      .from(TABLES.CASE_FINANCIAL_ENTRIES)
+      .select('support_payout_case_id,currency,state')
+      .eq('merchant_id', merchantId)
+      .in('support_payout_case_id', caseIds);
   if (error) return financialRows.map((row) => ({ ...row, known_states: [] }));
 
   const statesByCaseCurrency = new Map<string, Set<string>>();
@@ -455,14 +534,29 @@ export async function loadDashboardPeriodComparison(
     updated_at?: string | null;
   }>;
   const caseIds = cases.map((row) => row.id);
-  const { data: financialData } = caseIds.length
-    ? await client
-        .from(TABLES.CASE_FINANCIAL_SUMMARIES)
-        .select('support_payout_case_id,currency,requested_minor,exposed_minor,prevented_minor,confirmed_loss_minor,recovered_minor')
-        .eq('merchant_id', merchantId)
-        .in('support_payout_case_id', caseIds)
-    : { data: [] };
-  const attachedFinancial = await attachKnownFinancialStates(client, merchantId, (financialData ?? []) as Array<Record<string, any>>);
+  const [financialResult, entryResult] = caseIds.length
+    ? await Promise.all([
+        client
+          .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+          .select('support_payout_case_id,currency,requested_minor,exposed_minor,prevented_minor,confirmed_loss_minor,recovered_minor')
+          .eq('merchant_id', merchantId)
+          .in('support_payout_case_id', caseIds),
+        client
+          .from(TABLES.CASE_FINANCIAL_ENTRIES)
+          .select('support_payout_case_id,currency,state')
+          .eq('merchant_id', merchantId)
+          .in('support_payout_case_id', caseIds),
+      ])
+    : [{ data: [] }, { data: [], error: null }];
+  const attachedFinancial = await attachKnownFinancialStates(
+    client,
+    merchantId,
+    (financialResult.data ?? []) as Array<Record<string, any>>,
+    {
+      data: (entryResult.data ?? []) as Array<Record<string, any>>,
+      error: entryResult.error ?? null,
+    },
+  );
   const financialTruth = enforceFinancialTruth(attachedFinancial);
   const financial = financialTruth.rows as Array<{
     support_payout_case_id: string;
@@ -506,6 +600,80 @@ function addRank(
   map.set(id,row);
 }
 
+/**
+ * Records that have reached a terminal state are settled, not stale. A delivered
+ * shipment or a closed ticket is never written again, so counting it against
+ * source freshness makes every merchant with more than 48 hours of history
+ * report a permanently growing "records stale" figure against a source that is
+ * in fact healthy. Only records a live feed is still expected to touch can go
+ * stale, so the staleness count exempts terminal rows.
+ *
+ * Entries are deliberately narrow. A table absent from this map gets no
+ * exemption: over-broad terminal sets would hide the genuine feed outages this
+ * measure exists to surface. Orders are excluded on purpose — an order can still
+ * be refunded or amended long after fulfilment, so no fulfilment state settles
+ * it. Returns and cases likewise have no state that is provably final here.
+ */
+const COVERAGE_TERMINAL_STATES: Partial<Record<string,{column:string;values:readonly string[]}>>={
+  [TABLES.SOURCE_SHIPMENTS]:{column:'status',values:['delivered']},
+  [TABLES.SOURCE_TICKETS]:{column:'status',values:['closed']},
+};
+
+/**
+ * Refunds are immutable ingest events; no row is ever expected to change, so
+ * none of them can fall behind a live feed.
+ */
+const COVERAGE_IMMUTABLE_TABLES=new Set<string>([TABLES.SOURCE_REFUNDS]);
+
+async function loadReportingCoverage(
+  client: Client,
+  merchantId: string,
+  staleBefore: string,
+): Promise<CoverageRow[]> {
+  const coverageSpecs=[
+    [TABLES.SOURCE_ORDERS,'Orders','/sources/connected','connected-source'],
+    [TABLES.SOURCE_TICKETS,'Tickets','/sources/connected','connected-source'],
+    [TABLES.SOURCE_SHIPMENTS,'Shipments','/sources/connected','connected-source'],
+    [TABLES.SOURCE_REFUNDS,'Refunds','/sources/connected','connected-source'],
+    [TABLES.SOURCE_RETURNS,'Returns','/sources/connected','connected-source'],
+    [TABLES.MERCHANT_CLAIMS,'Cases','/cases','internal'],
+  ] as const;
+
+  return Promise.all(
+    coverageSpecs.map(async([table,objectType,href,scope])=>{
+      const date=table===TABLES.SOURCE_REFUNDS?'ingested_at':'updated_at';
+      const terminal=COVERAGE_TERMINAL_STATES[table];
+      // Rows older than the cutoff that are still expected to change. A null
+      // status is never treated as terminal, so an unmapped row still counts.
+      let staleQuery=client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId).lt(date,staleBefore);
+      if(terminal){
+        staleQuery=staleQuery.or(`${terminal.column}.is.null,${terminal.column}.not.in.(${terminal.values.join(',')})`);
+      }
+      // Internal records have no upstream feed, so they cannot go stale against
+      // one. Their row still reports record count and latest activity, which is
+      // the useful part; an idle open case is a workload signal that the SLA and
+      // overdue surfaces already carry, and "Repair connection" is not an action
+      // that applies to a record created inside Unauth.
+      const measuresSourceFreshness=scope==='connected-source'&&!COVERAGE_IMMUTABLE_TABLES.has(table);
+      const [latest,stale]=await Promise.all([
+        client.from(table).select(`id,${date}`,{count:'exact'}).eq('merchant_id',merchantId).order(date,{ascending:false}).limit(1),
+        measuresSourceFreshness?staleQuery:Promise.resolve({count:0}),
+      ]);
+      const records=latest.count??0;
+      const staleRecords=Math.min(records,Math.max(0,stale.count??0));
+      return{
+        objectType,
+        scope,
+        records,
+        freshRecords:records-staleRecords,
+        staleRecords,
+        latestAt:(latest.data as Array<Record<string,any>>|null)?.[0]?.[date]??null,
+        href,
+      };
+    }),
+  );
+}
+
 /** Canonical reporting projection. Money never crosses currency boundaries. */
 export async function loadIntelligenceReport(
   client:Client,
@@ -517,6 +685,19 @@ export async function loadIntelligenceReport(
   const asOf=options.asOf??now();
   const normalizedTimezone=normalizeReportTimezone(timezone);
   const cutoff=reportCutoff(range,asOf);
+  const staleBefore=new Date(nowMs()-48*3600000).toISOString();
+  const canonicalAggregatePromise = client.rpc
+    ? loadCanonicalFinancialAggregate(client as Parameters<typeof loadCanonicalFinancialAggregate>[0], merchantId, {
+      from: cutoff,
+      to: asOf.toISOString(),
+    })
+    : Promise.resolve(null);
+  const recoveryPromise=client
+    .from(TABLES.RECOVERY_CASES)
+    .select('id,status,recovery_type,currency,amount_recovered,updated_at')
+    .eq('merchant_id',merchantId)
+    .limit(10000);
+  const coveragePromise=loadReportingCoverage(client,merchantId,staleBefore);
   let casesQuery=client
     .from(TABLES.MERCHANT_CLAIMS)
     .select('id,status,claim_type,reason_normalized,loss_attribution,currency,submitted_at,created_at,updated_at,snoozed_until')
@@ -527,21 +708,38 @@ export async function loadIntelligenceReport(
   const {data:caseData}=await casesQuery;
   const cases=(caseData??[]) as Array<Record<string,any>>;
   const caseIds=cases.map(c=>c.id);
-  const {data:financialData}=caseIds.length
-    ?await client
-      .from(TABLES.CASE_FINANCIAL_SUMMARIES)
-      .select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,prevented_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,written_off_minor,updated_at')
-      .eq('merchant_id',merchantId)
-      .in('support_payout_case_id',caseIds)
-    :{data:[]};
+  const [financialResult,entryResult]=caseIds.length
+    ?await Promise.all([
+      client
+        .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+        .select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,prevented_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,written_off_minor,updated_at')
+        .eq('merchant_id',merchantId)
+        .in('support_payout_case_id',caseIds),
+      client
+        .from(TABLES.CASE_FINANCIAL_ENTRIES)
+        .select('support_payout_case_id,currency,state')
+        .eq('merchant_id',merchantId)
+        .in('support_payout_case_id',caseIds),
+    ])
+    :[{data:[]},{data:[],error:null}];
+  const financialData=financialResult.data;
   const attachedFinancial=await attachKnownFinancialStates(
     client,
     merchantId,
     (financialData??[]) as Array<Record<string,any>>,
+    {
+      data:(entryResult.data??[]) as Array<Record<string,any>>,
+      error:entryResult.error??null,
+    },
   );
   const financialTruth=enforceFinancialTruth(attachedFinancial);
   const financial=financialTruth.rows;
-  const bridges=aggregateMoneyBridges(financial);
+  const compatibilityBridges=aggregateMoneyBridges(financial);
+  const canonicalAggregate=await canonicalAggregatePromise;
+  const compatibilityByCurrency=new Map(compatibilityBridges.map((bridge)=>[bridge.currency,bridge]));
+  const bridges=canonicalAggregate?.source==='canonical'
+    ?canonicalAggregate.currencies.map((row)=>applyCanonicalCurrencyAggregate(row,compatibilityByCurrency.get(row.currency)))
+    :compatibilityBridges;
   const financialByCase=new Map(financial.map(r=>[r.support_payout_case_id,r]));
   const causesMap=new Map<string,RankedRow>();
 
@@ -658,11 +856,7 @@ export async function loadIntelligenceReport(
    * `amount_recovered_minor` column. Convert to minor units at the reporting
    * boundary, where every other financial value is already minor.
    */
-  const {data:recoveryData}=await client
-    .from(TABLES.RECOVERY_CASES)
-    .select('id,status,recovery_type,currency,amount_recovered,updated_at')
-    .eq('merchant_id',merchantId)
-    .limit(10000);
+  const {data:recoveryData}=await recoveryPromise;
   const recoveryMap=new Map<string,RankedRow>();
   for(const r of (recoveryData??[]) as Array<Record<string,any>>){
     if(cutoff&&r.updated_at<cutoff)continue;
@@ -680,36 +874,7 @@ export async function loadIntelligenceReport(
     );
   }
 
-  const coverageSpecs=[
-    [TABLES.SOURCE_ORDERS,'Orders','/orders','connected-source'],
-    [TABLES.SOURCE_TICKETS,'Tickets','/tickets','connected-source'],
-    [TABLES.SOURCE_SHIPMENTS,'Shipments','/sources/connected','connected-source'],
-    [TABLES.SOURCE_REFUNDS,'Refunds','/refunds','connected-source'],
-    [TABLES.SOURCE_RETURNS,'Returns','/returns','connected-source'],
-    [TABLES.MERCHANT_CLAIMS,'Cases','/cases','internal'],
-  ] as const;
-  const staleBefore=new Date(nowMs()-48*3600000).toISOString();
-  const coverage:CoverageRow[]=await Promise.all(
-    coverageSpecs.map(async([table,objectType,href,scope])=>{
-      const date=table===TABLES.SOURCE_REFUNDS?'ingested_at':'updated_at';
-      const [all,fresh,latest]=await Promise.all([
-        client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId),
-        client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId).gte(date,staleBefore),
-        client.from(table).select(`id,${date}`).eq('merchant_id',merchantId).order(date,{ascending:false}).limit(1),
-      ]);
-      const records=all.count??0;
-      const freshRecords=fresh.count??0;
-      return{
-        objectType,
-        scope,
-        records,
-        freshRecords,
-        staleRecords:Math.max(0,records-freshRecords),
-        latestAt:(latest.data as Array<Record<string,any>>|null)?.[0]?.[date]??null,
-        href,
-      };
-    }),
-  );
+  const coverage=await coveragePromise;
 
   const issues:string[]=[...financialTruth.issues];
   const affectedCurrencies=new Set<string>();
@@ -740,19 +905,13 @@ export async function loadIntelligenceReport(
       affectedMetrics.add('recovered');
       affectedMetrics.add('recoverable');
     }
-    const trendExposure=trend
-      .filter(point=>point.currency===bridge.currency)
-      .reduce((sum,point)=>sum+point.exposureMinor,0);
-    const trendRecovered=trend
-      .filter(point=>point.currency===bridge.currency)
-      .reduce((sum,point)=>sum+point.recoveredMinor,0);
-    if(trendExposure!==bridge.exposedMinor||trendRecovered!==bridge.recoveredMinor){
+    const trendMismatches=dashboardTrendMismatches(bridge,trend);
+    if(trendMismatches.length>0){
       issues.push(
         `${bridge.currency}: chart totals do not reconcile with the financial value strip`,
       );
       affectedCurrencies.add(bridge.currency);
-      if(trendExposure!==bridge.exposedMinor)affectedMetrics.add('exposed');
-      if(trendRecovered!==bridge.recoveredMinor)affectedMetrics.add('recovered');
+      for(const metric of trendMismatches)affectedMetrics.add(metric);
     }
   }
   const confidence:FinancialConfidence={
@@ -761,6 +920,8 @@ export async function loadIntelligenceReport(
     affectedCurrencies:[...affectedCurrencies].sort(),
     affectedMetrics:[...affectedMetrics].sort(),
     excludedRecordCount:financialTruth.excludedRecordCount+invalidCurrencyRows,
+    currencyExcludedRecordCount:invalidCurrencyRows,
+    unreconciledExcludedRecordCount:financialTruth.excludedRecordCount,
   };
   return{
     range,
@@ -778,6 +939,13 @@ export async function loadIntelligenceReport(
     coverage,
     reconciliation:{ok:issues.length===0,issues,confidence},
     recordCount:cases.length,
+    financialScope:{
+      definitionVersion:canonicalAggregate?.definitionVersion??'legacy-financial-summary-v1',
+      timeBasis:'case_submitted_at',
+      mixedCurrencyPolicy:'separated',
+      unknownPolicy:'withheld_not_zero',
+      source:canonicalAggregate?.source==='canonical'?'canonical':'compatibility',
+    },
   };
 }
 
@@ -789,5 +957,5 @@ export const REPORT_DEFINITIONS=[
   {id:'policy',name:'Policy effectiveness',definition:'Recorded merchant decisions grouped by policy result.',numerator:'Cases with the selected recorded result.',denominator:'Cases with a recorded policy result.',timeBasis:'Case submitted in selected period.'},
   {id:'operations',name:'Operations / SLA',definition:'Case workload grouped by canonical state.',numerator:'Cases in each state.',denominator:'All cases in the selected period.',timeBasis:'Case submitted in selected period.'},
   {id:'evidence',name:'Evidence gaps',definition:'Cases whose canonical workflow state identifies missing or awaited evidence.',numerator:'Cases in evidence-waiting states.',denominator:'Open cases in the selected period.',timeBasis:'Case submitted in selected period.'},
-  {id:'coverage',name:'Source coverage',definition:'Imported object records and freshness by object family.',numerator:'Records refreshed in the last 48 hours.',denominator:'All imported records in the merchant projection.',timeBasis:'Current source projection.'},
+  {id:'coverage',name:'Source coverage',definition:'Imported object records and freshness by object family.',numerator:'Records still expected to change that a source refreshed in the last 48 hours. Terminal records are counted as settled, not stale.',denominator:'All imported records in the merchant projection.',timeBasis:'Current source projection.'},
 ] as const;

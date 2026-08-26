@@ -6,7 +6,7 @@ export const woocommerceProvider: IntegrationProvider = {
   logoSrc: '/providers/woocommerce.svg',
   category: 'commerce',
   authMode: 'api_key',
-  buildStatus: 'partial',
+  codeMaturity: 'partial',
   description: 'Orders, refunds, fulfillments, and customer context from WooCommerce.',
   evidenceCapabilities: [
     'order_value',

@@ -6,29 +6,30 @@ import {
   requirePagePermission,
 } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
-import {
-  FilterChip,
-  LeadSummary,
-  PageFrame,
-  RegistrySurface,
-} from '@/components/ui';
-import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
-import { LossLedger, type LossLedgerRow } from '@/components/losses/LossLedger';
-import {
-  LossTrendChart,
-  type LossTrendCause,
-  type LossTrendPoint,
-} from '@/components/losses/LossVisuals';
+import { PageFrame } from '@/components/ui';
+import type { LossLedgerRow } from '@/components/losses/LossLedger';
+import { LossLedgerOperations } from '@/components/losses/LossLedgerOperations';
+import ExportMenu from '@/components/reports/ExportMenu';
 import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
-import { dominantCurrency, formatDateShort, formatMinorCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
-import { label } from '@/lib/ui/labels';
-import { selectLossContributions } from '@/lib/visualisation/chartSelectors';
 import {
   isLossWrittenOff,
   lossFinancialDisplay,
   summarizeKnownLossExposure,
 } from '@/lib/losses/financialDisplay';
+import {
+  filterAndSortLossRows,
+  LOSS_QUERY_STATUSES,
+  type LossQuerySort,
+  type LossQueryStatus,
+} from '@/lib/losses/queryState';
+import {
+  parseReportRange,
+  reportCutoff,
+  type ReportRange,
+} from '@/lib/reporting/intelligence';
+import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
+import { loadCanonicalFinancialAggregate } from '@/lib/financial/canonicalAggregates';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,12 +58,24 @@ type FinancialRow = {
   estimated_loss_minor: number;
   recoverable_minor: number;
   recovered_minor: number;
+  prevented_minor: number;
   written_off_minor: number;
   known_states: string[] | null;
 };
 
 type FinancialQueryRow = Omit<FinancialRow, 'known_states'> & {
   known_states?: string[] | null;
+};
+
+type PayoutIdentityRow = {
+  id: string;
+  source_order_id: string | null;
+};
+
+type OrderIdentityRow = {
+  id: string;
+  order_number: string | null;
+  customer_name: string | null;
 };
 
 type FinancialEntryRow = {
@@ -91,57 +104,35 @@ type OrphanRecoveryRow = {
 
 type LossSearchParams = Record<string, string | string[] | undefined>;
 
-type MinorSummary = {
-  totalMinor: number | null;
-  currency: string | null;
-  mixedCount: number;
-  known: boolean;
-};
-
 function oneParam(value: string | string[] | undefined): string | null {
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
-}
-
-function sumKnownMinor(
-  rows: LossLedgerRow[],
-  getValue: (row: LossLedgerRow) => number | null | undefined,
-  excludeWrittenOff = false,
-): MinorSummary {
-  const represented = rows.filter((row) => {
-    const value = getValue(row);
-    return value != null && Number.isFinite(value) && Boolean(row.currency) && (!excludeWrittenOff || !row.writtenOff);
-  });
-  if (!represented.length) return { totalMinor: null, currency: null, mixedCount: 0, known: false };
-
-  const currency = dominantCurrency(represented);
-  let totalMinor = 0;
-  let mixedCount = 0;
-  for (const row of represented) {
-    if (row.currency?.toUpperCase() !== currency) {
-      mixedCount += 1;
-      continue;
-    }
-    totalMinor += getValue(row) ?? 0;
-  }
-  return { totalMinor, currency, mixedCount, known: true };
 }
 
 function lossCauseKey(row: LossLedgerRow): string {
   return row.attribution ?? row.category ?? 'unattributed';
 }
 
-function hrefForLosses({ attribution, view }: { attribution?: string | null; view?: string | null }) {
+type LossQueryHref = {
+  range?: ReportRange | null;
+  currency?: string | null;
+  source?: string | null;
+  status?: LossQueryStatus | null;
+  search?: string | null;
+  sort?: LossQuerySort | null;
+  page?: number | null;
+};
+
+function hrefForLosses({ range, currency, source, status, search, sort, page }: LossQueryHref) {
   const params = new URLSearchParams();
-  if (attribution) params.set('attribution', attribution);
-  if (view) params.set('view', view);
+  if (range) params.set('range', range);
+  if (currency) params.set('currency', currency);
+  if (source) params.set('source', source);
+  if (status && status !== 'all') params.set('status', status);
+  if (search) params.set('search', search);
+  if (sort && sort !== 'updated_desc') params.set('sort', sort);
+  if (page && page > 1) params.set('page', String(page));
   const query = params.toString();
   return query ? `/financials/losses?${query}` : '/financials/losses';
-}
-
-function trendBucket(date: Date, weekly: boolean): Date {
-  if (!weekly) return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  const startOfWeekOffset = (date.getUTCDay() + 6) % 7;
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - startOfWeekOffset));
 }
 
 function shouldRetryWithoutKnownStates(error: { code?: string; message?: string } | null): boolean {
@@ -165,68 +156,6 @@ function normaliseFinancialRows(rows: FinancialQueryRow[], entries: FinancialEnt
   }));
 }
 
-function buildLossTrend(
-  entries: FinancialEntryRow[],
-  losses: LossCaseRow[],
-  currency: string | null,
-): LossTrendPoint[] {
-  if (!currency) return [];
-  const lossById = new Map(losses.map((loss) => [loss.id, loss]));
-  const lossIdByCaseId = new Map(
-    losses
-      .filter((loss) => loss.support_payout_case_id)
-      .map((loss) => [loss.support_payout_case_id as string, loss.id]),
-  );
-  const dated = entries.filter((entry) => {
-    if (entry.state !== 'confirmed_loss' || entry.amount_minor <= 0 || entry.currency?.toUpperCase() !== currency) return false;
-    return Number.isFinite(Date.parse(entry.effective_at));
-  });
-  if (!dated.length) return [];
-
-  const timestamps = dated.map((entry) => Date.parse(entry.effective_at));
-  const spanDays = (Math.max(...timestamps) - Math.min(...timestamps)) / 86_400_000;
-  const weekly = spanDays > 31;
-  const groups = new Map<string, { date: Date; causes: Map<string, LossTrendCause> }>();
-
-  for (const entry of dated) {
-    const date = trendBucket(new Date(entry.effective_at), weekly);
-    const key = date.toISOString().slice(0, 10);
-    const group = groups.get(key) ?? { date, causes: new Map<string, LossTrendCause>() };
-    const lossId = entry.loss_case_id ?? (entry.support_payout_case_id ? lossIdByCaseId.get(entry.support_payout_case_id) : undefined);
-    const loss = lossId ? lossById.get(lossId) : undefined;
-    const causeKey = loss?.attribution ?? loss?.case_category ?? 'unattributed';
-    const causeLabel = loss?.attribution
-      ? label('attribution', causeKey)
-      : loss?.case_category
-        ? label('lossCategory', causeKey)
-        : 'Attribution unavailable';
-    const existing = group.causes.get(causeKey);
-    group.causes.set(causeKey, {
-      key: causeKey,
-      label: causeLabel,
-      valueMinor: (existing?.valueMinor ?? 0) + entry.amount_minor,
-      href: hrefForLosses({ attribution: causeKey }),
-    });
-    groups.set(key, group);
-  }
-
-  return [...groups.values()]
-    .sort((left, right) => left.date.getTime() - right.date.getTime())
-    .map((group) => {
-      const causes = [...group.causes.values()].sort((left, right) => right.valueMinor - left.valueMinor);
-      return {
-        key: group.date.toISOString().slice(0, 10),
-        label: weekly ? `Week of ${formatDateShort(group.date)}` : formatDateShort(group.date),
-        totalMinor: causes.reduce((sum, cause) => sum + cause.valueMinor, 0),
-        causes,
-      };
-    });
-}
-
-function metricValue(summary: MinorSummary): string {
-  return summary.known ? formatMinorCurrencyNullable(summary.totalMinor, summary.currency) : '—';
-}
-
 export default async function LossesPage({
   searchParams,
 }: {
@@ -240,28 +169,43 @@ export default async function LossesPage({
   if (!ctx) redirect('/overview');
 
   const params = searchParams ? await searchParams : {};
-  const selectedAttribution = oneParam(params.attribution);
-  const selectedViewParam = oneParam(params.view);
-  const selectedView = ['all', 'confirmed', 'estimated', 'recoverable', 'prevented', 'written_off'].includes(selectedViewParam ?? '')
-    ? selectedViewParam as 'all' | 'confirmed' | 'estimated' | 'recoverable' | 'prevented' | 'written_off'
+  const range = parseReportRange(oneParam(params.range) ?? undefined);
+  const selectedSearch = (oneParam(params.search) ?? oneParam(params.attribution))?.slice(0, 100) ?? null;
+  const selectedSource = oneParam(params.source)?.slice(0, 100) ?? null;
+  const requestedCurrency = oneParam(params.currency)?.toUpperCase() ?? null;
+  const statusParam = oneParam(params.status) ?? oneParam(params.view);
+  const selectedStatus = LOSS_QUERY_STATUSES.includes(statusParam as LossQueryStatus)
+    ? statusParam as LossQueryStatus
     : 'all';
+  const sortParam = oneParam(params.sort);
+  const selectedSort: LossQuerySort = ['updated_asc', 'loss_desc', 'outstanding_desc'].includes(sortParam ?? '')
+    ? sortParam as LossQuerySort
+    : 'updated_desc';
+  const pageParam = Number(oneParam(params.page));
+  const selectedPage = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
   const nowMs = Date.now();
+  const cutoff = reportCutoff(range, new Date(nowMs));
 
-  const [lossResult, orphanResult] = await Promise.all([
+  const [lossResult, orphanResult, aggregate] = await Promise.all([
     serviceClient
       .from(TABLES.LOSS_CASES)
-      .select('id,support_payout_case_id,case_category,attribution,counterparty_type,counterparty_name,status,recoverability,financial_state,prevention_only,written_off_at,estimated_recovery_minor,currency,source_metadata,updated_at')
+      .select('id,support_payout_case_id,case_category,attribution,counterparty_type,counterparty_name,status,recoverability,financial_state,prevention_only,written_off_at,estimated_recovery_minor,currency,source_metadata,updated_at', { count: 'exact' })
       .eq('merchant_id', ctx.merchantId)
       .order('updated_at', { ascending: false })
       .limit(500),
     serviceClient
       .from(TABLES.RECOVERY_CASES)
-      .select('id,support_payout_case_id,recovery_type,owner_type,status,merchant_loss_amount,eligible_loss_amount,estimated_recoverable_max,amount_recovered,currency,updated_at')
+      .select('id,support_payout_case_id,recovery_type,owner_type,status,merchant_loss_amount,eligible_loss_amount,estimated_recoverable_max,amount_recovered,currency,updated_at', { count: 'exact' })
       .eq('merchant_id', ctx.merchantId)
       .is('loss_case_id', null)
       .eq('prevention_only', false)
       .gt('merchant_loss_amount', 0)
       .limit(500),
+    loadCanonicalFinancialAggregate(serviceClient, ctx.merchantId, {
+      from: cutoff,
+      to: new Date(nowMs).toISOString(),
+      currency: requestedCurrency && /^[A-Z]{3}$/.test(requestedCurrency) ? requestedCurrency : null,
+    }),
   ]);
   if (lossResult.error) throw new Error(`loss_registry_failed: ${lossResult.error.message}`);
   if (orphanResult.error) throw new Error(`loss_recovery_registry_failed: ${orphanResult.error.message}`);
@@ -269,13 +213,16 @@ export default async function LossesPage({
   const raw = (lossResult.data ?? []) as LossCaseRow[];
   const orphanRecoveries = (orphanResult.data ?? []) as OrphanRecoveryRow[];
   const lossIds = raw.map((row) => row.id);
-  const caseIds = raw.flatMap((row) => row.support_payout_case_id ? [row.support_payout_case_id] : []);
+  const caseIds = [...new Set([
+    ...raw.flatMap((row) => row.support_payout_case_id ? [row.support_payout_case_id] : []),
+    ...orphanRecoveries.map((row) => row.support_payout_case_id),
+  ])];
 
-  const [financialResult, entriesByCaseResult, entriesByLossResult] = await Promise.all([
+  const [financialResult, entriesByCaseResult, entriesByLossResult, payoutIdentityResult] = await Promise.all([
     caseIds.length
       ? serviceClient
         .from(TABLES.CASE_FINANCIAL_SUMMARIES)
-        .select('support_payout_case_id,currency,confirmed_loss_minor,estimated_loss_minor,recoverable_minor,recovered_minor,written_off_minor,known_states')
+        .select('support_payout_case_id,currency,confirmed_loss_minor,estimated_loss_minor,recoverable_minor,recovered_minor,prevented_minor,written_off_minor,known_states')
         .eq('merchant_id', ctx.merchantId)
         .in('support_payout_case_id', caseIds)
       : Promise.resolve({ data: [], error: null }),
@@ -295,6 +242,13 @@ export default async function LossesPage({
         .in('loss_case_id', lossIds)
         .order('effective_at', { ascending: true })
       : Promise.resolve({ data: [], error: null }),
+    caseIds.length
+      ? serviceClient
+        .from(TABLES.MERCHANT_CLAIMS)
+        .select('id,source_order_id')
+        .eq('merchant_id', ctx.merchantId)
+        .in('id', caseIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   let financialError = financialResult.error;
   let financialData = (financialResult.data ?? []) as FinancialQueryRow[];
@@ -302,7 +256,7 @@ export default async function LossesPage({
     const legacyFinancialResult = caseIds.length
       ? await serviceClient
         .from(TABLES.CASE_FINANCIAL_SUMMARIES)
-        .select('support_payout_case_id,currency,confirmed_loss_minor,estimated_loss_minor,recoverable_minor,recovered_minor,written_off_minor')
+        .select('support_payout_case_id,currency,confirmed_loss_minor,estimated_loss_minor,recoverable_minor,recovered_minor,prevented_minor,written_off_minor')
         .eq('merchant_id', ctx.merchantId)
         .in('support_payout_case_id', caseIds)
       : { data: [], error: null };
@@ -312,6 +266,20 @@ export default async function LossesPage({
   if (financialError) throw new Error(`loss_financial_summary_failed: ${financialError.message}`);
   if (entriesByCaseResult.error) throw new Error(`loss_financial_history_failed: ${entriesByCaseResult.error.message}`);
   if (entriesByLossResult.error) throw new Error(`loss_financial_loss_history_failed: ${entriesByLossResult.error.message}`);
+  if (payoutIdentityResult.error) throw new Error(`loss_case_identity_failed: ${payoutIdentityResult.error.message}`);
+
+  const payoutIdentities = (payoutIdentityResult.data ?? []) as PayoutIdentityRow[];
+  const orderIds = [...new Set(payoutIdentities.flatMap((row) => row.source_order_id ? [row.source_order_id] : []))];
+  const orderIdentityResult = orderIds.length
+    ? await serviceClient
+      .from(TABLES.SOURCE_ORDERS)
+      .select('id,order_number,customer_name')
+      .eq('merchant_id', ctx.merchantId)
+      .in('id', orderIds)
+    : { data: [], error: null };
+  if (orderIdentityResult.error) throw new Error(`loss_order_identity_failed: ${orderIdentityResult.error.message}`);
+  const orderById = new Map(((orderIdentityResult.data ?? []) as OrderIdentityRow[]).map((row) => [row.id, row]));
+  const identityByCase = new Map(payoutIdentities.map((row) => [row.id, row.source_order_id ? orderById.get(row.source_order_id) ?? null : null]));
 
   const entries = [...new Map(
     [...(entriesByCaseResult.data ?? []), ...(entriesByLossResult.data ?? [])]
@@ -327,6 +295,8 @@ export default async function LossesPage({
     return {
       id: row.id,
       supportPayoutCaseId: row.support_payout_case_id,
+      caseReference: row.support_payout_case_id ? identityByCase.get(row.support_payout_case_id)?.order_number ?? null : null,
+      customerName: row.support_payout_case_id ? identityByCase.get(row.support_payout_case_id)?.customer_name ?? null : null,
       category: row.case_category,
       attribution: row.attribution,
       counterpartyType: row.counterparty_type,
@@ -343,6 +313,7 @@ export default async function LossesPage({
         : null,
       recoverableMinor: display.recoverableMinor,
       recoveredMinor: display.recoveredMinor,
+      preventedMinor: summary?.prevented_minor ?? null,
       currency: summary?.currency ?? row.currency,
       source: typeof row.source_metadata?.origin === 'string'
         ? row.source_metadata.origin
@@ -366,6 +337,8 @@ export default async function LossesPage({
       detailHref: `/financials/recovery/${recovery.id}`,
       derived: true,
       supportPayoutCaseId: recovery.support_payout_case_id,
+      caseReference: identityByCase.get(recovery.support_payout_case_id)?.order_number ?? null,
+      customerName: identityByCase.get(recovery.support_payout_case_id)?.customer_name ?? null,
       category: recovery.recovery_type === 'carrier_claim' ? 'delivery_loss' : 'unknown_post_purchase_loss',
       attribution: recovery.recovery_type,
       counterpartyType: recovery.owner_type,
@@ -380,6 +353,7 @@ export default async function LossesPage({
       netUnrecoveredMinor: recoveredMinor == null ? null : Math.max(0, merchantLossMinor - recoveredMinor),
       recoverableMinor: Math.round(recoverySoughtAmount(amounts) * 100),
       recoveredMinor,
+      preventedMinor: null,
       currency: recovery.currency,
       source: 'recovery_case',
       freshness: freshnessFromTimestamp(recovery.updated_at, nowMs),
@@ -387,113 +361,86 @@ export default async function LossesPage({
     };
   });
   const rows = [...canonicalRows, ...derivedRows];
+  const currencies = [...new Set([
+    ...rows.flatMap((row) => row.currency ? [row.currency.toUpperCase()] : []),
+    ...aggregate.currencies.map((row) => row.currency),
+  ])].sort();
+  const selectedCurrency = requestedCurrency && currencies.includes(requestedCurrency) ? requestedCurrency : null;
+  const currencyRows = selectedCurrency ? rows.filter((row) => row.currency?.toUpperCase() === selectedCurrency) : rows;
+  const sourceCohort = filterAndSortLossRows(currencyRows, {
+    cutoff,
+    source: null,
+    status: 'all',
+    search: null,
+    sort: selectedSort,
+  });
+  const sourceOptions = [...new Set(sourceCohort.map((row) => row.source ?? 'unavailable'))].sort();
+  const selectedSourceValue = selectedSource && sourceOptions.includes(selectedSource) ? selectedSource : null;
+  const preSearchRows = filterAndSortLossRows(currencyRows, {
+    cutoff,
+    source: selectedSourceValue,
+    status: selectedStatus,
+    search: null,
+    sort: selectedSort,
+  });
 
-  const exposure = summarizeKnownLossExposure(rows);
-  const entryCurrencies = entries
-    .filter((entry) => entry.state === 'confirmed_loss' && entry.amount_minor > 0 && entry.currency)
-    .map((entry) => entry.currency.toUpperCase());
-  const displayCurrency = exposure.currency ?? entryCurrencies[0] ?? null;
-  const confirmedLoss = sumKnownMinor(rows, (row) => row.realisedLossMinor, true);
-  const netUnrecovered = sumKnownMinor(rows, (row) => row.netUnrecoveredMinor);
-  const recoverable = sumKnownMinor(rows, (row) => row.recoverableMinor, true);
-  const mixedHint = Math.max(exposure.mixedCount, confirmedLoss.mixedCount, recoverable.mixedCount, netUnrecovered.mixedCount);
-  const contributions = selectLossContributions(rows.map((row) => ({
-    key: lossCauseKey(row),
-    label: row.attribution ? label('attribution', lossCauseKey(row)) : label('lossCategory', lossCauseKey(row)),
-    amountMinor: row.realisedLossMinor ?? row.estimatedLossMinor,
-    currency: row.currency,
-    writtenOff: row.writtenOff,
-  })), displayCurrency);
-  const topContributions = contributions.slice(0, 5);
-  const otherContributions = contributions.slice(5);
-  const otherValueMajor = otherContributions.reduce((sum, item) => sum + item.valueMajor, 0);
-  const causeOptions = otherContributions.length
-    ? [...topContributions, { key: '__other', label: 'Other', valueMajor: otherValueMajor }]
-    : topContributions;
-  const trend = buildLossTrend(entries, raw, displayCurrency);
-  const causeScopedRows = selectedAttribution === '__other'
-    ? rows.filter((row) => otherContributions.some((item) => item.key === lossCauseKey(row)))
-    : selectedAttribution
-      ? rows.filter((row) => lossCauseKey(row) === selectedAttribution)
-      : rows;
+  const exposure = summarizeKnownLossExposure(preSearchRows);
+  const entryCurrencies = entries.filter((entry) => entry.currency).map((entry) => entry.currency.toUpperCase());
+  const displayCurrency = selectedCurrency ?? exposure.currency ?? entryCurrencies[0] ?? null;
+  const priorRows = cutoff
+    ? (() => {
+        const currentStartMs = Date.parse(cutoff);
+        const periodMs = nowMs - currentStartMs;
+        if (!Number.isFinite(currentStartMs) || !(periodMs > 0)) return [];
+        const previousStart = new Date(currentStartMs - periodMs).toISOString();
+        return filterAndSortLossRows(currencyRows, {
+          cutoff: previousStart,
+          source: selectedSourceValue,
+          status: selectedStatus,
+          search: null,
+          sort: selectedSort,
+        }).filter((row) => {
+          const updatedMs = row.updatedAt ? Date.parse(row.updatedAt) : Number.NaN;
+          return Number.isFinite(updatedMs) && updatedMs < currentStartMs;
+        });
+      })()
+    : [];
+  const queryState: LossQueryHref = {
+    range,
+    currency: selectedCurrency,
+    source: selectedSourceValue,
+    status: selectedStatus,
+    search: selectedSearch,
+    sort: selectedSort,
+    page: selectedPage,
+  };
+  const lossHref = (patch: Partial<LossQueryHref>) => hrefForLosses({ ...queryState, ...patch });
+  const causeKeys = new Set(preSearchRows.map((row) => lossCauseKey(row)));
+  const selectedCauseKey = selectedSearch && causeKeys.has(selectedSearch) ? selectedSearch : null;
 
   return (
     <PageFrame
-      title="Losses"
-      subtitle="See where merchant value remains unrecovered and which causes deserve attention."
-      metrics={
-        <LeadSummary
-          aria-label="Loss financial summary"
-          lead={{
-            label: 'Net unrecovered',
-            value: metricValue(netUnrecovered),
-            description: mixedHint ? `${mixedHint} incompatible record${mixedHint === 1 ? '' : 's'} excluded` : 'Known loss less reconciled recovery',
-          }}
-          supporting={[
-            { label: 'Recoverable value', value: metricValue(recoverable), description: 'Eligible value still available to chase' },
-            { label: 'Confirmed loss', value: metricValue(confirmedLoss), description: 'Append-only confirmed loss stage' },
-            { label: 'Loss records', value: formatNumber(rows.length), description: derivedRows.length ? `${derivedRows.length} awaiting reconciliation` : 'Recorded loss cases' },
-          ]}
-        />
-      }
-      primaryVisual={
-        <div className="grid min-w-0 gap-4 xl:grid-cols-12">
-          <div className="min-w-0 xl:col-span-8">
-            <LossTrendChart
-              data={trend}
-              currency={displayCurrency}
-              mixedCurrencyCount={exposure.mixedCount}
-            />
-          </div>
-          <div className="min-w-0 self-start xl:col-span-4">
-            <RankedContributionChart
-              id="loss-causes"
-              title="Which causes account for most value?"
-              description="Recorded loss value ranked by the primary attribution"
-              items={causeOptions.map((item) => ({
-                label: item.label,
-                value: item.valueMajor,
-                displayValue: formatMinorCurrencyNullable(Math.round(item.valueMajor * 100), displayCurrency),
-                detail: item.key === '__other' ? `${otherContributions.length} causes` : undefined,
-              }))}
-              records={{ href: '/financials/losses', label: 'View all loss records' }}
-              compact={causeOptions.length <= 2}
-            />
-          </div>
-        </div>
-      }
-      toolbar={
-        <div className="flex min-w-0 flex-wrap items-center gap-2" aria-label="Loss cause filters">
-          <span className="mr-1 text-xs font-medium text-[var(--ua-text-secondary)]">Cause</span>
-          <FilterChip href={hrefForLosses({ view: selectedView })} active={!selectedAttribution}>All causes</FilterChip>
-          {causeOptions.map((item) => (
-            <FilterChip
-              key={item.key}
-              href={hrefForLosses({ attribution: item.key, view: selectedView })}
-              active={selectedAttribution === item.key}
-            >
-              {item.label}
-            </FilterChip>
-          ))}
-        </div>
-      }
-      footer={
-        <p className="text-xs text-[var(--ua-text-tertiary)]">
-          Amounts stay in their recorded currency. Loss history uses immutable effective dates; unavailable stages remain unavailable rather than becoming zero.
-        </p>
-      }
+      title="Loss ledger"
+      surfaceId="loss-ledger"
+      archetype="operations-loss-ledger"
+      breadcrumbs={[{ label: 'Unauth', href: '/overview' }, { label: 'Loss ledger' }]}
+      showCurrentBreadcrumb
+      actions={<div className="uo-header-actions"><span>{TIME_RANGE_LABELS[range]}</span><ExportMenu range={range} currency={displayCurrency} /></div>}
     >
-      <RegistrySurface
-        aria-label="Loss registry"
-        resultCount={`${causeScopedRows.length} ${causeScopedRows.length === 1 ? 'loss record' : 'loss records'}${selectedAttribution ? ' in this cause' : ''}`}
-      >
-        <LossLedger
-          rows={rows}
-          selectedAttribution={selectedAttribution}
-          otherAttributionKeys={otherContributions.map((item) => item.key)}
-          initialView={selectedView}
-        />
-      </RegistrySurface>
+      <LossLedgerOperations
+        rows={preSearchRows}
+        priorRows={priorRows}
+        currency={displayCurrency}
+        rangeLabel={TIME_RANGE_LABELS[range]}
+        selectedCause={selectedCauseKey}
+        hrefForCause={(cause) => lossHref({ search: cause, page: null })}
+        page={selectedPage}
+        hrefForPage={(nextPage) => lossHref({ page: nextPage })}
+        aggregate={aggregate}
+        recordLimitation={(lossResult.count ?? raw.length) > raw.length || (orphanResult.count ?? orphanRecoveries.length) > orphanRecoveries.length
+          ? `Record-level charts and rows are partial: showing up to 500 loss records and 500 orphan recovery records. Canonical KPIs remain exact for the selected scope.`
+          : null}
+      />
     </PageFrame>
   );
 }

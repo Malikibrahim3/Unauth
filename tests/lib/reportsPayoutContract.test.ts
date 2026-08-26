@@ -16,63 +16,63 @@ describe("payout-control reports contract", () => {
   it("uses payout and recovery labels instead of store/network intelligence copy", () => {
     const page = read("app/(app)/financials/reports/ReportsPage.tsx");
     const view = read("components/reporting/IntelligenceReportView.tsx");
+    const ladder = read("components/reports/FinancialStageLadder.tsx");
     const model = read("lib/reporting/intelligence.ts");
     const copy = read("lib/ui/merchantCopy.ts");
 
-    const combined = `${page}\n${view}\n${model}\n${copy}`;
+    const combined = `${page}\n${view}\n${ladder}\n${model}\n${copy}`;
     expect(combined).toContain("Reports");
-    expect(combined).toContain("Value this period");
+    expect(combined).toContain("How did requested value become final net loss?");
     expect(combined).toContain("Maximum exposure");
     expect(combined).toContain("Prevented");
     expect(combined).toContain("Confirmed loss");
     expect(combined).toContain("Recovery performance");
     expect(combined).toContain("Source coverage");
-    expect(combined).toContain("Report definitions");
+    expect(combined).toContain("Metric definitions");
     expect(combined).not.toContain("Store and network intelligence");
     expect(combined).not.toContain("Live intelligence");
     expect(combined).not.toContain("Identity signal match rate");
   });
 
-  it("keeps exact drillable tables alongside the dashboard charts", () => {
+  it("keeps the Challenge 6 compact report figures drillable and accessible", () => {
     const view = read("components/reporting/IntelligenceReportView.tsx");
-    const charts = read("components/reporting/DashboardCharts.tsx");
-    // Phase 06 consolidated the hand-rolled report `<table>` + "View chart data"
-    // disclosure into the canonical ChartFrame/ChartDataTable primitive. The
-    // drillable accessible table still exists — it just lives in the primitive
-    // now, and DashboardCharts feeds it the same multi-series column model.
-    const frame = read("components/charts/authenticated/ChartDataTableDisclosure.tsx");
+    const commandIndex = read("components/reporting/ReportCommandIndex.tsx");
 
-    expect(frame).toContain("<table");
-    expect(frame).toContain("View chart data");
-    expect(view).toContain("cases with recorded exposure");
-    expect(view).toContain('financialMetricCaseIds(b, "exposed").length');
+    expect(view).toContain('<table className="sr-only">');
+    expect(view).toContain("View chart data");
     expect(view).toContain("financialReportRecordsHref");
-    expect(view).toContain("metric: step.state");
-    expect(charts).toContain("components/charts/authenticated/cartesian/CumulativeAreaLineChart");
-    expect(charts).toContain("How is financial value accumulating?");
-    expect(charts).toContain("Loss causes");
-    expect(charts).toContain("How much exposed value is reaching recovery?");
-    // The exact multi-series drillable table is preserved via the frame's model.
-    expect(charts).toContain("trendTable");
-    expect(charts).toContain("Exposure to date");
-    expect(charts).toContain("Recovered to date");
-    expect(charts).toContain("View exposure records");
-    expect(charts).toContain("metric=\"exposed\"");
-    expect(charts).toContain("ExportMenu");
-    expect(charts).not.toContain("monotone");
-    expect(charts).not.toContain("Recovery funnel");
+    expect(view).toContain("Is exposure outpacing recovery?");
+    expect(view).toContain("Which causes make up confirmed loss?");
+    expect(view).toContain("Which open operations need attention?");
+    expect(view).toContain("Where is recovered value coming from?");
+    expect(commandIndex).toContain("Open a report");
+    expect(view).not.toContain("DashboardCharts");
+    expect(view).not.toContain("How is financial value accumulating?");
+    expect(view).not.toContain("Case financials");
   });
 
   it("uses one reconciliation notice and keeps the records table and export visibly scoped", () => {
-    const view = read("components/reporting/IntelligenceReportView.tsx");
-    const charts = read("components/reporting/DashboardCharts.tsx");
+    const ladder = read("components/reports/FinancialStageLadder.tsx");
     const records = read("app/(app)/financials/reports/records/page.tsx");
 
-    expect(`${view}\n${charts}`.match(/Ledger reconciliation needs attention/g)).toHaveLength(1);
+    expect(ladder).toContain("finalUnreconciled");
+    expect(ladder).toContain("Cannot be computed — one or more stages fail the source-to-ledger reconciliation contract");
     expect(records).toContain("RegistrySurface");
     expect(records).toContain("DataTableServer");
     expect(records).toContain("ExportMenu");
     expect(records).toContain("Financial metric");
+  });
+
+  it("keeps every Reports breadcrumb on the canonical loss-ledger route", () => {
+    const reportSurfaces = [
+      read("app/(app)/financials/reports/ReportsPage.tsx"),
+      read("app/(app)/financials/reports/records/page.tsx"),
+      read("components/reports/NamedReportDetail.tsx"),
+      read("components/reports/ReportsLoadingFrame.tsx"),
+    ].join("\n");
+
+    expect(reportSurfaces).toContain("/financials/losses");
+    expect(reportSurfaces).not.toContain("/financials/loss-ledger");
   });
 
   it("rolls payout exposure and requested actions into report breakdowns", () => {

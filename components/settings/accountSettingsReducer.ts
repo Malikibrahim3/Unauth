@@ -21,9 +21,6 @@ export type AccountSettingsState = {
   passwordSaving: boolean;
   passwordSuccess: string;
   passwordError: string;
-  deleteConfirm: string;
-  deleteLoading: boolean;
-  deleteError: string;
 };
 
 export type AccountSettingsAction =
@@ -46,9 +43,6 @@ export const initialAccountSettingsState: AccountSettingsState = {
   passwordSaving: false,
   passwordSuccess: '',
   passwordError: '',
-  deleteConfirm: '',
-  deleteLoading: false,
-  deleteError: '',
 };
 
 export function accountSettingsReducer(

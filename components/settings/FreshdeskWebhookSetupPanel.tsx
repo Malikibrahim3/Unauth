@@ -21,24 +21,24 @@ export function FreshdeskWebhookSetupPanel({
 }: FreshdeskWebhookSetupPanelProps) {
   return (
     <Card unstyled variant="panel" className="space-y-4 p-5">
-      <p className="ua-text-body font-medium" style={{ color: 'var(--ua-text-primary)' }}>
+      <p className="ua-text-body font-medium" style={{ color: 'var(--uo-route-text-primary)' }}>
         One-time webhook setup
       </p>
-      <p className="ua-text-body" style={{ color: 'var(--ua-warning)' }}>
+      <p className="ua-text-body" style={{ color: 'var(--uo-route-warning)' }}>
         {secret.warning}
       </p>
-      <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>
+      <p className="ua-text-caption-role" style={{ color: 'var(--uo-route-text-secondary)' }}>
         This secret is shown once. If lost, rotate it from the connection settings below.
       </p>
 
       <div className="space-y-3 ua-text-body">
         <div>
-          <p className="ua-text-label mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label mb-1" style={{ color: 'var(--uo-route-text-secondary)' }}>
             Webhook URL
           </p>
           <pre
             className="ua-text-dense overflow-x-auto rounded-md p-3"
-            style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-primary)' }}
+            style={{ background: 'var(--uo-route-surface-secondary)', color: 'var(--uo-route-text-primary)' }}
           >
             {secret.webhookUrl}
           </pre>
@@ -47,7 +47,7 @@ export function FreshdeskWebhookSetupPanel({
             disabled={!canManage}
             onClick={() => void onCopy('webhookUrl', secret.webhookUrl)}
             className="ua-text-label mt-2 inline-flex items-center gap-1.5"
-            style={{ color: 'var(--ua-action-primary)' }}
+            style={{ color: 'var(--uo-route-action-primary)' }}
           >
             {copiedField === 'webhookUrl' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             Copy webhook URL
@@ -55,21 +55,21 @@ export function FreshdeskWebhookSetupPanel({
         </div>
 
         <div>
-          <p className="ua-text-label mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label mb-1" style={{ color: 'var(--uo-route-text-secondary)' }}>
             Header name (optional)
           </p>
-          <code className="ua-text-dense" style={{ color: 'var(--ua-text-primary)' }}>
+          <code className="ua-text-dense" style={{ color: 'var(--uo-route-text-primary)' }}>
             {secret.headerName}
           </code>
         </div>
 
         <div>
-          <p className="ua-text-label mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label mb-1" style={{ color: 'var(--uo-route-text-secondary)' }}>
             Secret value
           </p>
           <pre
             className="ua-text-dense overflow-x-auto rounded-md p-3 font-mono"
-            style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-primary)' }}
+            style={{ background: 'var(--uo-route-surface-secondary)', color: 'var(--uo-route-text-primary)' }}
           >
             {secret.secret}
           </pre>
@@ -78,7 +78,7 @@ export function FreshdeskWebhookSetupPanel({
             disabled={!canManage}
             onClick={() => void onCopy('secret', secret.secret)}
             className="ua-text-working-title mt-2 inline-flex items-center gap-2 rounded-md px-3 py-2"
-            style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+            style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
           >
             {copiedField === 'secret' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copiedField === 'secret' ? 'Copied' : 'Copy secret'}
@@ -86,7 +86,7 @@ export function FreshdeskWebhookSetupPanel({
         </div>
       </div>
 
-      <ol className="ua-text-body list-decimal space-y-2 pl-5" style={{ color: 'var(--ua-text-secondary)' }}>
+      <ol className="ua-text-body list-decimal space-y-2 pl-5" style={{ color: 'var(--uo-route-text-secondary)' }}>
         <li>
           In Freshdesk, then <strong>Admin</strong>, then <strong>Workflows</strong>, then <strong>Automations</strong>.
         </li>
@@ -109,7 +109,7 @@ export function FreshdeskWebhookSetupPanel({
         type="button"
         onClick={onDismiss}
         className="ua-text-label underline"
-        style={{ color: 'var(--ua-text-secondary)' }}
+        style={{ color: 'var(--uo-route-text-secondary)' }}
       >
         I saved the secret - hide this panel
       </button>

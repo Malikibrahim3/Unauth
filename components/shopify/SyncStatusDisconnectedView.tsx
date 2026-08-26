@@ -45,12 +45,12 @@ export function SyncStatusDisconnectedView({
   if (variant === 'inline') {
     return (
       <>
-        <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: 'var(--ua-border-default)' }}>
+        <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: 'var(--uo-route-border-default)' }}>
           <button
             type="button"
             onClick={onOpenModal}
             className="ua-text-working-title inline-flex items-center rounded-md px-3 py-1.5"
-            style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+            style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
             data-testid="open-connect-shopify-modal"
           >
             {actionLabel}
@@ -67,7 +67,7 @@ export function SyncStatusDisconnectedView({
     <>
       <div
         className="rounded-md p-5 border space-y-4"
-        style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-primary)' }}
+        style={{ borderColor: 'var(--uo-route-border-subtle)', background: 'var(--uo-route-surface-primary)' }}
       >
         <div className="flex items-start gap-3">
           <div
@@ -75,22 +75,22 @@ export function SyncStatusDisconnectedView({
             style={{
               background:
                 linkState === 'installed_unlinked'
-                  ? 'var(--ua-confidence-low)'
-                  : 'var(--ua-text-secondary)',
+                  ? 'var(--uo-route-confidence-low)'
+                  : 'var(--uo-route-text-secondary)',
             }}
           />
           <div className="flex-1 min-w-0">
-            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
               {title}
             </p>
-            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--uo-route-text-secondary)' }}>
               {description}
             </p>
             <button
               type="button"
               onClick={onOpenModal}
               className="ua-text-working-title inline-flex items-center mt-3 rounded-md px-3 py-1.5"
-            style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+            style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
               data-testid="open-connect-shopify-modal"
             >
               {actionLabel}

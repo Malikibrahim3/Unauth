@@ -13,6 +13,7 @@ import {
   formatMoneyOrDash,
 } from '@/lib/utils/format';
 import { dataQualityEvents, resetDataQuality } from '@/lib/observability/dataQuality';
+import { evidencePackageOrderAmount } from '@/components/evidence/evidencePackageOrderAmount';
 
 describe('RUN-09 currency truth', () => {
   beforeEach(() => resetDataQuality());
@@ -69,5 +70,11 @@ describe('RUN-09 currency truth', () => {
     formatCurrency(10, 'GBP');
     formatCurrency(10, 'eur');
     expect(dataQualityEvents()).toHaveLength(0);
+  });
+
+  it('renders evidence-order major units only with an explicit source currency', () => {
+    expect(evidencePackageOrderAmount({ amount: 55, currency: 'GBP' })).toBe('£55.00');
+    expect(evidencePackageOrderAmount({ amount: 55, currency: null })).toBe('Amount unavailable — currency missing');
+    expect(evidencePackageOrderAmount({ amount: null, currency: 'GBP' })).toBe('Amount unavailable — source amount missing');
   });
 });

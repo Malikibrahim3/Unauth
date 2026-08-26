@@ -107,6 +107,28 @@ insert into public.source_records (
     now() - interval '1 day', now() - interval '1 hour', now() - interval '1 hour',
     'current', 'fresh', 'runtime-v1', 'sha256:controlled-ticket-1',
     '{"source_status":"open"}'
+  ),
+  (
+    '86400000-0000-4000-8000-000000000003',
+    '81000000-0000-4000-8000-000000000001',
+    '86000000-0000-4000-8000-000000000001',
+    'controlled-carrier', 'provider_credit', 'runtime-credit-1000', 'provider_credit',
+    null,
+    'https://controlled.invalid/credits/runtime-credit-1000',
+    now() - interval '2 hours', now() - interval '2 hours', now() - interval '2 hours',
+    'current', 'fresh', 'runtime-v1', 'sha256:runtime-credit-1000',
+    '{"source_status":"observed"}'
+  ),
+  (
+    '86400000-0000-4000-8000-000000000004',
+    '81000000-0000-4000-8000-000000000001',
+    '86000000-0000-4000-8000-000000000001',
+    'controlled-carrier', 'provider_credit', 'runtime-credit-2000', 'provider_credit',
+    null,
+    'https://controlled.invalid/credits/runtime-credit-2000',
+    now() - interval '1 hour', now() - interval '1 hour', now() - interval '1 hour',
+    'current', 'fresh', 'runtime-v1', 'sha256:runtime-credit-2000',
+    '{"source_status":"observed"}'
   );
 
 insert into public.merchant_rules (
@@ -293,6 +315,7 @@ select pg_temp.assert_true(
   (select count(*) = 2 from public.source_records
    where merchant_id = '81000000-0000-4000-8000-000000000001'
      and source_account_id = '86000000-0000-4000-8000-000000000001'
+     and source_entity_type in ('order', 'ticket')
      and freshness_state = 'fresh'),
   'source intake retained account scope, provenance, and freshness'
 );
@@ -733,20 +756,26 @@ select pg_temp.assert_true(
   'financial drill-down remains merchant scoped'
 );
 
--- Recovery approval is not cash; payment emits delta-valued outbox facts.
+-- Recovery approval is not cash. Only source-observed credits can advance the
+-- received projection, and reconciliation remains a separate transition.
+create temporary table runtime_credit_state (
+  key text primary key,
+  payload jsonb not null
+) on commit drop;
+
 insert into public.recovery_cases (
   id, merchant_id, support_payout_case_id, loss_case_id,
   recovery_type, owner_type, status,
   merchant_loss_amount, eligible_loss_amount, estimated_recoverable_max,
   amount_sought_minor, amount_approved_minor, amount_recovered_minor,
-  amount_written_off_minor, currency
+  amount_written_off_minor, amount_recovered, currency
 ) values (
   '85000000-0000-4000-8000-000000000001',
   '81000000-0000-4000-8000-000000000001',
   '82000000-0000-4000-8000-000000000001',
   '84000000-0000-4000-8000-000000000001',
   'carrier_claim', 'carrier', 'submitted',
-  45, 30, 30, 3000, 0, 0, 0, 'GBP'
+  45, 30, 30, 3000, 0, 0, 0, 0, 'GBP'
 );
 select public.transition_recovery_case(
   '81000000-0000-4000-8000-000000000001',
@@ -769,56 +798,108 @@ select pg_temp.assert_true(
   'approval did not emit recovered cash event'
 );
 
-select public.transition_recovery_case(
+insert into runtime_credit_state
+select 'credit-1', public.record_provider_credit_v1(
+  '81000000-0000-4000-8000-000000000001',
+  'controlled-carrier', 'runtime-credit-1000', 'runtime-claim-1',
+  'controlled-order-1', null, 'credit', 1000, 'GBP',
+  now() - interval '2 hours', now() - interval '2 hours', 'source_observed', null,
+  '86400000-0000-4000-8000-000000000003',
+  '85000000-0000-4000-8000-000000000001',
+  '82000000-0000-4000-8000-000000000001', null, null,
+  'First carrier credit observed at source.', '{}'::jsonb,
+  'runtime-recovery-credit-1-observed'
+);
+insert into runtime_credit_state
+select 'credit-1-match', public.transition_provider_credit_v1(
   '81000000-0000-4000-8000-000000000001',
   '85000000-0000-4000-8000-000000000001',
-  'paid', 'paid', 'First partial credit received.',
-  1000, null, 'runtime-recovery-paid-1'
+  (select (payload -> 'credit' ->> 'id')::uuid from runtime_credit_state where key = 'credit-1'),
+  'matched', 1, 'external_claim_reference', 1, null,
+  'Carrier claim and credit references agree.',
+  'runtime-recovery-credit-1-match'
 );
 select pg_temp.assert_true(
   (select status = 'partially_approved' and amount_recovered_minor = 1000
+      and claim_readiness = 'credited_unreconciled'
    from public.recovery_cases where id = '85000000-0000-4000-8000-000000000001'),
-  'partial receipt retained an open partial state'
+  'matched source credit retained an open unreconciled state'
 );
 select pg_temp.assert_true(
-  (select (payload ->> 'amount_minor')::bigint = 1000
-   from public.domain_events
+  (select amount_minor = 1000
+   from public.provider_credit_events
    where merchant_id = '81000000-0000-4000-8000-000000000001'
-     and idempotency_key = 'recovery-action:runtime-recovery-paid-1'
-     and event_type = 'recovery.completed'),
-  'first received event contains its exact delta'
+     and idempotency_key = 'runtime-recovery-credit-1-match'
+     and event_type = 'matched'),
+  'first matched credit records its exact source-observed amount'
 );
 
-select public.transition_recovery_case(
+insert into runtime_credit_state
+select 'credit-2', public.record_provider_credit_v1(
   '81000000-0000-4000-8000-000000000001',
+  'controlled-carrier', 'runtime-credit-2000', 'runtime-claim-1',
+  'controlled-order-1', null, 'credit', 2000, 'GBP',
+  now() - interval '1 hour', now() - interval '1 hour', 'source_observed', null,
+  '86400000-0000-4000-8000-000000000004',
   '85000000-0000-4000-8000-000000000001',
-  'paid', 'paid', 'Final credit received.',
-  3000, null, 'runtime-recovery-paid-2'
+  '82000000-0000-4000-8000-000000000001', null, null,
+  'Final carrier credit observed at source.', '{}'::jsonb,
+  'runtime-recovery-credit-2-observed'
 );
-select public.transition_recovery_case(
+insert into runtime_credit_state
+select 'credit-2-match', public.transition_provider_credit_v1(
   '81000000-0000-4000-8000-000000000001',
   '85000000-0000-4000-8000-000000000001',
-  'paid', 'paid', 'Final credit received.',
-  3000, null, 'runtime-recovery-paid-2'
+  (select (payload -> 'credit' ->> 'id')::uuid from runtime_credit_state where key = 'credit-2'),
+  'matched', 1, 'external_claim_reference', 1, null,
+  'Final carrier claim and credit references agree.',
+  'runtime-recovery-credit-2-match'
+);
+select public.transition_provider_credit_v1(
+  '81000000-0000-4000-8000-000000000001',
+  '85000000-0000-4000-8000-000000000001',
+  (select (payload -> 'credit' ->> 'id')::uuid from runtime_credit_state where key = 'credit-2'),
+  'matched', 1, 'external_claim_reference', 1, null,
+  'Final carrier claim and credit references agree.',
+  'runtime-recovery-credit-2-match'
+);
+insert into runtime_credit_state
+select 'credit-1-reconcile', public.transition_provider_credit_v1(
+  '81000000-0000-4000-8000-000000000001',
+  '85000000-0000-4000-8000-000000000001',
+  (select (payload -> 'credit' ->> 'id')::uuid from runtime_credit_state where key = 'credit-1'),
+  'reconciled', 2, null, null, null,
+  'First credit independently reconciled to the ledger.',
+  'runtime-recovery-credit-1-reconcile'
+);
+insert into runtime_credit_state
+select 'credit-2-reconcile', public.transition_provider_credit_v1(
+  '81000000-0000-4000-8000-000000000001',
+  '85000000-0000-4000-8000-000000000001',
+  (select (payload -> 'credit' ->> 'id')::uuid from runtime_credit_state where key = 'credit-2'),
+  'reconciled', 2, null, null, null,
+  'Final credit independently reconciled to the ledger.',
+  'runtime-recovery-credit-2-reconcile'
 );
 select pg_temp.assert_true(
   (select status = 'paid' and amount_recovered_minor = 3000 and amount_written_off_minor = 0
+      and claim_readiness = 'reconciled'
    from public.recovery_cases where id = '85000000-0000-4000-8000-000000000001'),
-  'full receipt closed the recovery as paid'
+  'fully reconciled source credits closed the recovery as paid'
 );
 select pg_temp.assert_true(
   (select (payload ->> 'amount_minor')::bigint = 2000
    from public.domain_events
    where merchant_id = '81000000-0000-4000-8000-000000000001'
-     and idempotency_key = 'recovery-action:runtime-recovery-paid-2'
-     and event_type = 'recovery.completed'),
-  'second received event contains only the additional delta'
+     and idempotency_key = 'provider-credit-transition:runtime-recovery-credit-2-match'
+     and event_type = 'provider.credit_matched'),
+  'second matched credit outbox fact contains only its exact amount'
 );
 select pg_temp.assert_true(
-  (select count(*) = 1 from public.recovery_case_events
+  (select count(*) = 1 from public.provider_credit_events
    where merchant_id = '81000000-0000-4000-8000-000000000001'
-     and idempotency_key = 'runtime-recovery-paid-2'),
-  'recovery payment replay was idempotent'
+     and idempotency_key = 'runtime-recovery-credit-2-match'),
+  'provider credit match replay was idempotent'
 );
 
 -- A second recovery demonstrates explicit remaining-value write-off.

@@ -3,25 +3,8 @@
 import { forwardRef, type InputHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, style, ...props }, ref) => (
-    <input
-      ref={ref}
-      className={cn(
-        'ua-form-control w-full px-3 text-sm transition-colors duration-[var(--ua-duration-fast)]',
-        className,
-      )}
-      style={{
-        height: 'var(--ua-control-height-input)',
-        background: 'var(--ua-surface-primary)',
-        border: '1px solid var(--ua-border-control)',
-        borderRadius: 'var(--ua-radius-control)',
-        color: 'var(--ua-text-primary)',
-        ...style,
-      }}
-      {...props}
-    />
-  ),
-);
-
-Input.displayName = 'Input';
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
+  { className, ...props }, ref,
+) {
+  return <input ref={ref} className={cn('ua-form-control ua-input', className)} {...props} />;
+});

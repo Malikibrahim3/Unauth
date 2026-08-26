@@ -14,13 +14,13 @@ import { cn } from '@/lib/utils';
 export type KeyInsightTone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
 const TONE: Record<KeyInsightTone, { bg: string; fg: string; bd: string }> = {
-  neutral: { bg: 'var(--ua-surface-muted)', fg: 'var(--ua-text-secondary)', bd: 'var(--ua-border-default)' },
-  info: { bg: 'var(--ua-info-bg)', fg: 'var(--ua-info)', bd: 'var(--ua-info-border)' },
-  warning: { bg: 'var(--ua-warning-bg)', fg: 'var(--ua-warning)', bd: 'var(--ua-warning-border)' },
-  success: { bg: 'var(--ua-success-bg)', fg: 'var(--ua-success)', bd: 'var(--ua-success-border)' },
-  // danger follows the risk-critical family, not --ua-critical — they match in
+  neutral: { bg: 'var(--uo-route-surface-muted)', fg: 'var(--uo-route-text-secondary)', bd: 'var(--uo-route-border-default)' },
+  info: { bg: 'var(--uo-route-info-bg)', fg: 'var(--uo-route-info)', bd: 'var(--uo-route-info-border)' },
+  warning: { bg: 'var(--uo-route-warning-bg)', fg: 'var(--uo-route-warning)', bd: 'var(--uo-route-warning-border)' },
+  success: { bg: 'var(--uo-route-success-bg)', fg: 'var(--uo-route-success)', bd: 'var(--uo-route-success-border)' },
+  // danger follows the risk-critical family, not --uo-route-critical — they match in
   // light mode but diverge in dark (see StatusBadge for the same note).
-  danger: { bg: 'var(--ua-risk-critical-bg)', fg: 'var(--ua-risk-critical)', bd: 'var(--ua-risk-critical-border)' },
+  danger: { bg: 'var(--uo-route-risk-critical-bg)', fg: 'var(--uo-route-risk-critical)', bd: 'var(--uo-route-risk-critical-border)' },
 };
 
 interface KeyInsightCalloutProps {
@@ -51,9 +51,9 @@ export function KeyInsightCallout({
       data-auth-visual="key-insight"
       style={{
         padding: '12px 14px',
-        border: '1px solid var(--ua-border-default)',
-        borderRadius: 'var(--ua-radius-surface)',
-        background: 'var(--ua-surface-primary)',
+        border: '1px solid var(--uo-route-border-default)',
+        borderRadius: 'var(--uo-route-radius-surface)',
+        background: 'var(--uo-route-surface-primary)',
         boxShadow: 'none',
       }}
     >
@@ -64,7 +64,7 @@ export function KeyInsightCallout({
           style={{
             width: 30,
             height: 30,
-            borderRadius: 'var(--ua-radius-surface)',
+            borderRadius: 'var(--uo-route-radius-surface)',
             background: t.bg,
             color: t.fg,
             border: `1px solid ${t.bd}`,
@@ -78,11 +78,11 @@ export function KeyInsightCallout({
           <p
             className="m-0"
             style={{
-              color: 'var(--ua-text-tertiary)',
-              fontSize: 'var(--ua-text-metadata-size)',
-              fontWeight: 'var(--ua-text-metadata-weight)' as unknown as number,
-              letterSpacing: 'var(--ua-text-metadata-tracking)',
-              lineHeight: 'var(--ua-text-metadata-leading)',
+              color: 'var(--uo-route-text-tertiary)',
+              fontSize: 'var(--uo-route-text-metadata-size)',
+              fontWeight: 'var(--uo-route-text-metadata-weight)' as unknown as number,
+              letterSpacing: 'var(--uo-route-text-metadata-tracking)',
+              lineHeight: 'var(--uo-route-text-metadata-leading)',
               marginBottom: 4,
             }}
           >
@@ -90,8 +90,8 @@ export function KeyInsightCallout({
           </p>
         ) : null}
         <p
-          className="m-0 [&_strong]:font-semibold [&_strong]:tabular-nums [&_strong]:text-[var(--ua-text-primary)]"
-          style={{ color: 'var(--ua-text-secondary)', fontSize: 13, lineHeight: 1.45 }}
+          className="m-0 [&_strong]:font-semibold [&_strong]:tabular-nums [&_strong]:text-[var(--uo-route-text-primary)]"
+          style={{ color: 'var(--uo-route-text-secondary)', fontSize: 13, lineHeight: 1.45 }}
         >
           {children}
         </p>
@@ -99,7 +99,7 @@ export function KeyInsightCallout({
       {detail ? (
         <div
           className="shrink-0"
-          style={{ color: 'var(--ua-text-tertiary)', fontSize: 11, lineHeight: 1.4 }}
+          style={{ color: 'var(--uo-route-text-tertiary)', fontSize: 11, lineHeight: 1.4 }}
         >
           {detail}
         </div>

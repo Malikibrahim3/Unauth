@@ -23,7 +23,7 @@ describe('customer semantics deprecation', () => {
     );
     expect(content).not.toContain('watchlistedOnly');
     expect(content).not.toContain('watchlistFilterActive');
-    expect(content).toContain('openClaimsOnly');
+    expect(content).toContain('statusFilter');
   });
 
   it('canonical customer controls offer open claims rather than watchlist', () => {
@@ -31,8 +31,8 @@ describe('customer semantics deprecation', () => {
       path.join(process.cwd(), 'app/(app)/customers/CustomersOverviewPageView.tsx'),
       'utf-8',
     );
-    expect(content).toContain('?openClaims=1');
-    expect(content).toContain('Open payout cases');
+    expect(content).toContain('?status=open_cases');
+    expect(content).toContain('With open cases');
     expect(content).not.toContain('watchlisted');
     expect(content).not.toContain('on_watchlist');
   });
@@ -70,18 +70,17 @@ describe('customer semantics deprecation', () => {
       path.join(process.cwd(), 'app/(app)/customers/CustomersOverviewPageView.tsx'),
       'utf-8',
     );
-    expect(content).toContain('?openClaims=1');
-    expect(content).toContain('Open payout cases');
-    expect(content).toContain('Customers with open cases');
+    expect(content).toContain('?status=open_cases');
+    expect(content).toContain('With open cases');
     expect(content).not.toContain('watchlisted');
   });
 
-  it('customers overview grade distribution avoids high-risk customer wording', () => {
+  it('customers overview avoids high-risk verdict wording and preserves unavailable values', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/customers/CustomersOverviewPageView.tsx'),
       'utf-8',
     );
     expect(content).not.toMatch(/High risk/i);
-    expect(content).toContain('match band');
+    expect(content).toContain('— means unavailable, not zero');
   });
 });

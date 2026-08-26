@@ -2,41 +2,36 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
-import { PageFrame, RegistrySurface, EmptyState, ButtonLink, FilterChip, SegmentedControl } from '@/components/ui';
-import { dominantCurrency, formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
+import { PageFrame, RegistrySurface, EmptyState, ButtonLink, OperationalState, SegmentedControl } from '@/components/ui';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import {
   type ClaimRow,
   type CustomerProfileSummary,
   type EvidencePackageRow,
 } from './claimsPageData';
-import { buildClaimsQueryString } from './claimsPageLogic';
+import { buildClaimsQueryString, coverageForClaimsListView, type CasesSummary } from './claimsPageLogic';
 import { ClaimsQueueClient } from './ClaimsQueueClient';
 import type { ClaimsListView } from '@/lib/claims/claimsQueueUi';
+import type { ClaimMetricCoverage, ClaimQueueCounts } from '@/lib/claims/queueCounts';
+import { CasesCompactFilters } from './CasesCompactFilters';
+import { CasesFlow, CasesMetrics } from './CasesOverview';
+import type { CasesFlowSnapshot } from './casesFlow';
 
 export type ClaimsFilterTab = {
   label: string;
   count: number;
+  coverage: ClaimMetricCoverage;
   href: string;
   active: boolean;
 };
 
 export type ClaimsPageViewProps = {
   connectionState: ConnectionState;
-  queueCounts: {
-    total: number;
-    active: number;
-    unread: number;
-    overdue: number;
-    resolved: number;
-    awaitingEvidence: number;
-    awaitingCarrier: number;
-    awaiting3pl: number;
-    awaitingSupplier: number;
-    readyForDecision: number;
-    manualReview: number;
-    closed: number;
-  };
+  queueCounts: ClaimQueueCounts;
+  coverageByMetric: Record<keyof ClaimQueueCounts, ClaimMetricCoverage>;
+  aggregateCoverage: ClaimMetricCoverage;
+  casesSummary: CasesSummary;
+  casesFlow: CasesFlowSnapshot | null;
   isEmpty: boolean;
   resultText: string;
   pageSize: number;
@@ -52,8 +47,7 @@ export type ClaimsPageViewProps = {
   evidenceByClaimId: Map<string, EvidencePackageRow | null>;
   customerById: Map<string, CustomerProfileSummary>;
   currentUserId: string;
-  initialFocusClaimId?: string | null;
-  totalAtRisk: number;
+  initialSelectedCaseId?: string | null;
   recoveryMetricRows: Array<{
     status: string;
     total_estimated_loss: number | null;
@@ -70,6 +64,9 @@ export type ClaimsPageViewProps = {
 export function ClaimsPageView({
   connectionState,
   queueCounts,
+  coverageByMetric,
+  casesSummary,
+  casesFlow,
   isEmpty,
   resultText,
   pageSize,
@@ -85,15 +82,14 @@ export function ClaimsPageView({
   evidenceByClaimId,
   customerById,
   currentUserId,
-  initialFocusClaimId,
-  totalAtRisk,
+  initialSelectedCaseId,
   recoveryMetricRows,
   page,
   totalPages,
   basePath,
 }: ClaimsPageViewProps) {
-  // Display currency for aggregate KPIs: the most common case currency on record.
-  const displayCurrency = dominantCurrency(recoveryMetricRows.length > 0 ? recoveryMetricRows : claims);
+  void recoveryMetricRows;
+  const currentViewCoverage = coverageForClaimsListView(listView, coverageByMetric);
   const emptyDescription = searchTerm
     ? `No cases match “${searchTerm}”.`
     : listView.kind === 'unread'
@@ -129,34 +125,73 @@ export function ClaimsPageView({
                                 : listView.kind === 'status' && listView.status === 'escalated'
                                   ? 'No cases with strong identity evidence right now.'
                                   : 'No cases match this filter.';
+  const sortValue = slaFilter === 'overdue' ? 'ageing' : sort === 'age' ? 'oldest' : sort === 'value' ? 'value' : 'updated';
+  const sortItems = [
+    { value: 'updated', label: 'Updated', href: `${basePath}${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}` },
+    { value: 'oldest', label: 'Oldest', href: `${basePath}${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}` },
+    { value: 'ageing', label: 'Ageing first', href: `${basePath}${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}` },
+    { value: 'value', label: 'Highest value', href: `${basePath}${buildClaimsQueryString(sp, { sort: 'value', sla: undefined, page: '1' })}` },
+  ];
+  const scopeLabel = filterTabs.find((tab) => tab.active)?.label ?? 'All cases';
+  const filterKeys = ['queue', 'owner', 'viewed', 'status', 'evidence_posture', 'responsibility', 'claim_readiness', 'deadline'] as const;
+  const activeFilters = filterKeys
+    .filter((key) => sp[key])
+    .map((key) => ({ key, value: sp[key]! }));
+  const activeFilterCount = activeFilters.length;
+  const nextCase = claims[0] ?? null;
+  const activeFilterLabels: Record<string, string> = {
+    me: 'Assigned to me', unassigned: 'Unassigned', unread: 'New evidence', viewed: 'Viewed',
+    history: 'Recorded outcomes', snoozed: 'Deferred', strong: 'Strong evidence', contestable: 'Contestable evidence',
+    insufficient: 'Insufficient evidence', unavailable: 'Unavailable', ready_to_submit: 'Ready to submit',
+    waiting_on_provider: 'Waiting on provider', credited_unreconciled: 'Credited · unreconciled', reconciled: 'Reconciled',
+    courier: 'Courier', three_pl: '3PL', merchant: 'Merchant', unresolved: 'Unresolved', due: 'Deadline due', expired: 'Deadline expired',
+  };
 
   return (
-    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Cases" pageDescription="Connect Gorgias or Zendesk so Unauth can match the customer, order, item, parcel, and evidence before you act." hasData={queueCounts.total > 0}>
+    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Cases" pageDescription="Connect Gorgias or Zendesk so Unauth can match the customer, order, item, parcel, and evidence before you act." hasData={claims.length > 0 || (coverageByMetric.total === 'complete' && queueCounts.total > 0)}>
     <PageFrame
+      surfaceId="cases-registry"
+      archetype="P5"
       title="Cases"
-      subtitle={`${formatNumber(queueCounts.active)} active · ${formatNumber(queueCounts.unread)} with new evidence · ${formatNumber(queueCounts.readyForDecision)} ready for decision · ${formatCurrencyNullable(totalAtRisk, displayCurrency)} at issue`}
+      subtitle="Review each case by evidence readiness, deadline and the next permitted action."
+      breadcrumbs={[{ label: 'Unauth', href: '/overview' }, { label: 'Cases' }]}
+      showCurrentBreadcrumb
+      actions={
+        <div className="ua-cases-header-actions">
+          {nextCase ? <ButtonLink href={`${basePath}?selected=${encodeURIComponent(nextCase.id)}`} size="sm">Review next case</ButtonLink> : null}
+        </div>
+      }
       footer={
-        <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-tertiary)' }}>
+        <p className="ua-text-caption-role" style={{ color: 'var(--uo-route-text-tertiary)' }}>
           Support conversations stay in your helpdesk. Unauth reconciles the records, keeps customer action separate from responsibility, and routes supported recovery work to the right partner.
         </p>
       }
     >
       {isEmpty ? (
+        <div data-state-id="cases-first-use">
           <EmptyState
             title="No cases yet"
             description="Connect a support source to create cases from customer conversations."
             action={<ButtonLink href="/sources/connected" size="md">Connect support source</ButtonLink>}
           />
+        </div>
       ) : (
+        <>
+          <section className="ua-cases-truth-strip" aria-label="Current case queue truth">
+            <div><span>Current view</span><strong>{scopeLabel}</strong><small>{resultText}</small></div>
+            <div data-state={casesSummary.active.state}><span>Active cases</span><strong>{casesSummary.active.label}</strong><small>Current work, not recorded outcomes</small></div>
+            <div data-state={casesSummary.readyForDecision.state}><span>Ready for decision</span><strong>{casesSummary.readyForDecision.label}</strong><small>Evidence state only; no decision inferred</small></div>
+            <div data-state={casesSummary.atRisk.state}><span>Value at risk</span><strong>{casesSummary.atRisk.label}</strong><small>Currencies remain separate</small></div>
+          </section>
           <RegistrySurface
             aria-label="Cases registry and selected preview"
             className="ua-case-registry"
             toolbar={
-              <div className="ua-case-registry-tools">
+              <div className="ua-case-registry-tools" id="cases-registry-controls">
                 <div className="ua-case-registry-tools__primary">
                   <form method="get" action={basePath} role="search" aria-label="Search cases" className="ua-case-registry-tools__search">
                     {Object.entries(sp)
-                      .filter(([key, value]) => key !== 'search' && key !== 'page' && key !== 'focus' && value)
+                      .filter(([key, value]) => key !== 'search' && key !== 'page' && key !== 'selected' && value)
                       .map(([key, value]) => (
                         <input key={key} type="hidden" name={key} value={value} />
                       ))}
@@ -168,15 +203,15 @@ export function ClaimsPageView({
                       type="search"
                       defaultValue={searchTerm}
                       placeholder="Search customer, order, ticket or case reference"
-                      className="ua-text-body h-9 min-w-0 flex-1 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-[var(--ua-text-primary)]"
+                      className="ua-text-body h-9 min-w-0 flex-1 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-3 text-[var(--uo-route-text-primary)]"
                     />
                     {/* Secondary, not primary violet (C2) — the registry's primary
                      * action is reviewing a case, not running a search. */}
-                    <button type="submit" className="ua-text-label h-9 shrink-0 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]">
+                    <button type="submit" className="ua-text-label h-9 shrink-0 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-default)] px-3 text-[var(--uo-route-text-primary)] hover:bg-[var(--uo-route-surface-hover)]">
                       Search
                     </button>
                     {searchTerm ? (
-                      <Link href={`${basePath}${buildClaimsQueryString(sp, { search: undefined, page: '1', focus: undefined })}`} className="ua-text-label shrink-0 text-[var(--ua-text-secondary)] underline underline-offset-2">
+                      <Link href={`${basePath}${buildClaimsQueryString(sp, { search: undefined, page: '1', selected: undefined })}`} className="ua-text-label shrink-0 text-[var(--uo-route-text-secondary)] underline underline-offset-2">
                         Clear
                       </Link>
                     ) : null}
@@ -184,39 +219,31 @@ export function ClaimsPageView({
                   <div className="ua-case-registry-tools__sort">
                     <SegmentedControl
                       aria-label="Sort cases"
-                      value={slaFilter === 'overdue' ? 'ageing' : sort === 'age' ? 'oldest' : sort === 'value' ? 'value' : 'updated'}
-                      items={[
-                        { value: 'updated', label: 'Updated', href: `${basePath}${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}` },
-                        { value: 'oldest', label: 'Oldest', href: `${basePath}${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}` },
-                        { value: 'ageing', label: 'Ageing first', href: `${basePath}${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}` },
-                        { value: 'value', label: 'Highest value', href: `${basePath}${buildClaimsQueryString(sp, { sort: 'value', sla: undefined, page: '1' })}` },
-                      ]}
+                      value={sortValue}
+                      items={sortItems}
                     />
                   </div>
+                  <CasesCompactFilters
+                    scopeLabel={scopeLabel}
+                    resultText={resultText}
+                    filterTabs={filterTabs}
+                    sp={sp}
+                    basePath={basePath}
+                    activeFilterCount={activeFilterCount}
+                  />
                 </div>
-                <div className="ua-case-registry-tools__filters">
-                  <span className="ua-case-registry-tools__label">Workflow</span>
-                  <nav className="flex min-w-0 flex-wrap items-center gap-1" aria-label="Case filters">
-                    {/* A workflow with nothing in it right now isn't a real choice (C3) —
-                     * omit it rather than rendering a chip that reads "0" at full weight,
-                     * unless it's the view the operator is already looking at. */}
-                    {filterTabs
-                      .filter((tab) => tab.count > 0 || tab.active)
-                      .map((tab) => (
-                        <FilterChip
-                          key={tab.label}
-                          href={tab.href}
-                          active={tab.active}
-                          count={tab.count}
-                        >
-                          {tab.label}
-                        </FilterChip>
-                      ))}
-                  </nav>
-                  <p className="ml-auto text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]" role="status" aria-live="polite">
-                    {resultText}
-                  </p>
-                </div>
+              </div>
+            }
+            resultCount={resultText}
+            appliedSummary={
+              <div className="ua-case-applied-summary">
+                <span><strong>{scopeLabel}</strong> · {sortItems.find((item) => item.value === sortValue)?.label ?? 'Updated'}</span>
+                {activeFilters.map(({ key, value }) => (
+                  <Link key={key} href={`${basePath}${buildClaimsQueryString(sp, { [key]: undefined, page: '1', selected: undefined })}`}>
+                    {activeFilterLabels[value] ?? value.replaceAll('_', ' ')} <span aria-hidden="true">×</span>
+                  </Link>
+                ))}
+                {activeFilterCount ? <Link href={basePath} className="ua-case-applied-summary__clear">Clear all</Link> : null}
               </div>
             }
             pagination={
@@ -241,7 +268,15 @@ export function ClaimsPageView({
               </>
             }
           >
-            {claims.length === 0 ? (
+            {claims.length === 0 && currentViewCoverage !== 'complete' ? (
+              <OperationalState
+                kind="unavailable"
+                title="Case count unavailable"
+                description="The available case rows are shown, but this queue could not be evaluated completely. No zero or empty result has been inferred."
+                action={<ButtonLink href="/sources/connected" variant="secondary" size="sm">Review connected sources</ButtonLink>}
+              />
+            ) : claims.length === 0 ? (
+              <div data-state-id="cases-no-filter-results">
               <EmptyState
                 variant="compact"
                 title={emptyDescription}
@@ -252,7 +287,7 @@ export function ClaimsPageView({
                   <Link
                     href={`${basePath}?queue=history`}
                     className="ua-text-label mt-2 inline-block hover:underline"
-                    style={{ color: 'var(--ua-action-primary)' }}
+                    style={{ color: 'var(--uo-route-action-primary)' }}
                   >
                     View recorded outcomes
                   </Link>
@@ -260,12 +295,13 @@ export function ClaimsPageView({
                   <Link
                     href={`${basePath}?queue=active`}
                     className="ua-text-label mt-2 inline-block hover:underline"
-                    style={{ color: 'var(--ua-action-primary)' }}
+                    style={{ color: 'var(--uo-route-action-primary)' }}
                   >
                     View active cases
                   </Link>
                 )}
               />
+              </div>
             ) : (
               <ClaimsQueueClient
                 claims={claims}
@@ -273,11 +309,19 @@ export function ClaimsPageView({
                 evidenceRecord={Object.fromEntries(evidenceByClaimId)}
                 customersRecord={Object.fromEntries(customerById)}
                 currentUserId={currentUserId}
-                initialFocusClaimId={initialFocusClaimId}
+                initialSelectedCaseId={initialSelectedCaseId}
                 basePath={basePath}
               />
             )}
           </RegistrySurface>
+          <details className="ua-cases-analytics">
+            <summary><span>Queue analytics</span><small>Secondary context · does not change the selected work</small></summary>
+            <div className="ua-cases-analytics__body">
+              <CasesMetrics counts={queueCounts} summary={casesSummary} flow={casesFlow} />
+              <CasesFlow counts={queueCounts} flow={casesFlow} />
+            </div>
+          </details>
+        </>
       )}
     </PageFrame>
     </PageConnectionGate>

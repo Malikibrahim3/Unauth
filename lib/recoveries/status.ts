@@ -1,5 +1,21 @@
 import type { RecoveryCaseEventType, RecoveryCaseStatus } from '@/lib/recoveries/types';
 
+export type EvidencePackStatus = 'not_applicable' | 'complete' | 'partial';
+
+export function evidencePackStatus(input: {
+  evidence_required: readonly string[];
+  evidence_missing: readonly string[];
+  evidence_complete: boolean;
+}): EvidencePackStatus {
+  if (input.evidence_required.length === 0) return 'not_applicable';
+  const missing = new Set(input.evidence_missing);
+  return input.evidence_complete
+    && input.evidence_missing.length === 0
+    && input.evidence_required.every((requirement) => !missing.has(requirement))
+    ? 'complete'
+    : 'partial';
+}
+
 /**
  * Board columns group every recovery status into a visible column so a card can
  * never disappear by entering an un-rendered status. Each column may hold more

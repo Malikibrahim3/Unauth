@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button, Input, Modal, Select, Textarea } from '@/components/ui';
+import { BeforeYouConfirm, Button, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -155,8 +155,9 @@ export function InvestigationResponseDialog({
     <Modal
       open
       onClose={onClose}
-      title="Record investigation response"
+      title="Record the partner response"
       description={`Record the factual response from ${investigation.target_name ?? investigation.target_type}. This does not make the customer decision.`}
+      overlayId="investigation-response-modal"
       size="lg"
       closeOnBackdrop={!busy}
       footer={(
@@ -174,7 +175,7 @@ export function InvestigationResponseDialog({
     >
       <div className="space-y-4">
         {error ? (
-          <div role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
+          <div role="alert" className="ua-text-body rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3 text-[var(--uo-route-risk-critical)]">
             {error}
           </div>
         ) : null}
@@ -193,7 +194,7 @@ export function InvestigationResponseDialog({
           </Select>
         </label>
         {outcome === 'no_issue_found' ? (
-          <p className="ua-text-body rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
+          <p className="ua-text-body rounded-md border border-[var(--uo-route-warning-border)] bg-[var(--uo-route-warning-bg)] p-3 text-[var(--uo-route-warning)]">
             “No issue found” is neutral. It does not prove another party or the customer caused the issue.
           </p>
         ) : null}
@@ -239,7 +240,7 @@ export function InvestigationResponseDialog({
             type="url"
             value={externalUrl}
             onChange={(event) => setExternalUrl(event.target.value)}
-            placeholder="https://partner.example/evidence/reference"
+            placeholder="https://partner.test/evidence/reference"
           />
         </label>
         <label className="ua-text-body block font-medium">
@@ -254,6 +255,13 @@ export function InvestigationResponseDialog({
             Files are stored privately in quarantine and cannot influence a decision until a safety scan marks them clean.
           </span>
         </label>
+        <BeforeYouConfirm
+          objectSummary={`${investigation.id} · partner response`}
+          valueSummary="No financial value changes."
+          externalAction="None. This records a response already received; it does not contact the partner or customer."
+          reversible="Append-only. A correction adds a later response record rather than editing this one."
+          appendOnly="A case-evidence entry, the response facts and any supplied attachment. Responsibility and merchant decision remain unchanged."
+        />
       </div>
     </Modal>
   );

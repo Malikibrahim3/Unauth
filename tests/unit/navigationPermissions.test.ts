@@ -5,7 +5,7 @@ describe('permission-filtered navigation', () => {
   it('never exposes destinations without their permission', () => {
     const permissions = new Set([PERMISSIONS.VIEW_DASHBOARD]);
     const routes = getSidebarNavItems(permissions).flatMap((group) => group.items);
-    expect(routes.map((route) => route.key)).toEqual(['dashboard']);
+    expect(routes.map((route) => route.key)).toEqual(['dashboard', 'notifications', 'help']);
     expect(routes.every((route) => !route.permission || permissions.has(route.permission))).toBe(true);
   });
 

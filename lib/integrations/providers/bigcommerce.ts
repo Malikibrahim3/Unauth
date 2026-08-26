@@ -6,7 +6,7 @@ export const bigcommerceProvider: IntegrationProvider = {
   logoSrc: '/providers/bigcommerce.svg',
   category: 'commerce',
   authMode: 'oauth',
-  buildStatus: 'partial',
+  codeMaturity: 'partial',
   description: 'Orders, refunds, fulfillments, and customer context from BigCommerce.',
   setupHref: '/api/bigcommerce/install',
   evidenceCapabilities: [

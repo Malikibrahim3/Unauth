@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
  * 409 (idempotency_payload_conflict). Never runs case/rule logic synchronously.
  */
 export async function POST(req: NextRequest) {
-  const auth = await authenticateIngest(req);
+  const auth = await authenticateIngest(req, 'imports:write');
   if (auth instanceof NextResponse) return auth;
   if (env.GENERIC_EVENT_INGESTION_ENABLED !== 'true') {
     return NextResponse.json(

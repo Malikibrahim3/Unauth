@@ -2,7 +2,7 @@
  * The single JavaScript mirror of the authenticated product motion contract.
  *
  * CSS is the primary home for these values — `--ua-duration-*` and `--ua-ease-*`
- * in styles/authenticated/tokens.css. This module exists only for the call sites
+ * in styles/operations/foundation.css. This module exists only for the call sites
  * that genuinely need a number in JS: timers, delayed indicators, and any
  * animation library configuration.
  *
@@ -81,3 +81,14 @@ export const TOAST_TIMEOUT = {
   withDescription: 8_000,
   danger: null,
 } as const;
+
+/**
+ * Resolves a JS-driven duration against the user's reduced-motion
+ * preference (§16.3). Pair with `useMotionAllowed()` for the live browser
+ * signal — this is the pure function every timer-based caller (chart
+ * transitions, the changed-value wash) should route its duration through
+ * rather than branching on `prefers-reduced-motion` locally.
+ */
+export function withMotion(durationMs: number, motionAllowed: boolean): number {
+  return motionAllowed ? durationMs : DURATION.instant;
+}

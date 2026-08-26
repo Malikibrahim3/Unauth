@@ -15,7 +15,7 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 async function POSTHandler(request: NextRequest) {
-  const authResult = await validateApiKey(request);
+  const authResult = await validateApiKey(request, 'customers:read');
   if (!isValidatedApiKey(authResult)) return withV1Cors(authResult, request);
 
   let body: { email?: string };

@@ -4,7 +4,8 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { ConnectorRow, categoryLabel, type CatalogueRowItem } from '@/components/integrations/ConnectorRow';
+import { ConnectorRow } from '@/components/integrations/ConnectorRow';
+import { categoryLabel, type CatalogueRowItem } from '@/lib/integrations/catalogueView';
 
 function gorgiasRow(overrides: Partial<CatalogueRowItem> = {}): CatalogueRowItem {
   return {

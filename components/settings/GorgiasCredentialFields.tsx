@@ -35,9 +35,9 @@ export function GorgiasCredentialFields({
           type="email"
           className="w-full rounded-md px-3 py-2 ua-text-body"
           style={{
-            background: 'var(--ua-surface-secondary)',
-            border: '1px solid var(--ua-border-default)',
-            color: 'var(--ua-text-primary)',
+            background: 'var(--uo-route-surface-secondary)',
+            border: '1px solid var(--uo-route-border-default)',
+            color: 'var(--uo-route-text-primary)',
           }}
           placeholder="you@company.com"
           value={gorgiasApiEmail}
@@ -62,9 +62,9 @@ export function GorgiasCredentialFields({
           type="password"
           className="w-full rounded-md px-3 py-2 ua-text-body font-mono"
           style={{
-            background: 'var(--ua-surface-secondary)',
-            border: '1px solid var(--ua-border-default)',
-            color: 'var(--ua-text-primary)',
+            background: 'var(--uo-route-surface-secondary)',
+            border: '1px solid var(--uo-route-border-default)',
+            color: 'var(--uo-route-text-primary)',
           }}
           placeholder="Your REST API key"
           value={gorgiasApiKey}
@@ -81,7 +81,7 @@ export function GorgiasCredentialFields({
           type="button"
           onClick={onToggleCredHelp}
           className="text-xs underline"
-          style={{ color: 'var(--ua-action-primary)' }}
+          style={{ color: 'var(--uo-route-action-primary)' }}
         >
           Where do I find this?
         </button>

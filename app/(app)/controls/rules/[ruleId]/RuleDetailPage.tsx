@@ -59,11 +59,9 @@ export default async function RuleDetail({
     versions[0]!;
 
   return (
-    <PageFrame>
+    <PageFrame surfaceId="rule-version-workbench" archetype="P8">
       <SetBreadcrumbLabel label={display.name} />
-      <div className="pt-5">
-        <RuleVersionWorkbench ruleId={id} initialVersions={versions} canManage={canManage} />
-      </div>
+      <RuleVersionWorkbench ruleId={id} initialVersions={versions} canManage={canManage} />
     </PageFrame>
   );
 }

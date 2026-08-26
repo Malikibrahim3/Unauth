@@ -150,4 +150,38 @@ describe('useFetchJson — §7.5 ResourceSnapshot contract', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     await waitFor(() => expect(result.current.data).toEqual({ value: 2 }));
   });
+
+  it('aborts an in-flight request after its final subscriber unmounts', async () => {
+    const url = uniqueUrl('abort-on-unmount');
+    let requestSignal: AbortSignal | undefined;
+    global.fetch = jest.fn().mockImplementation((_url, init?: RequestInit) => {
+      requestSignal = init?.signal ?? undefined;
+      return new Promise((_resolve, reject) => {
+        requestSignal?.addEventListener('abort', () => reject(requestSignal?.reason));
+      });
+    });
+
+    const { unmount } = renderHook(() => useFetchJson<{ value: number }>(url));
+    expect(requestSignal?.aborted).toBe(false);
+    unmount();
+
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+    expect(requestSignal?.aborted).toBe(true);
+  });
+
+  it('turns an exceeded request deadline into a recoverable error', async () => {
+    const url = uniqueUrl('request-timeout');
+    global.fetch = jest.fn().mockImplementation((_url, init?: RequestInit) => {
+      const signal = init?.signal;
+      return new Promise((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(signal.reason));
+      });
+    });
+
+    const { result } = renderHook(() => useFetchJson<{ value: number }>(url, { timeoutMs: 10 }));
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(result.current.error).toBe('Request timed out. Try again.');
+  });
 });

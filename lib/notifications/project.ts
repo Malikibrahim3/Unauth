@@ -2,21 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { TABLES } from "@/lib/supabase/tables";
 import { filterInAppNotificationRecipients } from "@/lib/collaboration/notificationPreferences";
+import { NOTIFICATION_KINDS } from "@/lib/notifications/kinds";
 
 export const notificationRequestSchema = z.object({
   recipient_user_id: z.string().uuid(),
-  kind: z.enum([
-    "assignment",
-    "mention",
-    "approaching_deadline",
-    "evidence_update",
-    "decision_request",
-    "recovery_outcome",
-    "sync_failure",
-    "daily_work_summary",
-    "high_value_case_alert",
-    "scheduled_report",
-  ]),
+  kind: z.enum(NOTIFICATION_KINDS),
   title: z.string().trim().min(1).max(200),
   body: z.string().trim().max(2_000).nullable().optional(),
   target_href: z.string().startsWith("/").max(500),

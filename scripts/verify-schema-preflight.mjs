@@ -9,8 +9,9 @@
  *
  * Target resolution, in order:
  *   1. --db-url=<postgres url>
- *   2. SUPABASE_DB_URL
- *   3. the isolated local stack reported by `supabase status`
+ *   2. --container=<disposable database container>
+ *   3. SUPABASE_DB_URL
+ *   4. the isolated local stack reported by `supabase status`
  *
  * A remote target is read-only: the preflight only ever runs SELECTs against
  * the catalogue.
@@ -46,6 +47,8 @@ const explicitUrl =
   process.argv.find((arg) => arg.startsWith('--db-url='))?.slice('--db-url='.length) ??
   process.env.SUPABASE_DB_URL ??
   null;
+const explicitContainer =
+  process.argv.find((arg) => arg.startsWith('--container='))?.slice('--container='.length) ?? null;
 
 let query;
 let targetLabel;
@@ -54,7 +57,7 @@ if (explicitUrl) {
   targetLabel = `${parsed.hostname}:${parsed.port || 5432}${parsed.pathname}`;
   query = (sql) => run('psql', [explicitUrl, '-X', '-At', '-F', '|', '-v', 'ON_ERROR_STOP=1', '-c', sql]);
 } else {
-  const container = localContainer();
+  const container = explicitContainer || localContainer();
   targetLabel = `local container ${container}`;
   query = (sql) =>
     run('docker', [

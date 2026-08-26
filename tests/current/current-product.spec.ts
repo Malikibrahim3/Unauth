@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const CURRENT_ROUTES = [
-  { path: "/overview", heading: "Overview" },
+  { path: "/overview", heading: "Operating position" },
   { path: "/work", heading: "Work" },
   { path: "/cases", heading: "Cases" },
-  { path: "/financials/losses", heading: "Losses" },
+  { path: "/financials/losses", heading: "Loss ledger" },
   { path: "/financials/recovery", heading: "Recovery board" },
   { path: "/customers", heading: "Customers" },
   { path: "/controls/rules", heading: "Rules" },
@@ -50,24 +50,21 @@ test.describe("current merchant experience", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Work" }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Integration exceptions" }),
-    ).toHaveAttribute("aria-current", "page");
-    const caseActions = page.getByRole("button", { name: /^Open Case / });
-    await expect(caseActions).not.toHaveCount(0, { timeout: 20_000 });
-    await caseActions.nth(0).click();
+    const exceptionRows = page.getByRole("button", {
+      name: /Reconciliation Exception/,
+    });
+    await expect(exceptionRows).not.toHaveCount(0, { timeout: 20_000 });
+    await exceptionRows.first().click();
+    await page.getByRole("link", { name: "Open full record" }).click();
     await expect(page).toHaveURL(/\/cases\//, { timeout: 30_000 });
     await expect(
-      page.getByText("Evidence on file", { exact: true }),
+      page.getByRole("region", { name: "Recommendation → decision → external result → money" }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
-      page.getByText("Manage evidence and lifecycle", { exact: true }),
+      page.getByRole("region", { name: "Evidence and readiness" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("region", { name: "Case comments" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Activity" }),
+      page.getByRole("region", { name: "Evidence register" }),
     ).toBeVisible();
   });
 
@@ -75,26 +72,24 @@ test.describe("current merchant experience", () => {
     page,
   }) => {
     await page.goto("/overview");
-    await page.getByRole("button", { name: "Search (⌘K)" }).click();
-    const dialog = page.getByRole("dialog", { name: "Command palette" });
+    await page.getByRole("button", { name: "Search and navigate" }).click();
+    const dialog = page.getByRole("dialog", { name: "Search and navigate" });
     await expect(dialog).toBeVisible();
-    const input = page.getByLabel(
-      "Search customers, cases, and evidence",
-    );
+    const input = page.getByLabel("Search records or navigate");
     await input.fill("recovery");
     await expect
-      .poll(() => dialog.getByText("Recovery", { exact: true }).count())
+      .poll(() => dialog.getByText("Recovery board", { exact: true }).count())
       .toBeGreaterThan(0);
     await input.press("Escape");
     await expect(
-      page.getByRole("dialog", { name: "Command palette" }),
+      page.getByRole("dialog", { name: "Search and navigate" }),
     ).not.toBeVisible();
   });
 
   test("current CSV intake validates a canonical row without committing it", async ({
     page,
   }) => {
-    await page.goto("/sources/imports");
+    await page.goto("/sources/imports?step=upload");
     await expect(
       page.getByRole("heading", { level: 1, name: "Imports" }),
     ).toBeVisible();
@@ -102,15 +97,16 @@ test.describe("current merchant experience", () => {
     await page
       .locator("textarea:visible")
       .fill("external_id,currency,total_minor\nE2E-VALIDATE-ONLY,GBP,8400");
+    await page.getByRole("button", { name: "Continue to mapping" }).click();
     await expect(page.getByLabel("Map external_id")).toHaveValue("external_id");
     await expect(page.getByLabel("Map currency")).toHaveValue("currency");
     await expect(page.getByLabel("Map total_minor")).toHaveValue("total_minor");
-    await page.getByRole("button", { name: "Validate", exact: true }).click();
+    await page.getByRole("button", { name: "Validate rows", exact: true }).click();
     await expect(
       page.getByText("Every row passed validation.", { exact: true }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
-      page.getByRole("button", { name: "Import 1 valid row" }),
+      page.getByRole("button", { name: "Commit 1 valid rows" }),
     ).toBeEnabled();
   });
 
@@ -120,17 +116,20 @@ test.describe("current merchant experience", () => {
     test.setTimeout(90_000);
     await page.goto("/sources/browse");
     await expect(
-      page.getByText(/\d+ of \d+ layers connected/).first(),
+      page.getByRole("heading", { level: 2, name: "Minimum evidence stack" }),
     ).toBeVisible({ timeout: 20_000 });
     await expect(
-      page.getByText(/\d+ integrations across \d+ categories/).first(),
+      page.getByText(/\d+ providers?$/).first(),
     ).toBeVisible();
     await expect(
-      page.getByText("Runtime verification pending", { exact: true }).first(),
+      page.getByText(/\d+ in the canonical registry/).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Needs attention \d+/ }),
     ).toBeVisible();
     const connectorLink = page
       .locator('a[href^="/sources/"]')
-      .filter({ hasText: "View details" })
+      .filter({ hasText: "Details" })
       .first();
     await expect(connectorLink).toBeVisible();
     await connectorLink.click();
@@ -138,17 +137,31 @@ test.describe("current merchant experience", () => {
       timeout: 60_000,
     });
     await expect(
-      page.getByRole("heading", { level: 2, name: "Setup coverage" }),
+      page.getByRole("heading", {
+        level: 2,
+        name: "What this source is allowed to do",
+      }),
     ).toBeVisible({ timeout: 60_000 });
     await expect(
-      page.getByRole("heading", { level: 2, name: "Data available to Unauth" }),
+      page.getByText("Records held", { exact: true }).first(),
     ).toBeVisible({ timeout: 60_000 });
     await expect(
-      page.getByRole("cell", { name: "Issue refund (forbidden in MVP+)", exact: true }),
+      page.getByText(/Runtime verification pending/).first(),
     ).toBeVisible();
+    const retainedRunHistory = page.getByRole("heading", {
+      level: 2,
+      name: "Sync and import history",
+    });
+    const explicitNoRunHistory = page.getByText(
+      "No sync history is inferred from connection state.",
+      { exact: true },
+    );
     await expect(
-      page.getByRole("heading", { level: 2, name: "Import history" }),
+      retainedRunHistory.or(explicitNoRunHistory).first(),
     ).toBeVisible({ timeout: 60_000 });
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Configuration" }),
+    ).toBeVisible();
     await expectNoDocumentOverflow(page);
   });
 
@@ -160,20 +173,24 @@ test.describe("current merchant experience", () => {
       page.getByRole("heading", { level: 1, name: "Reports" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "Value this period" }),
+      page.getByRole("heading", { level: 2, name: "How did requested value become final net loss?" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Maximum exposure", { exact: true }).first(),
+      page.getByRole("heading", { name: "Is exposure outpacing recovery?" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Recovery performance", { exact: true }),
+      page.getByRole("heading", { name: "Which causes make up confirmed loss?" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Source coverage", { exact: true }).first(),
+      page.getByRole("link", { name: /Open loss causes/ }),
     ).toBeVisible();
     await expect(page.locator("main canvas")).toHaveCount(0);
-    await expect(page.locator("main .recharts-wrapper")).not.toHaveCount(0);
-    await expect(page.getByRole("region", { name: "Case financial charts" })).toBeVisible();
+    await expect(page.locator("main .recharts-wrapper")).toHaveCount(0);
+    await expect(page.getByRole("img", { name: /Cumulative maximum exposure and recovered cash/ })).toBeVisible();
     await expect(page.getByText("View chart data").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Open a report" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Metric definitions" })).toBeVisible();
+    await expect(page.getByText("Case financials", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("How is financial value accumulating?", { exact: true })).toHaveCount(0);
   });
 });

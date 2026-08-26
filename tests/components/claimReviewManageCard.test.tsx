@@ -132,7 +132,8 @@ describe('ClaimReviewManageCard', () => {
     render(<ClaimReviewManageCard wb={wb} canManage />);
     const button = screen.getByRole('button', { name: 'Decision not ready' });
     expect(button).toBeDisabled();
-    expect(button).toHaveStyle({ background: 'var(--ua-surface-muted)' });
+    expect(button).toHaveClass('ua-button');
+    expect(button).toHaveAttribute('aria-describedby', 'manage-decision-requirement');
   });
 
   it('offers reversal only once a decision is on record', () => {

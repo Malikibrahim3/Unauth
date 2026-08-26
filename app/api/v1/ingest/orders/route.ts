@@ -14,7 +14,7 @@ import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateIngest(req);
+  const auth = await authenticateIngest(req, 'imports:write');
   if (auth instanceof NextResponse) return auth;
 
   const rawIdempotencyKey = req.headers.get('idempotency-key');

@@ -1,4 +1,4 @@
-import { TablePageLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
+import { SettingsRouteLoading } from '@/components/settings/SettingsRouteLoading';
 export default function Loading() {
-  return <TablePageLoadingSkeleton label="Loading audit trail" />;
+  return <SettingsRouteLoading title="Audit trail" layout="wide" />;
 }

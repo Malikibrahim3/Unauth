@@ -2,17 +2,23 @@ import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
-import { PageFrame } from "@/components/ui";
-import { formatNumber } from "@/lib/utils/format";
 import {
   NotificationCentre,
   type NotificationItem,
 } from "@/components/notifications/NotificationCentre";
-import { listNotifications } from "@/lib/notifications/store";
+import { listNotificationsPage, NOTIFICATION_FILTERS, type NotificationFilter } from "@/lib/notifications/store";
 
 export const dynamic = "force-dynamic";
 
-export default async function NotificationsPage() {
+export default async function NotificationsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ tab?: string; cursor?: string }>;
+}) {
+  const routeParams = await searchParams;
+  const initialFilter = (NOTIFICATION_FILTERS as readonly string[]).includes(routeParams?.tab ?? '')
+    ? routeParams!.tab as NotificationFilter
+    : 'all';
   const user = await getRequestUser();
   if (!user) redirect("/login");
 
@@ -24,22 +30,20 @@ export default async function NotificationsPage() {
   );
   if (denied || !ctx) redirect("/overview");
 
-  const notifications = (await listNotifications(
-    serviceClient,
-    ctx.merchantId,
-    user.id,
-  )) as NotificationItem[];
-  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-  const recentCount = notifications.filter(
-    (item) => Date.parse(item.created_at) >= fourteenDaysAgo,
-  ).length;
-
-  return (
-    <PageFrame
-      title="Notifications"
-      subtitle={`${formatNumber(notifications.length)} total · ${formatNumber(recentCount)} received in the last 14 days`}
-    >
-      <NotificationCentre initialNotifications={notifications} />
-    </PageFrame>
-  );
+  let page;
+  try {
+    page = await listNotificationsPage(serviceClient, ctx.merchantId, user.id, {
+      filter: initialFilter,
+      cursor: routeParams?.cursor ?? null,
+    });
+  } catch {
+    page = await listNotificationsPage(serviceClient, ctx.merchantId, user.id, { filter: initialFilter });
+  }
+  return <NotificationCentre
+    initialNotifications={page.items as NotificationItem[]}
+    initialCounts={page.counts}
+    initialNextCursor={page.pageInfo.nextCursor}
+    initialFilter={initialFilter}
+    initialCursor={routeParams?.cursor ?? null}
+  />;
 }

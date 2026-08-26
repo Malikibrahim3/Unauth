@@ -1,21 +1,13 @@
 'use client';
 
-import { KeyRound, Trash2 } from 'lucide-react';
-import { Bone } from '@/components/ui/LoadingSkeleton';
+import { KeyRound } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import styles from '@/components/settings/OperationsSettings.module.css';
 
 function ApiKeysSkeleton() {
   return (
-    <div className="divide-y" style={{ borderColor: 'var(--ua-border-default)' }} aria-busy="true">
-      {[1, 2].map((i) => (
-        <div key={i} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <div className="space-y-1.5 min-w-0">
-            <Bone className="h-3.5 w-40" />
-            <Bone className="h-3 w-32" />
-            <Bone className="h-3 w-56" />
-          </div>
-          <Bone className="h-8 w-16 shrink-0" />
-        </div>
-      ))}
+    <div className={styles.skeleton} aria-busy="true">
+      <div /><div /><div />
     </div>
   );
 }
@@ -41,62 +33,45 @@ export function ApiKeysListSection({
 }: ApiKeysListSectionProps) {
   return (
     <section
-      className="rounded-md border"
-      style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
+      className={styles.card}
+      data-operations-surface="api-access"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4" style={{ borderColor: 'var(--ua-border-default)' }}>
+      <div className={styles.cardHeading}>
         <div>
-          <h2 className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>API keys</h2>
-          <p className="ua-text-caption-role mt-1">
-            Authenticate public API requests with{' '}
-            <code className="ua-text-dense">Authorization: Bearer unauth_sk_…</code>
-          </p>
+          <h2>API keys</h2>
+          <p>Scopes and rate limits are fixed at creation. Changing them means creating a new key.</p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onOpenCreateModal}
-          className="ua-text-working-title inline-flex items-center gap-2 rounded-md px-3 py-2"
-          style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+          leadingIcon={<KeyRound className="h-4 w-4" />}
+          size="sm"
         >
-          <KeyRound className="h-4 w-4" />
-          Create new API key
-        </button>
+          Create a key
+        </Button>
       </div>
 
       {loading ? (
         <ApiKeysSkeleton />
       ) : keysError ? (
-        <p className="ua-text-body px-5 py-8" style={{ color: 'var(--ua-risk-critical)' }}>{keysError}</p>
+        <p className={styles.empty} style={{ color: 'var(--uo-route-critical)' }}>{keysError}</p>
       ) : keys.length === 0 ? (
-        <p className="ua-text-body px-5 py-8" style={{ color: 'var(--ua-text-secondary)' }}>
-          No API keys yet. Create one for custom API integrations.
-        </p>
+        <p className={styles.empty}>No API keys yet. Create one for an approved export or integration.</p>
       ) : (
-        <ul className="divide-y" style={{ borderColor: 'var(--ua-border-default)' }}>
-          {keys.map((key) => (
-            <li key={key.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-              <div className="min-w-0">
-                <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{key.name}</p>
-                <p className="ua-text-dense mt-1 font-mono" style={{ color: 'var(--ua-text-secondary)' }}>{key.key_prefix}</p>
-                <p className="ua-text-caption-role mt-1">
-                  Created {formatIntegrationDate(key.created_at)} · Last used {formatIntegrationDate(key.last_used_at)} ·{' '}
-                  {key.rate_limit_per_minute}/min
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={busyId === key.id}
-                onClick={() => onOpenRevokeModal(key)}
-                className="ua-text-label inline-flex items-center gap-1 rounded-md border px-3 py-2 disabled:opacity-50"
-                style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Revoke
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className={styles.apiTable} role="table" aria-label="API keys" tabIndex={0}>
+          <div role="row" className={styles.apiHeader}><span>Name</span><span>Key</span><span>Scopes</span><span>Rate limit</span><span>Created</span><span>Last used</span><span>Status</span></div>
+          {keys.map((key) => <div role="row" className={styles.apiRow} key={key.id}>
+            <span className={styles.apiName}>{key.name}</span>
+            <span className={styles.apiPrefix}>{key.key_prefix}…</span>
+            <span className={styles.apiMuted}>{key.scopes.length ? key.scopes.join(', ') : 'No machine access'}</span>
+            <span>{key.rate_limit_per_minute}/minute</span>
+            <span>{formatIntegrationDate(key.created_at)}</span>
+            <span>{formatIntegrationDate(key.last_used_at)}</span>
+            <span>{key.revoked_at ? <span className={styles.apiStatus} data-tone="revoked">Revoked</span> : <button type="button" className={styles.apiStatus} disabled={busyId === key.id} onClick={() => onOpenRevokeModal(key)} title={`Revoke ${key.name}`}>Active · revoke</button>}</span>
+          </div>)}
+        </div>
       )}
+      <p className={styles.tableFootnote}>A revoked key stays in history so its prior use remains readable. Revocation does not remove records already ingested.</p>
     </section>
   );
 }

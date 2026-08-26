@@ -31,6 +31,16 @@ const remotePatterns = supabaseHostname
   : [];
 
 const nextConfig = {
+  // A task-specific dist directory lets verification run beside a developer's
+  // existing server without sharing or corrupting its generated lock/cache.
+  distDir: process.env.UNAUTH_NEXT_DIST_DIR || '.next',
+  // Keep the authenticated working set warm in the Webpack fallback. The app
+  // has substantially more than Next's five-entry development default, which
+  // otherwise evicts a route after one minute and recompiles it on the next click.
+  onDemandEntries: {
+    maxInactiveAge: 30 * 60 * 1000,
+    pagesBufferLength: 32,
+  },
   serverExternalPackages: ['papaparse'],
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1'],
@@ -75,6 +85,18 @@ const nextConfig = {
     ];
     return [{ source: '/:path*', headers: securityHeaders }];
   },
+  async rewrites() {
+    return [
+      { source: '/records/:type/:id', destination: '/financials/reports/records?kind=:type&value=:id' },
+      { source: '/recovery/:claimId', destination: '/financials/recovery/:claimId' },
+      { source: '/controls/payout-rules/:id/versions', destination: '/controls/rules/:id' },
+      { source: '/controls/flows/:id/edit', destination: '/controls/flows/:id' },
+      { source: '/sources/:provider/setup', destination: '/sources/setup/:provider' },
+      { source: '/settings/workspace', destination: '/settings/workspace/account' },
+      { source: '/settings/roles', destination: '/settings/workspace/team' },
+      { source: '/system-states', destination: '/help' },
+    ];
+  },
   async redirects() {
     // Compatibility redirects for URLs that were previously shipped or linked
     // externally. Keep this as the only legacy-route source of truth. Remove an
@@ -88,6 +110,10 @@ const nextConfig = {
   // is empty and image optimisation is disabled (fail-closed).
   images: {
     remotePatterns,
+    // Next 16 ignores any <Image quality> value that is not allow-listed here and
+    // silently falls back to 75. The landing hero screenshot is dense product UI,
+    // so it opts into 90 to keep small type and chart strokes crisp.
+    qualities: [75, 90],
   },
 };
 

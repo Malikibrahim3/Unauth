@@ -189,7 +189,7 @@ export function DashboardPositionChart({
           {readout ? (
             <>
               {readout.secondary != null ? (
-                <span data-tone="positive">{secondaryLabel} {formatValue(readout.secondary)}</span>
+                <span data-tone="observed">{secondaryLabel} {formatValue(readout.secondary)}</span>
               ) : null}
               {comparison && readout.previous != null ? (
                 <span data-tone="comparison">Previous {formatValue(readout.previous)}</span>
@@ -216,6 +216,7 @@ export function DashboardPositionChart({
 
       <div
         className={styles.timelinePlot}
+        style={{ '--uo-route-dashboard-bucket-count': data.length } as CSSProperties}
         role="group"
         data-testid="financial-plot"
         aria-label={`${metricLabel} timeline — ${scope}`}
@@ -260,8 +261,8 @@ export function DashboardPositionChart({
               || index % Math.max(1, Math.ceil(data.length / 5)) === 0;
             const isSelected = selectedKey === bucket.key;
             const style = {
-              '--ua-dashboard-timeline-current-scale': currentPercent / 100,
-              '--ua-dashboard-timeline-secondary-scale': secondaryPercent / 100,
+              '--uo-route-dashboard-timeline-current-scale': currentPercent / 100,
+              '--uo-route-dashboard-timeline-secondary-scale': secondaryPercent / 100,
             } as CSSProperties;
 
             return (
@@ -293,8 +294,8 @@ export function DashboardPositionChart({
                   </span>
                 ) : null}
                 <span className={styles.timelineBarSet} aria-hidden="true">
-                  <i className={styles.timelinePrimaryBar} />
-                  {secondaryValue != null ? <i className={styles.timelineSecondaryBar} /> : null}
+                  <i className={styles.timelinePrimaryBar} data-series="active" />
+                  {secondaryValue != null ? <i className={styles.timelineSecondaryBar} data-series="observed" /> : null}
                 </span>
                 <span
                   className={styles.timelineBucketLabel}
@@ -313,7 +314,7 @@ export function DashboardPositionChart({
 
       <div className={styles.timelineLegend} aria-label="Chart legend">
         <span><i data-tone="primary" />{metricLabel}</span>
-        {secondary ? <span><i data-tone="positive" />{secondaryLabel}</span> : null}
+        {secondary ? <span><i data-tone="observed" />{secondaryLabel}</span> : null}
         {comparison ? <span><i data-tone="comparison" />Previous period</span> : null}
       </div>
 

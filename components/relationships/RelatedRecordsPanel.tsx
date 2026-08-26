@@ -41,24 +41,24 @@ function freshnessLabel(freshness: string | null): string {
 export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
   if (records.length === 0) {
     return (
-      <div className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4 text-[length:var(--ua-text-dense-size)] text-[var(--ua-text-secondary)]">
+      <div className="rounded-lg border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] p-4 text-[length:var(--uo-route-text-dense-size)] text-[var(--uo-route-text-secondary)]">
         No related records yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]">
-      <ul className="divide-y divide-[var(--ua-border-subtle)]">
+    <div className="rounded-lg border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)]">
+      <ul className="divide-y divide-[var(--uo-route-border-subtle)]">
         {records.map((r) => {
           const label = ENTITY_LABELS[r.entityType] ?? r.entityType;
           const inner = (
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0">
-                <p className="ua-text-working-title truncate text-[var(--ua-text-primary)]">
+                <p className="ua-text-working-title truncate text-[var(--uo-route-text-primary)]">
                   {label}
                 </p>
-                <p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
+                <p className="mt-0.5 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]">
                   {r.sourceSystem ?? "source not identified"} ·{" "}
                   {freshnessLabel(r.freshness)}
                   {r.matchMethod ? ` · ${r.matchMethod}` : ""}
@@ -77,7 +77,7 @@ export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
                   href={r.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block hover:bg-[var(--ua-surface-hover)]"
+                  className="block hover:bg-[var(--uo-route-surface-hover)]"
                 >
                   {inner}
                 </a>

@@ -1,9 +1,5 @@
 import type { Metadata } from 'next';
-import FoundationNav from '../landing/_components/foundation/FoundationNav';
-import FoundationPricingTiers from '../landing/_components/foundation/FoundationPricingTiers';
-import FoundationPricingCredits from '../landing/_components/foundation/FoundationPricingCredits';
-import FoundationFooter from '../landing/_components/foundation/FoundationFooter';
-import foundationStyles from '../landing/_components/foundation/foundation.module.css';
+import { Challenge6Pricing } from '@/components/public/Challenge6PublicPages';
 
 export const metadata: Metadata = {
   title: 'Pricing | Unauth',
@@ -16,17 +12,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PricingPage() {
-  return (
-    <div
-      className={`overflow-x-clip bg-[var(--fl-bg)] text-[var(--fl-ink)] ${foundationStyles.landingHeadings}`}
-    >
-      <FoundationNav />
-      <main>
-        <FoundationPricingTiers />
-        <FoundationPricingCredits />
-        <FoundationFooter />
-      </main>
-    </div>
-  );
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ plan?: string }>;
+}) {
+  const params = await searchParams;
+  return <Challenge6Pricing requestedPlan={params?.plan} />;
 }

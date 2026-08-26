@@ -96,7 +96,7 @@ if (demoSeed.stdout) process.stdout.write(demoSeed.stdout);
 
 const { data: cases, error: caseError } = await supabase
   .from('support_payout_cases')
-  .select('id,amount_at_risk,currency,submitted_at,created_at')
+  .select('id,source_order_id,amount_at_risk,currency,submitted_at,created_at')
   .eq('merchant_id', MERCHANT_ID)
   .order('created_at', { ascending: true });
 if (caseError) throw caseError;
@@ -106,33 +106,16 @@ if (!primaryCase) {
   throw new Error('Canonical demo seed did not create a payout case');
 }
 
-const { error: exceptionError } = await supabase.from('case_exceptions').upsert(
-  {
-    merchant_id: MERCHANT_ID,
-    support_payout_case_id: primaryCase.id,
-    exception_type: 'conflicting_financials',
-    confidence: 'probable',
-    status: 'open',
-    title: 'Review conflicting source totals',
-    detail: 'Synthetic release fixture: connected source totals need a merchant decision.',
-    context: { fixture: 'release-e2e-local' },
-    subject_entity_type: 'support_payout_case',
-    subject_entity_id: primaryCase.id,
-    source_system: 'release_e2e_fixture',
-    dedup_key: 'release-e2e:connected-case-exception',
-  },
-  { onConflict: 'merchant_id,dedup_key' },
-);
-if (exceptionError) throw exceptionError;
-
 const { error: notificationError } = await supabase.from('notifications').upsert(
   {
     merchant_id: MERCHANT_ID,
     recipient_user_id: owner.id,
     kind: 'approaching_deadline',
     title: 'Review payout case evidence',
-    body: 'Synthetic release fixture notification for the connected merchant workflow.',
+    body: 'This payout case is waiting on evidence review. Open it to confirm the source gap before the next merchant decision.',
     target_href: `/cases/${primaryCase.id}`,
+    // Synthetic provenance stays machine-readable for deterministic fixture
+    // cleanup without leaking test language into the merchant experience.
     deduplication_key: 'release-e2e:workflow-notification',
     read_at: null,
   },
@@ -282,6 +265,91 @@ for (const caseRow of cases ?? []) {
   });
   if (error) throw error;
 }
+
+if (!primaryCase.source_order_id) {
+  throw new Error('Canonical demo case has no source order for reconciliation evidence');
+}
+
+const [sourceOrderResult, ledgerEntryResult] = await Promise.all([
+  supabase
+    .from('source_orders')
+    .select('id,external_id,order_number,total_price,currency,financial_status,placed_at,source')
+    .eq('merchant_id', MERCHANT_ID)
+    .eq('id', primaryCase.source_order_id)
+    .maybeSingle(),
+  supabase
+    .from('case_financial_entries')
+    .select('id,state,amount_minor,currency,effective_at')
+    .eq('merchant_id', MERCHANT_ID)
+    .eq('support_payout_case_id', primaryCase.id)
+    .eq('state', 'confirmed_loss')
+    .order('effective_at', { ascending: false })
+    .limit(1)
+    .maybeSingle(),
+]);
+if (sourceOrderResult.error) throw sourceOrderResult.error;
+if (ledgerEntryResult.error) throw ledgerEntryResult.error;
+if (!sourceOrderResult.data || !ledgerEntryResult.data) {
+  throw new Error('Reconciliation fixture requires a real source order and confirmed-loss entry');
+}
+
+const sourceOrder = sourceOrderResult.data;
+const ledgerEntry = ledgerEntryResult.data;
+const sourceTotal = Number(sourceOrder.total_price);
+const sourceCurrency = String(sourceOrder.currency ?? '').toUpperCase();
+const ledgerCurrency = String(ledgerEntry.currency ?? '').toUpperCase();
+if (!Number.isFinite(sourceTotal) || !sourceCurrency || !sourceOrder.placed_at) {
+  throw new Error('Source order lacks the recorded amount, currency or effective time required for reconciliation');
+}
+if (!Number.isSafeInteger(ledgerEntry.amount_minor) || !ledgerCurrency || !ledgerEntry.effective_at) {
+  throw new Error('Confirmed-loss entry lacks the recorded amount, currency or effective time required for reconciliation');
+}
+if (sourceCurrency !== ledgerCurrency) {
+  throw new Error('Reconciliation fixture cannot compare source and ledger amounts across currencies');
+}
+const sourceAmountMinor = Math.round(sourceTotal * 100);
+if (sourceAmountMinor === ledgerEntry.amount_minor) {
+  throw new Error('Reconciliation fixture does not contain a real source-to-ledger difference');
+}
+
+const { error: exceptionError } = await supabase.from('case_exceptions').upsert(
+  {
+    merchant_id: MERCHANT_ID,
+    support_payout_case_id: primaryCase.id,
+    exception_type: 'conflicting_financials',
+    confidence: 'probable',
+    status: 'open',
+    title: 'Review source and ledger totals',
+    detail: 'The recorded source order total and confirmed-loss entry differ. Review both facts before resolving this exception.',
+    context: {
+      fixture: 'release-e2e-local',
+      comparison_basis: 'source_order_total_vs_confirmed_loss',
+      source: {
+        record_id: sourceOrder.id,
+        record_type: 'source_order',
+        record_reference: sourceOrder.order_number ?? sourceOrder.external_id,
+        amount_minor: sourceAmountMinor,
+        currency: sourceCurrency,
+        state: sourceOrder.financial_status,
+        effective_at: sourceOrder.placed_at,
+      },
+      ledger: {
+        record_id: ledgerEntry.id,
+        record_type: 'case_financial_entry',
+        amount_minor: ledgerEntry.amount_minor,
+        currency: ledgerCurrency,
+        state: ledgerEntry.state,
+        effective_at: ledgerEntry.effective_at,
+      },
+    },
+    subject_entity_type: 'source_order',
+    subject_entity_id: sourceOrder.id,
+    source_system: sourceOrder.source,
+    dedup_key: 'release-e2e:connected-case-exception',
+  },
+  { onConflict: 'merchant_id,dedup_key' },
+);
+if (exceptionError) throw exceptionError;
 
 console.log(
   `Synthetic release fixture ready (${cases?.length ?? 0} cases; ${entries.length} new financial entries).`,

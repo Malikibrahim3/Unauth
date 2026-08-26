@@ -1,23 +1,21 @@
-'use client';
+"use client";
 
-import { type ReactNode } from 'react';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
-import { DURATION, EASE } from '@/lib/design/motion';
-import { useOverlayPresence } from '@/lib/design/useOverlayPresence';
-import { OverlayPortal } from '@/components/ui/OverlayPortal';
+import { useCallback, useId, type ReactNode } from "react";
+import { X } from "lucide-react";
+import { Button, type ButtonVariant } from "./Button";
+import { OverlayPortal } from "./OverlayPortal";
+import { useOverlayPresence } from "@/lib/design/useOverlayPresence";
+import { cn } from "@/lib/utils";
+import { BeforeYouConfirm, type BeforeYouConfirmProps } from "./BeforeYouConfirm";
 
 interface ModalAction {
   label: string;
   onClick: () => void;
-  /** `commit` is the neutral high-stakes action (§3.2) — financial decisions,
-   *  irreversible workflow steps, and confirmation. */
-  variant?: 'primary' | 'commit' | 'secondary' | 'danger';
+  variant?: Extract<ButtonVariant, "primary" | "commit" | "secondary" | "danger">;
   disabled?: boolean;
 }
 
-interface ModalProps {
+export interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
@@ -25,17 +23,19 @@ interface ModalProps {
   footer?: ReactNode;
   children: ReactNode;
   actions?: ModalAction[];
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   closeOnBackdrop?: boolean;
-  'aria-label'?: string;
+  closeOnEscape?: boolean;
+  showCloseButton?: boolean;
+  "aria-label"?: string;
   className?: string;
+  overlayId?: string;
+  /** Prevents Escape, backdrop, close, cancel, and action dismissal while a save is in flight. */
+  pending?: boolean;
+  pendingMessage?: string;
+  /** Canonical object/effect/reversibility/audit summary for consequential actions. */
+  reviewSummary?: BeforeYouConfirmProps;
 }
-
-const MODAL_WIDTHS: Record<'sm' | 'md' | 'lg', string> = {
-  sm: '400px',
-  md: '600px',
-  lg: '800px',
-};
 
 export function Modal({
   open,
@@ -45,120 +45,73 @@ export function Modal({
   footer,
   children,
   actions,
-  size = 'md',
+  size = "md",
   closeOnBackdrop = true,
-  'aria-label': ariaLabel,
+  closeOnEscape = true,
+  showCloseButton = true,
+  "aria-label": ariaLabel,
   className,
+  overlayId,
+  pending = false,
+  pendingMessage = "Saving this change. Keep this dialog open.",
+  reviewSummary,
 }: ModalProps) {
-  const { mounted, phase, containerRef, motionAllowed } = useOverlayPresence({
+  const titleId = useId();
+  const requestClose = useCallback(() => {
+    if (!pending) onClose();
+  }, [onClose, pending]);
+  const { mounted, phase, containerRef } = useOverlayPresence({
     open,
-    onClose,
-    exitDurationMs: DURATION.fast,
+    onClose: requestClose,
     trapFocus: true,
+    restoreFocus: true,
     lockBodyScroll: true,
+    closeOnEscape: closeOnEscape && !pending,
   });
-
   if (!mounted) return null;
-
-  const isOpen = phase === 'open';
-  const duration = phase === 'exiting' ? DURATION.fast : DURATION.base;
-  const ease = phase === 'exiting' ? EASE.exit : EASE.enter;
-  const transition = motionAllowed ? `opacity ${duration}ms ${ease}, transform ${duration}ms ${ease}` : 'none';
-
+  const ready = phase === "open";
   return (
     <OverlayPortal>
-    <div
-      role="presentation"
-      className="fixed inset-0 flex items-center justify-center"
-      aria-hidden={phase === 'exiting' ? true : undefined}
-      style={{
-        background: 'var(--ua-backdrop)',
-        zIndex: 'var(--ua-z-modal)' as unknown as number,
-        opacity: isOpen ? 1 : 0,
-        transition: motionAllowed ? `opacity ${duration}ms ${ease}` : 'none',
-        pointerEvents: phase === 'exiting' ? 'none' : undefined,
-      }}
-      onClick={closeOnBackdrop ? onClose : undefined}
-    >
       <div
-        ref={containerRef as React.RefObject<HTMLDivElement>}
-        role="dialog"
-        aria-modal="true"
-        tabIndex={-1}
-        aria-label={ariaLabel ?? title ?? 'Modal'}
-        className={cn('ua-card rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
-        style={{
-          background: 'var(--ua-surface-overlay)',
-          border: '1px solid var(--ua-border-default)',
-          boxShadow: 'var(--ua-shadow-overlay)',
-          width: MODAL_WIDTHS[size],
-          maxWidth: 'calc(100vw - 32px)',
-          opacity: isOpen ? 1 : 0,
-          transform: isOpen ? 'translateY(0) scale(1)' : 'translateY(6px) scale(0.99)',
-          transition,
+        className="ua-overlay"
+        data-phase={phase}
+        data-overlay-open={ready ? "true" : "false"}
+        aria-hidden={phase === "exiting" ? true : undefined}
+        onMouseDown={(event) => {
+          if (closeOnBackdrop && event.target === event.currentTarget) requestClose();
         }}
-        onClick={(e) => e.stopPropagation()}
       >
-        {(title || description) && (
-          <div
-            className="flex items-start justify-between gap-3 border-b px-4 py-3"
-            style={{ borderColor: 'var(--ua-border-default)' }}
-          >
-            <div className="flex-1 min-w-0">
-              {title && (
-                <h2 className="text-h2" style={{ color: 'var(--ua-text-primary)' }}>
-                  {title}
-                </h2>
-              )}
-              {description && (
-                <p className="mt-1 text-small" style={{ color: 'var(--ua-text-secondary)' }}>
-                  {description}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1 rounded-md hover:bg-[var(--ua-surface-hover)] transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]"
-              aria-label="Close modal"
-            >
-              <X className="w-4 h-4" style={{ color: 'var(--ua-text-secondary)' }} />
-            </button>
+        <section
+          ref={containerRef as React.RefObject<HTMLElement>}
+          className={cn("ua-modal", `ua-modal--${size}`, className)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title ? undefined : ariaLabel ?? "Dialog"}
+          aria-labelledby={title ? titleId : undefined}
+          data-overlay-id={overlayId}
+          data-overlay-state={ready ? "open" : phase}
+          data-pending={pending ? "true" : undefined}
+          aria-busy={pending || undefined}
+          tabIndex={-1}
+        >
+          {(title || description) ? (
+            <header className="ua-modal__header">
+              <div>{title ? <h2 id={titleId}>{title}</h2> : null}{description ? <p>{description}</p> : null}</div>
+              {showCloseButton ? <button type="button" onClick={requestClose} disabled={pending} aria-label={pending ? "Close unavailable while saving" : "Close dialog"}><X size={17} /></button> : null}
+            </header>
+          ) : null}
+          <div className="ua-modal__body">
+            {reviewSummary ? <BeforeYouConfirm {...reviewSummary} /> : null}
+            {children}
           </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto px-4 py-3.5">
-          {children}
-        </div>
-
-        {(footer || actions) && (
-          <div
-            className="flex items-center justify-end gap-2 border-t px-4 py-3"
-            style={{ borderColor: 'var(--ua-border-default)' }}
-          >
-            {footer ?? (
-              <>
-                <Button variant="secondary" onClick={onClose}>
-                  Cancel
-                </Button>
-                {actions?.map((action) => (
-                  <Button
-                    key={action.label}
-                    variant={action.variant ?? 'primary'}
-                    onClick={action.onClick}
-                    disabled={action.disabled}
-                  >
-                    {action.label}
-                  </Button>
-                ))}
-              </>
-            )}
-          </div>
-        )}
+          {pending ? <p className="ua-overlay-pending" role="status" aria-live="polite">{pendingMessage}</p> : null}
+          {footer || actions ? (
+            <footer className="ua-modal__footer" inert={pending || undefined} aria-disabled={pending || undefined}>
+              {footer ?? <><Button variant="secondary" onClick={requestClose} disabled={pending}>Cancel</Button>{actions?.map((action) => <Button key={action.label} variant={action.variant ?? "primary"} onClick={action.onClick} disabled={pending || action.disabled}>{action.label}</Button>)}</>}
+            </footer>
+          ) : null}
+        </section>
       </div>
-    </div>
     </OverlayPortal>
   );
 }
-
-export type { ModalProps };

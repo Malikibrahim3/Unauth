@@ -102,6 +102,8 @@ export type ClaimDecisionContext = {
     merchantEvidenceItems: number;
     hasCustomerEvidence: boolean;
     hasDeliveryEvidence: boolean;
+    /** Canonical evidence keys available for checklist-level readiness. */
+    evidenceTypes?: string[];
   };
 };
 

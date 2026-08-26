@@ -16,6 +16,7 @@ export default function ReportRecordsError({
       reset={reset}
       digest={error.digest}
       fallbackHref="/financials/reports"
+      stateId="report-records-error"
     />
   );
 }

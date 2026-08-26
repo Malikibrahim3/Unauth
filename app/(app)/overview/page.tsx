@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
 import { PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
-import { getRequestServiceClient, getRequestUser, requirePagePermission } from '@/lib/auth/requestContext';
+import { getRequestPermissions, getRequestServiceClient, getRequestUser, requirePagePermission } from '@/lib/auth/requestContext';
+import { getMerchantProfileById } from '@/lib/account/merchantProfile';
 import {
   loadDashboardPeriodComparison,
   loadIntelligenceReport,
@@ -25,12 +26,16 @@ export default async function OverviewPage({
       await resolveDefaultAppPath(service, user.id, { exclude: ['/overview'] }),
     );
   }
+  const metadataName = [user.user_metadata?.full_name, user.user_metadata?.name]
+    .find((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    ?.trim();
+  const displayName = metadataName ?? user.email ?? null;
   const params = await searchParams;
   const range = parseReportRange(params.range);
   const timezone = params.timezone && params.timezone.length < 80 ? params.timezone : 'UTC';
-  const compare = range !== 'all' && params.compare === 'previous' ? 'previous' : 'none';
+  const compare = range !== 'all' && params.compare !== 'none' ? 'previous' : 'none';
   const asOf = now();
-  const [report, comparison] = await Promise.all([
+  const [report, comparison, merchantProfile, permissions] = await Promise.all([
     loadIntelligenceReport(service, ctx.merchantId, range, timezone, { asOf }),
     compare === 'previous'
       ? loadDashboardPeriodComparison(
@@ -39,8 +44,10 @@ export default async function OverviewPage({
           range,
           asOf,
           timezone,
-        )
+      )
       : Promise.resolve(null),
+    getMerchantProfileById(service, ctx.merchantId),
+    getRequestPermissions(),
   ]);
   const requestedCurrency = params.currency?.toUpperCase();
   const selectedCurrency = report.bridges.some(
@@ -50,11 +57,16 @@ export default async function OverviewPage({
     : report.bridges[0]?.currency ?? null;
 
   return (
-    <DashboardOverview
-      report={report}
-      comparison={comparison}
-      selectedCurrency={selectedCurrency}
-      compare={compare}
-    />
+    <>
+      <DashboardOverview
+        report={report}
+        comparison={comparison}
+        selectedCurrency={selectedCurrency}
+        compare={compare}
+        userName={displayName}
+        workspaceName={merchantProfile?.name ?? null}
+        permissions={permissions}
+      />
+    </>
   );
 }

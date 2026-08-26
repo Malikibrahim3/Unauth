@@ -36,7 +36,13 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     ".next-living-precision-dev/types/**/*.ts",
-    ".next-living-precision-dev/dev/types/**/*.ts"
+    ".next-living-precision-dev/dev/types/**/*.ts",
+    ".next-lcp-audit/types/**/*.ts",
+    ".next-lcp-audit/dev/types/**/*.ts",
+    ".next-lcp-before/types/**/*.ts",
+    ".next-lcp-before/dev/types/**/*.ts",
+    ".next-capture/types/**/*.ts",
+    ".next-capture/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

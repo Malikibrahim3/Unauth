@@ -90,6 +90,7 @@ export function useClaimReviewWorkbench(
   sourceCustomerId: string | null,
   initialClaimId?: string | null,
   initialClaim?: ClaimRecord | null,
+  initialDecisionData?: Record<string, unknown> | null,
 ) {
   const [state, dispatch] = useReducer(
     claimReviewReducer,
@@ -179,11 +180,22 @@ export function useClaimReviewWorkbench(
    */
   const caseScopedClaimId = initialClaimId || resolvedActiveClaimId;
 
-  const [decisionLoading, setDecisionLoading] = useState(false);
+  // The case id is server-resolved, so required context is busy on the first
+  // client render rather than one effect later. Route readiness can therefore
+  // wait for either complete context or the bounded unavailable state without
+  // briefly accepting an incomplete case workbench as terminal.
+  const initialDecisionClaimIdRef = useRef(
+    initialDecisionData && initialClaimId ? initialClaimId : null,
+  );
+  const [decisionLoading, setDecisionLoading] = useState(
+    Boolean(caseScopedClaimId && !initialDecisionData),
+  );
   const [decisionError, setDecisionError] = useState<string | null>(null);
-  const [decisionData, setDecisionData] = useState<Record<string, unknown> | null>(null);
+  const [decisionData, setDecisionData] = useState<Record<string, unknown> | null>(
+    initialDecisionData ?? null,
+  );
   const [decisionStale, setDecisionStale] = useState(false);
-  const decisionDataRef = useRef<Record<string, unknown> | null>(null);
+  const decisionDataRef = useRef<Record<string, unknown> | null>(initialDecisionData ?? null);
   const decisionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reloadDecision = useCallback(async (targetClaimId: string | null, mode: 'read' | 'refresh' = 'read') => {
@@ -250,6 +262,13 @@ export function useClaimReviewWorkbench(
   }, []);
 
   useEffect(() => {
+    if (
+      initialDecisionClaimIdRef.current === caseScopedClaimId
+      && decisionDataRef.current
+    ) {
+      setDecisionLoading(false);
+      return;
+    }
     decisionDataRef.current = null;
     setDecisionData(null);
     setDecisionError(null);
@@ -474,19 +493,19 @@ export function useClaimReviewWorkbench(
 
   async function onOutcome() {
     if (!resolvedActiveClaimId) {
-      showMsg('Save a case first, then record the outcome.', 'error');
-      return;
+      showMsg('Save a case first, then record the merchant decision.', 'error');
+      return { ok: false, externalHandoff: null };
     }
     if (!state.decision) {
-      showMsg('Choose a decision before recording the outcome.', 'error');
-      return;
+      showMsg('Choose a decision before recording it.', 'error');
+      return { ok: false, externalHandoff: null };
     }
     const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
     const currency = selectedClaim?.currency ?? null;
     const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
     if (monetaryDecision && (amountMinor == null || amountMinor < 0 || !currency)) {
       showMsg('Enter the decision amount and confirm its currency before recording this decision.', 'error');
-      return;
+      return { ok: false, externalHandoff: null };
     }
     const idempotencyKey = decisionRequestKeyRef.current
       ?? requestKey(`case-decision:${resolvedActiveClaimId}`);
@@ -500,12 +519,22 @@ export function useClaimReviewWorkbench(
       notes: state.notes,
     }, idempotencyKey);
     patch({ busy: false });
-    if (r.message.toLowerCase().includes('saved')) {
+    const saved = r.message.toLowerCase().includes('saved');
+    const externalHandoff = r.data.external_handoff && typeof r.data.external_handoff === 'object'
+      ? r.data.external_handoff as Record<string, unknown>
+      : null;
+    if (saved) {
       decisionRequestKeyRef.current = null;
+      const handoffStatus = externalHandoff?.status;
+      const handoffReason = typeof externalHandoff?.reason === 'string' ? externalHandoff.reason : null;
       showMsg(
-        state.decision === 'escalated'
-          ? 'Merchant outcome recorded. Case flagged for high evidence density review.'
-          : 'Merchant outcome recorded.',
+        handoffStatus === 'handoff_ready'
+          ? 'Merchant decision recorded. Exact provider handoff prepared; no provider action was performed.'
+          : handoffStatus === 'unavailable'
+            ? `Merchant decision recorded. Exact provider handoff unavailable${handoffReason ? `: ${handoffReason}` : '.'}`
+            : state.decision === 'escalated'
+              ? 'Merchant decision recorded. Case flagged for high evidence density review.'
+              : 'Merchant decision recorded.',
         'success',
       );
       saveClaimDraft(profileId, pickDraftFields(state, resolvedActiveClaimId));
@@ -525,6 +554,7 @@ export function useClaimReviewWorkbench(
     }
     await refreshHistory();
     scheduleReloadDecision(resolvedActiveClaimId);
+    return { ok: saved, externalHandoff };
   }
 
   async function onEvidence() {

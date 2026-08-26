@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server';
+import '@/styles/operations/index.css';
 import { getRequestUser } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
 import { redirect } from 'next/navigation';
@@ -8,10 +9,27 @@ import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 import { getMerchantProfileById } from '@/lib/account/merchantProfile';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { safeRedirectPath } from '@/lib/auth/safeRedirect';
+import { loadConnectorCatalogue } from '@/lib/connectors/catalogue';
+import { loadLatestSubscriptionIntent } from '@/lib/billing/subscriptionIntent';
+import { PLANS } from '@/lib/billing/plans';
+import { formatNumber } from '@/lib/utils/format';
+import OnboardingLoading from './loading';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ next?: string; step?: string; ux9State?: string }>;
+}) {
+  const routeParams = await searchParams;
+  if (process.env.RELEASE_E2E_LOCAL === '1' && routeParams?.ux9State === 'loading') {
+    return <OnboardingLoading />;
+  }
+  const ux9ProfileComplete = process.env.RELEASE_E2E_LOCAL === '1' && routeParams?.ux9State === 'profile-complete';
+  const safeNext = safeRedirectPath(routeParams?.next);
+  const workspaceHref = safeNext.startsWith('/onboarding') ? '/overview' : safeNext;
   const serviceClient = createServiceClient();
   const user = await getRequestUser();
   if (!user) redirect('/login');
@@ -53,16 +71,27 @@ export default async function OnboardingPage() {
       .eq('merchant_id', ctx.merchantId)
       .in('category', ['warehouse_3pl', 'returns'])
     : Promise.resolve({ data: [] });
+  const cataloguePromise = ctx
+    ? loadConnectorCatalogue(serviceClient, ctx.merchantId)
+    : Promise.resolve([]);
+  const intentPromise = ctx
+    ? loadLatestSubscriptionIntent(serviceClient, ctx.merchantId)
+    : Promise.resolve({ intent: null, availability: 'available' as const });
 
-  const [merchant, { data: jobs }, connectionState, { data: applicabilityRows }] = await Promise.all([
+  const [merchant, { data: jobs }, connectionState, { data: applicabilityRows }, connectorCatalogue, subscriptionIntentRead] = await Promise.all([
     merchantPromise,
     jobsPromise,
     connectionPromise,
     applicabilityPromise,
+    cataloguePromise,
+    intentPromise,
   ]);
   const applicability = new Map(
     ((applicabilityRows ?? []) as Array<{ category: string; status: string }>).map((row) => [row.category, row.status]),
   );
+  const requestedPlanDefinition = subscriptionIntentRead.intent
+    ? PLANS[subscriptionIntentRead.intent.requestedPlanId]
+    : null;
 
   const setupComplete =
     merchant?.setup_complete === true || user.user_metadata?.setup_complete === true;
@@ -111,12 +140,32 @@ export default async function OnboardingPage() {
             : ''
       }
       initialProfileComplete={
-        merchant?.onboarding_profile_complete === true || setupComplete
+        merchant?.onboarding_profile_complete === true || setupComplete || ux9ProfileComplete
       }
       shopifyConnected={connectionState.shopify}
       shopifyShopDomain={connectionState.shopDomain ?? ''}
       helpdeskConnected={connectionState.helpdesk}
       helpdeskProvider={connectionState.helpdeskProvider}
+      workspaceHref={workspaceHref}
+      requestedPlan={requestedPlanDefinition?.name}
+      requestedCredits={requestedPlanDefinition
+        ? requestedPlanDefinition.creditsMonthly === 'custom'
+          ? 'Custom allowance'
+          : `${formatNumber(requestedPlanDefinition.creditsMonthly)} credits / month`
+        : undefined}
+      requestedPlanUnavailableReason={subscriptionIntentRead.availability === 'schema_pending'
+        ? 'Saved plan requests will appear after the MR0 database update is applied to this environment.'
+        : undefined}
+      initialConnectors={connectorCatalogue.map((connector) => ({
+        id: connector.id,
+        name: connector.name,
+        stage: connector.stage,
+        status: connector.status,
+        account: connector.account,
+        importedRecords: connector.importedRecords,
+        importedRecordsKnown: connector.importedRecordsKnown === true,
+        connectEnabled: connector.connectEnabled,
+      }))}
     />
   );
 }

@@ -93,6 +93,11 @@ const checks = [
   ['Privacy erasure and retention runtime', 'npm', ['run', 'verify:privacy-erasure']],
   ['Release 1 investigation lifecycle runtime', 'npm', ['run', 'verify:investigations-runtime']],
   ['Source-to-recovery PostgreSQL runtime', 'npm', ['run', 'verify:source-to-recovery']],
+  [
+    'Logical application backup and isolated restore',
+    'npm',
+    ['run', 'verify:backup-restore', '--', '--allow-destructive-local-restore'],
+  ],
   ['Chrome extension build', 'npm', ['run', 'build:extension']],
   ['Production build', 'npm', ['run', 'build']],
   ['Synthetic release browser fixture', 'npm', ['run', 'prepare:release-e2e']],

@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { TABLES } from '@/lib/supabase/tables';
-import { sumSameCurrency } from '@/lib/utils/format';
 import { PERMISSIONS } from '@/lib/permissions';
 import {
   getRequestServiceClient,
@@ -10,16 +9,22 @@ import {
 import { getCachedConnectionState } from '@/lib/connections/getConnectionState';
 import { ACTIVE_CLAIM_STATUSES, getClaimSlaState } from '@/lib/claims/sla';
 import { fetchClaimQueueCounts } from '@/lib/claims/queueCounts';
+import type { ClaimQueueCountsResult } from '@/lib/claims/queueCounts';
 import { claimsListTotalForView, formatClaimsResultText, resolveClaimsListView } from '@/lib/claims/claimsQueueUi';
 import { ClaimsPageView } from './ClaimsPageView';
 import type { ClaimsFilterTab } from './ClaimsPageView';
 import { merchantHasEntitlement } from '@/lib/product/requireEntitlement';
-import { buildClaimsQueryString } from './claimsPageLogic';
+import {
+  buildCasesSummary,
+  buildClaimsQueryString,
+  coverageForClaimsListView,
+} from './claimsPageLogic';
 import {
   type ClaimRow,
   type CustomerProfileSummary,
   type EvidencePackageRow,
 } from './claimsPageData';
+import { buildCasesFlowSnapshot } from './casesFlow';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,9 +104,38 @@ type ClaimsSearchParams = {
   queue?: string;
   owner?: string;
   viewed?: string;
+  selected?: string;
+  /** Compatibility only; generated links use `selected`. */
   focus?: string;
   /** Internal route context injected by the canonical /cases entry point. */
   surface?: 'cases';
+  evidence_posture?: string;
+  responsibility?: string;
+  claim_readiness?: string;
+  deadline?: string;
+};
+
+type RecoveryTruthRow = {
+  id: string;
+  support_payout_case_id: string;
+  current_claim_pack_id: string | null;
+  latest_submission_id: string | null;
+  latest_provider_response_id: string | null;
+  provider_position: string | null;
+  claim_readiness: string | null;
+  deadline_at: string | null;
+  amount_approved_minor: number | null;
+  amount_recovered_minor: number | null;
+  amount_written_off_minor: number | null;
+  currency: string | null;
+};
+
+type ClaimPackTruthRow = {
+  id: string;
+  recovery_case_id: string;
+  state: string;
+  posture: string;
+  readiness: string;
 };
 
 type SearchIdRow = { id: string };
@@ -276,6 +310,9 @@ export default async function ClaimsPage({
   const sp: Record<string, string | undefined> = { ...(resolvedParams ?? {}) };
   const basePath = '/cases';
   delete sp.surface;
+  const selectedCaseId = resolvedParams.selected ?? resolvedParams.focus ?? null;
+  delete sp.focus;
+  if (selectedCaseId) sp.selected = selectedCaseId;
   const searchTerm = resolvedParams.search?.trim().slice(0, 80) ?? '';
   const searchedCaseIds = searchTerm
     ? await resolveCaseSearchIds(serviceClient, ctx.merchantId, searchTerm)
@@ -283,9 +320,15 @@ export default async function ClaimsPage({
   const statusFilter = ALLOWED_STATUSES.includes(resolvedParams.status as ClaimStatus)
     ? (resolvedParams.status as ClaimStatus)
     : null;
-  const workflowFilter = WORKFLOW_FILTERS.includes(resolvedParams.workflow as WorkflowFilter)
+  const queueWorkflow = WORKFLOW_FILTERS.includes(resolvedParams.queue as WorkflowFilter)
+    ? (resolvedParams.queue as WorkflowFilter)
+    : null;
+  const legacyWorkflow = WORKFLOW_FILTERS.includes(resolvedParams.workflow as WorkflowFilter)
     ? (resolvedParams.workflow as WorkflowFilter)
     : null;
+  const workflowFilter = queueWorkflow ?? legacyWorkflow;
+  delete sp.workflow;
+  if (workflowFilter) sp.queue = workflowFilter;
   const queueFilter = resolvedParams.queue === 'history' || resolvedParams.queue === 'snoozed' || workflowFilter === 'closed' || (statusFilter && (FINAL_CLAIM_STATUSES as readonly string[]).includes(statusFilter))
     ? resolvedParams.queue === 'snoozed' ? 'snoozed' : 'history'
     : 'active';
@@ -295,6 +338,11 @@ export default async function ClaimsPage({
     ? resolvedParams.sort
     : 'updated';
   const slaFilter = resolvedParams.sla === 'overdue' || resolvedParams.sla === 'approaching' ? resolvedParams.sla : null;
+  const evidencePostureFilter = ['strong', 'contestable', 'insufficient', 'not_assessable', 'unavailable'].includes(resolvedParams.evidence_posture ?? '') ? resolvedParams.evidence_posture! : null;
+  const responsibilityFilter = ['merchant', 'three_pl', 'courier', 'supplier', 'unresolved', 'none_established'].includes(resolvedParams.responsibility ?? '') ? resolvedParams.responsibility! : null;
+  const claimReadinessFilter = ['not_assessable', 'not_eligible', 'evidence_needed', 'needs_review', 'ready_to_submit', 'submitted', 'waiting_on_provider', 'provider_position_recorded', 'credited_unreconciled', 'reconciled'].includes(resolvedParams.claim_readiness ?? '') ? resolvedParams.claim_readiness! : null;
+  const deadlineFilter = ['open', 'due', 'expired', 'unavailable'].includes(resolvedParams.deadline ?? '') ? resolvedParams.deadline! : null;
+  const truthFilterActive = Boolean(evidencePostureFilter || responsibilityFilter || claimReadinessFilter || deadlineFilter);
   /*
    * `sort=value` orders by exposure so the largest decisions surface first. It
    * was previously accepted in links but never honoured here, so the queue
@@ -311,8 +359,8 @@ export default async function ClaimsPage({
     : DEFAULT_PAGE_SIZE;
 
   // SLA filters apply after fetch - load all matching status rows (merchant-scoped, capped).
-  const listCap = slaFilter ? 1000 : pageSize;
-  const listOffset = slaFilter ? 0 : (page - 1) * pageSize;
+  const listCap = slaFilter || truthFilterActive ? 1000 : pageSize;
+  const listOffset = slaFilter || truthFilterActive ? 0 : (page - 1) * pageSize;
 
   let listQuery = serviceClient
     .from(TABLES.MERCHANT_CLAIMS)
@@ -356,8 +404,11 @@ export default async function ClaimsPage({
   // only on the merchant — run them concurrently instead of serially.
   const [
     { data: rawClaims, error: claimsQueryError, count: listCount },
-    queueCounts,
-    { data: recoveryMetricRows },
+    queueCountResult,
+    { data: recoveryMetricRows, error: recoveryMetricError, count: recoveryMetricCount },
+    { data: recoveryTruthRows, error: recoveryTruthError },
+    { data: claimPackTruthRows, error: claimPackTruthError },
+    { data: flowClaimRows, error: flowClaimError },
   ] = await Promise.all([
     searchedCaseIds && searchedCaseIds.size === 0
       ? Promise.resolve({ data: [], error: null, count: 0 })
@@ -365,11 +416,30 @@ export default async function ClaimsPage({
     fetchClaimQueueCounts(serviceClient, ctx.merchantId, user.id),
     serviceClient
       .from(TABLES.MERCHANT_CLAIMS)
-      .select('status,total_estimated_loss,amount_at_risk,currency,recoverability,recovery_owner')
+      .select('status,total_estimated_loss,amount_at_risk,currency,recoverability,recovery_owner', { count: 'exact' })
       .eq('merchant_id', ctx.merchantId),
+    serviceClient
+      .from(TABLES.RECOVERY_CASES)
+      .select('id,support_payout_case_id,current_claim_pack_id,latest_submission_id,latest_provider_response_id,provider_position,claim_readiness,deadline_at,amount_approved_minor,amount_recovered_minor,amount_written_off_minor,currency')
+      .eq('merchant_id', ctx.merchantId)
+      .limit(2000),
+    serviceClient
+      .from(TABLES.RECOVERY_CLAIM_PACKS)
+      .select('id,recovery_case_id,state,posture,readiness')
+      .eq('merchant_id', ctx.merchantId)
+      .order('pack_version', { ascending: false })
+      .limit(2000),
+    serviceClient
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select('id,status,submitted_at,created_at')
+      .eq('merchant_id', ctx.merchantId)
+      .limit(1000),
   ]);
   if (claimsQueryError) {
     console.error('Claims page query failed', claimsQueryError);
+  }
+  if (recoveryTruthError || claimPackTruthError) {
+    console.error('Claims truth projection query failed', recoveryTruthError ?? claimPackTruthError);
   }
 
   let claimRows = ((rawClaims ?? []) as unknown as ClaimQueryRow[]);
@@ -382,7 +452,51 @@ export default async function ClaimsPage({
     claimRows = claimRows.slice(slaOffset, slaOffset + pageSize);
   }
 
+  const truthRows = (recoveryTruthRows ?? []) as RecoveryTruthRow[];
+  const packRows = (claimPackTruthRows ?? []) as ClaimPackTruthRow[];
+  const packByRecoveryId = new Map<string, ClaimPackTruthRow>();
+  for (const row of packRows) if (!packByRecoveryId.has(row.recovery_case_id)) packByRecoveryId.set(row.recovery_case_id, row);
+  const truthByClaimId = new Map<string, RecoveryTruthRow>();
+  for (const row of truthRows) if (!truthByClaimId.has(row.support_payout_case_id)) truthByClaimId.set(row.support_payout_case_id, row);
+  function truthFor(claim: ClaimQueryRow) {
+    const recovery = truthByClaimId.get(claim.id) ?? null;
+    const pack = recovery ? packByRecoveryId.get(recovery.id) ?? null : null;
+    const readiness = recovery?.claim_readiness ?? pack?.readiness ?? (claim.recovery_state ? 'waiting_on_provider' : 'not_assessable');
+    const posture = pack?.posture
+      ?? (['ready_to_submit', 'submitted', 'waiting_on_provider', 'provider_position_recorded', 'credited_unreconciled', 'reconciled'].includes(readiness) ? 'strong' : recovery ? 'insufficient' : 'unavailable');
+    const responsibility = claim.loss_attribution?.includes('carrier') ? 'courier' : claim.loss_attribution?.includes('warehouse') || claim.loss_attribution?.includes('3pl') ? 'three_pl' : claim.loss_attribution?.includes('supplier') ? 'supplier' : claim.loss_attribution?.includes('merchant') ? 'merchant' : claim.loss_attribution === 'unknown' || !claim.loss_attribution ? 'unresolved' : 'unresolved';
+    const deadlineStatus = !recovery?.deadline_at ? 'unavailable' : Date.parse(recovery.deadline_at) < Date.now() ? 'expired' : Date.parse(recovery.deadline_at) - Date.now() < 3 * 24 * 60 * 60 * 1000 ? 'due' : 'open';
+    const money = readiness === 'reconciled' ? 'reconciled' : (recovery?.amount_recovered_minor ?? 0) > 0 ? 'credited' : (recovery?.amount_approved_minor ?? 0) > 0 ? 'approved_unpaid' : recovery?.latest_submission_id ? 'submitted' : 'not_recorded';
+    return { recovery, pack, readiness, posture, responsibility, deadlineStatus, money };
+  }
+  if (truthFilterActive) {
+    claimRows = claimRows.filter((claim) => {
+      const truth = truthFor(claim);
+      return (!evidencePostureFilter || truth.posture === evidencePostureFilter)
+        && (!responsibilityFilter || truth.responsibility === responsibilityFilter)
+        && (!claimReadinessFilter || truth.readiness === claimReadinessFilter)
+        && (!deadlineFilter || truth.deadlineStatus === deadlineFilter);
+    });
+    totalForPager = claimRows.length;
+    const truthOffset = (page - 1) * pageSize;
+    claimRows = claimRows.slice(truthOffset, truthOffset + pageSize);
+  }
+
   const totalPages = Math.max(1, Math.ceil(totalForPager / pageSize));
+
+  const flowClaimIds = (flowClaimRows ?? []).map((claim: { id: string }) => claim.id);
+  const { data: flowClosureRows, error: flowClosureError } = flowClaimIds.length > 0
+    ? await serviceClient
+        .from('claim_outcomes')
+        .select('claim_id,updated_at')
+        .in('claim_id', flowClaimIds)
+    : { data: [], error: null };
+  if (flowClaimError || flowClosureError) {
+    console.error('Cases flow query failed', flowClaimError ?? flowClosureError);
+  }
+  const casesFlow = flowClaimError || flowClosureError
+    ? null
+    : buildCasesFlowSnapshot(flowClaimRows ?? [], flowClosureRows ?? []);
 
   const claimIds = claimRows.map((c) => c.id);
   const sourceOrderIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_order_id ? [c.source_order_id] : []))));
@@ -634,6 +748,12 @@ export default async function ClaimsPage({
       investigation_next_due_at: investigation?.nextDueAt ?? null,
       investigation_evidence_gap: investigation?.evidenceGap ?? null,
       investigation_latest_response: investigation?.latestResponse ?? null,
+      evidence_posture: truthFor(c).posture as ClaimRow['evidence_posture'],
+      apparent_responsibility: truthFor(c).responsibility,
+      claim_readiness: truthFor(c).readiness,
+      claim_deadline: truthFor(c).recovery?.deadline_at ?? null,
+      provider_position: truthFor(c).recovery?.provider_position ?? 'not_recorded',
+      money_outcome: truthFor(c).money,
     };
   });
 
@@ -689,13 +809,49 @@ export default async function ClaimsPage({
     evidenceByClaimId.set(claim.id, orderId ? (packageByOrderId.get(orderId) ?? null) : null);
   }
 
-  // Sum only rows in the dominant currency; mixed-currency rows are excluded
-  // rather than silently added into a single-currency total.
-  const { total: totalAtRisk } = sumSameCurrency(
-    (recoveryMetricRows ?? []) as Array<{ amount_at_risk: number | null; currency: string | null }>,
-    (c) => c.amount_at_risk,
-    (c) => c.currency,
-  );
+  const { counts: queueCounts } = queueCountResult;
+  const coverageByMetric: ClaimQueueCountsResult['coverageByMetric'] = connectionState.helpdesk
+    ? queueCountResult.coverageByMetric
+    : Object.fromEntries(
+        Object.entries(queueCountResult.coverageByMetric).map(([metric, coverage]) => [
+          metric,
+          coverage === 'complete'
+            ? queueCounts[metric as keyof typeof queueCounts] > 0
+              ? 'partial'
+              : 'unavailable'
+            : coverage,
+        ]),
+      ) as ClaimQueueCountsResult['coverageByMetric'];
+  const coverageStates = Object.values(coverageByMetric);
+  const aggregateCoverage = coverageStates.every((coverage) => coverage === 'complete')
+    ? 'complete' as const
+    : coverageStates.some((coverage) => coverage !== 'unavailable')
+      ? 'partial' as const
+      : 'unavailable' as const;
+  const recoveryRows = (recoveryMetricRows ?? []) as Array<{
+    status: string;
+    total_estimated_loss: number | null;
+    amount_at_risk: number | null;
+    currency: string | null;
+    recoverability: string | null;
+    recovery_owner: string | null;
+  }>;
+  const atRiskCoverageFromQuery = !recoveryMetricError
+    && recoveryMetricCount != null
+    && recoveryRows.length === recoveryMetricCount
+    ? 'complete' as const
+    : recoveryRows.length > 0
+      ? 'partial' as const
+      : 'unavailable' as const;
+  const atRiskCoverage = !connectionState.helpdesk && atRiskCoverageFromQuery === 'complete'
+    ? recoveryRows.length > 0 ? 'partial' as const : 'unavailable' as const
+    : atRiskCoverageFromQuery;
+  const casesSummary = buildCasesSummary({
+    counts: queueCounts,
+    coverageByMetric,
+    atRiskRows: recoveryRows,
+    atRiskCoverage,
+  });
 
   const listView = resolveClaimsListView({
     queue: queueFilter,
@@ -706,71 +862,86 @@ export default async function ClaimsPage({
     sla: slaFilter ?? undefined,
   });
   const listViewTotal = claimsListTotalForView(listView, queueCounts);
-  const resultText = formatClaimsResultText({
-    showing: claims.length,
-    totalMatching: searchTerm ? totalForPager : (slaFilter ? totalForPager : listViewTotal),
-    view: slaFilter === 'overdue' ? { kind: 'sla', sla: 'overdue' } : slaFilter === 'approaching' ? { kind: 'sla', sla: 'approaching' } : listView,
-    search: searchTerm || undefined,
-  });
+  const listViewCoverage = coverageForClaimsListView(listView, coverageByMetric);
+  const resultText = listViewCoverage === 'complete' || searchTerm || slaFilter === 'approaching'
+    ? formatClaimsResultText({
+        showing: claims.length,
+        totalMatching: searchTerm ? totalForPager : (slaFilter ? totalForPager : listViewTotal),
+        view: slaFilter === 'overdue' ? { kind: 'sla', sla: 'overdue' } : slaFilter === 'approaching' ? { kind: 'sla', sla: 'approaching' } : listView,
+        search: searchTerm || undefined,
+      })
+    : `${claims.length} loaded case${claims.length === 1 ? '' : 's'} · queue coverage ${listViewCoverage}`;
 
 
   const filterTabs: ClaimsFilterTab[] = [
     {
       label: 'All',
       count: queueCounts.active,
-      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      coverage: coverageByMetric.active,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, selected: undefined, page: '1' })}`,
       active: listView.kind === 'active',
     },
     {
       label: 'Needs evidence',
       count: queueCounts.awaitingEvidence,
-      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'needs_evidence', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      coverage: coverageByMetric.awaitingEvidence,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: 'needs_evidence', viewed: undefined, owner: undefined, status: undefined, sla: undefined, selected: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'needs_evidence',
     },
     {
       label: 'Awaiting carrier',
       count: queueCounts.awaitingCarrier,
-      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'awaiting_carrier', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      coverage: coverageByMetric.awaitingCarrier,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: 'awaiting_carrier', viewed: undefined, owner: undefined, status: undefined, sla: undefined, selected: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'awaiting_carrier',
     },
     {
       label: 'Awaiting 3PL',
       count: queueCounts.awaiting3pl,
-      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'awaiting_3pl', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      coverage: coverageByMetric.awaiting3pl,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: 'awaiting_3pl', viewed: undefined, owner: undefined, status: undefined, sla: undefined, selected: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'awaiting_3pl',
     },
     {
       label: 'Awaiting supplier',
       count: queueCounts.awaitingSupplier,
-      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'awaiting_supplier', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      coverage: coverageByMetric.awaitingSupplier,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: 'awaiting_supplier', viewed: undefined, owner: undefined, status: undefined, sla: undefined, selected: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'awaiting_supplier',
     },
     {
       label: 'Ready for decision',
       count: queueCounts.readyForDecision,
-      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'ready_for_decision', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      coverage: coverageByMetric.readyForDecision,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: 'ready_for_decision', viewed: undefined, owner: undefined, status: undefined, sla: undefined, selected: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'ready_for_decision',
     },
     {
       label: 'Manual review',
       count: queueCounts.manualReview,
-      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'manual_review', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      coverage: coverageByMetric.manualReview,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: 'manual_review', viewed: undefined, owner: undefined, status: undefined, sla: undefined, selected: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'manual_review',
     },
     {
       label: 'Closed',
       count: queueCounts.closed,
-      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'closed', queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      coverage: coverageByMetric.closed,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: 'closed', viewed: undefined, owner: undefined, status: undefined, sla: undefined, selected: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'closed',
     },
   ];
 
-  const isEmpty = queueCounts.total === 0;
+  const isEmpty = coverageByMetric.total === 'complete' && queueCounts.total === 0;
 
   return (
     <ClaimsPageView
       connectionState={connectionState}
       queueCounts={queueCounts}
+      aggregateCoverage={aggregateCoverage}
+      coverageByMetric={coverageByMetric}
+      casesSummary={casesSummary}
+      casesFlow={casesFlow}
       isEmpty={isEmpty}
       resultText={resultText}
       pageSize={pageSize}
@@ -785,17 +956,9 @@ export default async function ClaimsPage({
       evidenceByClaimId={evidenceByClaimId}
       customerById={customerById}
       currentUserId={user.id}
-      initialFocusClaimId={resolvedParams.focus ?? null}
+      initialSelectedCaseId={selectedCaseId}
       searchTerm={searchTerm}
-      totalAtRisk={totalAtRisk}
-      recoveryMetricRows={(recoveryMetricRows ?? []) as Array<{
-        status: string;
-        total_estimated_loss: number | null;
-        amount_at_risk: number | null;
-        currency: string | null;
-        recoverability: string | null;
-        recovery_owner: string | null;
-      }>}
+      recoveryMetricRows={recoveryRows}
       page={page}
       totalPages={totalPages}
       basePath={basePath}

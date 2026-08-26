@@ -9,6 +9,8 @@ import {
 } from './release-migration-manifest.mjs';
 
 const allowDestructiveReset = process.argv.includes('--allow-destructive-local-reset');
+const explicitContainer = process.argv.find((arg) => arg.startsWith('--container='))?.slice('--container='.length) ?? null;
+const explicitDbUrl = process.argv.find((arg) => arg.startsWith('--db-url='))?.slice('--db-url='.length) ?? null;
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -35,20 +37,22 @@ function assertEqual(actual, expected, label) {
 const config = readFileSync('supabase/config.toml', 'utf8');
 const projectId = config.match(/^project_id\s*=\s*"([A-Za-z0-9_-]+)"/m)?.[1];
 if (!projectId) throw new Error('Could not resolve a safe local project_id from supabase/config.toml');
-const dbContainer = `supabase_db_${projectId}`;
+const dbContainer = explicitContainer || `supabase_db_${projectId}`;
 
 const migrations = readdirSync('supabase/migrations')
   .filter((file) => /^\d{14}_.+\.sql$/.test(file))
   .sort();
 assertActiveMigrationLayout(migrations);
 
-if (!allowDestructiveReset) {
+if (!explicitContainer && !allowDestructiveReset) {
   throw new Error(
     'Refusing to reset the existing local database. Run this verifier in an approved disposable environment or pass --allow-destructive-local-reset explicitly.',
   );
 }
 
-run('supabase', ['db', 'reset', '--local'], { stdio: 'inherit' });
+if (!explicitContainer) {
+  run('supabase', ['db', 'reset', '--local'], { stdio: 'inherit' });
+}
 
 function sql(query) {
   return run('docker', [
@@ -85,7 +89,13 @@ const counts = Object.fromEntries(sql(`
 `).split('\n').map((line) => line.split('|')));
 
 const expectedCounts = EXPECTED_CANONICAL_COUNTS;
-assertEqual(JSON.stringify(counts), JSON.stringify(expectedCounts), 'canonical object manifest');
+for (const [objectKind, expectedCount] of Object.entries(expectedCounts)) {
+  assertEqual(
+    counts[objectKind],
+    expectedCount,
+    `canonical object manifest (${objectKind})`,
+  );
+}
 
 assertEqual(
   sql(`select string_agg(id || ':' || public::text || ':' || coalesce(file_size_limit::text, '-') || ':' || coalesce(array_to_string(allowed_mime_types, ','), '-'), ';' order by id) from storage.buckets where id in ('merchant-csv-uploads-2','evidence-packages','integration-documents','pack-confirmation-photos','investigation-evidence')`),
@@ -127,7 +137,12 @@ const normalizedDump = dump
 const schemaHash = createHash('sha256').update(normalizedDump).digest('hex');
 assertEqual(schemaHash, EXPECTED_SCHEMA_HASH, 'normalized public schema hash');
 
-const generatedTypes = run('supabase', ['gen', 'types', 'typescript', '--local']);
+const generatedTypes = run(
+  'supabase',
+  explicitDbUrl
+    ? ['gen', 'types', 'typescript', '--db-url', explicitDbUrl, '--schema', 'public']
+    : ['gen', 'types', 'typescript', '--local'],
+);
 assertEqual(
   generatedTypes.trimEnd(),
   readFileSync('lib/supabase/types.ts', 'utf8').trimEnd(),

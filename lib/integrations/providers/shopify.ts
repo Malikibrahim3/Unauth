@@ -7,7 +7,7 @@ export const shopifyProvider: IntegrationProvider = {
   logoSrc: '/providers/shopify.svg',
   category: 'commerce',
   authMode: 'oauth',
-  buildStatus: 'live',
+  codeMaturity: 'complete',
   description: 'Orders, refunds, fulfillments, and Shopify Payments disputes.',
   setupHref: '/sources/setup/shopify',
   evidenceCapabilities: [

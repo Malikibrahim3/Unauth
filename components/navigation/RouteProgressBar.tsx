@@ -55,7 +55,7 @@ export default function RouteProgressBar({ active }: { active: boolean }) {
     <div
       className={cn(
         'pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden',
-        'transition-opacity duration-[var(--ua-duration-fast)] ease-[var(--ua-ease-exit)]',
+        'transition-opacity duration-[var(--uo-route-duration-fast)] ease-[var(--uo-route-ease-exit)]',
         visible ? 'opacity-100' : 'opacity-0',
       )}
       aria-hidden="true"
@@ -63,11 +63,11 @@ export default function RouteProgressBar({ active }: { active: boolean }) {
       <div
         className="h-full origin-left"
         style={{
-          background: 'var(--ua-accent-500)',
+          background: 'var(--uo-route-accent-500)',
           width: `${percent}%`,
           // Reduced motion (and capture mode) keep the state change but drop the travel.
           transition: motionAllowed
-            ? `width ${ROUTE_PROGRESS.firstAtMs}ms var(--ua-ease-standard)`
+            ? `width ${ROUTE_PROGRESS.firstAtMs}ms var(--uo-route-ease-standard)`
             : 'none',
         }}
       />

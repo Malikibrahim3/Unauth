@@ -11,7 +11,7 @@ export const zendeskProvider: IntegrationProvider = {
   // reconciliation, and no controlled e2e coverage — unlike Gorgias, the
   // reference implementation for this category. See
   // docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md.
-  buildStatus: 'partial',
+  codeMaturity: 'partial',
   description: 'Ticket messages, attachments, and payout-case context from Zendesk.',
   setupHref: '/sources/setup/zendesk',
   evidenceCapabilities: [

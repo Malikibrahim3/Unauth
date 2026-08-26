@@ -12,9 +12,9 @@ export function PrivacyBadge({ value = 'Privacy-safe', className }: PrivacyBadge
       title="Cross-store comparisons use hashed identifiers only. No other merchant can see your customer list."
       className={cn('inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-xs font-medium leading-none', className)}
       style={{
-        background: 'var(--ua-privacy-bg)',
-        borderColor: 'var(--ua-privacy-border)',
-        color: 'var(--ua-privacy)',
+        background: 'var(--uo-route-privacy-bg)',
+        borderColor: 'var(--uo-route-privacy-border)',
+        color: 'var(--uo-route-privacy)',
         letterSpacing: '0.04em',
       }}
     >

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bone, Button, Checkbox, SectionCard, Select, Surface } from "@/components/ui";
+import { useEffect, useMemo, useState } from "react";
+import { Bone, Button, Checkbox, OperationalState, SectionCard, Select, Surface } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   DEFAULT_PLATFORM_SETTINGS,
@@ -11,11 +11,12 @@ import {
   formatMajorUnitInput,
   parseMajorUnitInput,
 } from "@/lib/ui/merchantCopy";
+import { normalizeReportTimezone } from "@/lib/reporting/intelligence";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 const INPUT_CLASS =
-  "mt-1.5 h-8 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-primary)] outline-none focus:border-[var(--ua-action-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--ua-action-primary)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-60";
+  "mt-1.5 h-8 w-full rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-3 text-[length:var(--uo-route-text-caption-size)] text-[var(--uo-route-text-primary)] outline-none focus:border-[var(--uo-route-action-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--uo-route-action-primary)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-60";
 
 function Field({
   label,
@@ -27,7 +28,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block text-[length:var(--ua-text-caption-size)] font-medium text-[var(--ua-text-primary)]">
+    <label className="block text-[length:var(--uo-route-text-caption-size)] font-medium text-[var(--uo-route-text-primary)]">
       {label}
       {children}
       <span className="mt-1 block ua-text-metadata font-normal leading-relaxed">
@@ -41,13 +42,19 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
   const [settings, setSettings] = useState<PlatformSettings>(
     DEFAULT_PLATFORM_SETTINGS,
   );
+  const [savedSettings, setSavedSettings] = useState<PlatformSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [state, setState] = useState<SaveState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [moneyInputs, setMoneyInputs] = useState<Record<string, string>>({});
+  const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
+    let active = true;
+    setLoading(true);
+    setState("idle");
+    setMessage(null);
     void fetch("/api/settings/platform", { signal: controller.signal })
       .then(async (response) => {
         const body = (await response.json().catch(() => ({}))) as {
@@ -56,18 +63,23 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         };
         if (!response.ok || !body.settings)
           throw new Error(body.error ?? "Unable to load platform settings.");
+        if (!active) return;
         setSettings(body.settings);
+        setSavedSettings(body.settings);
         setMoneyInputs({});
       })
       .catch((error: unknown) => {
-        if ((error as Error).name !== "AbortError") {
+        if (active && (error as Error).name !== "AbortError") {
           setState("error");
           setMessage((error as Error).message);
         }
       })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, []);
+      .finally(() => { if (active) setLoading(false); });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [reloadVersion]);
 
   function patch<K extends keyof PlatformSettings>(
     key: K,
@@ -80,6 +92,17 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
+    if (!/^[A-Z]{3}$/.test(settings.reportingCurrency.trim())) {
+      setState("error");
+      setMessage("Reporting currency must be a three-letter ISO code.");
+      return;
+    }
+    const timezone = settings.timezone.trim();
+    if (normalizeReportTimezone(timezone) !== timezone) {
+      setState("error");
+      setMessage("Timezone must be a valid IANA timezone, such as Europe/London.");
+      return;
+    }
     setState("saving");
     setMessage(null);
     try {
@@ -93,8 +116,9 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         error?: string;
       };
       if (!response.ok || !body.settings)
-        throw new Error(body.error ?? "Unable to save platform settings.");
+        throw new Error(response.status === 409 ? "These defaults changed in another session. Refresh before saving again." : body.error ?? "Unable to save platform settings.");
       setSettings(body.settings);
+      setSavedSettings(body.settings);
       setMoneyInputs({});
       setState("saved");
       setMessage("Financial and workflow defaults saved.");
@@ -176,8 +200,26 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
     </Field>
   );
 
+  const dirty = useMemo(
+    () => savedSettings != null && JSON.stringify(settings) !== JSON.stringify(savedSettings),
+    [savedSettings, settings],
+  );
+
   if (loading) {
     return <PlatformSettingsSkeleton />;
+  }
+
+  if (state === "error" && savedSettings == null) {
+    return (
+      <Surface structure="working">
+        <OperationalState
+          kind="error"
+          title="Workspace defaults could not be loaded"
+          description={message ?? "No saved defaults are shown because the workspace settings source did not return a verified state."}
+          action={<Button variant="secondary" onClick={() => setReloadVersion((value) => value + 1)}>Try again</Button>}
+        />
+      </Surface>
+    );
   }
 
   return (
@@ -193,6 +235,16 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
             </p>
           </div>
           <StatusBadge family="workflowStatus" value="view_only" size="sm" />
+        </Surface>
+      ) : null}
+
+      {canManage && dirty ? (
+        <Surface structure="joined" className="flex items-start justify-between gap-3 bg-[var(--uo-route-warning-bg)]">
+          <div>
+            <p className="ua-text-working-title">Unsaved future-work defaults</p>
+            <p className="mt-1 ua-text-caption-role">Saving changes future matching, deadlines, alerts, and cost estimates. Historical decisions and ledger entries are not recalculated.</p>
+          </div>
+          <StatusBadge family="workflowStatus" value="draft" size="sm" />
         </Surface>
       ) : null}
 
@@ -334,7 +386,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         description="Write access and health notifications remain explicit workspace choices."
       >
         <div className="space-y-3">
-          <label className="flex items-start gap-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
+          <label className="flex items-start gap-3 rounded-md border border-[var(--uo-route-border-subtle)] p-3">
             <Checkbox
               className="mt-0.5"
               disabled={!canManage || loading || state === "saving"}
@@ -353,7 +405,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               </span>
             </span>
           </label>
-          <label className="flex items-start gap-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
+          <label className="flex items-start gap-3 rounded-md border border-[var(--uo-route-border-subtle)] p-3">
             <Checkbox
               className="mt-0.5"
               disabled={!canManage || loading || state === "saving"}
@@ -375,20 +427,20 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         </div>
       </SectionCard>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-[var(--ua-border-subtle)] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 border-t border-[var(--uo-route-border-subtle)] px-4 py-3">
         {canManage ? (
           <Button
             type="submit"
             loading={state === "saving"}
-            disabled={loading || state === "saving"}
+            disabled={loading || state === "saving" || !dirty}
           >
-            {state === "saving" ? "Saving defaults…" : "Save defaults"}
+            {state === "saving" ? "Saving defaults…" : dirty ? "Save defaults" : "Defaults saved"}
           </Button>
         ) : null}
         {message ? (
           <p
             role={state === "error" ? "alert" : "status"}
-            className={`ua-text-body ${state === "error" ? "text-[var(--ua-risk-critical)]" : "text-[var(--ua-success)]"}`}
+            className={`ua-text-body ${state === "error" ? "text-[var(--uo-route-risk-critical)]" : "text-[var(--uo-route-success)]"}`}
           >
             {message}
           </p>
@@ -411,7 +463,7 @@ function PlatformSettingsSkeleton() {
       {[3, 4, 2].map((fieldCount, sectionIndex) => (
         <div
           key={sectionIndex}
-          className="border-t border-[var(--ua-border-subtle)] px-4 py-4 first:border-t-0"
+          className="border-t border-[var(--uo-route-border-subtle)] px-4 py-4 first:border-t-0"
         >
           <Bone className="h-4 w-44" />
           <Bone className="mt-2 h-3 w-80 max-w-full" />
@@ -425,7 +477,7 @@ function PlatformSettingsSkeleton() {
           </div>
         </div>
       ))}
-      <div className="border-t border-[var(--ua-border-subtle)] px-4 py-3">
+      <div className="border-t border-[var(--uo-route-border-subtle)] px-4 py-3">
         <Bone className="h-8 w-28" />
       </div>
     </Surface>

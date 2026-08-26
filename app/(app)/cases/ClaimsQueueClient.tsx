@@ -1,16 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
   FileText,
   ArrowRight,
   Clock,
+  Maximize2,
+  X,
 } from "lucide-react";
 import { StatusPill, SlaPill } from "./claimsPageUi";
 import {
   Badge,
   ButtonLink,
+  DecisionBracket,
   EvidenceRow,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -47,7 +50,7 @@ type Props = {
   evidenceRecord: Record<string, EvidencePackageRow | null>;
   customersRecord: Record<string, CustomerProfileSummary>;
   currentUserId: string;
-  initialFocusClaimId?: string | null;
+  initialSelectedCaseId?: string | null;
   basePath?: '/cases';
 };
 
@@ -60,12 +63,12 @@ function customerDisplayName(
 
 function resolveInitialSelection(
   claims: ClaimRow[],
-  initialFocusClaimId?: string | null,
+  initialSelectedCaseId?: string | null,
 ): string | null {
-  if (initialFocusClaimId && claims.some((c) => c.id === initialFocusClaimId)) {
-    return initialFocusClaimId;
+  if (initialSelectedCaseId && claims.some((c) => c.id === initialSelectedCaseId)) {
+    return initialSelectedCaseId;
   }
-  return claims[0]?.id ?? null;
+  return null;
 }
 
 function sourceSystemLabel(claim: ClaimRow): string {
@@ -109,17 +112,39 @@ export function ClaimsQueueClient({
   evidenceRecord,
   customersRecord,
   currentUserId,
-  initialFocusClaimId,
+  initialSelectedCaseId,
   basePath = '/cases',
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(() =>
-    resolveInitialSelection(claims, initialFocusClaimId),
+    resolveInitialSelection(claims, initialSelectedCaseId),
   );
+  useEffect(() => {
+    if (selectedId && claims.some((claim) => claim.id === selectedId)) {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('selected') !== selectedId) {
+        url.searchParams.set('selected', selectedId);
+        window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+      }
+      return;
+    }
+    // Preserve continuity when a URL-backed selection is filtered out. The
+    // registry still opens with no selection by default, but an operator who
+    // was already inspecting a case should land on the first remaining row
+    // instead of being left with a stale, invisible selection.
+    const nextId = resolveInitialSelection(claims, initialSelectedCaseId)
+      ?? (selectedId ? claims[0]?.id ?? null : null);
+    setSelectedId(nextId);
+    const url = new URL(window.location.href);
+    if (nextId) url.searchParams.set('selected', nextId);
+    else url.searchParams.delete('selected');
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }, [claims, initialSelectedCaseId, selectedId]);
 
   function selectClaim(id: string) {
-    setSelectedId(id);
+    setSelectedId(id || null);
     const url = new URL(window.location.href);
-    url.searchParams.set('focus', id);
+    if (id) url.searchParams.set('selected', id);
+    else url.searchParams.delete('selected');
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   }
 
@@ -142,11 +167,23 @@ export function ClaimsQueueClient({
   const uniformSlaState = slaStates.length > 1 && slaStates.every((state) => state === slaStates[0]);
 
   return (
-    <div className="ua-case-queue">
+    <div className="ua-case-queue" data-preview-open={selected ? "true" : undefined}>
       {/* Left review list */}
       <div
-        className="ua-case-queue__list shrink-0 overflow-y-auto border-b lg:max-h-none lg:border-b-0 lg:border-r"
+        className="ua-case-queue__list shrink-0 overflow-y-auto border-b"
+        role="grid"
+        aria-label="Cases"
       >
+        <div className="ua-case-queue__header" role="row">
+          <span role="columnheader">Case</span>
+          <span role="columnheader">Customer</span>
+          <span role="columnheader">Order / ticket</span>
+          <span role="columnheader">Amount</span>
+          <span role="columnheader">State</span>
+          <span role="columnheader">Evidence posture / responsibility</span>
+          <span role="columnheader">Claim readiness / deadline</span>
+          <span role="columnheader">Provider / money</span>
+        </div>
         {claims.map((c) => {
           const customer = c.customer_id
             ? (customersRecord[c.customer_id] ?? null)
@@ -163,100 +200,59 @@ export function ClaimsQueueClient({
               type="button"
               data-case-id={c.id}
               onClick={() => selectClaim(c.id)}
-              aria-pressed={isSelected}
+              aria-selected={isSelected}
               aria-controls="payout-case-preview"
               className="ua-case-queue__item w-full border-b text-left transition-colors"
               data-selected={isSelected || undefined}
+              role="row"
             >
-              <div className="flex items-start justify-between gap-2 mb-0.5">
-                <p
-                  className="text-body-sm font-medium truncate"
-                  style={{
-                    color: isSelected ? "var(--ua-text-primary)" : "var(--ua-text-primary)",
-                  }}
-                >
-                  {customerDisplayName(customer)}
-                </p>
-                <span
-                  className="shrink-0 text-caption font-sans tabular-nums"
-                  style={{ color: "var(--ua-text-secondary)" }}
-                >
-                  {formatCurrencyNullable(
-                    c.amount_at_risk,
-                    c.currency ?? undefined,
-                  ) ?? "—"}
-                </span>
-              </div>
-              <p
-                className="text-caption mb-1.5"
-                style={{
-                  color: isSelected
-                    ? "var(--ua-text-secondary)"
-                    : "var(--ua-text-tertiary)",
-                }}
-              >
-                <span className="font-mono">{shortRef(c.order_ref ?? c.shopify_order_id, c.id)}</span>
-                <span aria-hidden="true">&nbsp;·&nbsp;</span>
+              <span className="ua-case-queue__cell ua-case-queue__cell--case" role="gridcell">
+                <span className="ua-case-queue__primary font-mono">{shortRef(c.id, c.id)}</span>
                 <span>{CLAIM_TYPE_LABELS[c.claim_type] ?? c.claim_type}</span>
-              </p>
-              <p
-                className="text-caption font-medium mb-1"
-                style={{
-                  color: isSelected
-                    ? "var(--ua-text-primary)"
-                    : "var(--ua-text-secondary)",
-                }}
-              >
-                {ops.nextActionLabel}
-              </p>
-              <p
-                className="text-[length:var(--ua-text-metadata-size)] mb-1.5"
-                style={{
-                  color: isSelected
-                    ? "var(--ua-text-secondary)"
-                    : "var(--ua-text-tertiary)",
-                }}
-              >
-                {sourceSystemLabel(c)}
-                {` · ${c.assigned_to ? "Assigned" : "Unassigned"}`}
-                {ops.daysWaiting != null
-                  ? ` · ${ops.daysWaiting}d waiting`
-                  : ""}
-              </p>
-              {(c.investigation_open_count ?? 0) > 0 ? (
-                <p
-                  className="mb-1.5 text-[length:var(--ua-text-metadata-size)]"
-                  style={{
-                    color: (c.investigation_overdue_count ?? 0) > 0
-                      ? "var(--ua-warning)"
-                      : "var(--ua-text-secondary)",
-                  }}
-                >
-                  {(c.investigation_awaiting_review_count ?? 0) > 0
-                    ? `${c.investigation_awaiting_review_count} response${c.investigation_awaiting_review_count === 1 ? "" : "s"} to review`
-                    : `${c.investigation_overdue_count ? "Overdue · " : "Waiting on "}${c.investigation_waiting_party ?? c.investigation_waiting_target?.replaceAll("_", " ") ?? "external response"}`}
-                  {c.investigation_next_due_at
-                    ? ` · ${formatDateTime(c.investigation_next_due_at)}`
-                    : ""}
-                </p>
-              ) : null}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <StatusPill status={c.status} />
-                <SlaPill claim={c} uniform={uniformSlaState} />
-              </div>
+              </span>
+              <span className="ua-case-queue__cell" role="gridcell">
+                <span className="ua-case-queue__primary">{customerDisplayName(customer)}</span>
+                <span>{customer?.primary_email ?? "Email unavailable"}</span>
+              </span>
+              <span className="ua-case-queue__cell" role="gridcell">
+                <span className="ua-case-queue__primary font-mono">{shortRef(c.order_ref ?? c.shopify_order_id, c.id)}</span>
+                <span>{sourceSystemLabel(c)}</span>
+              </span>
+              <span className="ua-case-queue__cell ua-case-queue__cell--amount" role="gridcell">
+                <span className="ua-case-queue__primary num">{formatCurrencyNullable(c.amount_at_risk, c.currency ?? undefined) ?? "Unavailable"}</span>
+                <span>{c.currency ?? "Currency unavailable"}</span>
+              </span>
+              <span className="ua-case-queue__cell" role="gridcell">
+                <span className="flex flex-wrap items-center gap-1"><StatusPill status={c.status} /><SlaPill claim={c} uniform={uniformSlaState} /></span>
+                <span>{c.assigned_to ? "Assigned" : "Unassigned"}{ops.daysWaiting != null ? ` · ${ops.daysWaiting}d waiting` : ""}</span>
+              </span>
+              <span className="ua-case-queue__cell" role="gridcell">
+                <span className="ua-case-queue__primary">{c.evidence_posture ? c.evidence_posture.replaceAll("_", " ") : "Not assessable"}</span>
+                <span>{c.apparent_responsibility ? `${c.apparent_responsibility.replaceAll("_", " ")} · merchant confirmation separate` : c.evidence_posture === "strong" ? "All required source gates met" : "Recommendation only"}</span>
+              </span>
+              <span className="ua-case-queue__cell" role="gridcell">
+                <span className="ua-case-queue__primary">{c.claim_readiness ? c.claim_readiness.replaceAll("_", " ") : "Not assessable"}</span>
+                <span>{c.claim_deadline ? `Deadline ${formatDateAbsolute(c.claim_deadline)}` : "Deadline unavailable"}</span>
+              </span>
+              <span className="ua-case-queue__cell" role="gridcell">
+                <span className="ua-case-queue__primary">{c.provider_position && c.provider_position !== "not_recorded" ? c.provider_position.replaceAll("_", " ") : "Provider not recorded"}</span>
+                <span>{c.money_outcome ? c.money_outcome.replaceAll("_", " ") : "Money outcome unavailable"} · Updated {formatDateAbsolute(c.updated_at)}</span>
+              </span>
             </button>
           );
         })}
       </div>
 
-      {/* Right detail panel */}
-      <div
-        id="payout-case-preview"
-        className="ua-case-queue__preview min-w-0 flex-1 overflow-y-auto"
-        role="region"
-        aria-label="Selected case preview"
-      >
-        {selected && selectedOps ? (
+      {/* Row selection stays in context. Expand opens the canonical full case page. */}
+      {selected && selectedOps ? (
+        <aside
+          id="payout-case-preview"
+          className="ua-case-queue__preview min-w-0"
+          role="region"
+          aria-label="Selected case preview"
+          data-overlay-id="case-context-drawer"
+          data-signal-rail="true"
+        >
           <ClaimDetailPanel
             claim={selected}
             ops={selectedOps}
@@ -264,28 +260,12 @@ export function ClaimsQueueClient({
             evidence={selectedEvidence}
             customer={selectedCustomer}
             basePath={basePath}
+            onClose={() => selectClaim('')}
           />
-        ) : (
-          <div className="flex h-full items-center justify-center px-8 py-16 text-center">
-            <div>
-              <p
-                className="text-body-sm font-medium mb-1"
-                style={{ color: "var(--ua-text-secondary)" }}
-              >
-                Select a case to review
-              </p>
-              <p
-                className="text-caption"
-                style={{ color: "var(--ua-text-tertiary)" }}
-              >
-                Choose any case from the list on the left.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+        </aside>
+      ) : null}
 
-      <aside className="ua-case-queue__decision-rail" aria-label="Decision rail">
+      <aside className="ua-case-queue__decision-rail" aria-label="Decision rail" data-signal-rail="true" hidden={!selected}>
         {selected && selectedOps ? (
           <CaseDecisionRail
             claim={selected}
@@ -326,23 +306,44 @@ function CaseDecisionRail({
         Recommendations are advisory. A merchant decision is recorded separately with its evidence and audit receipt.
       </p>
 
-      <div className="mt-5 space-y-4">
-        <section className="border-b border-[var(--ua-border-subtle)] pb-4">
-          <p className="ua-text-metadata">Evidence</p>
-          <p className="ua-text-working-title mt-1">{evidence ? 'Package generated' : ops.evidenceStatus}</p>
-          <p className="ua-text-caption-role mt-1">{evidence ? `Reference ${evidence.reference_number}` : 'Review source records before recording an outcome.'}</p>
-        </section>
-        <section className="border-b border-[var(--ua-border-subtle)] pb-4">
-          <p className="ua-text-metadata">Recommendation</p>
-          <p className="ua-text-working-title mt-1">{ops.nextActionLabel}</p>
-          <p className="ua-text-caption-role mt-1">{ops.reviewState}</p>
-        </section>
-        <section>
-          <p className="ua-text-metadata">Merchant decision</p>
-          <p className="ua-text-working-title mt-1">{hasRecordedDecision ? (outcome ? (DECISION_LABELS[outcome.decision] ?? outcome.decision) : 'Recorded') : 'Not yet recorded'}</p>
-          <p className="ua-text-caption-role mt-1">Open the review workbench to confirm, re-authenticate if required, and retain the receipt.</p>
-        </section>
-      </div>
+      <DecisionBracket
+        className="mt-5"
+        title="Evidence to merchant decision"
+        description="Each authority stays explicit; an open node is not a completed decision."
+        items={[
+          {
+            key: 'evidence',
+            authority: 'fact',
+            label: 'Evidence set',
+            value: evidence ? 'Package generated' : ops.evidenceStatus,
+            meta: evidence ? `Reference ${evidence.reference_number}` : 'Review source records',
+            state: evidence ? 'recorded' : 'partial',
+          },
+          {
+            key: 'recommendation',
+            authority: 'recommendation',
+            label: 'Advisory next action',
+            value: ops.nextActionLabel,
+            meta: ops.reviewState,
+            state: 'known',
+          },
+          {
+            key: 'decision',
+            authority: 'merchant-decision',
+            label: 'Recorded by the merchant',
+            value: hasRecordedDecision ? (outcome ? (DECISION_LABELS[outcome.decision] ?? outcome.decision) : 'Recorded') : 'Not yet recorded',
+            meta: hasRecordedDecision ? 'Audit receipt retained' : 'Open the review workbench',
+            state: hasRecordedDecision ? 'recorded' : 'missing',
+          },
+          {
+            key: 'outcome',
+            authority: 'ledger-outcome',
+            label: 'Recorded customer outcome',
+            value: outcome ? outcomeLabel(outcome.outcome) : 'No outcome recorded',
+            state: outcome ? 'recorded' : 'missing',
+          },
+        ]}
+      />
 
       <ButtonLink href={`${basePath}/${claim.id}#${action.hash}`} size="sm" className="mt-5 w-full justify-center">
         {hasRecordedDecision ? 'Review receipt' : 'Review merchant decision'}
@@ -358,6 +359,7 @@ function ClaimDetailPanel({
   evidence,
   customer,
   basePath,
+  onClose,
 }: {
   claim: ClaimRow;
   ops: ReturnType<typeof claimNextAction>;
@@ -365,27 +367,43 @@ function ClaimDetailPanel({
   evidence: EvidencePackageRow | null;
   customer: CustomerProfileSummary | null;
   basePath: '/cases';
+  onClose: () => void;
 }) {
   const orderRef = shortRef(claim.order_ref ?? claim.shopify_order_id, claim.id);
+  const caseRef = shortRef(claim.id, claim.id);
   const primaryAction = casePreviewPrimaryAction(claim);
 
   return (
     <div className="ua-case-preview">
       <header className="ua-case-preview__identity">
-        <p className="text-caption font-medium" style={{ color: "var(--ua-text-tertiary)" }}>
+        <div className="ua-case-preview__identity-actions">
+          <Link
+            href={`${basePath}/${claim.id}?return=${encodeURIComponent(`${basePath}?selected=${claim.id}`)}`}
+            scroll
+            aria-label="Expand case"
+            title="Expand case"
+          >
+            <Maximize2 size={14} aria-hidden="true" />
+            <span>Expand</span>
+          </Link>
+          <button type="button" onClick={onClose} aria-label="Close case preview" title="Close case preview">
+            <X size={14} aria-hidden="true" />
+          </button>
+        </div>
+        <p className="text-caption font-medium" style={{ color: "var(--uo-route-text-tertiary)" }}>
           Value at issue
         </p>
-        <h2 className="ua-text-hero-value mt-1" style={{ color: "var(--ua-text-primary)" }}>
+        <h2 className="ua-text-hero-value mt-1" style={{ color: "var(--uo-route-text-primary)" }}>
           {formatCurrencyNullable(claim.amount_at_risk, claim.currency ?? undefined) ?? "—"}
         </h2>
-        <p className="mt-2 text-body-sm font-medium" style={{ color: "var(--ua-text-primary)" }}>
+        <p className="mt-2 text-body-sm font-medium" style={{ color: "var(--uo-route-text-primary)" }}>
           {CLAIM_TYPE_LABELS[claim.claim_type] ?? claim.claim_type}
         </p>
         <p
           className="text-caption mt-0.5"
-          style={{ color: "var(--ua-text-tertiary)" }}
+          style={{ color: "var(--uo-route-text-tertiary)" }}
         >
-          {orderRef}
+          {caseRef} · {orderRef}
           {claim.shop_domain ? ` · ${claim.shop_domain}` : ""}
           {" · "}Filed {formatFiledDate(claim)}
           {" · "}Age {formatClaimAge(claim)}
@@ -397,7 +415,7 @@ function ClaimDetailPanel({
       >
         <p
           className="ua-text-metadata mb-0.5"
-          style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
+          style={{ color: "var(--uo-route-text-tertiary)", letterSpacing: "0.06em" }}
         >
           Review context
         </p>
@@ -405,13 +423,13 @@ function ClaimDetailPanel({
           <div>
             <p
               className="text-caption"
-              style={{ color: "var(--ua-text-tertiary)" }}
+              style={{ color: "var(--uo-route-text-tertiary)" }}
             >
               Case state
             </p>
             <p
               className="text-body-sm font-medium"
-              style={{ color: "var(--ua-text-primary)" }}
+              style={{ color: "var(--uo-route-text-primary)" }}
             >
               {ops.evidenceStatus}
             </p>
@@ -419,13 +437,13 @@ function ClaimDetailPanel({
           <div>
             <p
               className="text-caption"
-              style={{ color: "var(--ua-text-tertiary)" }}
+              style={{ color: "var(--uo-route-text-tertiary)" }}
             >
               Waiting time
             </p>
             <p
               className="text-body-sm font-medium"
-              style={{ color: "var(--ua-text-primary)" }}
+              style={{ color: "var(--uo-route-text-primary)" }}
             >
               {ops.daysWaiting == null ? "—" : `${ops.daysWaiting}d`}
             </p>
@@ -433,13 +451,13 @@ function ClaimDetailPanel({
           <div>
             <p
               className="text-caption"
-              style={{ color: "var(--ua-text-tertiary)" }}
+              style={{ color: "var(--uo-route-text-tertiary)" }}
             >
               Next action
             </p>
             <p
               className="text-body-sm font-medium"
-              style={{ color: "var(--ua-text-primary)" }}
+              style={{ color: "var(--uo-route-text-primary)" }}
             >
               {ops.nextActionLabel}
             </p>
@@ -447,7 +465,7 @@ function ClaimDetailPanel({
         </div>
         <p
           className="text-caption mt-2"
-          style={{ color: "var(--ua-text-secondary)" }}
+          style={{ color: "var(--uo-route-text-secondary)" }}
         >
           {ops.reviewState}
         </p>
@@ -467,11 +485,11 @@ function ClaimDetailPanel({
             <div>
               <p
                 className="ua-text-metadata"
-                style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
+                style={{ color: "var(--uo-route-text-tertiary)", letterSpacing: "0.06em" }}
               >
                 Investigations
               </p>
-              <p className="mt-1 text-body-sm font-medium" style={{ color: "var(--ua-text-primary)" }}>
+              <p className="mt-1 text-body-sm font-medium" style={{ color: "var(--uo-route-text-primary)" }}>
                 {(claim.investigation_awaiting_review_count ?? 0) > 0
                   ? `${claim.investigation_awaiting_review_count} response${claim.investigation_awaiting_review_count === 1 ? "" : "s"} ready for review`
                   : `${claim.investigation_open_count ?? 0} open · waiting on ${claim.investigation_waiting_party ?? claim.investigation_waiting_target?.replaceAll("_", " ") ?? "external evidence"}`}
@@ -491,18 +509,18 @@ function ClaimDetailPanel({
             </div>
           </div>
           {claim.investigation_evidence_gap ? (
-            <p className="mt-2 text-caption" style={{ color: "var(--ua-text-secondary)" }}>
+            <p className="mt-2 text-caption" style={{ color: "var(--uo-route-text-secondary)" }}>
               {claim.investigation_evidence_gap}
             </p>
           ) : null}
           {claim.investigation_latest_response ? (
-            <p className="mt-2 rounded-md bg-[var(--ua-surface-muted)] p-2 text-caption text-[var(--ua-text-secondary)]">
+            <p className="mt-2 rounded-md bg-[var(--uo-route-surface-muted)] p-2 text-caption text-[var(--uo-route-text-secondary)]">
               Latest response: {claim.investigation_latest_response}
             </p>
           ) : null}
           <Link
             href={`${basePath}/${claim.id}#case-responsibility`}
-            className="ua-text-working-title mt-2.5 inline-flex items-center gap-1.5 text-[var(--ua-text-primary)] underline underline-offset-2"
+            className="ua-text-working-title mt-2.5 inline-flex items-center gap-1.5 text-[var(--uo-route-text-primary)] underline underline-offset-2"
           >
             Open investigation <ArrowRight className="h-3 w-3" />
           </Link>
@@ -512,14 +530,15 @@ function ClaimDetailPanel({
       {/* Recovery chase-up */}
       {(claim.recoverability ||
         claim.recovery_owner ||
-        claim.loss_attribution) && (
+        claim.loss_attribution ||
+        claim.attribution_confidence) && (
         <section className="ua-case-preview__section">
           <div
             className="flex items-center justify-between gap-3"
           >
             <p
               className="ua-text-metadata"
-              style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
+              style={{ color: "var(--uo-route-text-tertiary)", letterSpacing: "0.06em" }}
             >
               Recovery chase-up
             </p>
@@ -528,17 +547,17 @@ function ClaimDetailPanel({
             )}
           </div>
           <div className="mt-3 space-y-2">
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-3">
               <div>
                 <p
                   className="text-caption"
-                  style={{ color: "var(--ua-text-tertiary)" }}
+                  style={{ color: "var(--uo-route-text-tertiary)" }}
                 >
                   Partner
                 </p>
                 <p
                   className="text-body-sm font-medium"
-                  style={{ color: claim.recovery_owner ? "var(--ua-text-primary)" : "var(--ua-text-tertiary)" }}
+                  style={{ color: claim.recovery_owner ? "var(--uo-route-text-primary)" : "var(--uo-route-text-tertiary)" }}
                 >
                   {claim.recovery_owner
                     ? (LIKELY_OWNER_LABELS[
@@ -550,13 +569,13 @@ function ClaimDetailPanel({
               <div>
                 <p
                   className="text-caption"
-                  style={{ color: "var(--ua-text-tertiary)" }}
+                  style={{ color: "var(--uo-route-text-tertiary)" }}
                 >
                   Attribution
                 </p>
                 <p
                   className="text-body-sm font-medium"
-                  style={{ color: claim.loss_attribution ? "var(--ua-text-primary)" : "var(--ua-text-tertiary)" }}
+                  style={{ color: claim.loss_attribution ? "var(--uo-route-text-primary)" : "var(--uo-route-text-tertiary)" }}
                 >
                   {claim.loss_attribution
                     ? (LOSS_ATTRIBUTION_DISPLAY[
@@ -565,11 +584,27 @@ function ClaimDetailPanel({
                     : "Unclear"}
                 </p>
               </div>
+              <div>
+                <p
+                  className="text-caption"
+                  style={{ color: "var(--uo-route-text-tertiary)" }}
+                >
+                  Attribution confidence
+                </p>
+                <p
+                  className="text-body-sm font-medium"
+                  style={{ color: claim.attribution_confidence ? "var(--uo-route-text-primary)" : "var(--uo-route-text-tertiary)" }}
+                >
+                  {claim.attribution_confidence
+                    ? humanizeEvidenceProse(claim.attribution_confidence).replace(/^./, (character) => character.toUpperCase())
+                    : "Unavailable"}
+                </p>
+              </div>
             </div>
             {claim.recovery_next_action && (
               <p
                 className="text-caption"
-                style={{ color: "var(--ua-text-secondary)" }}
+                style={{ color: "var(--uo-route-text-secondary)" }}
               >
                 {humanizeEvidenceProse(claim.recovery_next_action)}
               </p>
@@ -578,7 +613,7 @@ function ClaimDetailPanel({
               claim.recovery_required_evidence.length > 0 && (
                 <p
                   className="text-caption"
-                  style={{ color: "var(--ua-text-tertiary)" }}
+                  style={{ color: "var(--uo-route-text-tertiary)" }}
                 >
                   Evidence needed:{" "}
                   {claim.recovery_required_evidence
@@ -598,11 +633,11 @@ function ClaimDetailPanel({
           <div className="flex items-center gap-2">
             <ShieldCheck
               className="h-3.5 w-3.5"
-              style={{ color: "var(--ua-text-primary)" }}
+              style={{ color: "var(--uo-route-text-primary)" }}
             />
             <p
               className="ua-text-metadata"
-              style={{ color: "var(--ua-text-primary)", letterSpacing: "0.06em" }}
+              style={{ color: "var(--uo-route-text-primary)", letterSpacing: "0.06em" }}
             >
               Evidence package
             </p>
@@ -615,7 +650,7 @@ function ClaimDetailPanel({
                 <EvidenceRow
                   state="confirmed"
                   text={
-                    <span className="font-mono font-semibold text-[var(--ua-text-primary)]">
+                    <span className="font-mono font-semibold text-[var(--uo-route-text-primary)]">
                       {evidence.reference_number}
                     </span>
                   }
@@ -637,14 +672,14 @@ function ClaimDetailPanel({
             <div className="flex items-center justify-between gap-3">
               <p
                 className="text-caption"
-                style={{ color: "var(--ua-text-tertiary)" }}
+                style={{ color: "var(--uo-route-text-tertiary)" }}
               >
                 {missingEvidenceCopy(claim)}
               </p>
               <Link
                 href={`${basePath}/${claim.id}#case-evidence`}
                 className="ua-text-working-title shrink-0 hover:underline"
-                style={{ color: "var(--ua-action-primary)" }}
+                style={{ color: "var(--uo-route-action-primary)" }}
               >
                 Review case evidence
               </Link>
@@ -661,7 +696,7 @@ function ClaimDetailPanel({
           >
             <p
               className="ua-text-metadata"
-              style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
+              style={{ color: "var(--uo-route-text-tertiary)", letterSpacing: "0.06em" }}
             >
               Customer
             </p>
@@ -671,14 +706,14 @@ function ClaimDetailPanel({
               <div className="min-w-0">
                 <p
                   className="ua-text-working-title truncate"
-                  style={{ color: "var(--ua-text-primary)" }}
+                  style={{ color: "var(--uo-route-text-primary)" }}
                 >
                   {customerDisplayName(customer)}
                 </p>
                 {customer.primary_email ? (
                   <p
                     className="mt-1 text-caption truncate"
-                    style={{ color: "var(--ua-text-tertiary)" }}
+                    style={{ color: "var(--uo-route-text-tertiary)" }}
                   >
                     {customer.primary_email}
                   </p>
@@ -687,7 +722,7 @@ function ClaimDetailPanel({
               <Link
                 href={`/customers/${customer.id}`}
                 className="ua-text-working-title shrink-0 inline-flex items-center gap-1 hover:underline"
-                style={{ color: "var(--ua-action-primary)" }}
+                style={{ color: "var(--uo-route-action-primary)" }}
               >
                 Profile <ArrowRight className="h-3 w-3" />
               </Link>
@@ -704,11 +739,11 @@ function ClaimDetailPanel({
           >
             <Clock
               className="h-3.5 w-3.5"
-              style={{ color: "var(--ua-text-tertiary)" }}
+              style={{ color: "var(--uo-route-text-tertiary)" }}
             />
             <p
               className="ua-text-metadata"
-              style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
+              style={{ color: "var(--uo-route-text-tertiary)", letterSpacing: "0.06em" }}
             >
               Merchant-recorded outcome
             </p>
@@ -716,21 +751,21 @@ function ClaimDetailPanel({
           <div className="mt-3">
             <p
               className="text-body-sm font-medium"
-              style={{ color: "var(--ua-text-primary)" }}
+              style={{ color: "var(--uo-route-text-primary)" }}
             >
               {DECISION_LABELS[outcome.decision] ?? outcome.decision}
             </p>
             {outcome.outcome && outcome.outcome !== outcome.decision && (
               <p
                 className="text-caption mt-0.5"
-                style={{ color: "var(--ua-text-secondary)" }}
+                style={{ color: "var(--uo-route-text-secondary)" }}
               >
                 {outcomeLabel(outcome.outcome)}
               </p>
             )}
             <p
               className="text-caption mt-1"
-              style={{ color: "var(--ua-text-tertiary)" }}
+              style={{ color: "var(--uo-route-text-tertiary)" }}
             >
               Updated {formatDateAbsolute(new Date(outcome.updated_at))}
             </p>

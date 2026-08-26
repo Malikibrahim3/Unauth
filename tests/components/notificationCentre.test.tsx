@@ -18,6 +18,8 @@ describe('NotificationCentre', () => {
       id: 'n1', kind: 'mention', title: 'Mentioned', body: 'Please review',
       target_href: '/cases/case-1', read_at: null, created_at: '2026-07-11T10:00:00Z',
     }]} />);
+    expect(screen.getByRole('heading', { name: 'Notifications' })).toBeInTheDocument();
+    expect(screen.queryByText('Recent activity')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /mentioned/i }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/notifications/n1/read', { method: 'POST' }));
     expect(push).toHaveBeenCalledWith('/cases/case-1');

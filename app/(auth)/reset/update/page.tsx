@@ -1,130 +1,119 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Check, KeyRound, Link2Off } from 'lucide-react';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/Button';
+import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
-import { Panel } from '@/components/ui';
+import { AuthError } from '../../AuthShell';
 import { createClient } from '@/lib/supabase/client';
-import { AuthError, authButtonStyle, authInputClassName } from '../../AuthShell';
+import { safeRedirectPath } from '@/lib/auth/safeRedirect';
 
-function mapUpdateError(message: string): string {
-  const lower = message.toLowerCase();
-  if (lower.includes('password should be at least') || lower.includes('weak password')) {
-    return 'Password must be at least 8 characters';
-  }
-  return 'We could not update your password. Please try the reset link again.';
-}
+type SessionState = 'checking' | 'valid' | 'invalid' | 'success';
 
-function passwordRequirement(password: string): string {
-  if (!password) return 'Use at least 8 characters.';
-  if (password.length < 8) return `${8 - password.length} more character${password.length === 7 ? '' : 's'} needed.`;
-  return 'Password length is valid.';
-}
-
-export default function UpdatePasswordPage() {
+function UpdatePasswordForm() {
+  const searchParams = useSearchParams();
+  const requestedNext = searchParams.get('next');
+  const nextPath = safeRedirectPath(requestedNext);
+  const resetHref = requestedNext ? `/reset?next=${encodeURIComponent(nextPath)}` : '/reset';
+  const loginParams = new URLSearchParams({ password: 'updated' });
+  if (requestedNext) loginParams.set('next', nextPath);
+  const loginHref = `/login?${loginParams.toString()}`;
+  const [sessionState, setSessionState] = useState<SessionState>('checking');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<'password' | 'confirm', string>>>({});
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmRef = useRef<HTMLInputElement>(null);
   const supabase = useMemo(() => createClient(), []);
-  const router = useRouter();
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      if (active) setSessionState('invalid');
+    }, 10_000);
+    void supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
+      if (active) setSessionState(data.session ? 'valid' : 'invalid');
+    }).catch(() => {
+      if (active) setSessionState('invalid');
+    });
+    const { data } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (!active) return;
+      if (event === 'PASSWORD_RECOVERY' || session) setSessionState('valid');
+    });
+    return () => { active = false; window.clearTimeout(timeout); data.subscription.unsubscribe(); };
+  }, [supabase]);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (password.length < 8) {
-      setFieldErrors({ password: 'Password must be at least 8 characters' });
+      setError('Use at least 8 characters.');
+      passwordRef.current?.focus();
       return;
     }
-
     if (password !== confirm) {
-      setFieldErrors({ confirm: 'Passwords do not match' });
+      setError('Passwords do not match.');
+      confirmRef.current?.focus();
       return;
     }
-
     setLoading(true);
-    setFieldErrors({});
-
-    const { error } = await supabase.auth.updateUser({ password });
-
-    if (error) {
-      setLoading(false);
-      setFieldErrors({ password: mapUpdateError(error.message) });
+    setError('');
+    const result = await supabase.auth.updateUser({ password });
+    setLoading(false);
+    setPassword('');
+    setConfirm('');
+    if (result.error) {
+      setError(result.error.message.toLowerCase().includes('session') ? 'This reset link has expired. Request a new one.' : 'We could not update the password. Try the recovery link again.');
+      if (result.error.message.toLowerCase().includes('session')) setSessionState('invalid');
       return;
     }
+    setSessionState('success');
+  }
 
-    router.push('/overview');
-    router.refresh();
+  if (sessionState === 'checking') {
+    return <section className="ua-auth-card" data-surface-id="password-reset-session-check" data-state-id="password-reset-session-check" aria-busy="true" aria-label="Checking the recovery link"><p className="text-sm text-[var(--uo-route-text-secondary)]" role="status">Checking the recovery link…</p></section>;
+  }
+
+  if (sessionState === 'invalid') {
+    return (
+      <section className="ua-auth-card" data-surface-id="set-new-password" data-state-id="reset-update-invalid-session" data-archetype="P2">
+        <header><span className="ua-auth-card__mark"><Link2Off size={18} aria-hidden="true" /></span><div><h1>This link cannot be used</h1><p>Recovery links are time-limited and can only be used once.</p></div></header>
+        <Link className="ua-button ua-button--primary ua-button--lg w-full justify-center" href={resetHref}>Request a new link</Link>
+        <footer><Link href={requestedNext ? `/login?next=${encodeURIComponent(nextPath)}` : '/login'}>Back to sign in</Link></footer>
+      </section>
+    );
+  }
+
+  if (sessionState === 'success') {
+    return (
+      <section className="ua-auth-card" data-surface-id="set-new-password" data-state-id="reset-update-success" data-archetype="P2">
+        <header><span className="ua-auth-card__mark"><Check size={18} aria-hidden="true" /></span><div><h1>Password updated</h1><p>Your new password is ready to use.</p></div></header>
+        <Link className="ua-button ua-button--primary ua-button--lg w-full justify-center" href={loginHref}>Return to sign in</Link>
+      </section>
+    );
   }
 
   return (
-    <Panel as="section" variant="panel" className="p-6">
-      <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">Set new password</h1>
-
-      <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="reset-update-password" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
-            New password
-          </label>
-          <Input
-            id="reset-update-password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value);
-              setFieldErrors((current) => ({ ...current, password: undefined }));
-            }}
-            required
-            minLength={8}
-            aria-invalid={Boolean(fieldErrors.password)}
-            aria-describedby="reset-update-password-requirement reset-update-password-error"
-            className={authInputClassName}
-            placeholder="At least 8 characters"
-          />
-          <p id="reset-update-password-requirement" className="mt-2 min-h-5 text-sm leading-5 text-[var(--ua-text-tertiary)]" aria-live="polite">
-            {passwordRequirement(password)}
-          </p>
-          <AuthError id="reset-update-password-error">{fieldErrors.password}</AuthError>
-        </div>
-
-        <div>
-          <label htmlFor="reset-update-confirm" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
-            Confirm password
-          </label>
-          <Input
-            id="reset-update-confirm"
-            name="confirm-password"
-            type="password"
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(event) => {
-              setConfirm(event.target.value);
-              setFieldErrors((current) => ({ ...current, confirm: undefined }));
-            }}
-            required
-            minLength={8}
-            aria-invalid={Boolean(fieldErrors.confirm)}
-            aria-describedby={fieldErrors.confirm ? 'reset-update-confirm-error' : undefined}
-            className={authInputClassName}
-            placeholder="Confirm password"
-          />
-          <AuthError id="reset-update-confirm-error">{fieldErrors.confirm}</AuthError>
-        </div>
-
-        <Button
-          type="submit"
-          size="lg"
-          loading={loading}
-          disabled={loading}
-          className="w-full justify-center"
-          style={authButtonStyle}
-        >
-          {loading ? 'Updating password' : 'Update password'}
-        </Button>
+    <section className="ua-auth-card" data-surface-id="set-new-password" data-state-id="set-new-password" data-archetype="P2">
+      <header><span className="ua-auth-card__mark"><KeyRound size={18} aria-hidden="true" /></span><div><h1>Set a new password</h1><p>Choose a password you have not used for this workspace.</p></div></header>
+      <form noValidate onSubmit={submit}>
+        <FormField label="New password" hint="Use 8 or more characters." error={error && password.length < 8 ? error : undefined} success={password.length >= 8 ? 'Password length is valid.' : undefined}>
+          <Input ref={passwordRef} name="password" type="password" autoComplete="new-password" value={password} onChange={(event) => { setPassword(event.target.value); setError(''); }} />
+        </FormField>
+        <FormField label="Confirm password" error={error && password.length >= 8 ? error : undefined}>
+          <Input ref={confirmRef} name="confirm-password" type="password" autoComplete="new-password" value={confirm} onChange={(event) => { setConfirm(event.target.value); setError(''); }} />
+        </FormField>
+        <AuthError>{error}</AuthError>
+        <Button type="submit" size="lg" loading={loading}>Save new password</Button>
       </form>
-    </Panel>
+    </section>
   );
+}
+
+export default function UpdatePasswordPage() {
+  return <Suspense fallback={<section className="ua-auth-card" aria-busy="true">Checking the recovery link…</section>}><UpdatePasswordForm /></Suspense>;
 }

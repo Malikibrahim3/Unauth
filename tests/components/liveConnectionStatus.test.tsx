@@ -4,7 +4,8 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
-import { ConnectorRow, type CatalogueRowItem } from '@/components/integrations/ConnectorRow';
+import { ConnectorRow } from '@/components/integrations/ConnectorRow';
+import type { CatalogueRowItem } from '@/lib/integrations/catalogueView';
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
 

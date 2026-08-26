@@ -11,6 +11,7 @@ type AuthenticatedPanelProps = {
   className?: string;
   bodyClassName?: string;
   capabilityId?: string;
+  'data-state-id'?: string;
 };
 
 /** Dense white content panel used by list, form, and configuration surfaces. */
@@ -22,12 +23,13 @@ export function AuthenticatedPanel({
   className,
   bodyClassName,
   capabilityId,
+  'data-state-id': dataStateId,
 }: AuthenticatedPanelProps) {
   // Renders the canonical working surface (§7.1) via the shared Surface
   // primitive; `styles.panel`/`.panelHeader`/`.panelBody` compose the shared
   // `ua-working-surface` anatomy from global rather than redeclaring it.
   return (
-    <Surface as="section" structure="working" className={cn(styles.panel, className)} data-capability-id={capabilityId}>
+    <Surface as="section" structure="working" className={cn(styles.panel, className)} data-capability-id={capabilityId} data-state-id={dataStateId}>
       {title || description || actions ? (
         <div className={styles.panelHeader}>
           <div>

@@ -6,7 +6,7 @@ export const csvImportProvider: IntegrationProvider = {
   logoSrc: '/providers/document-upload.svg',
   category: 'commerce',
   authMode: 'manual_upload',
-  buildStatus: 'live',
+  codeMaturity: 'complete',
   description: 'Merchant-uploaded customers, orders, refunds, and fulfillment records.',
   setupHref: '/sources/imports',
   evidenceCapabilities: [

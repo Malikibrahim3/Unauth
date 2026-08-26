@@ -1581,8 +1581,8 @@ describe("dashboard/page.tsx — fail-closed and no silent zero", () => {
       ),
       "utf-8",
     );
-    expect(content).toContain("Unavailable is not zero");
-    expect(content).toContain("No financial history is available for cases in this period");
+    expect(content).toContain("Financial report data unavailable");
+    expect(content).toContain("Unavailable values have not been replaced with zero");
   });
 
   it("handles permission denial — does NOT ignore the resolved permission result", () => {

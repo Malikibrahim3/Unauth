@@ -86,3 +86,7 @@ export function useNavigation() {
   }
   return ctx;
 }
+
+export function useOptionalNavigation() {
+  return useContext(NavigationContext);
+}

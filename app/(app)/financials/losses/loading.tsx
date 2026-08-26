@@ -3,7 +3,7 @@ import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSk
 export default function Loading() {
   return (
     <OperationalRouteSkeleton
-      title="Loading loss trend and ledger"
+      title="Loading loss ledger and review queue"
       rows={7}
       kpiCount={4}
       visualVariant="combo"

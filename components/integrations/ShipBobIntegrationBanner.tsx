@@ -53,9 +53,9 @@ export function ShipBobIntegrationBanner() {
   if (!banner) return null;
 
   const styles = {
-    success: { background: 'var(--ua-success-bg)', color: 'var(--ua-success)', border: 'var(--ua-success-border)' },
-    warning: { background: 'var(--ua-warning-bg)', color: 'var(--ua-warning)', border: 'var(--ua-warning-border)' },
-    error: { background: 'var(--ua-critical-bg)', color: 'var(--ua-critical)', border: 'var(--ua-critical-border)' },
+    success: { background: 'var(--uo-route-success-bg)', color: 'var(--uo-route-success)', border: 'var(--uo-route-success-border)' },
+    warning: { background: 'var(--uo-route-warning-bg)', color: 'var(--uo-route-warning)', border: 'var(--uo-route-warning-border)' },
+    error: { background: 'var(--uo-route-critical-bg)', color: 'var(--uo-route-critical)', border: 'var(--uo-route-critical-border)' },
   } as const;
 
   return (

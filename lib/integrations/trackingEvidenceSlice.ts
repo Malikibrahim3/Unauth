@@ -117,6 +117,7 @@ export function parseCarrierEvidenceRows(
   const photoRow = rows.find((row) => row.evidence_type === 'delivery_photo');
   const signatureRow = rows.find((row) => row.evidence_type === 'signature');
   const proofRow = rows.find((row) => row.evidence_type === 'proof_of_delivery');
+  const gpsRow = rows.find((row) => row.evidence_type === 'gps' || row.evidence_type === 'gps_coordinates');
 
   if (!statusRow && !eventsRow && !trackingRow) {
     slice.gap = 'tracking_not_found';
@@ -146,7 +147,7 @@ export function parseCarrierEvidenceRows(
   slice.deliveryPhotoAvailable = photoRow?.value != null;
   slice.signatureAvailable = signatureRow?.value != null;
   slice.proofOfDeliveryAvailable = proofRow?.value != null;
-  slice.gpsSupported = false;
+  slice.gpsSupported = gpsRow?.value != null;
   return slice;
 }
 

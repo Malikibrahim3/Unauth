@@ -1,194 +1,188 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Check, UserRoundPlus } from 'lucide-react';
+import { AuthError, AuthShell } from '@/app/(auth)/AuthShell';
 import { Button } from '@/components/ui/Button';
+import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
-import { Panel } from '@/components/ui';
-import { AuthError, AuthShell, authButtonStyle, authInputClassName } from '@/app/(auth)/AuthShell';
 import { createClient } from '@/lib/supabase/client';
+import { safeRedirectPath } from '@/lib/auth/safeRedirect';
+import { parseRequestedPlanId, PLANS } from '@/lib/billing/plans';
+import { formatNumber } from '@/lib/utils/format';
 
-type SignupErrors = Partial<Record<'email' | 'password' | 'confirm', string>>;
+type Field = 'email' | 'password' | 'confirm';
+type SignupErrors = Partial<Record<Field, string>>;
 
-function validateSignup(email: string, password: string, confirm: string): SignupErrors {
-  const fieldErrors: SignupErrors = {};
-  if (!email.trim()) fieldErrors.email = 'Enter your email address.';
-  else if (!/^\S+@\S+\.\S+$/.test(email.trim())) fieldErrors.email = 'Enter a valid email address.';
-  if (password.length < 8) fieldErrors.password = 'Password must be at least 8 characters.';
-  if (!confirm) fieldErrors.confirm = 'Confirm your password.';
-  else if (password !== confirm) fieldErrors.confirm = 'Passwords do not match.';
-  return fieldErrors;
+function validate(email: string, password: string, confirm: string): SignupErrors {
+  const errors: SignupErrors = {};
+  if (!/^\S+@\S+\.\S+$/.test(email.trim())) errors.email = 'Enter a valid email address.';
+  if (password.length < 8) errors.password = 'Use at least 8 characters.';
+  if (!confirm) errors.confirm = 'Confirm your password.';
+  else if (password !== confirm) errors.confirm = 'Passwords do not match.';
+  return errors;
 }
 
 function mapSignupError(message: string): SignupErrors {
   const lower = message.toLowerCase();
-  if (lower.includes('user already registered')) return { email: 'An account with this email already exists' };
-  if (lower.includes('password should be at least') || lower.includes('weak password')) {
-    return { password: 'Password must be at least 8 characters' };
-  }
-  return { email: 'We could not create your account. Please try again.' };
+  if (lower.includes('already registered')) return { email: 'We could not create the account. Check your details or use sign in.' };
+  if (lower.includes('password') || lower.includes('weak')) return { password: 'Choose a stronger password with at least 8 characters.' };
+  return { email: 'We could not create the account. Check your details and try again.' };
 }
 
-export default function SignupPage() {
+function SignupForm() {
+  const searchParams = useSearchParams();
+  // This is presentation-only until the authenticated server persists an
+  // intent below. No query value ever updates subscription state directly.
+  const plan = parseRequestedPlanId(searchParams.get('plan'));
+  const requestedNext = searchParams.get('next');
+  const nextPath = safeRedirectPath(requestedNext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<SignupErrors>({});
+  const [errors, setErrors] = useState<SignupErrors>({});
   const [loading, setLoading] = useState(false);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmRef = useRef<HTMLInputElement>(null);
+  const intentKeyRef = useRef<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function focusFirst(next: SignupErrors) {
+    const first = (['email', 'password', 'confirm'] as const).find((field) => next[field]);
+    ({ email: emailRef, password: passwordRef, confirm: confirmRef }[first ?? 'email']).current?.focus();
+  }
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const validationErrors = validateSignup(email, password, confirm);
-    if (Object.keys(validationErrors).length > 0) {
-      setFieldErrors(validationErrors);
+    const nextErrors = validate(email, password, confirm);
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      focusFirst(nextErrors);
       return;
     }
 
     setLoading(true);
-    setFieldErrors({});
-
+    setErrors({});
+    intentKeyRef.current ??= globalThis.crypto?.randomUUID?.()
+      ?? `signup-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    const callbackParams = new URLSearchParams();
+    if (requestedNext) callbackParams.set('next', nextPath);
     const signUpResult = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/callback`,
-        data: { setup_complete: false },
+        emailRedirectTo: `${window.location.origin}/callback${callbackParams.size ? `?${callbackParams.toString()}` : ''}`,
+        data: {
+          setup_complete: false,
+          ...(plan
+            ? {
+                requested_plan: plan,
+                subscription_intent_key: intentKeyRef.current,
+              }
+            : {}),
+        },
       },
     });
 
     if (signUpResult.error) {
+      const mapped = mapSignupError(signUpResult.error.message);
       setLoading(false);
-      setFieldErrors(mapSignupError(signUpResult.error.message));
+      setErrors(mapped);
+      setPassword('');
+      setConfirm('');
+      focusFirst(mapped);
       return;
     }
 
     let user = signUpResult.data.user ?? null;
     if (!signUpResult.data.session) {
-      const signInResult = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (!signInResult.error) user = signInResult.data.user;
+      const signIn = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (!signIn.error) user = signIn.data.user;
     }
 
     if (user) {
-      // Workspace ownership is represented by merchant_users, not a legacy
-      // merchants.user_id column. Bootstrap through the server-side service
-      // path so a brand-new account can create both rows as one service-owned
-      // product flow without relying on browser RLS permissions.
-      const setupResponse = await fetch('/api/account/setup', {
+      const setup = await fetch('/api/account/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bootstrapOnly: true }),
       });
-
-      if (!setupResponse.ok) {
+      if (!setup.ok) {
         setLoading(false);
-        setFieldErrors({ email: 'Your account was created, but we could not prepare your workspace.' });
+        setPassword('');
+        setConfirm('');
+        setErrors({ email: 'The workspace could not be prepared. Sign in or try again in a moment.' });
+        emailRef.current?.focus();
         return;
+      }
+      if (plan) {
+        const intent = await fetch('/api/billing/subscription-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': intentKeyRef.current ?? `signup-${user.id}-${plan}`,
+          },
+          body: JSON.stringify({ planId: plan, source: 'signup' }),
+        });
+        if (!intent.ok) {
+          setLoading(false);
+          setPassword('');
+          setConfirm('');
+          setErrors({ email: 'The workspace was created, but the plan request could not be saved. Sign in and choose the plan again in Billing.' });
+          emailRef.current?.focus();
+          return;
+        }
       }
     }
 
-    router.push('/onboarding');
+    const onboardingParams = new URLSearchParams();
+    if (requestedNext) onboardingParams.set('next', nextPath);
+    router.push(`/onboarding${onboardingParams.size ? `?${onboardingParams.toString()}` : ''}`);
     router.refresh();
   }
 
+  const loginParams = new URLSearchParams();
+  if (plan) loginParams.set('plan', plan);
+  if (requestedNext) loginParams.set('next', nextPath);
+  const loginHref = `/login${loginParams.size ? `?${loginParams.toString()}` : ''}`;
+  const selectedPlan = plan ? PLANS[plan] : null;
+  const planLabel = selectedPlan?.name ?? null;
+
   return (
-    <AuthShell>
-      <Panel as="section" variant="panel" className="p-6">
-        <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">Create your account</h1>
-
-        <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
-              Email
-            </label>
-            <Input
-              id="signup-email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                setFieldErrors((current) => ({ ...current, email: undefined }));
-              }}
-              required
-              aria-invalid={Boolean(fieldErrors.email)}
-              aria-describedby={fieldErrors.email ? 'signup-email-error' : undefined}
-              className={authInputClassName}
-              placeholder="you@company.com"
-            />
-            <AuthError id="signup-email-error">{fieldErrors.email}</AuthError>
-          </div>
-
-          <div>
-            <label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
-              Password
-            </label>
-            <Input
-              id="signup-password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setFieldErrors((current) => ({ ...current, password: undefined }));
-              }}
-              required
-              minLength={8}
-              aria-invalid={Boolean(fieldErrors.password)}
-              aria-describedby={fieldErrors.password ? 'signup-password-error' : undefined}
-              className={authInputClassName}
-              placeholder="At least 8 characters"
-            />
-            <AuthError id="signup-password-error">{fieldErrors.password}</AuthError>
-          </div>
-
-          <div>
-            <label htmlFor="signup-confirm" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
-              Confirm password
-            </label>
-            <Input
-              id="signup-confirm"
-              name="confirm-password"
-              type="password"
-              autoComplete="new-password"
-              value={confirm}
-              onChange={(event) => {
-                setConfirm(event.target.value);
-                setFieldErrors((current) => ({ ...current, confirm: undefined }));
-              }}
-              required
-              minLength={8}
-              aria-invalid={Boolean(fieldErrors.confirm)}
-              aria-describedby={fieldErrors.confirm ? 'signup-confirm-error' : undefined}
-              className={authInputClassName}
-              placeholder="Confirm password"
-            />
-            <AuthError id="signup-confirm-error">{fieldErrors.confirm}</AuthError>
-          </div>
-
-          <Button
-            type="submit"
-            size="lg"
-            loading={loading}
-            disabled={loading}
-            className="w-full justify-center"
-            style={authButtonStyle}
-          >
-            {loading ? 'Creating account' : 'Create account'}
-          </Button>
-        </form>
-
-        <p className="mt-5 text-sm text-[var(--ua-text-secondary)]">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-[var(--ua-action-primary)] underline-offset-4 hover:underline">
-            Sign in
-          </Link>
-        </p>
-      </Panel>
-    </AuthShell>
+    <section className="ua-auth-card" data-surface-id="create-account" data-archetype="P2">
+      <header>
+        <span className="ua-auth-card__mark"><UserRoundPlus size={18} aria-hidden="true" /></span>
+        <div><h1>Create your account</h1><p>{planLabel ? `Start with the ${planLabel} plan selected.` : 'Create the account that will own your workspace.'}</p></div>
+      </header>
+      {selectedPlan ? (
+        <section className="ua-auth-intent" aria-label="Requested plan intent">
+          <strong>{selectedPlan.name} requested</strong>
+          <p>{selectedPlan.creditsMonthly === 'custom' ? 'The credit allowance is agreed before activation.' : `${formatNumber(selectedPlan.creditsMonthly)} credits are included each month.`} This request is saved after account creation; billing changes only after provider confirmation.</p>
+        </section>
+      ) : null}
+      <form noValidate onSubmit={submit}>
+        <FormField label="Work email" error={errors.email}>
+          <Input ref={emailRef} name="email" type="email" autoComplete="email" value={email} onChange={(event) => { setEmail(event.target.value); setErrors((current) => ({ ...current, email: undefined })); }} />
+        </FormField>
+        <FormField label="Password" hint="Use 8 or more characters." error={errors.password} success={password.length >= 8 ? 'Password length is valid.' : undefined}>
+          <Input ref={passwordRef} name="password" type="password" autoComplete="new-password" value={password} onChange={(event) => { setPassword(event.target.value); setErrors((current) => ({ ...current, password: undefined })); }} />
+        </FormField>
+        <FormField label="Confirm password" error={errors.confirm}>
+          <Input ref={confirmRef} name="confirm-password" type="password" autoComplete="new-password" value={confirm} onChange={(event) => { setConfirm(event.target.value); setErrors((current) => ({ ...current, confirm: undefined })); }} />
+        </FormField>
+        <AuthError>{errors.email ?? errors.password ?? errors.confirm}</AuthError>
+        <Button type="submit" size="lg" loading={loading}>Create account</Button>
+      </form>
+      <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-[var(--ua-text-secondary)]"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--ua-success)]" aria-hidden="true" /><span>By creating an account, you agree to the <Link className="text-[var(--ua-text-link)] underline underline-offset-2" href="/legal/pilot-terms">Pilot terms</Link> and acknowledge the <Link className="text-[var(--ua-text-link)] underline underline-offset-2" href="/legal/privacy">Privacy policy</Link>.</span></p>
+      <div className="ua-auth-enumeration-note"><i /><p>We never disclose whether an email already belongs to an account. Existing workspace members can use sign in or request a recovery link.</p></div>
+      <footer><span>Already have an account? <Link href={loginHref}>Sign in</Link></span><Link href={plan ? `/pricing?plan=${encodeURIComponent(plan)}` : '/pricing'}>Compare plans</Link></footer>
+    </section>
   );
+}
+
+export default function SignupPage() {
+  return <AuthShell><Suspense fallback={<div className="ua-auth-card" aria-busy="true">Preparing account setup…</div>}><SignupForm /></Suspense></AuthShell>;
 }

@@ -36,24 +36,24 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
     <div
       className="ua-text-body flex items-center justify-between gap-4 px-4 py-2.5 border-b"
       style={{
-        background: 'color-mix(in srgb, var(--ua-warning) 8%, var(--ua-surface-primary))',
-        borderColor: 'color-mix(in srgb, var(--ua-warning) 20%, transparent)',
-        color: 'var(--ua-text-secondary)',
-        fontFamily: 'var(--ua-font-sans)',
+        background: 'color-mix(in srgb, var(--uo-route-warning) 8%, var(--uo-route-surface-primary))',
+        borderColor: 'color-mix(in srgb, var(--uo-route-warning) 20%, transparent)',
+        color: 'var(--uo-route-text-secondary)',
+        fontFamily: 'var(--uo-route-font-sans)',
       }}
     >
       <div className="flex items-center gap-2 min-w-0">
         <span
           className="h-1.5 w-1.5 rounded-full shrink-0"
-          style={{ background: 'var(--ua-warning)' }}
+          style={{ background: 'var(--uo-route-warning)' }}
           aria-hidden="true"
         />
-        <span className="leading-snug" style={{ color: 'var(--ua-text-primary)' }}>{message}</span>
+        <span className="leading-snug" style={{ color: 'var(--uo-route-text-primary)' }}>{message}</span>
       </div>
       <Link
         href="/sources/connected"
         className="ua-text-working-title shrink-0 whitespace-nowrap hover:opacity-80 transition-opacity"
-        style={{ color: 'var(--ua-action-primary)' }}
+        style={{ color: 'var(--uo-route-text-link)' }}
       >
         Complete setup
       </Link>

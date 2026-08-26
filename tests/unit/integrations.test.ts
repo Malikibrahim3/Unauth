@@ -79,38 +79,38 @@ function mockClient(tables: Record<string, any[]>) {
 describe('integration registry', () => {
   it('marks built providers live/partial and future providers slot-only', () => {
     const byId = Object.fromEntries(INTEGRATION_PROVIDERS.map((provider) => [provider.id, provider]));
-    expect(byId.shopify.buildStatus).toBe('live');
-    expect(byId.woocommerce.buildStatus).toBe('partial');
-    expect(byId.bigcommerce.buildStatus).toBe('partial');
-    expect(byId.gorgias.buildStatus).toBe('live');
+    expect(byId.shopify.codeMaturity).toBe('complete');
+    expect(byId.woocommerce.codeMaturity).toBe('partial');
+    expect(byId.bigcommerce.codeMaturity).toBe('partial');
+    expect(byId.gorgias.codeMaturity).toBe('complete');
     // Zendesk/Freshdesk/UPS/FedEx are NOT 'live': no executable adapter (or,
     // for UPS/FedEx, no sync/webhook lifecycle at all), no real health probe,
     // no reconciliation, no controlled e2e coverage — see the contract tests
     // below and docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md.
-    expect(byId.zendesk.buildStatus).toBe('partial');
-    expect(byId.freshdesk.buildStatus).toBe('partial');
-    expect(byId.aftership).toBeUndefined();
-    expect(byId.ups.buildStatus).toBe('partial');
-    expect(byId.fedex.buildStatus).toBe('partial');
-    expect(byId.csv_import.buildStatus).toBe('live');
-    expect(byId.document_upload.buildStatus).toBe('live');
-    expect(byId.self_fulfillment_pack.buildStatus).toBe('live');
-    expect(byId.shipbob.buildStatus).toBe('partial');
-    expect(byId.stripe.buildStatus).toBe('slot_only');
+    expect(byId.zendesk.codeMaturity).toBe('partial');
+    expect(byId.freshdesk.codeMaturity).toBe('partial');
+    expect(byId.aftership?.codeMaturity).toBe('slot_only');
+    expect(byId.ups.codeMaturity).toBe('partial');
+    expect(byId.fedex.codeMaturity).toBe('partial');
+    expect(byId.csv_import.codeMaturity).toBe('complete');
+    expect(byId.document_upload.codeMaturity).toBe('complete');
+    expect(byId.self_fulfillment_pack.codeMaturity).toBe('complete');
+    expect(byId.shipbob.codeMaturity).toBe('partial');
+    expect(byId.stripe.codeMaturity).toBe('slot_only');
     expect(byId.gmail).toBeUndefined();
-    expect(byId.amazon_marketplace).toBeUndefined();
+    expect(byId.amazon_marketplace?.codeMaturity).toBe('slot_only');
     expect(byId.slack).toBeUndefined();
-    // Dead integration stubs (no real wiring) were removed: loop, returngo,
-    // narvar, shiphero, extensiv, shipmonk, paypal, adyen.
-    expect(byId.loop).toBeUndefined();
+    // Reserved catalogue slots remain truthfully non-connectable until their
+    // adapter, setup route, and runtime proof exist.
+    expect(byId.loop_returns?.codeMaturity).toBe('slot_only');
     expect(byId.returngo).toBeUndefined();
     expect(byId.narvar).toBeUndefined();
     expect(byId.shiphero).toBeUndefined();
     expect(byId.extensiv).toBeUndefined();
-    expect(byId.shipmonk).toBeUndefined();
-    expect(byId.paypal).toBeUndefined();
-    expect(byId.adyen).toBeUndefined();
-    expect(byId.carrier_claims.buildStatus).toBe('slot_only');
+    expect(byId.shipmonk?.codeMaturity).toBe('slot_only');
+    expect(byId.paypal?.codeMaturity).toBe('slot_only');
+    expect(byId.adyen?.codeMaturity).toBe('slot_only');
+    expect(byId.carrier_claims.codeMaturity).toBe('slot_only');
     expect(byId.carrier_claims.evidenceCapabilities).toEqual(expect.arrayContaining([
       'carrier_claim_submission_status',
       'carrier_claim_outcome',
@@ -135,6 +135,17 @@ describe('integration registry', () => {
       'shipbob',
       'stripe',
       'carrier_claims',
+      'adobe_commerce',
+      'amazon_marketplace',
+      'shipmonk',
+      'dhl',
+      'usps',
+      'royal_mail',
+      'aftership',
+      'loop_returns',
+      'happy_returns',
+      'paypal',
+      'adyen',
     ]));
   });
 
@@ -180,6 +191,7 @@ describe('provider display stage is derived from evidence level, never hand-set'
     expect(deriveProviderDisplayStage(byId.self_fulfillment_pack)).toBe('partial');
     expect(deriveProviderDisplayStage(byId.stripe)).toBe('planned');
     expect(deriveProviderDisplayStage(byId.carrier_claims)).toBe('planned');
+    expect(INTEGRATION_PROVIDERS.filter((provider) => provider.codeMaturity === 'slot_only')).toHaveLength(13);
     expect(INTEGRATION_PROVIDERS.filter((provider) => deriveProviderDisplayStage(provider) === 'live')).toEqual([]);
   });
 

@@ -28,7 +28,7 @@ export function StatusWithReason({
   return (
     <div className={cn('flex min-w-0 items-start gap-3', className)}>
       <StatusBadge family={family} value={value} tone={tone} size={size} className="shrink-0" />
-      <div className="min-w-0 text-caption text-[var(--ua-text-secondary)]">
+      <div className="min-w-0 text-caption text-[var(--uo-route-text-secondary)]">
         {reason}
       </div>
     </div>

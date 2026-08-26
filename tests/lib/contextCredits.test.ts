@@ -73,6 +73,8 @@ describe('context credits', () => {
     const result = await consumeContextCredits(supabase, {
       merchantId: 'merchant-1',
       contextType: 'full_context',
+      logicalOperationId: 'test-full-context-1',
+      sourceObject: { type: 'claim', id: 'claim-1' },
     });
 
     expect(result.ok).toBe(false);
@@ -94,7 +96,7 @@ describe('context credits', () => {
     });
 
     const rpc = jest.fn().mockResolvedValue({
-      data: { ok: true, used: 1, remaining: 4999, credits_spent: 1, monthly_remaining: 4999, topup_remaining: 0 },
+      data: { ok: true, used: 1, remaining: 4999, credits_spent: 1, monthly_remaining: 4999, topup_remaining: 0, duplicate: false, receipt_id: 'receipt-1' },
       error: null,
     });
     const supabase: any = { rpc };
@@ -108,6 +110,8 @@ describe('context credits', () => {
       orderRef: 'ORD-1',
       customerRef: 'C-1',
       reason: 'delivery_dispute',
+      logicalOperationId: 'widget-case-claim-1',
+      sourceObject: { type: 'claim', id: 'claim-1' },
     });
 
     expect(result.ok).toBe(true);
@@ -124,8 +128,16 @@ describe('context credits', () => {
         p_customer_ref: 'C-1',
         p_reason: 'delivery_dispute',
         p_plan_tier: 'growth',
+        p_billable_event: 'context.basic',
+        p_logical_operation_id: 'widget-case-claim-1',
+        p_source_object_type: 'claim',
+        p_source_object_id: 'claim-1',
       }),
     );
+    if (result.ok) {
+      expect(result.receiptId).toBe('receipt-1');
+      expect(result.duplicate).toBe(false);
+    }
   });
 
   it('free and pro tiers can use full network context when credits remain', () => {

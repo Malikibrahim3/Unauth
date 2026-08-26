@@ -1,18 +1,22 @@
 import { redirect } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/server';
-import { hasPermission, PERMISSIONS } from '@/lib/permissions';
+import { PERMISSIONS } from '@/lib/permissions';
 import {
   getRequestServiceClient,
   getRequestUser,
   requirePagePermission,
 } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
-import { WorkbenchPage, ButtonLink, LeadSummary } from '@/components/ui';
-import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
-import { listRecoveryCases } from '@/lib/recoveries/store';
-import { RecoveryBoardClient } from './RecoveryBoardClient';
+import { ButtonLink, PageFrame } from '@/components/ui';
+import {
+  listRecoveryCasesPage,
+  RECOVERY_BOARD_STAGES,
+  type RecoveryBoardStage,
+} from '@/lib/recoveries/store';
 import type { RecoveryCase } from '@/lib/recoveries/types';
-import { RecoveryTrend, type RecoveryTrendPoint } from '@/components/recoveries/RecoveryVisuals';
+import { RecoveryBoardOperations } from '@/components/recoveries/RecoveryBoardOperations';
+import ExportMenu from '@/components/reports/ExportMenu';
+import { loadCanonicalFinancialAggregate } from '@/lib/financial/canonicalAggregates';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,58 +33,10 @@ type PayoutRow = {
 
 type OrderRow = { id: string; order_number: string | null };
 type TicketRow = { id: string; external_id: string | null };
-type RecoveryFinancialEntry = {
-  recovery_case_id: string | null;
-  state: 'recoverable' | 'recovered' | 'written_off';
-  amount_minor: number;
-  currency: string;
-  effective_at: string;
-};
+type RecoverySearchParams = Record<string, string | string[] | undefined>;
 
-function isoWeek(value: string) {
-  const date = new Date(value);
-  const day = (date.getUTCDay() + 6) % 7;
-  date.setUTCDate(date.getUTCDate() - day + 3);
-  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
-  const firstDay = (firstThursday.getUTCDay() + 6) % 7;
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDay + 3);
-  const week = 1 + Math.round((date.getTime() - firstThursday.getTime()) / 604800000);
-  return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
-}
-
-function weekLabel(value: string) {
-  const [year, rawWeek] = value.split('-W');
-  return `Week ${Number(rawWeek)}, ${year}`;
-}
-
-/** Builds a weekly balance only from dated, append-only financial entries. */
-function buildRecoveryTrend(entries: RecoveryFinancialEntry[], currency: string | null): RecoveryTrendPoint[] {
-  if (!currency) return [];
-  const rows = entries
-    .filter((entry) => entry.currency.toUpperCase() === currency.toUpperCase())
-    .slice()
-    .sort((a, b) => a.effective_at.localeCompare(b.effective_at));
-  const buckets = new Map<string, { recoveredMinor: number; outstandingMinor: number; recoveryRate: number | null }>();
-  let outstandingMinor = 0;
-  let recoveredToDate = 0;
-  for (const entry of rows) {
-    const amount = Math.max(0, Number(entry.amount_minor));
-    if (entry.state === 'recoverable') outstandingMinor += amount;
-    if (entry.state === 'recovered') {
-      recoveredToDate += amount;
-      outstandingMinor -= amount;
-    }
-    if (entry.state === 'written_off') outstandingMinor -= amount;
-    const key = isoWeek(entry.effective_at);
-    const existing = buckets.get(key) ?? { recoveredMinor: 0, outstandingMinor: 0, recoveryRate: null };
-    existing.recoveredMinor += entry.state === 'recovered' ? amount : 0;
-    existing.outstandingMinor = Math.max(0, outstandingMinor);
-    existing.recoveryRate = recoveredToDate + outstandingMinor > 0
-      ? recoveredToDate / (recoveredToDate + outstandingMinor)
-      : null;
-    buckets.set(key, existing);
-  }
-  return Array.from(buckets, ([key, value]) => ({ key, label: weekLabel(key), ...value }));
+function one(value: string | string[] | undefined): string | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
 }
 
 async function enrichRecoveryCases(
@@ -137,74 +93,57 @@ async function enrichRecoveryCases(
   });
 }
 
-export default async function RecoveriesPage() {
+export default async function RecoveriesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<RecoverySearchParams>;
+}) {
   const user = await getRequestUser();
   if (!user) redirect('/login');
-
   const serviceClient = getRequestServiceClient();
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
   if (!ctx) redirect('/overview');
-  const [canManage, rawRecoveries] = await Promise.all([
-    hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS),
-    listRecoveryCases(serviceClient, ctx.merchantId),
+  const params = searchParams ? await searchParams : {};
+  const requestedCurrency = one(params.currency)?.toUpperCase() ?? null;
+  const requestedStage = one(params.stage);
+  const stage: RecoveryBoardStage = RECOVERY_BOARD_STAGES.includes(requestedStage as RecoveryBoardStage)
+    ? requestedStage as RecoveryBoardStage
+    : 'all';
+  const pageValue = Number(one(params.page));
+  const page = Number.isInteger(pageValue) && pageValue > 0 ? pageValue : 1;
+  const search = one(params.search)?.slice(0, 100) ?? null;
+  const asOf = new Date();
+  const [result, aggregate] = await Promise.all([
+    listRecoveryCasesPage(serviceClient, ctx.merchantId, {
+      stage,
+      currency: requestedCurrency,
+      search,
+      page,
+      pageSize: 25,
+    }),
+    loadCanonicalFinancialAggregate(serviceClient, ctx.merchantId, {
+      from: new Date(asOf.getTime() - 30 * 86_400_000).toISOString(),
+      to: asOf.toISOString(),
+      currency: requestedCurrency && /^[A-Z]{3}$/.test(requestedCurrency) ? requestedCurrency : null,
+    }),
   ]);
-  const recoveries = await enrichRecoveryCases(serviceClient, ctx.merchantId, rawRecoveries);
-  const recoveryIds = recoveries.map((recovery) => recovery.id);
-  const { data: entryRows, error: entryError } = recoveryIds.length
-    ? await serviceClient
-      .from(TABLES.CASE_FINANCIAL_ENTRIES)
-      .select('recovery_case_id,state,amount_minor,currency,effective_at')
-      .eq('merchant_id', ctx.merchantId)
-      .in('recovery_case_id', recoveryIds)
-      .in('state', ['recoverable', 'recovered', 'written_off'])
-      .order('effective_at', { ascending: true })
-    : { data: [], error: null };
-  if (entryError) throw new Error(`Failed to load recovery financial entries: ${entryError.message}`);
-  const openRecoveries = recoveries.filter((item) => !['paid', 'closed_unrecoverable'].includes(item.status));
-  const missingSourceData = recoveries.filter((item) => item.status === 'evidence_needed' || item.evidence_missing.length > 0).length;
-  const needsCorrespondence = recoveries.filter((item) => item.status === 'chase_due').length;
-  // Sum only rows in the dominant currency; a merchant with mixed-currency
-  // recoveries gets a disclosed exclusion instead of a silently-wrong total.
-  const recoverableSum = sumSameCurrency(recoveries, (item) => item.estimated_recoverable_max, (item) => item.currency);
-  const recoveredSum = sumSameCurrency(recoveries, (item) => item.amount_recovered, (item) => item.currency);
-  const estimatedRecoverable = recoverableSum.total;
-  const recovered = recoveredSum.total;
-  const currency = recoverableSum.currency;
-  const mixedHint = recoverableSum.mixedCount > 0 ? ` · ${recoverableSum.mixedCount} case${recoverableSum.mixedCount === 1 ? '' : 's'} in other currencies excluded` : '';
-  const trend = buildRecoveryTrend((entryRows ?? []) as RecoveryFinancialEntry[], currency);
+  result.rows = await enrichRecoveryCases(serviceClient, ctx.merchantId, result.rows);
 
   return (
-    <WorkbenchPage
+    <PageFrame
       title="Recovery board"
-      subtitle="The losses you can still do something about: what needs evidence, what's ready to submit, what needs chasing, and what came back."
+      surfaceId="recovery-board"
+      archetype="operations-recovery-board"
+      breadcrumbs={[{ label: 'Unauth', href: '/overview' }, { label: 'Recovery board' }]}
       actions={
-        <ButtonLink href="/controls/rules/recovery" variant="secondary" size="sm">
-          Partner rulebook
-        </ButtonLink>
+        <div className="uo-header-actions">
+          <span>Last 30 days</span>
+          <ExportMenu range="30d" currency={result.currency} />
+          <ButtonLink href="/cases?status=decision_recorded" size="sm">Review recovery-ready cases</ButtonLink>
+        </div>
       }
-      kpiStrip={
-        <LeadSummary
-          aria-label="Recovery summary"
-          lead={{
-            label: 'Estimated recovery',
-            value: formatCurrencyNullable(estimatedRecoverable, currency),
-            description: `Upper estimate${mixedHint}`,
-          }}
-          supporting={[
-            { label: 'Open cases', value: formatNumber(openRecoveries.length), description: 'Active recovery work' },
-            { label: 'Missing data', value: formatNumber(missingSourceData), description: 'Waiting on a source' },
-            { label: 'Needs correspondence', value: formatNumber(needsCorrespondence), description: 'Draft chase requests' },
-            { label: 'Recovered', value: formatCurrencyNullable(recovered, currency), description: `Received or credited${mixedHint}` },
-          ]}
-        />
-      }
-      primaryVisual={<RecoveryTrend currency={currency} points={trend} mixedCurrencyCount={recoverableSum.mixedCount} />}
-      main={<RecoveryBoardClient recoveries={recoveries} canManage={canManage} />}
-      footer={
-        <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
-          Cases update automatically as your connected tools sync new evidence and status. Missing evidence stays marked as missing until a source provides it.
-        </p>
-      }
-    />
+    >
+      <RecoveryBoardOperations result={result} search={search} aggregate={aggregate} />
+    </PageFrame>
   );
 }

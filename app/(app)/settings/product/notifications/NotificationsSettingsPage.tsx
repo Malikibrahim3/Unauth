@@ -14,6 +14,13 @@ export default async function NotificationPreferencesPage() {
     <SettingsPageShell
       title="Notification preferences"
       subtitle="Choose which typed operational events create an in-app item for your account. Preferences never change another team member’s inbox."
+      surfaceId="notification-preferences"
+      truth={{
+        access: "You control preferences for your own account",
+        currentState: "Eight implemented in-app event types · email delivery unavailable",
+        saveBehavior: "Each switch saves immediately and restores its previous value on failure",
+        impact: "Changes which future events appear in your inbox; teammates are unaffected",
+      }}
     >
       <NotificationPreferencesForm initial={values} />
     </SettingsPageShell>

@@ -40,14 +40,14 @@ export function EvidenceChecklistCard({
   return (
     <Card unstyled as="section" variant="panel" className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-label" style={{ color: 'var(--uo-route-text-secondary)' }}>
           Evidence on file
         </p>
         <StatusBadge family="evidenceStrength" value={evidence.strength} />
       </div>
 
       {evidence.items.length === 0 ? (
-        <p className="ua-text-body" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-body" style={{ color: 'var(--uo-route-text-secondary)' }}>
           No supporting evidence on file yet.
         </p>
       ) : (
@@ -57,28 +57,28 @@ export function EvidenceChecklistCard({
             const isMissing = item.state === 'missing';
             const isUnavailable = item.state === 'unavailable';
             const mark = isPresent ? '✓' : isMissing ? '○' : isUnavailable ? '–' : '–';
-            const markColor = isPresent ? 'var(--ua-success)' : 'var(--ua-text-tertiary)';
+            const markColor = isPresent ? 'var(--uo-route-success)' : 'var(--uo-route-text-tertiary)';
             return (
               <li key={item.key} className="ua-text-dense flex items-start gap-2">
                 <span aria-hidden style={{ color: markColor, lineHeight: '1.4' }}>
                   {mark}
                 </span>
-                <span style={{ color: isPresent ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)' }}>
+                <span style={{ color: isPresent ? 'var(--uo-route-text-primary)' : 'var(--uo-route-text-secondary)' }}>
                   {item.label}
                   {item.state === 'not_tracked' && (
-                    <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
+                    <span className="ua-text-metadata" style={{ color: 'var(--uo-route-text-tertiary)' }}>
                       {' '}
                       · not tracked
                     </span>
                   )}
                   {item.state === 'unavailable' && (
-                    <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
+                    <span className="ua-text-metadata" style={{ color: 'var(--uo-route-text-tertiary)' }}>
                       {' '}
                       · unavailable from provider
                     </span>
                   )}
                   {item.state === 'missing' && item.reason !== 'Not on file' && (
-                    <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
+                    <span className="ua-text-metadata" style={{ color: 'var(--uo-route-text-tertiary)' }}>
                       {' '}
                       · {item.reason}
                     </span>
@@ -96,13 +96,13 @@ export function EvidenceChecklistCard({
           variant="muted"
           className="ua-text-caption-role mt-3 flex items-start gap-2 px-3 py-2.5"
           style={{
-            borderColor: 'color-mix(in srgb, var(--ua-warning) 25%, var(--ua-border-default))',
-            background: 'color-mix(in srgb, var(--ua-warning) 6%, var(--ua-surface-primary))',
+            borderColor: 'color-mix(in srgb, var(--uo-route-warning) 25%, var(--uo-route-border-default))',
+            background: 'color-mix(in srgb, var(--uo-route-warning) 6%, var(--uo-route-surface-primary))',
           }}
         >
-          <span aria-hidden style={{ color: 'var(--ua-warning)', lineHeight: '1.5' }}>!</span>
-          <span style={{ color: 'var(--ua-text-secondary)' }}>
-            <span className="font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+          <span aria-hidden style={{ color: 'var(--uo-route-warning)', lineHeight: '1.5' }}>!</span>
+          <span style={{ color: 'var(--uo-route-text-secondary)' }}>
+            <span className="font-semibold" style={{ color: 'var(--uo-route-text-primary)' }}>
               {delivery?.trackingGap === 'no_tracking_number'
                 ? 'Delivery evidence: no tracking number on the source order.'
                 : 'Delivery evidence: not connected.'}
@@ -111,7 +111,7 @@ export function EvidenceChecklistCard({
             <Link
               href="/sources/connected"
               className="font-medium underline underline-offset-2"
-              style={{ color: 'var(--ua-warning)' }}
+              style={{ color: 'var(--uo-route-warning)' }}
             >
               Connect a tracking source
             </Link>

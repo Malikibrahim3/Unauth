@@ -7,6 +7,7 @@ export type MerchantSettingsProfile = {
   monthly_order_volume: string | null;
   primary_fraud_concern: string | null;
   onboarding_profile_complete: boolean;
+  onboarding_deferred_at: string | null;
   setup_complete: boolean;
 };
 
@@ -31,6 +32,10 @@ export function parseMerchantSettings(settings: unknown): MerchantSettingsProfil
       typeof record.primary_fraud_concern === 'string' ? record.primary_fraud_concern : null,
     onboarding_profile_complete:
       record.onboarding_profile_complete === true || record.setup_complete === true,
+    onboarding_deferred_at:
+      typeof record.onboarding_deferred_at === 'string' && record.onboarding_deferred_at.trim()
+        ? record.onboarding_deferred_at
+        : null,
     setup_complete: record.setup_complete === true,
   };
 }
@@ -53,6 +58,9 @@ export function mergeMerchantSettings(
   }
   if (patch.onboarding_profile_complete !== undefined) {
     current.onboarding_profile_complete = patch.onboarding_profile_complete;
+  }
+  if (patch.onboarding_deferred_at !== undefined) {
+    current.onboarding_deferred_at = patch.onboarding_deferred_at;
   }
   if (patch.setup_complete !== undefined) current.setup_complete = patch.setup_complete;
 

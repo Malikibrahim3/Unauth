@@ -26,6 +26,7 @@ export type WidgetContextUnlockParams = {
   orderRef?: string | null;
   claimId?: string | null;
   customerRef?: string | null;
+  logicalOperationId?: string;
 };
 
 export type WidgetContextUnlockResult =
@@ -184,6 +185,12 @@ export async function performWidgetContextUnlock(
     ticketRef: params.ticketRef ?? null,
     orderRef: params.orderRef ?? null,
     customerRef: params.customerRef ?? null,
+    logicalOperationId: params.logicalOperationId
+      ?? `widget:${params.apiKeyId}:${resultContextType}:${params.claimId ?? params.ticketRef ?? params.orderRef ?? params.customerRef}`,
+    sourceObject: {
+      type: params.claimId ? 'claim' : params.ticketRef ? 'ticket' : params.orderRef ? 'order' : 'customer',
+      id: params.claimId ?? params.ticketRef ?? params.orderRef ?? params.customerRef ?? 'unknown',
+    },
     allowSoftCap: softCapBasic,
     metadata: {
       request_source: 'widget',

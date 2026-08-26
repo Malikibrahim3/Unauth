@@ -12,8 +12,9 @@ import {
   ListChecks,
   TrendingDown,
   Plug,
+  Bell,
 } from 'lucide-react';
-import { PERMISSIONS, type Permission } from '@/lib/permissions';
+import { PERMISSIONS, type Permission } from '@/lib/permissions/constants';
 import type { ProductTier } from '@/lib/product/tiers';
 import { ROUTE_ALIASES } from './aliases';
 
@@ -24,9 +25,12 @@ export type AppRouteKey =
   | 'claims'
   | 'losses'
   | 'recoveries'
+  | 'reconciliation'
   | 'reports'
   | 'integrations'
+  | 'imports'
   | 'settings'
+  | 'notifications'
   | 'help'
   | 'rules'
   | 'flows';
@@ -114,7 +118,7 @@ export const APP_ROUTES = {
   losses: {
     key: 'losses',
     href: '/financials/losses',
-    label: 'Losses',
+    label: 'Loss ledger',
     pageTitle: 'Losses',
     sectionPrefix: '/financials/losses',
     permission: PERMISSIONS.VIEW_INBOX,
@@ -129,7 +133,7 @@ export const APP_ROUTES = {
   recoveries: {
     key: 'recoveries',
     href: '/financials/recovery',
-    label: 'Recovery',
+    label: 'Recovery board',
     pageTitle: 'Recovery board',
     sectionPrefix: '/financials/recovery',
     permission: PERMISSIONS.VIEW_INBOX,
@@ -140,6 +144,18 @@ export const APP_ROUTES = {
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Track source-backed losses, evidence gaps, correspondence, and synced recovery outcomes',
+  },
+  reconciliation: {
+    key: 'reconciliation',
+    href: '/financials/reconciliation',
+    label: 'Reconciliation',
+    pageTitle: 'Reconciliation',
+    sectionPrefix: '/financials/reconciliation',
+    permission: PERMISSIONS.VIEW_INBOX,
+    icon: SlidersHorizontal,
+    sidebar: true,
+    commandPalette: true,
+    commandDescription: 'Resolve source-to-ledger exceptions without inferring missing values',
   },
   reports: {
     key: 'reports',
@@ -156,15 +172,27 @@ export const APP_ROUTES = {
   integrations: {
     key: 'integrations',
     href: '/sources/connected',
-    label: 'Integrations',
-    pageTitle: 'Integrations',
-    sectionPrefix: '/sources',
+    label: 'Connected',
+    pageTitle: 'Sources',
+    sectionPrefix: '/sources/connected',
     permission: PERMISSIONS.VIEW_SETTINGS,
     aliases: ['/integrations', '/settings/integrations'],
     icon: Plug,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Connect commerce, helpdesk, carrier, and payment sources',
+  },
+  imports: {
+    key: 'imports',
+    href: '/sources/imports',
+    label: 'Imports',
+    pageTitle: 'Imports',
+    sectionPrefix: '/sources/imports',
+    permission: PERMISSIONS.MANAGE_SETTINGS,
+    icon: Plug,
+    sidebar: true,
+    commandPalette: true,
+    commandDescription: 'Upload and inspect source-backed import jobs',
   },
   settings: {
     key: 'settings',
@@ -179,17 +207,31 @@ export const APP_ROUTES = {
     commandPalette: true,
     commandDescription: 'Account and team settings',
   },
+  notifications: {
+    key: 'notifications',
+    href: '/notifications',
+    label: 'Notifications',
+    pageTitle: 'Notifications',
+    sectionPrefix: '/notifications',
+    icon: Bell,
+    sidebar: true,
+    commandPalette: true,
+    commandDescription: 'Workspace notifications and source health updates',
+  },
   help: {
     key: 'help',
     href: '/help',
     label: 'Help',
     pageTitle: 'Help',
     icon: HelpCircle,
+    sidebar: true,
+    commandPalette: true,
+    commandDescription: 'Guidance for working with evidence and ledger states',
   },
   rules: {
     key: 'rules',
     href: '/controls/rules',
-    label: 'Rules',
+    label: 'Payout rules',
     pageTitle: 'Rules',
     sectionPrefix: '/controls/rules',
     permission: PERMISSIONS.VIEW_SETTINGS,
@@ -233,10 +275,11 @@ export const COMMAND_PALETTE_FILTERS = [
 ] as const;
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
-  { label: 'Overview', routeKeys: ['dashboard'] },
-  { label: 'Work', routeKeys: ['work', 'claims', 'losses', 'recoveries', 'customers'] },
-  { label: 'Configure', routeKeys: ['rules', 'flows'] },
-  { label: 'Reports and setup', routeKeys: ['reports', 'integrations', 'settings'] },
+  { label: 'Act on work', routeKeys: ['dashboard', 'work', 'claims', 'customers'] },
+  { label: 'Trace money', routeKeys: ['losses', 'recoveries', 'reconciliation', 'reports'] },
+  { label: 'Configure decisions', routeKeys: ['rules', 'flows'] },
+  { label: 'Connect evidence', routeKeys: ['integrations', 'imports'] },
+  { label: 'Workspace', routeKeys: ['settings', 'notifications', 'help'] },
 ];
 
 export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array<{ label: string; items: AppRoute[] }> {
@@ -244,12 +287,16 @@ export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array
     label: group.label,
     items: group.routeKeys
       .map((key) => APP_ROUTES[key] as AppRoute)
+      .filter((route) => route.sidebar !== false)
       .filter((route) => !route.permission || !permissions || permissions.has(route.permission)),
   })).filter((group) => group.items.length > 0);
 }
 
 export function getCommandPaletteNavItems(permissions?: ReadonlySet<Permission>) {
-  const items: Array<{ label: string; description: string; href: string }> = [];
+  const groupByRoute = new Map(
+    SIDEBAR_NAV_GROUPS.flatMap((group) => group.routeKeys.map((key) => [key, group.label] as const)),
+  );
+  const items: Array<{ label: string; description: string; href: string; group: string }> = [];
   for (const r of Object.values(APP_ROUTES) as AppRoute[]) {
     if (!r.commandPalette) continue;
     if (r.permission && permissions && !permissions.has(r.permission)) continue;
@@ -257,9 +304,19 @@ export function getCommandPaletteNavItems(permissions?: ReadonlySet<Permission>)
       label: r.key === 'dashboard' ? 'Operations overview' : r.label,
       description: r.commandDescription ?? r.label,
       href: r.href,
+      group: groupByRoute.get(r.key) ?? 'Workspace',
     });
   }
   return items;
+}
+
+/** Match a canonical sidebar route across its detail surfaces and aliases. */
+export function isAppRouteActive(pathname: string, route: AppRoute): boolean {
+  const path = pathname.split('?')[0] || pathname;
+  const matches = (target: string) => path === target || path.startsWith(`${target}/`);
+  return matches(route.href)
+    || Boolean(route.sectionPrefix && matches(route.sectionPrefix))
+    || Boolean(route.aliases?.some(matches));
 }
 
 export function getPageTitleForPath(pathname: string): string | undefined {

@@ -39,7 +39,7 @@ export default function BillingStatusBanner() {
     return (
       <div
         className="ua-text-body flex-shrink-0 border-b px-4 py-2"
-        style={{ borderColor: 'var(--ua-risk-high)', background: 'color-mix(in srgb, var(--ua-risk-high) 8%, var(--ua-canvas))' }}
+        style={{ borderColor: 'var(--uo-route-risk-high)', background: 'color-mix(in srgb, var(--uo-route-risk-high) 8%, var(--uo-route-canvas))' }}
         role="alert"
       >
         Your payment failed. Update billing to restore full access. Store Checks are still available.{' '}
@@ -56,7 +56,7 @@ export default function BillingStatusBanner() {
   return (
     <div
       className="ua-text-body flex-shrink-0 border-b px-4 py-2"
-      style={{ borderColor: 'var(--ua-risk-high)', background: 'color-mix(in srgb, var(--ua-risk-high) 8%, var(--ua-canvas))' }}
+      style={{ borderColor: 'var(--uo-route-risk-high)', background: 'color-mix(in srgb, var(--uo-route-risk-high) 8%, var(--uo-route-canvas))' }}
       role="alert"
     >
       Your subscription lapsed. You&apos;re now on Free.{' '}

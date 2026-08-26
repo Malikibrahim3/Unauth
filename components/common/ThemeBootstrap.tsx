@@ -1,20 +1,8 @@
-'use client';
-
-import { useEffect } from 'react';
-
-const STORAGE_KEY = 'unauth.theme';
-
+/**
+ * Theme state is intentionally scoped to the authenticated product root.
+ * Public, auth, and onboarding routes must never receive a global colour-mode
+ * attribute from the document bootstrap.
+ */
 export default function ThemeBootstrap() {
-  useEffect(() => {
-    try {
-      const theme = localStorage.getItem(STORAGE_KEY);
-      if (theme === 'dark' || theme === 'light') {
-        document.documentElement.dataset.theme = theme;
-      }
-    } catch {
-      // Ignore storage failures in restricted browser contexts.
-    }
-  }, []);
-
   return null;
 }

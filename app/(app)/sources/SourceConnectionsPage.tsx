@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import {
   PERMISSIONS,
   resolveDefaultAppPath,
@@ -14,28 +13,39 @@ import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
 // RUN-18: the validating entry point, so no consumer can skip the
 // impossible-state check.
 import { connectionReadModel } from "@/lib/connections/readModel";
-import {
-  type CatalogueRowItem,
-} from "@/components/integrations/ConnectorRow";
-import { IntegrationsTabs, type IntegrationsView } from "@/components/integrations/IntegrationsTabs";
-import { IntegrationsWorkspace } from "@/components/integrations/IntegrationsWorkspace";
+import type { CatalogueRowItem, IntegrationsView } from "@/lib/integrations/catalogueView";
 import { DeferredLiveConnectionVerification } from "@/components/integrations/DeferredLiveConnectionVerification";
 import { ShipBobIntegrationBanner } from "@/components/integrations/ShipBobIntegrationBanner";
 import { ButtonLink } from "@/components/ui";
 import { PageFrame } from "@/components/ui/PageFrame";
+import { SourcesOperations } from "@/components/sources/SourcesOperations";
+import {
+  evaluateSourceReadiness,
+  type RequiredEvidenceLayerId,
+} from "@/lib/sources/evidenceReadiness";
 
 export const dynamic = "force-dynamic";
 
-function resolveView(value: string | undefined, hasConnections: boolean): Exclude<IntegrationsView, "imports"> {
+type SourceSearchParams = {
+  view?: string;
+  status?: string;
+  category?: string;
+  layer?: string;
+  q?: string;
+};
+
+function resolveView(value: string | undefined, defaultView: Exclude<IntegrationsView, "imports">): Exclude<IntegrationsView, "imports"> {
   if (value === "browse") return "browse";
   if (value === "connected") return "connected";
-  return hasConnections ? "connected" : "browse";
+  return defaultView;
 }
 
 export default async function IntegrationsPage({
   searchParams,
+  defaultView = "connected",
 }: {
-  searchParams?: Promise<{ view?: string }>;
+  searchParams?: Promise<SourceSearchParams>;
+  defaultView?: Exclude<IntegrationsView, "imports">;
 }) {
   const user = await getRequestUser();
   if (!user) redirect("/login");
@@ -54,6 +64,7 @@ export default async function IntegrationsPage({
       providerId: item.id,
       syncState: item.syncState,
       freshness: item.freshness,
+      liveVerification: item.liveVerification,
       lastVerifiedAt: item.lastVerifiedAt,
       importedRecords: item.importedRecords,
     });
@@ -67,29 +78,59 @@ export default async function IntegrationsPage({
     };
   });
 
-  const connectedCount = catalogue.filter((item) => item.connectionCount > 0 || item.connectionId !== null || item.status !== "not_connected").length;
-  const plannedCount = catalogue.filter((item) => item.stage === "planned").length;
-  const browseCount = catalogue.filter((item) => item.category !== "documents" && item.stage !== "planned").length + plannedCount;
-  const view = resolveView((await searchParams)?.view, connectedCount > 0);
+  const resolvedSearch = await searchParams;
+  const view = resolveView(resolvedSearch?.view, defaultView);
+  const readiness = evaluateSourceReadiness(catalogue);
+  const firstMissingLayer = readiness.firstMissingLayer?.id ?? null;
+  const setupHref = firstMissingLayer
+    ? `/sources/browse?layer=${encodeURIComponent(firstMissingLayer)}`
+    : "/sources/browse";
+  const setupLabel = readiness.ready ? "Add another source" : "Complete source setup";
+  const initialStatus = ["all", "connected", "not_connected", "attention", "planned"].includes(resolvedSearch?.status ?? "")
+    ? resolvedSearch?.status as "all" | "connected" | "not_connected" | "attention" | "planned"
+    : "all";
+  const categoryToLayer: Record<string, RequiredEvidenceLayerId | undefined> = {
+    commerce: "commerce",
+    helpdesk: "support",
+    warehouse_3pl: "fulfilment",
+    returns: "fulfilment",
+    carrier: "delivery",
+    tracking: "delivery",
+    payments_disputes: "payments",
+  };
+  const initialLayer = resolvedSearch?.layer && ["commerce", "support", "fulfilment", "delivery", "payments", "supplemental"].includes(resolvedSearch.layer)
+    ? resolvedSearch.layer as RequiredEvidenceLayerId | "supplemental"
+    : categoryToLayer[resolvedSearch?.category ?? ""] ?? "all";
 
   return (
     <>
       <ShipBobIntegrationBanner />
       <DeferredLiveConnectionVerification />
       <PageFrame
+        surfaceId={view === "browse" ? "source-catalogue" : "connected-sources"}
+        archetype={view === "browse" ? "P5-catalogue" : "P5-registry"}
         title="Sources"
-        subtitle="Manage the systems that feed evidence into Unauth, or add a new source to your stack."
+        breadcrumbs={[
+          { label: "Unauth", href: "/overview" },
+          { label: view === "browse" ? "Source catalogue" : "Connected sources" },
+        ]}
+        subtitle="Connect the systems Unauth uses to assemble complete order, support, fulfilment, delivery and payment evidence."
         actions={
-          view === "browse" ? (
-            <ButtonLink href="/sources/connected?view=connected" variant="secondary" size="sm">View connections</ButtonLink>
-          ) : (
-            <ButtonLink href="/sources/browse" size="sm" leadingIcon={<Plus size={14} />}>Add source</ButtonLink>
-          )
+          <>
+            {view === "browse" ? <ButtonLink href="/sources/connected?view=connected" variant="secondary" size="sm">View connections</ButtonLink> : null}
+            <ButtonLink href={setupHref} size="sm" leadingIcon={readiness.ready ? <Plus size={14} /> : <ArrowRight size={14} />}>
+              {setupLabel}
+            </ButtonLink>
+          </>
         }
-        tabs={<IntegrationsTabs active={view} connectedCount={connectedCount} catalogueCount={browseCount} />}
       >
-        <IntegrationsWorkspace items={catalogue} initialView={view} />
-        <Link href="/sources/imports" className="sr-only">Open imports workspace</Link>
+        <SourcesOperations
+          items={catalogue}
+          view={view}
+          initialQuery={resolvedSearch?.q ?? ""}
+          initialStatus={initialStatus}
+          initialLayer={initialLayer}
+        />
       </PageFrame>
     </>
   );

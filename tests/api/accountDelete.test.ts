@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 jest.mock('@/lib/supabase/server', () => ({
-  createAdminClient: jest.fn(),
   createClient: jest.fn(),
   createServiceClient: jest.fn(),
 }));
 
 jest.mock('@/lib/permissions', () => ({
+  ACTIVE_MERCHANT_COOKIE: 'unauth.active_merchant',
   PERMISSIONS: { GRANT_PERMISSIONS: 'grant_permissions' },
   requirePermission: jest.fn(),
 }));
@@ -14,328 +14,160 @@ jest.mock('@/lib/permissions', () => ({
 jest.mock('@/lib/ratelimit', () => ({
   enforceRateLimit: jest.fn().mockResolvedValue(null),
   getClientIp: jest.fn(() => '127.0.0.1'),
-  limitFromEnv: jest.fn(() => ({ limit: 3, window: 3600 })),
+  limitFromEnv: jest.fn(() => ({ limit: 6, window: 3600 })),
   rateLimitKey: jest.fn((name: string, ip: string) => `${name}:${ip}`),
 }));
 
-import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server';
+jest.mock('@/lib/privacy/workspaceDeletion', () => {
+  class WorkspaceDeletionRunError extends Error {
+    constructor(public jobId: string, public stage: string, message: string) {
+      super(message);
+    }
+  }
+  return {
+    createWorkspaceDeletionJob: jest.fn(),
+    getWorkspaceDeletionJob: jest.fn(),
+    resumeWorkspaceDeletionJob: jest.fn(),
+    WorkspaceDeletionRunError,
+  };
+});
+
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
-import { POST } from '@/app/api/account/delete/route';
+import {
+  createWorkspaceDeletionJob,
+  getWorkspaceDeletionJob,
+  resumeWorkspaceDeletionJob,
+  WorkspaceDeletionRunError,
+} from '@/lib/privacy/workspaceDeletion';
+import { GET, POST } from '@/app/api/account/delete/route';
 
-const USER_ID = 'user-1';
-const MERCHANT_ID = 'merchant-1';
+const USER_ID = '30000000-0000-4000-8000-000000000001';
+const MERCHANT_ID = '10000000-0000-4000-8000-000000000001';
+const JOB_ID = '20000000-0000-4000-8000-000000000001';
+const IDEMPOTENCY_KEY = '40000000-0000-4000-8000-000000000001';
 
-type DeleteOperation =
-  | { table: string; method: 'eq'; column: string; value: string }
-  | { table: string; method: 'in'; column: string; values: string[] };
+function job(overrides: Record<string, unknown> = {}) {
+  return {
+    id: JOB_ID,
+    merchant_reference: MERCHANT_ID,
+    actor_user_reference: USER_ID,
+    idempotency_key: IDEMPOTENCY_KEY,
+    status: 'pending',
+    stage: 'preflight',
+    attempts: 0,
+    preflight: {},
+    storage_manifest: [],
+    progress: {},
+    verification: {},
+    last_error: null,
+    receipt_id: null,
+    created_at: '2026-08-23T00:00:00.000Z',
+    updated_at: '2026-08-23T00:00:00.000Z',
+    completed_at: null,
+    ...overrides,
+  } as never;
+}
 
-type MockOptions = {
-  authed?: boolean;
-  denied?: NextResponse | null;
-  deleteErrors?: Record<string, string>;
-};
-
-function makeRequest(body: unknown) {
+function request(body: unknown) {
   return new NextRequest('http://localhost/api/account/delete', {
     method: 'POST',
-    body: JSON.stringify(body),
     headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
   });
 }
 
-function makeService(options: MockOptions = {}) {
-  const deleteOperations: DeleteOperation[] = [];
-  const selects: Array<{ table: string; column: string; value: string }> = [];
-  const removals: Array<{ bucket: string; paths: string[] }> = [];
-  const rpcCalls: Array<{ fn: string; args: unknown }> = [];
-
-  const dataByTable: Record<string, unknown[]> = {
-    csv_upload_queue: [{ storage_path: 'uploads/raw.csv' }],
-    public_audits: [{ csv_path: 'public/raw.csv' }],
-    evidence_packages: [{ pdf_storage_path: 'legacy/evidence.pdf' }],
-    claim_evidence: [{ storage_path: 'claims/evidence.pdf' }],
-    integration_documents: [{ file_path: 'docs/terms.pdf' }],
-    support_payout_cases: [{ id: 'case-1' }],
-    sync_jobs: [{ id: 'job-1' }],
-  };
-
-  const service = {
-    deleteOperations,
-    selects,
-    removals,
-    rpcCalls,
-    from(table: string) {
-      let operation: 'select' | 'delete' | null = null;
-      const builder = {
-        select: jest.fn(() => {
-          operation = 'select';
-          return builder;
-        }),
-        delete: jest.fn(() => {
-          operation = 'delete';
-          return builder;
-        }),
-        eq: jest.fn((column: string, value: string) => {
-          if (operation === 'delete') {
-            deleteOperations.push({ table, method: 'eq', column, value });
-          } else {
-            selects.push({ table, column, value });
-          }
-          return builder;
-        }),
-        in: jest.fn((column: string, values: string[]) => {
-          if (operation === 'delete') {
-            deleteOperations.push({ table, method: 'in', column, values });
-          }
-          return builder;
-        }),
-        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-        then(resolve: (value: { data: unknown[] | null; error: { message: string } | null }) => unknown) {
-          const error = operation === 'delete' && options.deleteErrors?.[table]
-            ? { message: options.deleteErrors[table] }
-            : null;
-          return Promise.resolve(resolve({ data: operation === 'select' ? dataByTable[table] ?? [] : null, error }));
-        },
-      };
-      return builder;
-    },
-    rpc: jest.fn((fn: string, args: unknown) => {
-      rpcCalls.push({ fn, args });
-      // PostgREST rpc builders are thenable and resolve to { data, error }.
-      return {
-        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-        then: (resolve: (v: { data: unknown; error: null }) => unknown) =>
-          Promise.resolve(resolve({ data: null, error: null })),
-      };
-    }),
-    storage: {
-      from(bucket: string) {
-        return {
-          list: jest.fn().mockResolvedValue({ data: [], error: null }),
-          remove: jest.fn((paths: string[]) => {
-            removals.push({ bucket, paths });
-            return Promise.resolve({ data: null, error: null });
-          }),
-        };
-      },
-    },
-  };
-
-  return service;
-}
-
-function setup(options: MockOptions = {}) {
-  const { authed = true, denied = null } = options;
-  const service = makeService(options);
-  const deleteUser = jest.fn().mockResolvedValue({ error: null });
-
+function setup({ authenticated = true, role = 'owner' } = {}) {
   (createClient as jest.Mock).mockReturnValue({
-    auth: { getUser: jest.fn().mockResolvedValue({ data: { user: authed ? { id: USER_ID } : null } }) },
+    auth: { getUser: jest.fn().mockResolvedValue({ data: { user: authenticated ? { id: USER_ID } : null } }) },
   });
-  (createServiceClient as jest.Mock).mockReturnValue(service);
-  (createAdminClient as jest.Mock).mockReturnValue({
-    auth: { admin: { deleteUser } },
+  (createServiceClient as jest.Mock).mockReturnValue({ service: true });
+  (requirePermission as jest.Mock).mockResolvedValue({
+    denied: null,
+    ctx: { userId: USER_ID, merchantId: MERCHANT_ID, role },
   });
-  (requirePermission as jest.Mock).mockResolvedValue(
-    denied ? { denied, ctx: null } : { denied: null, ctx: { merchantId: MERCHANT_ID } },
-  );
-
-  return { service, deleteUser };
+  (createWorkspaceDeletionJob as jest.Mock).mockResolvedValue(job());
+  (resumeWorkspaceDeletionJob as jest.Mock).mockResolvedValue(job({
+    status: 'completed',
+    stage: 'completed',
+    attempts: 3,
+    receipt_id: '50000000-0000-4000-8000-000000000001',
+    completed_at: '2026-08-23T00:05:00.000Z',
+    verification: { merchant_row_absent: true, auth_identity_retained: true },
+  }));
 }
 
-describe('POST /api/account/delete', () => {
-  afterEach(() => {
+describe('/api/account/delete resumable workspace job', () => {
+  beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it('rejects unauthenticated deletion', async () => {
-    setup({ authed: false });
-
-    const res = await POST(makeRequest({ confirm: 'DELETE' }));
-
-    expect(res.status).toBe(401);
-    expect(createServiceClient).not.toHaveBeenCalled();
-  });
-
-  it('requires explicit destructive confirmation', async () => {
     setup();
-
-    const res = await POST(makeRequest({ confirm: 'delete' }));
-
-    expect(res.status).toBe(400);
-    expect(createServiceClient).not.toHaveBeenCalled();
   });
 
-  it('deletes current v2 merchant-owned tables before deleting the merchant and auth user', async () => {
-    const { service, deleteUser } = setup();
+  it('requires authentication and an explicit confirmation', async () => {
+    setup({ authenticated: false });
+    expect((await POST(request({ confirm: 'DELETE', idempotencyKey: IDEMPOTENCY_KEY }))).status).toBe(401);
 
-    const res = await POST(makeRequest({ confirm: 'DELETE' }));
-    const body = await res.json();
+    setup();
+    expect((await POST(request({ confirm: 'delete', idempotencyKey: IDEMPOTENCY_KEY }))).status).toBe(400);
+  });
 
-    expect(res.status).toBe(200);
-    expect(body).toEqual({ ok: true });
+  it('creates an owner-only idempotent job and returns its verified receipt', async () => {
+    const response = await POST(request({ confirm: 'DELETE', idempotencyKey: IDEMPOTENCY_KEY }));
+    const body = await response.json();
 
-    const deletedTables = service.deleteOperations.map((op) => op.table);
-    expect(deletedTables).toEqual(expect.arrayContaining([
-      'source_orders',
-      'source_customers',
-      'source_tickets',
-      'source_ticket_events',
-      'support_payout_cases',
-      'claim_events',
-      'claim_evidence',
-      'claim_outcomes',
-      'recovery_cases',
-      // recovery_case_events / loss_case_events are append-only and purged via
-      // purge_merchant_source_agnostic, not the generic delete loop.
-      'partner_recovery_rules',
-      'merchant_rules',
-      'rule_evaluations',
-      'identity_signals',
-      'identity_edges',
-      'identity_notes',
-      'merchant_identity_state',
-      'store_connections',
-      'helpdesk_connections',
-      'merchant_integrations',
-      'integration_credentials',
-      'integration_evidence_items',
-      'integration_documents',
-      'extracted_partner_terms',
-      'evidence_download_tokens',
-      'profile_view_tokens',
-      'evidence_packages',
-      'agreement_rule_evaluations',
-      'agreement_rules',
-      'agreement_clauses',
-      'document_upload_jobs',
-      'agreements',
-      'accountability_events',
-      'work_tasks',
-      'recovery_tasks',
-      'evidence_links',
-      'loss_attribution_candidates',
-      'loss_sources',
-      'evidence_items',
-      'category_applicability',
-      'pack_confirmations',
-      'sync_jobs',
-      'sync_job_chunks',
-      'merchant_users',
-      'merchants',
-      // Canonical entity model (Phase 3)
-      'source_order_lines',
-      'source_payments',
-      'source_transactions',
-      'source_replacements',
-      'source_shipments',
-      'source_tracking_events',
-      'source_shipment_lines',
-      'source_returns',
-      'source_messages',
-      'merchant_customers',
-      'ingestion_field_errors',
-    ]));
-    // Source-agnostic foundation tables (incl. append-only domain_events and
-    // case_financial_entries) are purged via the flag-gated RPC before the
-    // generic loop deletes support_payout_cases (which they cascade from).
-    expect(service.rpcCalls).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ fn: 'record_account_deletion_receipt' }),
-        { fn: 'purge_merchant_source_agnostic', args: { p_merchant_id: MERCHANT_ID } },
-        { fn: 'purge_merchant_reconciliation_history', args: { p_merchant_id: MERCHANT_ID } },
-        { fn: 'purge_merchant_audit_projection', args: { p_merchant_id: MERCHANT_ID } },
-        { fn: 'purge_merchant_privacy_records', args: { p_merchant_id: MERCHANT_ID } },
-      ]),
+    expect(response.status).toBe(200);
+    expect(createWorkspaceDeletionJob).toHaveBeenCalledWith(
+      expect.anything(),
+      { merchantId: MERCHANT_ID, actorUserId: USER_ID, idempotencyKey: IDEMPOTENCY_KEY },
     );
-    expect(deleteUser).toHaveBeenCalledWith(USER_ID);
+    expect(resumeWorkspaceDeletionJob).toHaveBeenCalled();
+    expect(body).toMatchObject({
+      ok: true,
+      jobId: JOB_ID,
+      status: 'completed',
+      stage: 'completed',
+      receiptId: '50000000-0000-4000-8000-000000000001',
+    });
+    expect(response.cookies.get('unauth.active_merchant')).toMatchObject({ value: '' });
   });
 
-  it('scopes all direct v2 deletes to the authenticated merchant', async () => {
-    const { service } = setup();
+  it('rejects a non-owner even if a bad permission fixture grants the capability', async () => {
+    setup({ role: 'admin' });
+    const response = await POST(request({ confirm: 'DELETE', idempotencyKey: IDEMPOTENCY_KEY }));
+    expect(response.status).toBe(403);
+    expect(createWorkspaceDeletionJob).not.toHaveBeenCalled();
+  });
 
-    await POST(makeRequest({ confirm: 'DELETE' }));
+  it('resumes an actor-owned job after membership data is no longer available', async () => {
+    (getWorkspaceDeletionJob as jest.Mock).mockResolvedValue(job({ status: 'failed', stage: 'database_cleanup', attempts: 2 }));
+    const response = await POST(request({ confirm: 'DELETE', jobId: JOB_ID }));
 
-    const merchantScopedDeletes = service.deleteOperations.filter(
-      (op) => op.method === 'eq' && op.column === 'merchant_id',
+    expect(response.status).toBe(200);
+    expect(requirePermission).not.toHaveBeenCalled();
+    expect(getWorkspaceDeletionJob).toHaveBeenCalledWith(expect.anything(), JOB_ID, USER_ID);
+  });
+
+  it('returns resumable state when a stage fails', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const failedJob = job({ status: 'failed', stage: 'database_cleanup', attempts: 2, last_error: 'simulated' });
+    (resumeWorkspaceDeletionJob as jest.Mock).mockRejectedValue(
+      new WorkspaceDeletionRunError(JOB_ID, 'database_cleanup' as never, 'simulated'),
     );
-    expect(merchantScopedDeletes.length).toBeGreaterThan(25);
-    expect(merchantScopedDeletes.every((op) => op.value === MERCHANT_ID)).toBe(true);
-    expect(service.deleteOperations).toContainEqual({
-      table: 'claim_outcomes',
-      method: 'in',
-      column: 'claim_id',
-      values: ['case-1'],
-    });
-    expect(service.deleteOperations).toContainEqual({
-      table: 'sync_job_chunks',
-      method: 'in',
-      column: 'job_id',
-      values: ['job-1'],
-    });
-    expect(service.deleteOperations).toContainEqual({
-      table: 'merchants',
-      method: 'eq',
-      column: 'id',
-      value: MERCHANT_ID,
-    });
+    (getWorkspaceDeletionJob as jest.Mock).mockResolvedValue(failedJob);
+    const response = await POST(request({ confirm: 'DELETE', jobId: JOB_ID }));
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({ resumable: true, jobId: JOB_ID, status: 'failed', stage: 'database_cleanup' });
+    expect(consoleError).toHaveBeenCalledWith('[workspace-delete] resumable job failed', expect.objectContaining({ jobId: JOB_ID }));
+    consoleError.mockRestore();
   });
 
-  it('does not query dropped legacy tables or orphan-profile RPCs', async () => {
-    const { service, deleteUser } = setup();
-
-    const res = await POST(makeRequest({ confirm: 'DELETE' }));
-
-    expect(res.status).toBe(200);
-    expect(deleteUser).toHaveBeenCalledWith(USER_ID);
-    const touchedTables = [
-      ...service.selects.map((operation) => operation.table),
-      ...service.deleteOperations.map((operation) => operation.table),
-    ];
-    expect(touchedTables).not.toEqual(expect.arrayContaining([
-      'public_audits',
-      'csv_upload_queue',
-      'customer_profiles',
-      'customer_profile_audit_appearances',
-    ]));
-    // Only the canonical purge and durable deletion-receipt RPCs are used; no
-    // legacy orphan-profile RPCs.
-    expect(service.rpcCalls.map((c) => c.fn)).toEqual([
-      'record_account_deletion_receipt',
-      'purge_merchant_source_agnostic',
-      'purge_merchant_reconciliation_history',
-      'purge_merchant_audit_projection',
-      'purge_merchant_privacy_records',
-      'purge_merchant_source_agnostic',
-      'purge_merchant_reconciliation_history',
-      'purge_merchant_audit_projection',
-      'record_account_deletion_receipt',
-    ]);
-  });
-
-  it('does not delete the auth user when a current v2 cleanup table fails', async () => {
-    const { deleteUser } = setup({
-      deleteErrors: {
-        source_orders: 'database unavailable',
-      },
-    });
-
-    const res = await POST(makeRequest({ confirm: 'DELETE' }));
-    const body = await res.json();
-
-    expect(res.status).toBe(500);
-    expect(body.error).toContain('Failed to delete all merchant data');
-    expect(deleteUser).not.toHaveBeenCalled();
-  });
-
-  it('removes integration document storage objects as part of credential cleanup', async () => {
-    const { service } = setup();
-
-    await POST(makeRequest({ confirm: 'DELETE' }));
-
-    expect(service.removals).toContainEqual({
-      bucket: 'integration-documents',
-      paths: ['docs/terms.pdf'],
-    });
+  it('exposes status only for the authenticated job actor', async () => {
+    (getWorkspaceDeletionJob as jest.Mock).mockResolvedValue(job({ status: 'failed', stage: 'storage_cleanup' }));
+    const response = await GET(new NextRequest(`http://localhost/api/account/delete?jobId=${JOB_ID}`));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ jobId: JOB_ID, stage: 'storage_cleanup' });
+    expect(getWorkspaceDeletionJob).toHaveBeenCalledWith(expect.anything(), JOB_ID, USER_ID);
   });
 });

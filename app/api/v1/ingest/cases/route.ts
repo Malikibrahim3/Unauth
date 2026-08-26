@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
  * or as a fully unanchored manual case.
  */
 export async function POST(req: NextRequest) {
-  const auth = await authenticateIngest(req);
+  const auth = await authenticateIngest(req, 'imports:write');
   if (auth instanceof NextResponse) return auth;
 
   const rawIdempotencyKey = req.headers.get('idempotency-key');

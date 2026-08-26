@@ -64,29 +64,29 @@ function GatePanel({ missing, pageName, pageDescription }: {
   return (
     <div className="mx-auto w-full max-w-[1500px] px-3 pb-6 pt-4 sm:px-5">
       <div
-        className="w-full space-y-3 rounded-[var(--ua-radius-surface)] border p-4"
+        className="w-full space-y-3 rounded-[var(--uo-route-radius-surface)] border p-4"
         style={{
-          background: 'var(--ua-surface-primary)',
-          borderColor: 'var(--ua-border-default)',
+          background: 'var(--uo-route-surface-primary)',
+          borderColor: 'var(--uo-route-border-default)',
         }}
       >
         <div
-          className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-control)]"
-          style={{ background: 'var(--ua-surface-primary)', border: '1px solid var(--ua-border-default)' }}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--uo-route-radius-control)]"
+          style={{ background: 'var(--uo-route-surface-primary)', border: '1px solid var(--uo-route-border-default)' }}
         >
-          <Plug className="h-4 w-4" style={{ color: 'var(--ua-text-secondary)' }} />
+          <Plug className="h-4 w-4" style={{ color: 'var(--uo-route-text-secondary)' }} />
         </div>
 
         <div className="space-y-2">
           <h2
             className="ua-text-section-title leading-snug"
-            style={{ color: 'var(--ua-text-primary)', fontFamily: 'var(--ua-font-sans)' }}
+            style={{ color: 'var(--uo-route-text-primary)', fontFamily: 'var(--uo-route-font-sans)' }}
           >
             {headline}
           </h2>
           <p
-            className="max-w-2xl text-[length:var(--ua-text-caption-size)] leading-5"
-            style={{ color: 'var(--ua-text-secondary)', fontFamily: 'var(--ua-font-sans)' }}
+            className="max-w-2xl text-[length:var(--uo-route-text-caption-size)] leading-5"
+            style={{ color: 'var(--uo-route-text-secondary)', fontFamily: 'var(--uo-route-font-sans)' }}
           >
             {body}
           </p>

@@ -10,6 +10,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { TABLES } from '@/lib/supabase/tables';
+import { NOTIFICATION_KINDS, type NotificationKind } from '@/lib/notifications/kinds';
 
 export type NotificationPreference = {
   kind: string;
@@ -18,8 +19,8 @@ export type NotificationPreference = {
   updated_at?: string;
 };
 
-export const NOTIFICATION_KINDS = ['assignment','mention','approaching_deadline','evidence_update','decision_request','recovery_outcome','sync_failure','daily_work_summary','high_value_case_alert','scheduled_report'] as const;
-export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
+export { NOTIFICATION_KINDS };
+export type { NotificationKind };
 
 export const DEFAULT_PREFERENCE = { in_app_enabled: true, email_enabled: false };
 

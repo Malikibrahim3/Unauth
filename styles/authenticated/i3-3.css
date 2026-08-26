@@ -1,0 +1,222 @@
+@layer components {
+  /*
+   * Signal Ledger / I3.3
+   *
+   * Source surfaces use petrol for observed provider facts, copper only for
+   * the selected trust object or next action, and the semantic palette for
+   * stale, missing, partial and unsupported states. No colour implies health
+   * without an accompanying written state.
+   */
+  .ua-app {
+    --ua-trust-observed: var(--ua-data-petrol);
+    --ua-trust-comparison: var(--ua-data-slate);
+    --ua-trust-selected: var(--ua-signal-copper);
+    --ua-trust-selected-soft: var(--ua-signal-copper-soft);
+    --ua-trust-open: var(--ua-rule-default);
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] {
+    border-color: var(--ua-rule-default);
+    background: var(--ua-paper-primary);
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-chart-frame__header {
+    background: color-mix(in srgb, var(--ua-paper-primary) 80%, var(--ua-paper-secondary));
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-chart-frame__plot {
+    padding-block: 0;
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] [data-signal-rail="true"] {
+    position: relative;
+    background: var(--ua-paper-secondary);
+    box-shadow: inset 2px 0 0 var(--ua-trust-selected);
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell {
+    min-height: 42px;
+    border: 1px solid transparent;
+    border-radius: var(--ua-radius-control);
+    transition: background-color 160ms var(--ua-ease-standard), border-color 160ms var(--ua-ease-standard), box-shadow 160ms var(--ua-ease-standard), color 160ms var(--ua-ease-standard), opacity 160ms var(--ua-ease-standard);
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell[data-state="current"] {
+    border-color: var(--ua-rule-hairline);
+    background: var(--ua-paper-secondary);
+    color: var(--ua-text-secondary);
+    opacity: 1;
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix tbody th {
+    text-transform: none;
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell[data-state="unavailable"] {
+    border-color: var(--ua-trust-open);
+    border-style: dotted;
+    background: transparent;
+    color: var(--ua-text-tertiary);
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell[data-state="partial"],
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell[data-state="stale"],
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell[data-state="missing"] {
+    opacity: 1;
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell[data-selected="true"] {
+    border-color: var(--ua-trust-selected);
+    outline: 0;
+    background: var(--ua-trust-selected-soft);
+    color: var(--ua-text-primary);
+    box-shadow: inset 2px 0 0 var(--ua-trust-selected);
+    opacity: 1;
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell:focus-visible {
+    outline: 2px solid var(--ua-border-focus);
+    outline-offset: 2px;
+  }
+
+  .ua-app [data-state-id="source-blocking-issue"] {
+    border-color: var(--ua-warning-border);
+    background: var(--ua-paper-primary);
+    box-shadow: inset 2px 0 0 var(--ua-warning);
+  }
+
+  .ua-app [data-source-catalogue-card] {
+    border-color: var(--ua-rule-hairline);
+    box-shadow: none;
+  }
+
+  .ua-app [data-source-catalogue-card]:hover {
+    border-color: var(--ua-rule-default);
+    background: color-mix(in srgb, var(--ua-paper-primary) 82%, var(--ua-paper-secondary));
+  }
+
+  .ua-app [data-source-catalogue-card][data-planned="true"] {
+    border-style: dotted;
+    background: var(--ua-paper-secondary);
+  }
+
+  .ua-app [data-trust-state="stale"],
+  .ua-app [data-trust-state="not_syncing"],
+  .ua-app [data-trust-state="error"] {
+    box-shadow: inset 2px 0 0 var(--ua-warning);
+  }
+
+  .ua-app [data-surface-id="source-detail"] aside[aria-label="Source context and actions"] {
+    position: sticky;
+    top: calc(var(--ua-utility-header-height) + var(--ua-space-5));
+  }
+
+  .ua-app [data-source-setup] ol button[aria-current="step"],
+  .ua-app [data-source-import] ol button[aria-current="step"],
+  .ua-app [data-testid="connector-setup-shell"] ol [aria-current="step"] {
+    background: var(--ua-trust-selected-soft);
+    color: var(--ua-text-primary);
+    box-shadow: inset 2px 0 0 var(--ua-trust-selected);
+  }
+
+  .ua-app [data-source-setup] section,
+  .ua-app [data-source-import] section,
+  .ua-app [data-testid="connector-setup-shell"] section {
+    border-top-color: var(--ua-rule-default);
+  }
+
+  .ua-app [data-source-setup] footer,
+  .ua-app [data-source-import] footer {
+    border-top-color: var(--ua-rule-default);
+  }
+
+  /* The matrix is the sources family's visual peak: provider rows remain
+   * stable while operators compare object coverage and freshness across it. */
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix {
+    overflow: auto;
+    border-block: 1px solid var(--ua-rule-hairline);
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix thead th {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    background: var(--ua-paper-secondary);
+    color: var(--ua-text-tertiary);
+    font-family: var(--ua-font-mono);
+    font-size: 9px;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix tbody th {
+    position: sticky;
+    z-index: 1;
+    left: 0;
+    border-right: 1px solid var(--ua-rule-default);
+    background: var(--ua-paper-primary);
+    box-shadow: 8px 0 12px rgb(28 29 26 / 3%);
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix tbody tr:hover th,
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix tbody tr:hover td {
+    background: color-mix(in srgb, var(--ua-paper-primary) 78%, var(--ua-paper-secondary));
+  }
+
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix tbody tr:focus-within th,
+  .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix tbody tr:focus-within td {
+    background: var(--ua-trust-selected-soft);
+  }
+
+  .ua-app [data-surface-id="source-detail"] [data-trust-state] {
+    position: relative;
+  }
+
+  .ua-app [data-surface-id="source-detail"] [data-trust-state="current"] {
+    box-shadow: inset 2px 0 0 var(--ua-data-petrol);
+  }
+
+  .ua-app [data-source-catalogue-card] footer {
+    border-top: 1px dotted var(--ua-rule-hairline);
+  }
+
+  .ua-app [data-source-catalogue-card]:focus-within {
+    border-color: var(--ua-border-focus);
+    box-shadow: inset 2px 0 0 var(--ua-trust-selected);
+  }
+
+  .ua-app [data-state-id="source-no-results"],
+  .ua-app [data-state-id="source-catalogue-empty"],
+  .ua-app [data-state-id="sources-first-use"] .ua-empty-state {
+    min-height: 180px;
+    justify-items: start;
+    padding-inline: clamp(20px, 6%, 52px);
+    text-align: left;
+  }
+
+  @media (max-width: 1180px) {
+    .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell {
+      min-height: 38px;
+      padding-inline: 7px;
+    }
+
+    .ua-app [data-source-catalogue-card] {
+      min-width: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ua-app [data-source-catalogue-card],
+    .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix tbody :where(th, td) {
+      transition: border-color 150ms var(--ua-ease-standard), background-color 150ms var(--ua-ease-standard), box-shadow 150ms var(--ua-ease-standard), color 150ms var(--ua-ease-standard);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix__cell,
+    .ua-app [data-source-catalogue-card],
+    .ua-app [data-auth-chart="source-trust-matrix"] .ua-status-matrix tbody :where(th, td) {
+      transition: none;
+    }
+  }
+}

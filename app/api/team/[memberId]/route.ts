@@ -2,13 +2,14 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { TEAM_ROLES } from '@/lib/permissions/roles';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 
 const roleUpdateSchema = z.object({
-  role: z.enum(['owner', 'admin', 'analyst', 'viewer']),
+  role: z.enum(TEAM_ROLES),
   confirmOwnershipTransfer: z.boolean().optional(),
 });
 
@@ -61,6 +62,15 @@ async function PATCHHandler(
   if (!target) return NextResponse.json({ error: 'Member not found.' }, { status: 404 });
 
   const targetRole = target.role;
+  if (target.user_id === user.id) {
+    return NextResponse.json({ error: 'You cannot change your own role.' }, { status: 403 });
+  }
+  if (
+    ctx.role === 'admin'
+    && (targetRole === 'admin' || targetRole === 'owner' || role === 'admin' || role === 'owner')
+  ) {
+    return NextResponse.json({ error: 'Administrators can change only analyst and viewer roles.' }, { status: 403 });
+  }
   if (targetRole === 'owner' && role !== 'owner') {
     return NextResponse.json({
       error: 'The owner role cannot be changed directly. Transfer ownership to another active member instead.',
@@ -145,12 +155,16 @@ async function DELETEHandler(
   if (limited) return limited;
 
   const { data: target } = await scopedClient
-    .from(TABLES.MERCHANT_MEMBERS).select('id, role, invited_email')
+    .from(TABLES.MERCHANT_MEMBERS).select('id, role, invited_email, user_id')
     .eq('id', resolvedParams.memberId)
     .neq('invite_status', 'revoked')
     .single();
   if (!target) return NextResponse.json({ error: 'Member not found.' }, { status: 404 });
   if (target.role === 'owner') return NextResponse.json({ error: 'The owner cannot be removed.' }, { status: 403 });
+  if (target.user_id === user.id) return NextResponse.json({ error: 'You cannot remove your own access.' }, { status: 403 });
+  if (ctx.role === 'admin' && target.role === 'admin') {
+    return NextResponse.json({ error: 'Only the workspace owner can remove an administrator.' }, { status: 403 });
+  }
 
   const { error } = await scopedClient
     .from(TABLES.MERCHANT_MEMBERS)

@@ -39,9 +39,9 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const TONE: Record<ToastTone, { icon: ReactNode; surface: string }> = {
-  success: { icon: <CheckCircle2 className="h-4 w-4" style={{ color: "var(--ua-success)" }} />, surface: "var(--ua-success-bg)" },
-  info: { icon: <Info className="h-4 w-4" style={{ color: "var(--ua-info)" }} />, surface: "var(--ua-info-bg)" },
-  danger: { icon: <TriangleAlert className="h-4 w-4" style={{ color: "var(--ua-risk-critical)" }} />, surface: "var(--ua-risk-critical-bg)" },
+  success: { icon: <CheckCircle2 className="h-4 w-4" style={{ color: "var(--uo-route-success)" }} />, surface: "var(--uo-route-success-bg)" },
+  info: { icon: <Info className="h-4 w-4" style={{ color: "var(--uo-route-info)" }} />, surface: "var(--uo-route-info-bg)" },
+  danger: { icon: <TriangleAlert className="h-4 w-4" style={{ color: "var(--uo-route-risk-critical)" }} />, surface: "var(--uo-route-risk-critical-bg)" },
 };
 
 /** §7.3 tone-based lifetime for one toast, in ms. `null` means "persistent until dismissed". */
@@ -111,13 +111,13 @@ function ToastItemView({ item, onRequestClose, onExited }: {
       role="status"
       aria-live="polite"
       aria-hidden={phase === "exiting" ? true : undefined}
-      className="pointer-events-auto flex items-start gap-3 rounded-[var(--ua-radius-surface)] border p-3 shadow-[var(--ua-shadow-menu)]"
+      className="pointer-events-auto flex items-start gap-3 rounded-[var(--uo-route-radius-surface)] border p-3 shadow-[var(--uo-route-shadow-menu)]"
       style={{
-        borderColor: "var(--ua-border-default)",
+        borderColor: "var(--uo-route-border-default)",
         background: TONE[item.tone].surface,
         opacity: isOpen ? 1 : 0,
         transform: isOpen ? "translateY(0)" : "translateY(8px)",
-        transition: motionAllowed ? `opacity ${duration}ms var(--ua-ease-standard), transform ${duration}ms var(--ua-ease-standard)` : "none",
+        transition: motionAllowed ? `opacity ${duration}ms var(--uo-route-ease-standard), transform ${duration}ms var(--uo-route-ease-standard)` : "none",
         pointerEvents: phase === "exiting" ? "none" : undefined,
       }}
       onMouseEnter={pause}
@@ -127,9 +127,9 @@ function ToastItemView({ item, onRequestClose, onExited }: {
     >
       <span className="mt-0.5 shrink-0">{TONE[item.tone].icon}</span>
       <div className="min-w-0 flex-1">
-        <p className="ua-text-working-title text-[var(--ua-text-primary)]">{item.title}</p>
+        <p className="ua-text-working-title text-[var(--uo-route-text-primary)]">{item.title}</p>
         {item.description ? (
-          <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">{item.description}</p>
+          <p className="mt-0.5 text-xs text-[var(--uo-route-text-secondary)]">{item.description}</p>
         ) : null}
       </div>
       <IconButton
@@ -167,7 +167,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="pointer-events-none fixed bottom-4 right-4 z-[var(--ua-z-toast)] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2"
+        className="pointer-events-none fixed bottom-4 right-4 z-[var(--uo-route-z-toast)] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2"
         role="region"
         aria-label="Notifications"
       >

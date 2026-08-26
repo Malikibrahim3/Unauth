@@ -2,6 +2,7 @@ import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchan
 import { gorgiasApiBaseUrl, gorgiasApiRequest } from '@/lib/support/gorgias/registerSidebarWidget';
 import type { ClaimGateCase, ClaimGateDecision, ClaimGateEvidence } from '@/lib/claim-gate/types';
 import type { AccountabilityResult } from '@/lib/accountability/types';
+import { env } from '@/lib/utils/env';
 
 function tagForStatus(status: string): string {
   switch (status) {
@@ -115,6 +116,9 @@ export async function writeGateResultToGorgias(input: {
    */
   recommendationNote?: string;
 }): Promise<{ attempted: boolean; ok: boolean; error?: string }> {
+  if (env.GORGIAS_BOUNDED_WRITEBACK_ENABLED !== 'true') {
+    return { attempted: false, ok: false, error: 'gorgias_bounded_writeback_gated_off' };
+  }
   const access = await getActiveGorgiasMerchantApiAccess(input.client, input.merchantId);
   if (!access) return { attempted: false, ok: false, error: 'gorgias_not_connected' };
 
@@ -171,6 +175,9 @@ export async function writeAccountabilityNoteToGorgias(input: {
   tags?: string[];
 }): Promise<{ attempted: boolean; ok: boolean; error?: string }> {
   if (!input.externalTicketId) return { attempted: false, ok: false, error: 'missing_external_ticket_id' };
+  if (env.GORGIAS_BOUNDED_WRITEBACK_ENABLED !== 'true') {
+    return { attempted: false, ok: false, error: 'gorgias_bounded_writeback_gated_off' };
+  }
   const access = await getActiveGorgiasMerchantApiAccess(input.client, input.merchantId);
   if (!access) return { attempted: false, ok: false, error: 'gorgias_not_connected' };
 

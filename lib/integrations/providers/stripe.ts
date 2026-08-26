@@ -6,7 +6,7 @@ export const stripeProvider: IntegrationProvider = {
   logoSrc: '/providers/stripe.svg',
   category: 'payments_disputes',
   authMode: 'oauth',
-  buildStatus: 'slot_only',
+  codeMaturity: 'slot_only',
   evidenceCapabilities: ['dispute_status', 'chargeback_evidence', 'recovery_deadline'],
   capabilities: { readDisputes: true, readClaimStatus: true, readSettlements: true },
   // slot_only providers derive to 'planned' unconditionally regardless of this

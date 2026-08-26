@@ -201,7 +201,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     const row = providerShapeFromCanonical(canonicalRow) as any;
     if (!row.source_provider) continue;
     const provider = getIntegrationProvider(row.source_provider);
-    if (!provider || provider.buildStatus === 'slot_only') continue;
+    if (!provider || provider.codeMaturity === 'slot_only') continue;
     items.push({
       id: row.id,
       merchantId: row.merchant_id,
@@ -247,7 +247,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     ));
   }
 
-  for (const provider of views.filter((candidate) => candidate.buildStatus === 'slot_only')) {
+  for (const provider of views.filter((candidate) => candidate.codeMaturity === 'slot_only')) {
     missingEvidence.push(missing(
       views,
       provider.id,
@@ -273,7 +273,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
   }
 
   const connectedSources = views
-    .filter((view) => view.status === 'connected' && view.buildStatus !== 'slot_only')
+    .filter((view) => view.status === 'connected' && view.codeMaturity !== 'slot_only')
     .map((view) => {
       const sourceItems = normalized.filter((item) => item.sourceProvider === view.id);
       return {

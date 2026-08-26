@@ -1,498 +1,318 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
-  Badge,
-  BoardColumn,
-  BoardSurface,
-  EmptyState,
-  Modal,
-  Panel,
-  Textarea,
-} from "@/components/ui";
-import { PackageSearch } from "lucide-react";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
-import { CaseContextDrawer } from "@/components/cases/CaseContextDrawer";
-import { formatCurrencyNullable, formatDate, formatMinorCurrencyNullable } from "@/lib/utils/format";
-import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
+  Button,
+  DataTableServer,
+  FilterChip,
+  Input,
+  MoneyValue,
+  OperationalState,
+  RegistrySurface,
+  RegistryToolbar,
+  StatusBadge,
+  UnavailableValue,
+} from '@/components/ui';
+import { RowActionsMenu } from '@/components/ui/RowActionsMenu';
+import { CaseContextDrawer } from '@/components/cases/CaseContextDrawer';
+import { formatDate } from '@/lib/utils/format';
+import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
 import {
   RECOVERY_OWNER_LABELS,
   type RecoveryCase,
-} from "@/lib/recoveries/types";
-import { RECOVERY_BOARD_COLUMNS } from "@/lib/recoveries/status";
-import { shortRef } from "@/lib/ui/displayRef";
-import { formatMajorUnitInput, parseMajorUnitInput } from "@/lib/ui/merchantCopy";
+} from '@/lib/recoveries/types';
+import { hashId, shortRef } from '@/lib/ui/displayRef';
+import { RecoveryActionDialog } from '@/components/recoveries/RecoveryActionDialog';
+import {
+  RECOVERY_ACTIONS,
+  recoveryActionAvailable,
+  recoveryNextAction,
+  type RecoveryActionOption,
+} from '@/components/recoveries/recoveryActionOptions';
 
 type Props = {
   recoveries: RecoveryCase[];
   canManage: boolean;
+  financialPeriod?: {
+    label: string;
+    recoveryIds: string[];
+    clearHref: string;
+  } | null;
 };
 
-type RecoveryAction =
-  | "ready"
-  | "submitted"
-  | "chased"
-  | "approved"
-  | "partially_approved"
-  | "rejected"
-  | "appealed"
-  | "paid"
-  | "closed_unrecoverable";
+const FILTERS = [
+  { key: 'all', label: 'All recoveries' },
+  { key: 'evidence', label: 'Missing evidence' },
+  { key: 'ready', label: 'Ready to submit' },
+  { key: 'chase', label: 'Needs correspondence' },
+  { key: 'outcome', label: 'Outcome recorded' },
+  { key: 'closed', label: 'Closed' },
+] as const;
 
-const ACTIONS: Array<{
-  action: RecoveryAction;
-  label: string;
-  statuses: RecoveryCase["status"][];
-  confirm?: boolean;
-  requiresNote?: boolean;
-  amountKind?: "approved" | "received";
-}> = [
-  {
-    action: "ready",
-    label: "Mark ready",
-    statuses: ["draft", "evidence_needed"],
-  },
-  {
-    action: "submitted",
-    label: "Mark submitted",
-    statuses: ["ready_to_submit"],
-    confirm: true,
-    requiresNote: true,
-  },
-  {
-    action: "chased",
-    label: "Record chase",
-    statuses: ["submitted", "waiting_response", "chase_due"],
-  },
-  {
-    action: "approved",
-    label: "Record approved",
-    statuses: ["submitted", "waiting_response", "chase_due"],
-    confirm: true,
-    amountKind: "approved",
-  },
-  {
-    action: "partially_approved",
-    label: "Record partial approval",
-    statuses: ["submitted", "waiting_response", "chase_due"],
-    confirm: true,
-    amountKind: "approved",
-  },
-  {
-    action: "rejected",
-    label: "Record rejected",
-    statuses: ["submitted", "waiting_response", "chase_due"],
-    confirm: true,
-    requiresNote: true,
-  },
-  {
-    action: "appealed",
-    label: "Record appeal",
-    statuses: ["rejected"],
-    confirm: true,
-    requiresNote: true,
-  },
-  {
-    action: "paid",
-    label: "Record paid",
-    statuses: ["approved", "partially_approved"],
-    confirm: true,
-    amountKind: "received",
-  },
-  {
-    action: "closed_unrecoverable",
-    label: "Close unrecoverable",
-    statuses: ["draft", "evidence_needed", "rejected", "appealed"],
-    confirm: true,
-    requiresNote: true,
-  },
-];
+type FilterKey = (typeof FILTERS)[number]['key'];
+type FinancialFilterKey = 'financial-eligible' | 'financial-submitted' | 'financial-approved' | 'financial-recovered' | 'financial-outstanding';
+type BoardFilterKey = FilterKey | FinancialFilterKey;
 
-function dateLabel(value: string | null) {
-  return value ? formatDate(value) : "No date";
+const FINANCIAL_FILTER_LABELS: Record<FinancialFilterKey, string> = {
+  'financial-eligible': 'eligible / sought value',
+  'financial-submitted': 'submitted value',
+  'financial-approved': 'approved value',
+  'financial-recovered': 'received / credited value',
+  'financial-outstanding': 'outstanding value',
+};
+
+function matchesFilter(item: RecoveryCase, filter: BoardFilterKey) {
+  if (filter === 'financial-eligible') return item.amount_sought_minor > 0;
+  if (filter === 'financial-submitted') return ['submitted', 'waiting_response', 'chase_due', 'approved', 'partially_approved', 'rejected', 'appealed', 'paid'].includes(item.status);
+  if (filter === 'financial-approved') return item.amount_approved_minor > 0;
+  if (filter === 'financial-recovered') return item.amount_recovered_minor > 0;
+  if (filter === 'financial-outstanding') return item.amount_sought_minor - item.amount_recovered_minor - item.amount_written_off_minor > 0;
+  if (filter === 'all') return true;
+  if (filter === 'evidence') return item.status === 'evidence_needed' || item.evidence_missing.length > 0;
+  if (filter === 'ready') return item.status === 'ready_to_submit';
+  if (filter === 'chase') return ['submitted', 'waiting_response', 'chase_due'].includes(item.status);
+  if (filter === 'outcome') return ['approved', 'partially_approved', 'rejected', 'appealed'].includes(item.status);
+  return ['paid', 'closed_unrecoverable'].includes(item.status);
 }
 
-function actionDescription(action: RecoveryAction | undefined): string {
-  if (action === "approved" || action === "partially_approved") {
-    return "Records the source-approved amount. Approval is not recorded as recovered cash.";
-  }
-  if (action === "paid") return "Records the cumulative amount actually received or credited back to the merchant.";
-  if (action === "closed_unrecoverable") return "Records the remaining pursued amount as written off; it is not money recovered.";
-  if (action === "submitted") return "Records that a merchant submitted externally. Unauth does not send the claim or correspondence.";
-  return "This records an immutable recovery activity event.";
+function displayDeadline(value: string | null) {
+  return value ? formatDate(value) : null;
 }
 
-function nextActionFor(item: RecoveryCase) {
-  if (item.status === 'evidence_needed') return 'Complete the missing evidence';
-  if (item.status === 'draft') return 'Review the recovery pack';
-  if (item.status === 'ready_to_submit') return 'Submit externally and record it';
-  if (item.status === 'chase_due') return 'Record the follow-up';
-  if (item.status === 'submitted' || item.status === 'waiting_response') return 'Await the source response';
-  if (item.status === 'approved' || item.status === 'partially_approved') return 'Record the received amount';
-  if (item.status === 'rejected') return 'Review the rejection and appeal if appropriate';
-  if (item.status === 'appealed') return 'Await the appeal outcome';
-  if (item.status === 'paid') return 'Recovery reconciled';
-  return 'Recovery closed as unrecoverable';
-}
-
-export function RecoveryBoardClient({ recoveries, canManage }: Props) {
-  const [rowOverrides, setRowOverrides] = useState<
-    Record<string, RecoveryCase>
-  >({});
-  const rowsState = recoveries.map((row) => rowOverrides[row.id] ?? row);
-  const [busyId, setBusyId] = useState<string | null>(null);
+export function RecoveryBoardClient({ recoveries, canManage, financialPeriod = null }: Props) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedFilter = searchParams.get('stage');
+  const financialFilter = requestedFilter && requestedFilter in FINANCIAL_FILTER_LABELS ? requestedFilter as FinancialFilterKey : null;
+  const initialFilter = FILTERS.some((item) => item.key === requestedFilter) ? requestedFilter as FilterKey : financialFilter ?? 'all';
+  const requestedSearch = searchParams.get('search') ?? '';
+  const [filter, setFilter] = useState<BoardFilterKey>(initialFilter);
+  const [query, setQuery] = useState(requestedSearch);
+  const [rowOverrides, setRowOverrides] = useState<Record<string, RecoveryCase>>({});
   const [message, setMessage] = useState<string | null>(null);
-  const [contextCaseId, setContextCaseId] = useState<string | null>(null);
-  const [pending, setPending] = useState<{
-    item: RecoveryCase;
-    option: (typeof ACTIONS)[number];
-    note: string;
-    amount: string;
-    idempotencyKey: string;
-  } | null>(null);
-  const retryKeysRef = useRef<Record<string, string>>({});
+  const [pending, setPending] = useState<{ item: RecoveryCase; option: RecoveryActionOption } | null>(null);
 
-  async function runAction(
-    item: RecoveryCase,
-    option: (typeof ACTIONS)[number],
-  ) {
-    if (option.confirm && pending == null) {
-      const retryScope = `${item.id}:${option.action}`;
-      const idempotencyKey = retryKeysRef.current[retryScope]
-        ?? `${retryScope}:${crypto.randomUUID()}`;
-      retryKeysRef.current[retryScope] = idempotencyKey;
-      const defaultAmount = option.amountKind === "approved"
-        ? formatMajorUnitInput(item.amount_sought_minor, item.currency)
-        : "";
-      setPending({ item, option, note: "", amount: defaultAmount, idempotencyKey });
-      return;
+  const rowsState = recoveries.map((row) => rowOverrides[row.id] ?? row);
+  const ownerOptions = [...new Set(rowsState.map((item) => item.owner_type))].sort();
+  const sourceOptions = [...new Map(rowsState.map((item) => [item.partner?.id ?? 'unavailable', item.partner?.name ?? 'Source unavailable'])).entries()].sort((left, right) => left[1].localeCompare(right[1]));
+  const requestedOwner = searchParams.get('owner');
+  const owner = requestedOwner && ownerOptions.includes(requestedOwner as RecoveryCase['owner_type']) ? requestedOwner : null;
+  const requestedSource = searchParams.get('source');
+  const source = requestedSource && sourceOptions.some(([key]) => key === requestedSource) ? requestedSource : null;
+  const selectedRecovery = rowsState.find((item) => item.id === searchParams.get('selected')) ?? null;
+  useEffect(() => setFilter(initialFilter), [initialFilter]);
+  useEffect(() => setQuery(requestedSearch), [requestedSearch]);
+  const visibleRows = (() => {
+    const normalized = query.trim().toLowerCase();
+    return rowsState.filter((item) => {
+      if (financialPeriod && !financialPeriod.recoveryIds.includes(item.id)) return false;
+      if (!matchesFilter(item, filter)) return false;
+      if (owner && item.owner_type !== owner) return false;
+      if (source && (item.partner?.id ?? 'unavailable') !== source) return false;
+      if (!normalized) return true;
+      const searchable = [
+        item.id,
+        item.partner?.name,
+        RECOVERY_OWNER_LABELS[item.owner_type],
+        RECOVERY_TYPE_LABELS[item.recovery_type],
+        item.support_payout_case?.order_number,
+        item.support_payout_case?.ticket_external_id,
+        item.support_payout_case_id,
+      ].filter(Boolean).join(' ').toLowerCase();
+      return searchable.includes(normalized);
+    });
+  })();
+
+  function updateLocation(input: { stage?: BoardFilterKey | null; query?: string | null; owner?: string | null; source?: string | null; selected?: string | null }) {
+    const params = new URLSearchParams(searchParams.toString());
+    if ('stage' in input) {
+      if (!input.stage || input.stage === 'all') params.delete('stage'); else params.set('stage', input.stage);
     }
-    const active = pending?.item.id === item.id && pending.option.action === option.action
-      ? pending
-      : null;
-    const retryScope = `${item.id}:${option.action}`;
-    const idempotencyKey = active?.idempotencyKey
-      ?? retryKeysRef.current[retryScope]
-      ?? `${retryScope}:${crypto.randomUUID()}`;
-    retryKeysRef.current[retryScope] = idempotencyKey;
-    const amountMinor = active?.amount
-      ? parseMajorUnitInput(active.amount, item.currency)
-      : null;
-    setBusyId(`${item.id}:${option.action}`);
-    setMessage(null);
-    try {
-      const response = await fetch(`/api/recoveries/${item.id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: option.action,
-          note: active?.note.trim() || undefined,
-          amountMinor: option.amountKind && amountMinor != null && amountMinor >= 0
-            ? amountMinor
-            : undefined,
-          idempotencyKey,
-        }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Recovery action failed");
-      setRowOverrides((current) => ({
-        ...current,
-        [item.id]: body.recoveryCase,
-      }));
-      delete retryKeysRef.current[retryScope];
-      setPending(null);
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Recovery action failed",
-      );
-    } finally {
-      setBusyId(null);
+    if ('query' in input) {
+      if (input.query?.trim()) params.set('search', input.query.trim()); else params.delete('search');
     }
+    if ('owner' in input) {
+      if (input.owner) params.set('owner', input.owner); else params.delete('owner');
+    }
+    if ('source' in input) {
+      if (input.source) params.set('source', input.source); else params.delete('source');
+    }
+    if ('selected' in input) {
+      if (input.selected) params.set('selected', input.selected); else params.delete('selected');
+    }
+    const suffix = params.toString();
+    router.replace(suffix ? `${pathname}?${suffix}` : pathname, { scroll: false });
   }
+
+  function openAction(item: RecoveryCase, option: RecoveryActionOption) {
+    setMessage(null);
+    setPending({ item, option });
+  }
+
+  const columns = [
+    {
+      key: 'recovery',
+      header: 'Recovery',
+      width: '180px',
+      render: (item: RecoveryCase) => (
+        <span className="flex min-w-0 flex-col gap-1">
+          <Link href={`/financials/recovery/${item.id}`} className="ua-text-working-title text-[var(--uo-route-text-primary)] hover:text-[var(--uo-route-action-primary)]">Recovery {hashId(item.id)}</Link>
+          <span className="ua-text-metadata">{RECOVERY_TYPE_LABELS[item.recovery_type]}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'partner',
+      header: 'Partner / owner',
+      render: (item: RecoveryCase) => <span className="ua-text-dense">{item.partner?.name ?? RECOVERY_OWNER_LABELS[item.owner_type]}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      kind: 'status' as const,
+      render: (item: RecoveryCase) => <StatusBadge family="recoveryStatus" value={item.status} size="sm" />,
+    },
+    {
+      key: 'case',
+      header: 'Case',
+      render: (item: RecoveryCase) => (
+        <button type="button" className="ua-text-label text-left text-[var(--uo-route-action-primary)] underline underline-offset-2" onClick={() => updateLocation({ selected: item.id })}>
+          {item.support_payout_case?.order_number ?? item.support_payout_case?.ticket_external_id ?? shortRef(null, item.support_payout_case_id)}
+        </button>
+      ),
+    },
+    {
+      key: 'sought',
+      header: 'Sought',
+      kind: 'currency' as const,
+      render: (item: RecoveryCase) => <MoneyValue minorUnits={item.amount_sought_minor} currency={item.currency} />,
+    },
+    {
+      key: 'recovered',
+      header: 'Recovered',
+      kind: 'currency' as const,
+      render: (item: RecoveryCase) => <MoneyValue minorUnits={item.amount_recovered_minor} currency={item.currency} />,
+    },
+    {
+      key: 'outstanding',
+      header: 'Outstanding',
+      kind: 'currency' as const,
+      render: (item: RecoveryCase) => <MoneyValue minorUnits={Math.max(0, item.amount_sought_minor - item.amount_recovered_minor - item.amount_written_off_minor)} currency={item.currency} />,
+    },
+    {
+      key: 'evidence',
+      header: 'Evidence / source',
+      render: (item: RecoveryCase) => (
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="ua-text-dense">{item.evidence_complete ? 'Complete' : `${item.evidence_missing.length} missing`}</span>
+          <span className="ua-text-metadata">{item.last_source_event_at ? `Source ${formatDate(item.last_source_event_at)}` : 'Source update unavailable'}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'deadline',
+      header: 'Deadline',
+      kind: 'date' as const,
+      render: (item: RecoveryCase) => displayDeadline(item.deadline_at) ?? <UnavailableValue reason="No partner deadline is recorded" />,
+    },
+    {
+      key: 'next',
+      header: 'Next action',
+      width: '220px',
+      render: (item: RecoveryCase) => {
+        const applicable = RECOVERY_ACTIONS.filter((option) => recoveryActionAvailable(item, option));
+        const [primary, ...rest] = applicable;
+        return (
+          <span className="flex min-w-[190px] items-center justify-between gap-2">
+            <span className="ua-text-dense text-[var(--uo-route-text-secondary)]">{recoveryNextAction(item)}</span>
+            {canManage && primary ? (
+              <span className="flex shrink-0 items-center gap-1">
+                <Button size="sm" variant="secondary" disabled={pending?.item.id === item.id} onClick={() => openAction(item, primary)}>{primary.label}</Button>
+                {rest.length ? <RowActionsMenu label="More recovery actions" actions={rest.map((option) => ({ label: option.label, tone: ['rejected', 'closed_unrecoverable'].includes(option.action) ? 'danger' : 'default', onSelect: () => openAction(item, option) }))} /> : null}
+              </span>
+            ) : null}
+          </span>
+        );
+      },
+    },
+  ];
 
   return (
-    <div>
-      {recoveries.length === 0 ? (
-        <div className="rounded-xl border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]">
-          <EmptyState
-            icon={<PackageSearch aria-hidden="true" />}
-            title="No recovery cases yet"
-            description="Recovery cases appear when a source-backed loss has a possible recovery route. Connect your sources or review a case to start the handoff."
-            action={<Link href="/sources/connected" className="ua-text-working-title inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)]">Review integrations</Link>}
-          />
+    <>
+      {financialPeriod ? (
+        <div className="ua-text-body mb-3 flex flex-wrap items-center justify-between gap-3 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-accent-soft)] px-3 py-2 text-[var(--uo-route-text-secondary)]" role="status">
+          <span>Showing {financialPeriod.recoveryIds.length} {financialPeriod.recoveryIds.length === 1 ? 'recovery' : 'recoveries'} supporting {financialPeriod.label}.</span>
+          <Link href={financialPeriod.clearHref} className="ua-text-label text-[var(--uo-route-action-primary)] underline underline-offset-2">Clear period</Link>
         </div>
       ) : null}
-      <p className="ua-text-metadata mb-3" style={{ color: "var(--ua-text-tertiary)" }}>
-        Cards update automatically as your connected tools sync new evidence and
-        status.
-      </p>
-      {message ? (
-        <p
-          role="alert"
-          className="ua-text-caption-role mb-3"
-          style={{ color: "var(--ua-critical)" }}
-        >
-          {message}
-        </p>
+      {filter in FINANCIAL_FILTER_LABELS ? (
+        <div className="ua-text-body mb-3 flex flex-wrap items-center justify-between gap-3 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-accent-soft)] px-3 py-2 text-[var(--uo-route-text-secondary)]" role="status">
+          <span>Showing records that support {(FINANCIAL_FILTER_LABELS as Record<string, string>)[filter]}.</span>
+          <button type="button" onClick={() => { setFilter('all'); updateLocation({ stage: null }); }} className="ua-text-label text-[var(--uo-route-action-primary)] underline underline-offset-2">Clear financial cohort</button>
+        </div>
       ) : null}
-      {recoveries.length > 0 ? <BoardSurface label="Recovery stages">
-        {RECOVERY_BOARD_COLUMNS.map((column) => {
-          const rows = rowsState.filter((item) =>
-            column.statuses.includes(item.status),
-          );
-          return (
-            <BoardColumn
-              key={column.key}
-              title={column.label}
-              count={<Badge size="sm">{rows.length}</Badge>}
-            >
-                {rows.length === 0 ? (
-                  <p
-                    className="ua-text-metadata px-2 py-6 text-center"
-                    style={{ color: "var(--ua-text-tertiary)" }}
-                  >
-                    No cases
-                  </p>
-                ) : (
-                  rows.map((item) => {
-                    const orderLabel =
-                      item.support_payout_case?.order_number ??
-                      item.support_payout_case?.ticket_external_id ??
-                      shortRef(null, item.support_payout_case_id);
-                    return (
-                      <Panel
-                        as="article"
-                        key={item.id}
-                        variant="inset"
-                        className="p-3"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-                          <div className="min-w-0">
-                            <Link
-                              href={`/financials/recovery/${item.id}`}
-                              className="ua-text-working-title block truncate no-underline hover:underline"
-                              style={{ color: "var(--ua-text-primary)" }}
-                            >
-                              {orderLabel}
-                            </Link>
-                            <p
-                              className="mt-0.5 text-[length:var(--ua-text-metadata-size)]"
-                              style={{ color: "var(--ua-text-tertiary)" }}
-                            >
-                              {RECOVERY_TYPE_LABELS[item.recovery_type]} ·{" "}
-                              {RECOVERY_OWNER_LABELS[item.owner_type]}
-                            </p>
-                          </div>
-                          <StatusBadge family="recoveryStatus" value={item.status} size="sm" className="shrink-0" />
-                        </div>
-                        <div className="mt-3 border-l-2 border-[var(--ua-accent-500)] pl-2">
-                          <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Next action</p>
-                          <p className="ua-text-dense mt-0.5 font-medium text-[var(--ua-text-primary)]">{nextActionFor(item)}</p>
-                        </div>
-                        <div className="ua-text-metadata mt-3 grid grid-cols-2 gap-2">
-                          <div>
-                            <p style={{ color: "var(--ua-text-tertiary)" }}>
-                              Recoverable
-                            </p>
-                            <p
-                              className="font-sans tabular-nums"
-                              style={{ color: "var(--ua-text-primary)" }}
-                            >
-                              {formatCurrencyNullable(
-                                item.estimated_recoverable_max,
-                                item.currency,
-                              ) ?? "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p style={{ color: "var(--ua-text-tertiary)" }}>
-                              Deadline
-                            </p>
-                            <p style={{ color: "var(--ua-text-primary)" }}>
-                              {dateLabel(item.deadline_at)}
-                            </p>
-                          </div>
-                          <div>
-                            <p style={{ color: "var(--ua-text-tertiary)" }}>
-                              Source update
-                            </p>
-                            <p style={{ color: "var(--ua-text-primary)" }}>
-                              {dateLabel(item.last_source_event_at)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          <Badge tone={item.evidence_complete ? "success" : "warning"} size="sm" dot>
-                            {item.evidence_complete
-                              ? "Evidence complete"
-                              : `${item.evidence_missing.length} ${item.evidence_missing.length === 1 ? 'item' : 'items'} missing`}
-                          </Badge>
-                          {item.partner?.name ? (
-                            <Badge size="sm">{item.partner.name}</Badge>
-                          ) : null}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setContextCaseId(item.support_payout_case_id)
-                            }
-                            className="rounded-md px-2 py-0.5 text-[length:var(--ua-text-metadata-size)]"
-                            style={{
-                              border: "1px solid var(--ua-border-subtle)",
-                              color: "var(--ua-text-secondary)",
-                            }}
-                          >
-                            Case context
-                          </button>
-                        </div>
-                        {canManage
-                          ? (() => {
-                              const applicable = ACTIONS.filter((option) =>
-                                option.statuses.includes(item.status),
-                              );
-                              if (applicable.length === 0) return null;
-                              const [primary, ...rest] = applicable;
-                              const isDanger = (a: RecoveryAction) =>
-                                a === "closed_unrecoverable" || a === "rejected";
-                              const primaryBusy =
-                                busyId === `${item.id}:${primary.action}`;
-                              return (
-                                <div
-                                  className="mt-3 flex items-center gap-1.5 border-t pt-3"
-                                  style={{ borderColor: "var(--ua-border-subtle)" }}
-                                >
-                                  <button
-                                    type="button"
-                                    className="rounded-md px-2.5 py-1 text-[length:var(--ua-text-metadata-size)] font-medium"
-                                    style={{
-                                      border: "1px solid var(--ua-border-subtle)",
-                                      color: isDanger(primary.action)
-                                        ? "var(--ua-risk-critical)"
-                                        : "var(--ua-text-secondary)",
-                                    }}
-                                    disabled={primaryBusy}
-                                    onClick={() => runAction(item, primary)}
-                                  >
-                                    {primaryBusy ? "Saving…" : primary.label}
-                                  </button>
-                                  {rest.length > 0 ? (
-                                    <RowActionsMenu
-                                      label="More recovery actions"
-                                      actions={rest.map((option) => ({
-                                        label: option.label,
-                                        tone: isDanger(option.action)
-                                          ? "danger"
-                                          : "default",
-                                        disabled:
-                                          busyId ===
-                                          `${item.id}:${option.action}`,
-                                        onSelect: () => runAction(item, option),
-                                      }))}
-                                    />
-                                  ) : null}
-                                </div>
-                              );
-                            })()
-                          : null}
-                      </Panel>
-                    );
-                  })
-                )}
-            </BoardColumn>
-          );
-        })}
-      </BoardSurface> : null}
-      {contextCaseId ? (
-        <CaseContextDrawer
-          caseId={contextCaseId}
-          onClose={() => setContextCaseId(null)}
-        />
-      ) : null}
-      <Modal
-        open={pending != null}
-        onClose={() => setPending(null)}
-        title={pending?.option.label ?? "Confirm recovery action"}
-        description={actionDescription(pending?.option.action)}
-        actions={
-          pending
-            ? [
-                {
-                  label: pending.option.label,
-                  variant:
-                    pending.option.action === "closed_unrecoverable"
-                      ? "danger"
-                      : "primary",
-                  disabled:
-                    (pending.option.requiresNote && pending.note.trim().length < 3)
-                    || (Boolean(pending.option.amountKind)
-                      && (parseMajorUnitInput(pending.amount, pending.item.currency) == null || parseMajorUnitInput(pending.amount, pending.item.currency)! < 0)),
-                  onClick: () =>
-                    void runAction(pending.item, {
-                      ...pending.option,
-                      confirm: false,
-                    }),
-                },
-              ]
-            : []
+      {message && !pending ? <p role="status" className="ua-text-body mb-3 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-surface-muted)] px-3 py-2 text-[var(--uo-route-text-secondary)]">{message}</p> : null}
+      <RegistrySurface
+        aria-label="Recovery operations"
+        persistentTable
+        toolbar={
+          <RegistryToolbar
+            search={<Input aria-label="Search recoveries" placeholder="Search recovery, partner or case" value={query} onChange={(event) => { setQuery(event.target.value); updateLocation({ query: event.target.value }); }} />}
+            filters={(
+              <div className="grid min-w-0 gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="ua-text-metadata mr-1">Stage</span>{FILTERS.map((item) => <FilterChip key={item.key} active={filter === item.key} onClick={() => { setFilter(item.key); updateLocation({ stage: item.key }); }}>{item.label}</FilterChip>)}</div>
+                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="ua-text-metadata mr-1">Owner</span><FilterChip active={!owner} onClick={() => updateLocation({ owner: null })}>All owners</FilterChip>{ownerOptions.map((item) => <FilterChip key={item} active={owner === item} onClick={() => updateLocation({ owner: item })}>{RECOVERY_OWNER_LABELS[item]}</FilterChip>)}</div>
+                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="ua-text-metadata mr-1">Source</span><FilterChip active={!source} onClick={() => updateLocation({ source: null })}>All sources</FilterChip>{sourceOptions.map(([key, sourceLabel]) => <FilterChip key={key} active={source === key} onClick={() => updateLocation({ source: key })}>{sourceLabel}</FilterChip>)}</div>
+              </div>
+            )}
+          />
         }
+        resultCount={`${visibleRows.length} of ${rowsState.length} recoveries`}
       >
-        <dl className="ua-text-dense space-y-2">
-          <div className="flex justify-between gap-4">
-            <dt>Amount pursued</dt>
-            <dd className="font-sans tabular-nums">
-              {pending
-                ? formatMinorCurrencyNullable(pending.item.amount_sought_minor, pending.item.currency)
-                : "—"}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt>Recovered</dt>
-            <dd className="font-sans tabular-nums">
-              {pending
-                ? formatMinorCurrencyNullable(pending.item.amount_recovered_minor, pending.item.currency)
-                : "—"}
-            </dd>
-          </div>
-        </dl>
-        {pending?.option.amountKind ? (
-          <label className="ua-text-label mt-4 block">
-            {pending.option.amountKind === "approved" ? "Approved amount" : "Cumulative amount received"}
-            <div className="mt-1 grid grid-cols-[1fr_auto] gap-2">
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                inputMode="decimal"
-                value={pending.amount}
-                onChange={(event) => setPending({ ...pending, amount: event.target.value })}
-                className="ua-text-body rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
-              />
-              <span className="ua-text-label flex items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-3">
-                {pending.item.currency}
-              </span>
-            </div>
-            <span className="mt-1 block text-[length:var(--ua-text-metadata-size)] font-normal text-[var(--ua-text-tertiary)]">
-              Enter {pending.item.currency} in major units.
-            </span>
-          </label>
-        ) : null}
-        {pending?.option.requiresNote ? (
-          <label className="ua-text-label mt-4 block">
-            Reason
-            <Textarea
-              value={pending.note}
-              onChange={(event) => setPending({ ...pending, note: event.target.value })}
-              className="mt-1 min-h-20"
-              placeholder="Record the source reference or reason"
+        {recoveries.length === 0 ? (
+          <div data-state-id="recovery-board-empty-state">
+            <OperationalState
+              kind="empty"
+              title="No source-backed recoveries yet"
+              description="A recovery appears only after a viable loss has an evidence-backed recovery route. Connect sources or review an eligible case to start the handoff."
+              action={<Link href="/sources/connected" className="ua-text-working-title text-[var(--uo-route-action-primary)] underline underline-offset-2">Review connected sources</Link>}
             />
-          </label>
-        ) : null}
-        <p className="ua-text-caption-role mt-4">
-          Closing unrecoverable does not delete prior evidence, correspondence,
-          or financial activity.
-        </p>
-      </Modal>
-    </div>
+          </div>
+        ) : (
+          <DataTableServer
+            flush
+            persistentHeader
+            density="two-line"
+            aria-label="Recovery ledger"
+            rows={visibleRows}
+            columns={columns}
+            getRowKey={(item) => item.id}
+            emptyState={
+              <div data-state-id="recovery-board-no-result">
+                <OperationalState kind="filtered-empty" title="No recoveries match these controls" description="Clear the search or choose another operational stage. No recovery records were changed." />
+              </div>
+            }
+          />
+        )}
+      </RegistrySurface>
+
+      {selectedRecovery ? <CaseContextDrawer caseId={selectedRecovery.support_payout_case_id} onClose={() => updateLocation({ selected: null })} /> : null}
+
+      <RecoveryActionDialog
+        item={pending?.item ?? null}
+        option={pending?.option ?? null}
+        open={pending != null}
+        overlayId="confirm-recovery-action-modal"
+        onClose={() => setPending(null)}
+        onRecorded={(updated, successMessage) => {
+          setRowOverrides((current) => ({ ...current, [updated.id]: updated }));
+          setPending(null);
+          setMessage(successMessage);
+        }}
+      />
+    </>
   );
 }

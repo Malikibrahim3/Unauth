@@ -16,6 +16,7 @@ export default function RecoveryRulesError({
       reset={reset}
       digest={error.digest}
       fallbackHref="/controls/rules"
+      stateId="recovery-rulebook-error"
     />
   );
 }

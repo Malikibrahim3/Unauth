@@ -6,6 +6,7 @@ import {
   hashWidgetToken,
   widgetTokenDisplayPrefix,
 } from '@/lib/api/widgetTokens';
+import type { ApiRateLimit, ApiScope } from '@/lib/api/accessPolicy';
 
 export const API_KEY_PREFIX = 'unauth_sk_';
 const RANDOM_SEGMENT_LENGTH = 32;
@@ -50,6 +51,7 @@ export type CreatedMerchantApiKey = {
     name: string;
     created_at: string;
     rate_limit_per_minute: number;
+    scopes: ApiScope[];
   };
 };
 
@@ -62,7 +64,8 @@ export type CreatedMerchantApiKey = {
 export async function createMerchantApiKey(
   service: ReturnType<typeof createServiceClient>,
   merchantId: string,
-  name: string
+  name: string,
+  options: { scopes?: ApiScope[]; rateLimitPerMinute?: ApiRateLimit } = {},
 ): Promise<CreatedMerchantApiKey | null> {
   const plaintext = generateApiKeyPlaintext();
   const keyHash = hashApiKey(plaintext);
@@ -78,8 +81,10 @@ export async function createMerchantApiKey(
       key_hash: keyHash,
       key_prefix: keyPrefix,
       name,
+      scopes: options.scopes ?? [],
+      rate_limit_per_minute: options.rateLimitPerMinute ?? 60,
     })
-    .select('id, key_prefix, name, created_at, rate_limit_per_minute')
+    .select('id, key_prefix, name, created_at, rate_limit_per_minute, scopes')
     .single();
 
   if (error || !inserted) return null;

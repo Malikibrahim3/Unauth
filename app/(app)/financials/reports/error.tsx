@@ -1,6 +1,6 @@
 'use client';
 
-import { ErrorBoundaryUI } from '@/components/ui';
+import { OperationalRouteError } from '@/components/states/OperationalRouteError';
 
 export default function Error({
   error,
@@ -9,5 +9,5 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <ErrorBoundaryUI error={error} reset={reset} title="Analytics unavailable" />;
+  return <OperationalRouteError title="Financial reports could not be loaded" description="The report scope, financial stages, supporting records and export data are unchanged." reset={reset} digest={error.digest} fallbackHref="/financials/losses" stateId="reports-error" />;
 }

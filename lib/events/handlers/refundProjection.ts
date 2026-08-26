@@ -2,6 +2,7 @@ import type { DomainEventHandler } from '@/lib/events/handlers/types';
 import { TABLES } from '@/lib/supabase/tables';
 import { syncPayoutCaseMerchantCustomer } from '@/lib/identity/merchantCustomerResolver';
 import { recordCaseOutcome } from '@/lib/reconciliation/outcomes';
+import { observeShopifyRefundForExternalAction } from '@/lib/claims/externalAction';
 
 export const refundProjection: DomainEventHandler = async (client, event) => {
   if (event.event_type !== 'refund.created') return { applied: false, detail: 'ignored' };
@@ -100,6 +101,25 @@ export const refundProjection: DomainEventHandler = async (client, event) => {
       p_idempotency_key: `refund-projection:${event.id}`,
     });
     if (outcomeError) throw new Error(`refund_outcome_reconciliation_failed: ${outcomeError.message}`);
+  }
+  const sourceOrderExternalId = typeof payload.source_order_external_id === 'string'
+    ? payload.source_order_external_id
+    : null;
+  const refundExternalId = typeof payload.source_external_id === 'string'
+    ? payload.source_external_id
+    : event.aggregate_id;
+  if (sourceOrderExternalId && refundExternalId) {
+    await observeShopifyRefundForExternalAction(client, {
+      merchantId: event.merchant_id,
+      caseId,
+      sourceOrderExternalId,
+      amountMinor,
+      currency,
+      refundExternalId,
+      transactionState,
+      observedAt: event.occurred_at ?? new Date().toISOString(),
+      domainEventId: event.id,
+    });
   }
   return { applied: true, detail: `case:${caseId}:${transactionState}` };
 };

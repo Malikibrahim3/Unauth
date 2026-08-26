@@ -10,7 +10,8 @@
         "status",
         "responsibility_confirmation_state",
         "responsibility_confirmed_at",
-        "responsibility_confirmed_by"
+        "responsibility_confirmed_by",
+        "responsibility_event_id"
       ]
     },
     {
@@ -37,7 +38,9 @@
         "merchant_id",
         "support_payout_case_id",
         "partner_id",
+        "is_primary",
         "status",
+        "evidence_gap",
         "request_summary",
         "response_summary",
         "created_at"
@@ -73,7 +76,253 @@
       "columns": [
         "id",
         "merchant_id",
-        "last_source_event_at"
+        "support_payout_case_id",
+        "partner_id",
+        "recovery_type",
+        "owner_type",
+        "status",
+        "merchant_loss_amount",
+        "eligible_loss_amount",
+        "estimated_recoverable_min",
+        "estimated_recoverable_max",
+        "amount_recovered",
+        "currency",
+        "deadline_at",
+        "next_chase_at",
+        "last_chased_at",
+        "evidence_required",
+        "evidence_missing",
+        "evidence_complete",
+        "rejection_reason",
+        "calculation_reason",
+        "excluded_costs",
+        "internal_owner_user_id",
+        "created_at",
+        "updated_at",
+        "loss_case_id",
+        "prevention_only",
+        "last_source_event_at",
+        "current_claim_pack_id",
+        "latest_submission_id",
+        "latest_provider_response_id",
+        "provider_position",
+        "provider_position_at",
+        "claim_readiness",
+        "amount_sought_minor",
+        "amount_approved_minor",
+        "amount_recovered_minor",
+        "amount_written_off_minor"
+      ]
+    },
+    {
+      "table": "provider_credit_records",
+      "requiredBy": "MR4 - source credit observation, matching, reconciliation, and reversal",
+      "columns": [
+        "id",
+        "merchant_id",
+        "provider",
+        "external_credit_id",
+        "credit_type",
+        "amount_minor",
+        "currency",
+        "occurred_at",
+        "observed_at",
+        "observation_authority",
+        "source_record_id",
+        "evidence_item_id",
+        "recovery_case_id",
+        "support_payout_case_id",
+        "reverses_credit_id",
+        "match_status",
+        "reconciliation_status",
+        "state_version",
+        "idempotency_key"
+      ]
+    },
+    {
+      "table": "provider_credit_events",
+      "requiredBy": "MR4 - immutable provider credit history",
+      "columns": [
+        "id",
+        "merchant_id",
+        "provider_credit_record_id",
+        "recovery_case_id",
+        "support_payout_case_id",
+        "event_type",
+        "from_status",
+        "to_status",
+        "amount_minor",
+        "currency",
+        "actor_user_id",
+        "source_record_id",
+        "evidence_item_id",
+        "financial_entry_id",
+        "reason",
+        "metadata",
+        "idempotency_key",
+        "created_at"
+      ]
+    },
+    {
+      "table": "evidence_items",
+      "requiredBy": "Cases evidence truth - source class and lineage",
+      "columns": [
+        "id",
+        "merchant_id",
+        "claim_id",
+        "source_system",
+        "evidence_type",
+        "title",
+        "summary",
+        "occurred_at",
+        "raw_payload",
+        "external_url",
+        "proves",
+        "created_at",
+        "confidence",
+        "source_record_id",
+        "connection_id",
+        "source_account_id",
+        "source_url",
+        "source_created_at",
+        "source_updated_at",
+        "ingested_at",
+        "last_synced_at",
+        "freshness_state",
+        "sync_state",
+        "storage_path",
+        "content_hash",
+        "structured_value",
+        "source_metadata",
+        "created_by",
+        "updated_at",
+        "case_source_class",
+        "source_lineage_root_id"
+      ]
+    },
+    {
+      "table": "partner_recovery_rules",
+      "requiredBy": "Cases evidence truth - versioned provider terms",
+      "columns": [
+        "id",
+        "merchant_id",
+        "partner_id",
+        "rule_name",
+        "recovery_type",
+        "applies_to_claim_type",
+        "claimable_costs",
+        "excluded_costs",
+        "required_evidence",
+        "deadline_days",
+        "liability_cap_amount",
+        "liability_cap_currency",
+        "liability_cap_basis",
+        "submission_method",
+        "submission_url",
+        "submission_email",
+        "source_type",
+        "confidence",
+        "active",
+        "created_at",
+        "updated_at",
+        "version_number",
+        "supersedes_rule_id",
+        "jurisdiction",
+        "service_codes",
+        "effective_from",
+        "effective_to",
+        "claimant_roles",
+        "minimum_wait_days",
+        "deadline_basis",
+        "notice_deadline_days",
+        "complete_pack_deadline_days",
+        "critical_requirements",
+        "exclusions",
+        "compensation_terms",
+        "terms_source_url",
+        "source_document_id",
+        "source_published_at",
+        "reviewed_at",
+        "reviewed_by",
+        "approved_at",
+        "approved_by",
+        "rule_approval_status"
+      ]
+    },
+    {
+      "table": "recovery_claim_packs",
+      "requiredBy": "Cases external recovery - immutable claim-pack artifacts",
+      "columns": [
+        "id",
+        "merchant_id",
+        "recovery_case_id",
+        "support_payout_case_id",
+        "rule_version_id",
+        "pack_version",
+        "state",
+        "posture",
+        "readiness",
+        "readiness_snapshot",
+        "manifest",
+        "pdf_storage_path",
+        "zip_storage_path",
+        "pdf_hash",
+        "zip_hash",
+        "generated_at",
+        "finalized_at",
+        "generated_by",
+        "supersedes_pack_id",
+        "idempotency_key",
+        "created_at"
+      ]
+    },
+    {
+      "table": "recovery_claim_submissions",
+      "requiredBy": "Cases external recovery - manual submission receipts",
+      "columns": [
+        "id",
+        "merchant_id",
+        "recovery_case_id",
+        "claim_pack_id",
+        "channel",
+        "provider_account_reference",
+        "external_claim_reference",
+        "external_url",
+        "amount_sought_minor",
+        "currency",
+        "submitted_at",
+        "submitted_by",
+        "receipt_evidence_item_id",
+        "receipt_correspondence_id",
+        "notes",
+        "idempotency_key",
+        "created_at"
+      ]
+    },
+    {
+      "table": "recovery_provider_responses",
+      "requiredBy": "Cases external recovery - provider position and compensation",
+      "columns": [
+        "id",
+        "merchant_id",
+        "recovery_case_id",
+        "submission_id",
+        "provider",
+        "liability_position",
+        "compensation_state",
+        "provider_amount_minor",
+        "approved_amount_minor",
+        "credited_amount_minor",
+        "currency",
+        "external_reference",
+        "external_url",
+        "received_at",
+        "recorded_by",
+        "response_evidence_item_id",
+        "response_correspondence_id",
+        "notes",
+        "idempotency_key",
+        "created_at"
       ]
     },
     {
@@ -87,6 +336,182 @@
         "definition",
         "is_shared",
         "deleted_at"
+      ]
+    },
+    {
+      "table": "work_tasks",
+      "requiredBy": "MR3 - canonical server-backed Work task lifecycle",
+      "columns": [
+        "id",
+        "merchant_id",
+        "title",
+        "description",
+        "status",
+        "priority",
+        "owner_user_id",
+        "owner_role",
+        "due_at",
+        "snoozed_until",
+        "created_at",
+        "updated_at",
+        "source",
+        "source_metadata",
+        "task_kind",
+        "waiting_party",
+        "state_version",
+        "support_payout_case_id",
+        "loss_case_id",
+        "recovery_case_id",
+        "blocking_reason",
+        "completed_at",
+        "completed_by",
+        "completion_outcome"
+      ]
+    },
+    {
+      "table": "case_exceptions",
+      "requiredBy": "MR3 - combined task and reconciliation-exception Work queue",
+      "columns": [
+        "id",
+        "merchant_id",
+        "title",
+        "detail",
+        "status",
+        "priority",
+        "assigned_to",
+        "due_at",
+        "deadline_kind",
+        "created_at",
+        "updated_at",
+        "source_system",
+        "support_payout_case_id",
+        "exception_type",
+        "context",
+        "state_version"
+      ]
+    },
+    {
+      "table": "connector_action_runs",
+      "requiredBy": "MR3 - durable external-action handoff and source-observation lifecycle",
+      "columns": [
+        "id",
+        "merchant_id",
+        "connection_id",
+        "support_payout_case_id",
+        "capability_id",
+        "external_record_id",
+        "payload",
+        "result",
+        "status",
+        "action_state",
+        "state_version",
+        "request_fingerprint",
+        "requested_operation",
+        "amount_minor",
+        "currency",
+        "merchant_reported_at",
+        "merchant_reported_method",
+        "external_reference",
+        "receipt_evidence",
+        "provider_request_id",
+        "provider_object_id",
+        "provider_status",
+        "provider_error",
+        "retry_count",
+        "observed_source",
+        "observed_at",
+        "reconciled_at",
+        "idempotency_key",
+        "actor_user_id",
+        "created_at",
+        "updated_at",
+        "completed_at"
+      ]
+    },
+    {
+      "table": "subscription_intents",
+      "requiredBy": "MR0 - server-owned subscription selection and provider-confirmation boundary",
+      "columns": [
+        "id",
+        "merchant_id",
+        "requested_plan_id",
+        "requested_by",
+        "logical_operation_id",
+        "source",
+        "status",
+        "checkout_session_id",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "table": "context_credit_events",
+      "requiredBy": "MR0 - idempotent billable-event receipt and exact reversal",
+      "columns": [
+        "id",
+        "merchant_id",
+        "billable_event",
+        "logical_operation_id",
+        "credits_spent",
+        "status",
+        "source_object_type",
+        "source_object_id",
+        "monthly_credits_spent",
+        "topup_credits_spent",
+        "refunded_credits",
+        "reversed_at"
+      ]
+    },
+    {
+      "table": "merchant_api_keys",
+      "requiredBy": "MR5 - server-enforced machine API scopes and per-key request limits",
+      "columns": [
+        "id",
+        "merchant_id",
+        "key_hash",
+        "key_prefix",
+        "name",
+        "scopes",
+        "rate_limit_per_minute",
+        "created_at",
+        "last_used_at",
+        "revoked_at"
+      ]
+    },
+    {
+      "table": "workspace_deletion_jobs",
+      "requiredBy": "MR5 - owner-only idempotent resumable workspace deletion",
+      "columns": [
+        "id",
+        "merchant_reference",
+        "actor_user_reference",
+        "idempotency_key",
+        "status",
+        "stage",
+        "attempts",
+        "preflight",
+        "storage_manifest",
+        "progress",
+        "verification",
+        "last_error",
+        "receipt_id",
+        "created_at",
+        "updated_at",
+        "completed_at"
+      ]
+    },
+    {
+      "table": "workspace_deletion_receipts",
+      "requiredBy": "MR5 - durable verified workspace deletion result",
+      "columns": [
+        "id",
+        "job_reference",
+        "merchant_reference",
+        "actor_user_reference",
+        "idempotency_key",
+        "verification",
+        "verified_at",
+        "meaning"
       ]
     }
   ],
@@ -115,9 +540,165 @@
       ],
       "references": "source_order_lines",
       "requiredBy": "RUN-03 \u2014 the matched source order line behind a resolved match"
+    },
+    {
+      "table": "evidence_items",
+      "columns": ["source_lineage_root_id"],
+      "references": "evidence_items",
+      "requiredBy": "Cases evidence truth - preserve source lineage"
+    },
+    {
+      "table": "partner_recovery_rules",
+      "columns": ["supersedes_rule_id"],
+      "references": "partner_recovery_rules",
+      "requiredBy": "Cases evidence truth - immutable rule versions"
+    },
+    {
+      "table": "recovery_claim_packs",
+      "columns": ["recovery_case_id"],
+      "references": "recovery_cases",
+      "requiredBy": "Cases external recovery - pack ownership"
+    },
+    {
+      "table": "recovery_claim_packs",
+      "columns": ["support_payout_case_id"],
+      "references": "support_payout_cases",
+      "requiredBy": "Cases external recovery - pack case scope"
+    },
+    {
+      "table": "recovery_claim_packs",
+      "columns": ["rule_version_id"],
+      "references": "partner_recovery_rules",
+      "requiredBy": "Cases external recovery - pack rule provenance"
+    },
+    {
+      "table": "recovery_claim_submissions",
+      "columns": ["recovery_case_id"],
+      "references": "recovery_cases",
+      "requiredBy": "Cases external recovery - submission ownership"
+    },
+    {
+      "table": "recovery_claim_submissions",
+      "columns": ["claim_pack_id"],
+      "references": "recovery_claim_packs",
+      "requiredBy": "Cases external recovery - submission pack provenance"
+    },
+    {
+      "table": "recovery_claim_submissions",
+      "columns": ["receipt_evidence_item_id"],
+      "references": "evidence_items",
+      "requiredBy": "Cases external recovery - submission receipt evidence"
+    },
+    {
+      "table": "recovery_claim_submissions",
+      "columns": ["receipt_correspondence_id"],
+      "references": "external_correspondence",
+      "requiredBy": "Cases external recovery - submission receipt correspondence"
+    },
+    {
+      "table": "recovery_provider_responses",
+      "columns": ["recovery_case_id"],
+      "references": "recovery_cases",
+      "requiredBy": "Cases external recovery - provider response ownership"
+    },
+    {
+      "table": "recovery_provider_responses",
+      "columns": ["submission_id"],
+      "references": "recovery_claim_submissions",
+      "requiredBy": "Cases external recovery - response submission provenance"
+    },
+    {
+      "table": "recovery_provider_responses",
+      "columns": ["response_evidence_item_id"],
+      "references": "evidence_items",
+      "requiredBy": "Cases external recovery - provider response evidence"
+    },
+    {
+      "table": "recovery_provider_responses",
+      "columns": ["response_correspondence_id"],
+      "references": "external_correspondence",
+      "requiredBy": "Cases external recovery - provider response correspondence"
+    },
+    {
+      "table": "recovery_cases",
+      "columns": ["current_claim_pack_id"],
+      "references": "recovery_claim_packs",
+      "requiredBy": "Cases external recovery - current pack projection"
+    },
+    {
+      "table": "recovery_cases",
+      "columns": ["latest_submission_id"],
+      "references": "recovery_claim_submissions",
+      "requiredBy": "Cases external recovery - latest submission projection"
+    },
+    {
+      "table": "recovery_cases",
+      "columns": ["latest_provider_response_id"],
+      "references": "recovery_provider_responses",
+      "requiredBy": "Cases external recovery - latest provider response projection"
+    },
+    {
+      "table": "subscription_intents",
+      "columns": ["merchant_id"],
+      "references": "merchants",
+      "requiredBy": "MR0 - tenant ownership for subscription intents"
+    },
+    {
+      "table": "subscription_intents",
+      "columns": ["requested_plan_id"],
+      "references": "plans",
+      "requiredBy": "MR0 - canonical plan identity for subscription intents"
     }
   ],
   "grants": [
+    {
+      "table": "subscription_intents",
+      "role": "authenticated",
+      "privileges": ["SELECT"],
+      "requiredBy": "MR0 - tenant-filtered subscription intent reads"
+    },
+    {
+      "table": "subscription_intents",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "MR0 - server-owned subscription intent lifecycle"
+    },
+    {
+      "table": "recovery_claim_packs",
+      "role": "authenticated",
+      "privileges": ["SELECT"],
+      "requiredBy": "Cases external recovery - tenant-filtered pack reads"
+    },
+    {
+      "table": "recovery_claim_submissions",
+      "role": "authenticated",
+      "privileges": ["SELECT"],
+      "requiredBy": "Cases external recovery - tenant-filtered submission reads"
+    },
+    {
+      "table": "recovery_provider_responses",
+      "role": "authenticated",
+      "privileges": ["SELECT"],
+      "requiredBy": "Cases external recovery - tenant-filtered provider-response reads"
+    },
+    {
+      "table": "recovery_claim_packs",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "Cases external recovery - pack RPC and artifact reads"
+    },
+    {
+      "table": "recovery_claim_submissions",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "Cases external recovery - submission RPC and reads"
+    },
+    {
+      "table": "recovery_provider_responses",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "Cases external recovery - provider response RPC and reads"
+    },
     {
       "table": "work_saved_views",
       "role": "service_role",
@@ -128,6 +709,24 @@
         "DELETE"
       ],
       "requiredBy": "RUN-06 \u2014 without these the saved-view endpoint fails with SQLSTATE 42501 and surfaces as a 500"
+    },
+    {
+      "table": "work_tasks",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "MR3 - Work projection and lifecycle transition RPCs"
+    },
+    {
+      "table": "case_exceptions",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "MR3 - combined Work queue and exception resolution"
+    },
+    {
+      "table": "connector_action_runs",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "MR3 - external action handoff and source observation"
     },
     {
       "table": "case_claimed_items",
@@ -185,6 +784,15 @@
       "requiredBy": "RUN-16 \u2014 recovered provider credits"
     },
     {
+      "table": "provider_credit_events",
+      "role": "service_role",
+      "privileges": [
+        "SELECT",
+        "INSERT"
+      ],
+      "requiredBy": "MR4 - immutable provider credit history"
+    },
+    {
       "table": "case_prevention_observations",
       "role": "service_role",
       "privileges": [
@@ -194,6 +802,18 @@
         "DELETE"
       ],
       "requiredBy": "RUN-21 \u2014 prevented-value reporting"
+    },
+    {
+      "table": "workspace_deletion_jobs",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "MR5 - resumable workspace deletion orchestration"
+    },
+    {
+      "table": "workspace_deletion_receipts",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "MR5 - immutable workspace deletion receipt reads and writes"
     }
   ]
 }

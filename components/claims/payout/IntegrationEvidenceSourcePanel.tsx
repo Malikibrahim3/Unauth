@@ -23,7 +23,7 @@ export function IntegrationEvidenceSourcePanel({
   return (
     <Card unstyled as="section" variant="panel" className="p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-label" style={{ color: 'var(--uo-route-text-secondary)' }}>
           Connected evidence sources
         </p>
         <span className="ua-text-metadata">
@@ -42,7 +42,7 @@ export function IntegrationEvidenceSourcePanel({
           return (
             <Card unstyled key={source.providerId} as="li" variant="muted" className="ua-text-dense p-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{source.providerName}</span>
+                <span className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>{source.providerName}</span>
                 <StatusBadge family="workflowStatus" value="connected" size="sm" />
               </div>
               <p className="ua-text-caption-role mt-1">

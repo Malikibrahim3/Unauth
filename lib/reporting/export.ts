@@ -1,6 +1,7 @@
 import {
   FINANCIAL_REPORT_METRICS,
   financialMetricCaseIds,
+  financialMetricCaseCount,
   financialMetricIsKnown,
   financialMetricValue,
   type FinancialReportMetric,
@@ -11,7 +12,7 @@ import { hashId } from '@/lib/ui/displayRef';
 import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 
 export const REPORT_EXPORT_VERSION = 'mvp-plus-financial-v2';
-export type ReportExportView = 'metrics' | 'outcomes';
+export type ReportExportView = 'metrics' | 'outcomes' | 'records';
 export type ReportExportScope = {
   metric?: FinancialReportMetric | null;
   category?: string | null;
@@ -54,6 +55,9 @@ export function buildReportExportRows(
   view: ReportExportView,
   scope: ReportExportScope = {},
 ): unknown[][] {
+  if (view === 'records') {
+    throw new Error('Supporting records are exported by the paged report-record contract.');
+  }
   const header = [
     'report_version',
     'generated_at',
@@ -110,7 +114,7 @@ export function buildReportExportRows(
           bridge.currency,
           known,
           valueMinor == null ? 'Unavailable' : formatMinorCurrencyNullable(valueMinor, bridge.currency),
-          recordIds.length,
+          financialMetricCaseCount(bridge, metric),
           recordIds.map((id) => hashId(id)).join(';'),
         ];
       }),

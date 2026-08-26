@@ -48,6 +48,36 @@ export type RecordCaseOutcomeInput = {
   metadata?: Record<string, unknown>;
 };
 
+export type MerchantRecordedOutcomeEvidence = Pick<
+  RecordCaseOutcomeInput,
+  'state' | 'sourceSystem' | 'sourceRecordId' | 'sourceExternalId' | 'correlationMethod' | 'overrideReason'
+>;
+
+/**
+ * The authenticated merchant route may record an unverified report or a
+ * receipt-backed completion. Provider-observed states are reserved for source
+ * ingestion so a browser request cannot manufacture a provider result.
+ */
+export function validateMerchantRecordedOutcomeEvidence(
+  input: MerchantRecordedOutcomeEvidence,
+): string | null {
+  if (input.state !== 'reported' && input.state !== 'merchant_confirmed') {
+    return 'Source-observed, failed, reversed, and pending states must come from the canonical source-ingestion lifecycle.';
+  }
+  if (!input.overrideReason?.trim()) {
+    return 'An evidence note is required for a merchant-recorded external outcome.';
+  }
+  if (input.state === 'merchant_confirmed') {
+    if (!input.sourceRecordId?.trim() && !input.sourceExternalId?.trim()) {
+      return 'A receipt or provider reference is required before recording a completed external outcome.';
+    }
+    if (input.correlationMethod !== 'receipt_backed_manual_record') {
+      return 'Receipt-backed completion must use the receipt_backed_manual_record correlation method.';
+    }
+  }
+  return null;
+}
+
 function outcomeIsRealised(input: RecordCaseOutcomeInput): boolean {
   return input.state === 'observed_success' || input.state === 'merchant_confirmed';
 }

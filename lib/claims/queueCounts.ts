@@ -30,6 +30,14 @@ export type ClaimQueueCounts = {
   underReview: number;
 };
 
+export type ClaimMetricCoverage = 'complete' | 'partial' | 'unavailable';
+
+export type ClaimQueueCountsResult = {
+  counts: ClaimQueueCounts;
+  coverageByMetric: Record<keyof ClaimQueueCounts, ClaimMetricCoverage>;
+  aggregateCoverage: ClaimMetricCoverage;
+};
+
 export function isClaimSnoozed(claim: ClaimQueueCountRow, now = new Date()): boolean {
   if (!(ACTIVE_CLAIM_STATUSES as readonly string[]).includes(claim.status)) return false;
   const snoozedUntil = claim.snoozed_until ? new Date(claim.snoozed_until) : null;
@@ -160,7 +168,7 @@ export async function fetchClaimQueueCounts(
   serviceClient: any,
   merchantId: string,
   currentUserId?: string | null,
-): Promise<ClaimQueueCounts> {
+): Promise<ClaimQueueCountsResult> {
   const nowIso = new Date().toISOString();
 
   const [
@@ -188,7 +196,7 @@ export async function fetchClaimQueueCounts(
     activeClaimsCountQuery(serviceClient, merchantId, nowIso).is('assigned_to', null),
     currentUserId
       ? activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('assigned_to', currentUserId)
-      : Promise.resolve({ count: 0 }),
+      : Promise.resolve({ count: null, error: null }),
     snoozedClaimsCountQuery(serviceClient, merchantId, nowIso),
     serviceClient
       .from(TABLES.MERCHANT_CLAIMS)
@@ -207,16 +215,55 @@ export async function fetchClaimQueueCounts(
     activeClaimsCountQuery(serviceClient, merchantId, nowIso).in('status', ['manual_review', 'escalated']),
     serviceClient
       .from(TABLES.MERCHANT_CLAIMS)
-      .select('status,submitted_at,created_at,updated_at,snoozed_until,first_viewed_at,assigned_to')
+      .select('status,submitted_at,created_at,updated_at,snoozed_until,first_viewed_at,assigned_to', { count: 'exact' })
       .eq('merchant_id', merchantId)
       .in('status', [...ACTIVE_CLAIM_STATUSES]),
   ]);
 
-  const overdue = ((slaRowsRes.data ?? []) as ClaimQueueCountRow[]).filter((row) =>
+  const slaRows = (slaRowsRes.data ?? []) as ClaimQueueCountRow[];
+  const overdue = slaRows.filter((row) =>
     isClaimOverdueActive(row),
   ).length;
 
-  return {
+  const directCoverage = (result: { count?: number | null; error?: unknown }): ClaimMetricCoverage =>
+    !result.error && result.count != null ? 'complete' : 'unavailable';
+  const coverageByMetric = {
+    total: directCoverage(totalRes),
+    active: directCoverage(activeRes),
+    unread: directCoverage(unreadRes),
+    unassigned: directCoverage(unassignedRes),
+    assignedToMe: currentUserId ? directCoverage(assignedRes) : 'unavailable',
+    snoozed: directCoverage(snoozedRes),
+    resolved: directCoverage(resolvedRes),
+    awaitingEvidence: directCoverage(awaitingEvidenceRes),
+    awaitingCarrier: directCoverage(awaitingCarrierRes),
+    awaiting3pl: directCoverage(awaiting3plRes),
+    awaitingSupplier: directCoverage(awaitingSupplierRes),
+    readyForDecision: directCoverage(readyForDecisionRes),
+    manualReview: directCoverage(manualReviewRes),
+    overdue:
+      !slaRowsRes.error
+      && slaRowsRes.count != null
+      && slaRows.length === slaRowsRes.count
+        ? 'complete'
+        : slaRows.length > 0
+          ? 'partial'
+          : 'unavailable',
+  } satisfies Partial<Record<keyof ClaimQueueCounts, ClaimMetricCoverage>>;
+
+  const awaitingInfoCoverage: ClaimMetricCoverage = [
+    coverageByMetric.awaitingEvidence,
+    coverageByMetric.awaitingCarrier,
+    coverageByMetric.awaiting3pl,
+    coverageByMetric.awaitingSupplier,
+  ].every((coverage) => coverage === 'complete')
+    ? 'complete'
+    : [awaitingEvidenceRes, awaitingCarrierRes, awaiting3plRes, awaitingSupplierRes]
+      .some((result) => (result.count ?? 0) > 0)
+      ? 'partial'
+      : 'unavailable';
+
+  const counts: ClaimQueueCounts = {
     total: totalRes.count ?? 0,
     active: activeRes.count ?? 0,
     unread: unreadRes.count ?? 0,
@@ -240,5 +287,24 @@ export async function fetchClaimQueueCounts(
     open: readyForDecisionRes.count ?? 0,
     underReview: manualReviewRes.count ?? 0,
     overdue,
+  };
+
+  const completeCoverageByMetric: Record<keyof ClaimQueueCounts, ClaimMetricCoverage> = {
+    ...coverageByMetric,
+    awaitingInfo: awaitingInfoCoverage,
+    closed: coverageByMetric.resolved,
+    escalated: coverageByMetric.manualReview,
+    open: coverageByMetric.readyForDecision,
+    underReview: coverageByMetric.manualReview,
+  };
+
+  return {
+    counts,
+    coverageByMetric: completeCoverageByMetric,
+    aggregateCoverage: Object.values(completeCoverageByMetric).every((coverage) => coverage === 'complete')
+      ? 'complete'
+      : Object.entries(counts).some(([metric, count]) => count > 0 && completeCoverageByMetric[metric as keyof ClaimQueueCounts] !== 'complete')
+        ? 'partial'
+        : 'unavailable',
   };
 }

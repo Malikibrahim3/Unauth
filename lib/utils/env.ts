@@ -40,6 +40,8 @@ const envSchema = z.object({
   SHOPIFY_API_SECRET: z.string().min(1).optional(),
   SHOPIFY_WEBHOOK_SECRET: z.string().min(1).optional(),
   GORGIAS_SUPPORT_WEBHOOK_SECRET: z.string().min(32).optional(),
+  /** Independent kill switch for the bounded Gorgias internal-note and tag writeback. */
+  GORGIAS_BOUNDED_WRITEBACK_ENABLED: z.string().optional(),
   FRESHDESK_SUPPORT_WEBHOOK_SECRET: z.string().min(32).optional(),
   ZENDESK_SUPPORT_WEBHOOK_SECRET: z.string().min(32).optional(),
   BIGCOMMERCE_CLIENT_ID: z.string().min(1).optional(),

@@ -516,7 +516,7 @@ function connectedProviderForPlan(providers: ProviderConnectionView[], plan: Evi
 }
 
 function slotProviderForPlan(providers: ProviderConnectionView[], plan: EvidenceSourcePlan, evidenceType: string): ProviderConnectionView | null {
-  return providers.find((provider) => provider.buildStatus === 'slot_only' && providerMatchesPlan(provider, plan, evidenceType)) ?? null;
+  return providers.find((provider) => provider.codeMaturity === 'slot_only' && providerMatchesPlan(provider, plan, evidenceType)) ?? null;
 }
 
 export function evaluateMissingLossCaseEvidence(input: {

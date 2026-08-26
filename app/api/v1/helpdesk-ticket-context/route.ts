@@ -14,7 +14,7 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 async function GETHandler(request: NextRequest) {
-  const authResult = await validateApiKey(request);
+  const authResult = await validateApiKey(request, 'cases:read');
   if (!isValidatedApiKey(authResult)) return withV1Cors(authResult, request);
 
   const service = createServiceClient();

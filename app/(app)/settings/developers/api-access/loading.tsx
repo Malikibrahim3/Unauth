@@ -1,4 +1,4 @@
-import { FormPageLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
+import { SettingsRouteLoading } from '@/components/settings/SettingsRouteLoading';
 export default function Loading() {
-  return <FormPageLoadingSkeleton />;
+  return <SettingsRouteLoading title="API access" layout="wide" />;
 }

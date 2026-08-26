@@ -42,18 +42,18 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
     return (
       <div
         className="rounded-md border p-5"
-        style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
+        style={{ borderColor: 'var(--uo-route-border-default)', background: 'var(--uo-route-surface-primary)' }}
       >
-        <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
+        <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
           You need an API key first
         </p>
-        <p className="ua-text-body mt-2" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-body mt-2" style={{ color: 'var(--uo-route-text-secondary)' }}>
           Create a key in API &amp; Integrations, then return here to install the extension.
         </p>
         <Link
           href="/sources/connected"
-          className="ua-text-working-title mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3"
-          style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+          className="ua-text-working-title mt-3 inline-flex h-8 items-center rounded-[var(--uo-route-radius-control)] px-3"
+          style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
         >
           Settings → API &amp; Integrations
         </Link>
@@ -66,8 +66,8 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
   return (
     <div className="space-y-3">
       <p
-        className="rounded-[var(--ua-radius-control)] border px-4 py-3 text-[length:var(--ua-text-metadata-size)]"
-        style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
+        className="rounded-[var(--uo-route-radius-control)] border px-4 py-3 text-[length:var(--uo-route-text-metadata-size)]"
+        style={{ borderColor: 'var(--uo-route-border-default)', color: 'var(--uo-route-text-secondary)' }}
       >
         Available for manual install while Chrome Web Store listing is pending.
       </p>
@@ -77,8 +77,8 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           type="button"
           onClick={() => void downloadZip()}
           disabled={downloading}
-          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 disabled:opacity-60"
-          style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--uo-route-radius-control)] px-3 disabled:opacity-60"
+          style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
         >
           <Download className="h-4 w-4" />
           {downloading ? 'Preparing zip…' : 'Download Chrome extension (.zip)'}
@@ -93,7 +93,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
         </p>
       </div>
 
-      <ol className="list-decimal space-y-2 pl-5 text-[length:var(--ua-text-caption-size)] leading-5" style={{ color: 'var(--ua-text-primary)' }}>
+      <ol className="list-decimal space-y-2 pl-5 text-[length:var(--uo-route-text-caption-size)] leading-5" style={{ color: 'var(--uo-route-text-primary)' }}>
         <li>Download the extension zip above and unzip it.</li>
         <li>
           In Chrome, open <strong>Extensions</strong> (from the puzzle icon or browser menu).
@@ -109,11 +109,11 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
 
       <div
         className="ua-text-dense rounded-md border p-4"
-        style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
+        style={{ borderColor: 'var(--uo-route-border-default)', background: 'var(--uo-route-surface-primary)' }}
       >
-        <p style={{ color: 'var(--ua-text-primary)' }}>
+        <p style={{ color: 'var(--uo-route-text-primary)' }}>
           Use key:{' '}
-          <span className="ua-text-dense font-mono" style={{ color: 'var(--ua-text-secondary)' }}>
+          <span className="ua-text-dense font-mono" style={{ color: 'var(--uo-route-text-secondary)' }}>
             {displayPrefix}
           </span>
         </p>

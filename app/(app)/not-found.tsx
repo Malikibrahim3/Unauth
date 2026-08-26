@@ -1,32 +1,31 @@
-import Link from 'next/link';
-import { PageFrame } from '@/components/ui/PageFrame';
-import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+'use client';
+
+import { usePathname } from 'next/navigation';
+import { ButtonLink, EmptyState, PageFrame, Surface } from '@/components/ui';
 
 export default function AppNotFound() {
+  const pathname = usePathname();
   return (
     <PageFrame
-      title="This page was not found"
-      subtitle="The page may have been renamed or you may not have access. Return to your queue or verify the current workspace."
+      surfaceId="authenticated-not-found"
+      archetype="P12"
+      title="This workspace page is unavailable"
+      subtitle="Unauth could not match the requested address to a page in the current workspace. Your selected workspace and saved records are unchanged."
+      meta={<span>Requested route · <code>{pathname}</code></span>}
     >
-      <AuthenticatedPanel bodyClassName="flex flex-wrap items-center justify-between gap-3 p-4">
-        <p className="text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">No record or workflow state was changed.</p>
-        <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/overview"
-              className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-              style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)', outlineColor: 'var(--ua-action-primary)' }}
-            >
-              Go to Overview
-            </Link>
-            <Link
-              href="/cases"
-              className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-              style={{ borderColor: 'var(--ua-border-subtle)', color: 'var(--ua-text-primary)', outlineColor: 'var(--ua-action-primary)' }}
-            >
-              Go to Cases
-            </Link>
-        </div>
-      </AuthenticatedPanel>
+      <Surface structure="working" as="section" data-state-id="authenticated-not-found">
+        <EmptyState
+          title="The destination could not be opened"
+          description="This state does not tell us whether the address changed, the record is unavailable, or access is restricted. Return to a known workspace page and reopen the item from there."
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              <ButtonLink href="/overview" variant="primary">Return to Overview</ButtonLink>
+              <ButtonLink href="/cases" variant="secondary">Open Cases</ButtonLink>
+              <ButtonLink href="/help?q=unavailable" variant="link">Get recovery help</ButtonLink>
+            </div>
+          }
+        />
+      </Surface>
     </PageFrame>
   );
 }

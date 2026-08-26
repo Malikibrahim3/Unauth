@@ -127,7 +127,7 @@ async function POSTHandler(request: NextRequest) {
   }
 
   // 6. Upload PDF to Storage
-  const storagePath = `${user.id}/${pkg.referenceNumber}.pdf`
+  const storagePath = `${ctx.merchantId}/evidence/${pkg.referenceNumber}.pdf`
   const { error: uploadError } = await serviceRole.storage
     .from(STORAGE_BUCKETS.EVIDENCE_PACKAGES)
     .upload(storagePath, pdfBuffer, {
@@ -178,6 +178,8 @@ async function POSTHandler(request: NextRequest) {
     contextType: 'evidence_summary',
     customerRef: customerProfileId,
     orderRef: disputedOrderId,
+    logicalOperationId: `evidence-package:${packageId}`,
+    sourceObject: { type: 'evidence_package', id: packageId },
     metadata: {
       request_source: 'app',
       evidence_package_id: packageId,

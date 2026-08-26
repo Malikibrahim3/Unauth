@@ -2,6 +2,7 @@ import { createClient, createAdminClient, createServiceClient } from '@/lib/supa
 import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { TEAM_INVITABLE_ROLES } from '@/lib/permissions/roles';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
@@ -9,7 +10,7 @@ import { withRequestLogging } from '@/lib/log';
 
 const inviteSchema = z.object({
   email: z.string().trim().email().transform((email) => email.toLowerCase()),
-  role: z.enum(['admin', 'analyst', 'viewer']),
+  role: z.enum(TEAM_INVITABLE_ROLES),
 });
 
 const TEAM_AUDIT_ACTIONS = [
@@ -43,7 +44,7 @@ async function GETHandler(req: NextRequest) {
       .order('created_at', { ascending: true }),
     scopedClient
       .from(TABLES.MERCHANT_MEMBERS)
-      .select('id, user_id, invited_email')
+      .select('id, user_id, invited_email, invite_status, created_at, accepted_at')
       .eq('role', 'owner')
       .neq('invite_status', 'revoked')
       .maybeSingle(),
@@ -61,10 +62,10 @@ async function GETHandler(req: NextRequest) {
         user_id: ownerUserId,
         invited_email: ownerEmail,
         role: 'owner',
-        invite_status: 'active',
+        invite_status: ownerRow?.invite_status ?? 'active',
         invited_by: null,
-        created_at: null,
-        accepted_at: null,
+        created_at: ownerRow?.created_at ?? null,
+        accepted_at: ownerRow?.accepted_at ?? null,
         is_account_owner: true,
       }
     : null;
@@ -126,6 +127,9 @@ async function POSTHandler(req: NextRequest) {
   }
 
   const { email, role } = parsed.data;
+  if (ctx.role === 'admin' && role === 'admin') {
+    return NextResponse.json({ error: 'Only the workspace owner can invite an administrator.' }, { status: 403 });
+  }
 
   const { data: existing } = await scopedClient
     .from(TABLES.MERCHANT_MEMBERS)

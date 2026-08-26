@@ -1,20 +1,26 @@
 'use client';
 
-import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { getButtonPresentation } from './buttonStyles';
 import { Spinner, type SpinnerSize } from './Spinner';
 
-const SPINNER_SIZE: Record<ButtonSize, SpinnerSize> = { sm: 'sm', md: 'md', lg: 'lg' };
-
-/*
- * Instrument Grade: `primary` is the ordinary accent forward action;
- * `commit` is the neutral near-black high-stakes action for financial
- * decisions, irreversible workflow steps, and confirmation. A region must not
- * show both at equal emphasis.
- */
 export type ButtonVariant = 'primary' | 'commit' | 'secondary' | 'ghost' | 'danger' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
+
+export const BUTTON_CLASS: Record<ButtonVariant, string> = {
+  primary: 'ua-button ua-button--primary',
+  commit: 'ua-button ua-button--commit',
+  secondary: 'ua-button ua-button--secondary',
+  ghost: 'ua-button ua-button--ghost',
+  danger: 'ua-button ua-button--danger',
+  link: 'ua-button ua-button--link',
+};
+
+export const BUTTON_SIZE_CLASS: Record<ButtonSize, string> = {
+  sm: 'ua-button--sm', md: 'ua-button--md', lg: 'ua-button--lg',
+};
+
+const SPINNER_SIZE: Record<ButtonSize, SpinnerSize> = { sm: 'sm', md: 'md', lg: 'lg' };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -23,40 +29,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   leadingIcon?: ReactNode;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    { variant = 'primary', size = 'md', loading = false, leadingIcon, className, children, disabled, style, ...props },
-    ref,
-  ) => {
-    const { className: buttonClassName, style: buttonStyle, iconSizeClass } = getButtonPresentation(
-      variant,
-      size,
-      className,
-      style,
-      Boolean(disabled) && !loading,
-    );
-
-    return (
-      <button
-        type="button"
-        ref={ref}
-        disabled={disabled || loading}
-        aria-busy={loading || undefined}
-        className={buttonClassName}
-        style={buttonStyle}
-        {...props}
-      >
-        <span className={cn('inline-flex items-center gap-2', loading && 'invisible')}>
-          {leadingIcon ? <span className={cn('shrink-0', iconSizeClass)} aria-hidden="true">{leadingIcon}</span> : null}
-          {children}
-        </span>
-        {loading ? (
-          <span className="absolute inset-0 inline-flex items-center justify-center" aria-hidden="true">
-            <Spinner size={SPINNER_SIZE[size]} label="" />
-          </span>
-        ) : null}
-      </button>
-    );
-  },
-);
-Button.displayName = 'Button';
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = 'primary', size = 'md', loading = false, leadingIcon, className, children, disabled, ...props },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={cn(BUTTON_CLASS[variant], BUTTON_SIZE_CLASS[size], className)}
+      {...props}
+    >
+      {loading ? <Spinner size={SPINNER_SIZE[size]} label="" /> : leadingIcon ? <span className="ua-button__icon" aria-hidden="true">{leadingIcon}</span> : null}
+      <span>{children}</span>
+    </button>
+  );
+});

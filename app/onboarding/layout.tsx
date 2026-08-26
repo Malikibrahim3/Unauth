@@ -9,6 +9,9 @@ export default function OnboardingRouteLayout({
     <div
       className="ua-auth-surface min-h-screen"
       data-ui-version="decision-ledger-instrument-grade-entry"
+      data-readiness="shell-ready auth-resolved"
+      data-shell-ready="true"
+      data-auth-resolved="true"
     >
       <AuthenticatedSurfaceTelemetry />
       {children}

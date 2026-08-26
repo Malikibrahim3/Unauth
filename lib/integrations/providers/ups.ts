@@ -11,7 +11,7 @@ export const upsProvider: IntegrationProvider = {
   // lifecycle at all, only on-demand evidence fetch for a matching tracking
   // number, and "health" only refreshes an OAuth token rather than probing
   // the tracking API. See docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md.
-  buildStatus: 'partial',
+  codeMaturity: 'partial',
   description: 'Direct UPS tracking, scan history, delivery status, signature, and photo proof when available.',
   evidenceCapabilities: ['tracking_number', 'tracking_events', 'delivery_status', 'delivery_photo', 'signature'],
   capabilities: { readTracking: true, readAttachments: true },

@@ -10,15 +10,17 @@ import { scoreIdentityFromSignals } from '@/lib/scorer';
 // recommendation phrasing in the UI. Under the payout-control direction merchant
 // rules legitimately surface a "recommended action" (docs/PRODUCT.md,
 // MVP_STEERING §19), so that phrasing is allowed. What stays banned is Unauth
-// itself deciding the claim — auto-deny/auto-reject and approve/deny/reject-claim
+// itself deciding the claim — auto-deny/auto-reject and approve/reject-claim
 // CTAs (MVP_STEERING §24: merchant rules recommend, Unauth never decides).
+// Challenge6's Case Detail authority deliberately includes "Deny claim" inside
+// the named Merchant decision section. That is a person-recorded choice, not an
+// automated recommendation, so it is not forbidden here.
 const FORBIDDEN_UI_PHRASES = [
   'before deciding',
   'auto-deny',
   'auto-reject',
   'approve claim',
   'reject claim',
-  'deny claim',
 ];
 
 describe('recommended_action deprecation', () => {

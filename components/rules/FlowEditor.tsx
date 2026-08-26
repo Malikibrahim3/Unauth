@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Button, Input, Card, Select, Textarea } from "@/components/ui";
+import { Button, Input, Select, Textarea } from "@/components/ui";
+import styles from './AutomationControls.module.css';
 
 export type FlowConditionDraft = {
   field: string;
@@ -30,9 +31,8 @@ export type FlowOutputDraft = (
         | "decision_request"
         | "recovery_outcome"
         | "sync_failure"
-        | "daily_work_summary"
         | "high_value_case_alert"
-        | "scheduled_report";
+        ;
       title: string;
       body?: string;
     }
@@ -167,10 +167,11 @@ export function FlowEditor({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5">
-      <Card unstyled variant="panel" className="p-4">
-        <h2 className="ua-text-working-title">Trigger</h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+    <form onSubmit={submit} className="grid gap-1">
+      <section className={styles.editorSection}>
+        <h2 className={styles.editorHeading}>Trigger and identity</h2>
+        <p className={styles.editorCopy}>Name the operator-facing intent and choose the source event that starts evaluation.</p>
+        <div className={styles.editorGrid}>
           <label className="ua-text-label">
             Flow name
             <Input
@@ -205,13 +206,13 @@ export function FlowEditor({
             placeholder="What work does this route, and why?"
           />
         </label>
-      </Card>
+      </section>
 
-      <Card unstyled variant="panel" className="p-4">
+      <section className={styles.editorSection}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="ua-text-working-title">Conditions</h2>
-            <p className="ua-text-metadata mt-1">
+            <h2 className={styles.editorHeading}>Conditions</h2>
+            <p className={styles.editorCopy}>
               All conditions must match. Use source event fields such as
               case.status or shipment.carrier.
             </p>
@@ -241,7 +242,7 @@ export function FlowEditor({
             {conditions.map((condition, index) => (
               <div
                 key={condition._editorKey}
-                className="grid gap-2 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)_auto]"
+                className={styles.editorRow}
               >
                 <Input
                   aria-label={`Condition ${index + 1} field`}
@@ -333,18 +334,18 @@ export function FlowEditor({
             ))}
           </div>
         ) : (
-          <p className="ua-text-caption-role mt-3 rounded-md border border-[var(--ua-warning)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
+          <p className="ua-text-caption-role mt-3 rounded-md border border-[var(--uo-route-warning)] bg-[var(--uo-route-warning-bg)] p-3 text-[var(--uo-route-warning)]">
             No conditions: every event with this trigger will run the actions
             below.
           </p>
         )}
-      </Card>
+      </section>
 
-      <Card unstyled variant="panel" className="p-4">
+      <section className={styles.editorSection}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="ua-text-working-title">Bounded action</h2>
-            <p className="ua-text-metadata mt-1">
+            <h2 className={styles.editorHeading}>Bounded actions</h2>
+            <p className={styles.editorCopy}>
               Flows can route work, request evidence, set deadlines, or request
               a notification. They cannot make or execute payout decisions.
             </p>
@@ -372,17 +373,17 @@ export function FlowEditor({
             />
           ))}
         </div>
-      </Card>
+      </section>
 
-      <Card unstyled variant="muted" className="p-4">
-        <p className="ua-text-label">
+      <section className={styles.editorSection}>
+        <p className={styles.editorHeading}>
           Readable summary
         </p>
         <ol className="ua-text-body mt-2 grid gap-2 sm:grid-cols-3">
           {summary.map((item, index) => (
             <li
               key={item}
-              className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-3 py-2"
+              className={styles.logicRow}
             >
               <span className="ua-text-metadata mr-2 font-mono">
                 {index + 1}
@@ -398,13 +399,13 @@ export function FlowEditor({
             </li>
           ))}
         </ul>
-      </Card>
+      </section>
       {error ? (
-        <p role="alert" className="ua-text-body text-[var(--ua-critical)]">
+        <p role="alert" className="ua-text-body text-[var(--uo-route-critical)]">
           {error}
         </p>
       ) : null}
-      <div className="flex justify-end gap-2">
+      <div className={styles.editorActions}>
         <Button
           type="button"
           variant="ghost"
@@ -455,7 +456,7 @@ function ActionEditor({
       });
   }
   return (
-    <div className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
+    <div className={styles.logicRow}>
       <div className="flex items-center justify-between gap-3">
         <label className="ua-text-label">
           Action {index + 1}

@@ -20,6 +20,10 @@ jest.mock('@/lib/claims/store', () => {
   };
 });
 
+jest.mock('@/lib/claims/externalAction', () => ({
+  prepareDecisionHandoff: jest.fn(),
+}));
+
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
 import { POST as claimsPost } from '@/app/api/claims/route';
@@ -33,6 +37,7 @@ import { POST as assignmentPost } from '@/app/api/claims/[claimId]/assignment/ro
 import { POST as snoozePost } from '@/app/api/claims/[claimId]/snooze/route';
 import { POST as responseCopiedPost } from '@/app/api/claims/[claimId]/customer-response-copied/route';
 import { upsertMerchantClaim, recordMerchantCaseDecision, upsertClaimEvidenceItem } from '@/lib/claims/store';
+import { prepareDecisionHandoff } from '@/lib/claims/externalAction';
 import { TABLES } from '@/lib/supabase/tables';
 
 const TEST_USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -261,7 +266,14 @@ function setupServiceClient(opts: {
 }
 
 describe('claims routes', () => {
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => {
+    jest.resetAllMocks();
+    (prepareDecisionHandoff as jest.Mock).mockResolvedValue({
+      status: 'not_applicable',
+      reason: 'This decision does not require the Shopify refund handoff.',
+      action: null,
+    });
+  });
 
   it('unauthenticated request rejected', async () => {
     setupAuth(false);
@@ -382,6 +394,14 @@ describe('claims routes', () => {
       decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
       domain_event_id: 'event-1', replayed: false,
     });
+    (prepareDecisionHandoff as jest.Mock).mockResolvedValue({
+      status: 'handoff_ready',
+      reason: null,
+      action: {
+        status: 'manual_required',
+        result: { external_action_performed: false, provider_response: null },
+      },
+    });
     const res = await outcomePost(
       mkReq('http://localhost/api/claims/c1/outcome', {
         decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
@@ -395,6 +415,14 @@ describe('claims routes', () => {
     }));
     expect(body.outcome.outcome).toBe('pending');
     expect(body.projection.note).toContain('No refund');
+    expect(body.external_handoff).toMatchObject({
+      status: 'handoff_ready',
+      action: expect.objectContaining({ status: 'manual_required' }),
+    });
+    expect(prepareDecisionHandoff).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      caseId: '550e8400-e29b-41d4-a716-446655440000',
+      decision: expect.objectContaining({ id: 'd1', decision: 'approved', amountMinor: 2500, currency: 'GBP' }),
+    }));
   });
 
   it('records a decision on a merchant-owned CSV/manual claim without shop domain', async () => {

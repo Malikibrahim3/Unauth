@@ -3,5 +3,5 @@
 import { OperationalRouteError } from '@/components/states/OperationalRouteError';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  return <OperationalRouteError title="This flow run could not be loaded" description="No workflow execution record was changed." reset={reset} fallbackHref="/controls/flows/runs" digest={error.digest} />;
+  return <OperationalRouteError title="This flow run could not be loaded" description="No workflow execution record was changed." reset={reset} fallbackHref="/controls/flows/runs" digest={error.digest} stateId="flow-run-error" />;
 }

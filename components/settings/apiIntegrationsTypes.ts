@@ -4,7 +4,9 @@ export type ApiKeyRow = {
   name: string;
   created_at: string;
   last_used_at: string | null;
+  revoked_at: string | null;
   rate_limit_per_minute: number;
+  scopes: import('@/lib/api/accessPolicy').ApiScope[];
 };
 
 export type HelpdeskOption = {

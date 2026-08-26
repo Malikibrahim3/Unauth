@@ -1,6 +1,86 @@
 import { labelFor } from "@/lib/copy/labels";
 import { shortRef } from "@/lib/ui/displayRef";
 import { label } from "@/lib/ui/labels";
+import { formatCurrencyNullable, formatNumber } from "@/lib/utils/format";
+
+export type CustomerDataCoverage = "complete" | "partial" | "unavailable";
+
+function observedCount(value: number | null, coverage: CustomerDataCoverage, noun: string): string {
+  if (coverage === "complete") {
+    if (value == null) return "Unavailable";
+    return `${formatNumber(value)} ${noun}${value === 1 ? "" : "s"}`;
+  }
+  if (value != null && value > 0) return `${formatNumber(value)} ${noun}${value === 1 ? "" : "s"} observed · partial`;
+  return "Unavailable";
+}
+
+export function buildCustomerProfileMetricLabels(input: {
+  orderCoverage: CustomerDataCoverage;
+  caseCoverage: CustomerDataCoverage;
+  merchantOrderCount: number | null;
+  merchantClaimCount: number | null;
+  merchantChargebackCount: number | null;
+  totalOrderValue: number | null;
+  totalRefundedValue: number | null;
+  displayCurrency: string | null;
+  merchantNarrative: string;
+}) {
+  const orderValueKnown = input.totalOrderValue != null && input.displayCurrency != null;
+  const caseValueKnown = input.totalRefundedValue != null && input.displayCurrency != null;
+  const lifetimeValue = orderValueKnown
+    ? `${formatCurrencyNullable(input.totalOrderValue, input.displayCurrency)}${input.orderCoverage === "complete" ? "" : " observed · partial"}`
+    : "Unavailable";
+  const orders = input.merchantOrderCount == null
+    ? "Unavailable"
+    : input.orderCoverage === "complete"
+      ? formatNumber(input.merchantOrderCount)
+      : input.merchantOrderCount > 0
+        ? `${formatNumber(input.merchantOrderCount)} observed · partial`
+        : "Unavailable";
+  const averageOrder = input.orderCoverage === "complete"
+    && input.merchantOrderCount != null
+    && input.merchantOrderCount > 0
+    && orderValueKnown
+    ? `Average ${formatCurrencyNullable(input.totalOrderValue! / input.merchantOrderCount, input.displayCurrency)}`
+    : "Average unavailable";
+  const caseContext = input.caseCoverage === "complete" && input.merchantClaimCount === 0
+    ? "No recorded cases"
+    : observedCount(input.merchantClaimCount, input.caseCoverage, "case");
+  const caseDescription = input.merchantChargebackCount != null && input.merchantChargebackCount > 0
+    ? observedCount(input.merchantChargebackCount, input.caseCoverage, "chargeback")
+    : input.caseCoverage === "complete"
+      ? input.merchantNarrative
+      : "Case history coverage incomplete";
+  const tiedValue = caseValueKnown
+    ? `${formatCurrencyNullable(input.totalRefundedValue, input.displayCurrency)}${input.orderCoverage === "complete" && input.caseCoverage === "complete" ? "" : " observed · partial"}`
+    : "Unavailable";
+  const caseRate = input.orderCoverage === "complete"
+    && input.caseCoverage === "complete"
+    && input.merchantOrderCount != null
+    && input.merchantOrderCount > 0
+    && input.merchantClaimCount != null
+    ? `${Math.round((input.merchantClaimCount / input.merchantOrderCount) * 100)}% case rate`
+    : "Case rate unavailable";
+
+  return {
+    lifetimeValue,
+    lifetimeValueDescription: input.orderCoverage === "complete" ? "Merchant-owned orders" : "Observed merchant-owned orders",
+    orders,
+    averageOrder,
+    caseContext,
+    caseDescription,
+    tiedValue,
+    caseRate,
+  };
+}
+
+export function linkageIndicatorBasis(input: {
+  identifierCount: number;
+  signalLabel: string;
+  observedOrderCount: number;
+}): string {
+  return `Basis: ${formatNumber(input.identifierCount)} distinct ${input.signalLabel} identifier${input.identifierCount === 1 ? "" : "s"} across ${formatNumber(input.observedOrderCount)} observed order${input.observedOrderCount === 1 ? "" : "s"}.`;
+}
 
 export function labelize(value: string) {
   return labelFor(value);

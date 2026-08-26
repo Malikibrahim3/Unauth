@@ -770,7 +770,7 @@ function baseCta(
     extras.push(`ticket_id=${encodeURIComponent(link.ticketRef.trim())}`);
   }
   if (claimId) {
-    extras.push(`focus=${encodeURIComponent(claimId)}`);
+    extras.push(`selected=${encodeURIComponent(claimId)}`);
   }
   const sep = base.includes('?') ? '&' : '?';
   const fragment = claimId ? '#case-investigations' : '';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { Button, Input, Modal, Select, Textarea } from '@/components/ui';
+import { BeforeYouConfirm, Button, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -200,8 +200,9 @@ export function InvestigationRequestDialog({
     <Modal
       open
       onClose={onClose}
-      title={existing ? 'Edit investigation draft' : 'Create investigation request'}
+      title={existing ? 'Edit investigation draft' : 'Request evidence from a partner'}
       description="Draft a targeted factual request. Nothing is sent until you explicitly send or mark it sent."
+      overlayId="investigation-request-modal"
       size="lg"
       closeOnBackdrop={!busy}
       footer={(
@@ -222,7 +223,7 @@ export function InvestigationRequestDialog({
     >
       <div className="space-y-4">
         {error ? (
-          <div role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
+          <div role="alert" className="ua-text-body rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3 text-[var(--uo-route-risk-critical)]">
             {error}
           </div>
         ) : null}
@@ -312,7 +313,7 @@ export function InvestigationRequestDialog({
               className="mt-1"
               value={recipient}
               onChange={(event) => setRecipient(event.target.value)}
-              placeholder="ops@partner.example"
+              placeholder="ops@partner.test"
             />
           </label>
           <label className="ua-text-body font-medium">
@@ -338,7 +339,7 @@ export function InvestigationRequestDialog({
           <label className="ua-text-body block font-medium">
             Override rationale
             <Textarea
-              className="mt-1 min-h-20 border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)]"
+              className="mt-1 min-h-20 border-[var(--uo-route-warning-border)] bg-[var(--uo-route-warning-bg)]"
               value={overrideRationale}
               onChange={(event) => setOverrideRationale(event.target.value)}
               placeholder="Explain why this target or question is more appropriate."
@@ -347,11 +348,18 @@ export function InvestigationRequestDialog({
           </label>
         ) : null}
         {selectedPartner?.contact_instructions ? (
-          <div className="ua-text-caption-role rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
-            <span className="font-semibold text-[var(--ua-text-primary)]">Partner instructions: </span>
+          <div className="ua-text-caption-role rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-muted)] p-3">
+            <span className="font-semibold text-[var(--uo-route-text-primary)]">Partner instructions: </span>
             {selectedPartner.contact_instructions}
           </div>
         ) : null}
+        <BeforeYouConfirm
+          objectSummary={`${caseId} · ${existing ? `investigation ${existing.id}` : 'new investigation draft'}`}
+          valueSummary="No financial value changes."
+          externalAction="None yet. Saving this form does not send email or submit through a partner portal."
+          reversible="Yes. The draft can be revised or cancelled before any explicit send action."
+          appendOnly={`${existing ? 'A draft-update audit event' : 'A new investigation draft'}${dueAt ? ` with response due ${dueAt.replace('T', ' ')}` : ' with no recorded deadline'}.`}
+        />
       </div>
     </Modal>
   );

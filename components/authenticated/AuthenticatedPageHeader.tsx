@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
+import Link from '@/components/navigation/AppNavLink';
 import styles from './AuthenticatedPageChrome.module.css';
 
 export type Breadcrumb = { label: string; href?: string };
@@ -13,6 +13,7 @@ type AuthenticatedPageHeaderProps = {
   meta?: ReactNode;
   tabs?: ReactNode;
   capabilityId?: string;
+  showCurrentBreadcrumb?: boolean;
 };
 
 /** Compact page chrome derived from the approved Overview composition. */
@@ -25,12 +26,18 @@ export function AuthenticatedPageHeader({
   meta,
   tabs,
   capabilityId,
+  showCurrentBreadcrumb = true,
 }: AuthenticatedPageHeaderProps) {
-  const visibleBreadcrumbs = breadcrumbs?.filter((item, index) => {
-    const isLast = index === breadcrumbs.length - 1;
+  const sourceBreadcrumbs = breadcrumbs?.length
+    ? breadcrumbs[0]?.label === 'Unauth'
+      ? breadcrumbs
+      : [{ label: 'Unauth', href: '/overview' }, ...breadcrumbs]
+    : [{ label: 'Unauth', href: '/overview' }];
+  const visibleBreadcrumbs = sourceBreadcrumbs.filter((item, index) => {
+    const isLast = index === sourceBreadcrumbs.length - 1;
     // The H1 is the current location. Keep only true parent links in the
     // breadcrumb row so a record name is not rendered twice above the fold.
-    return !(isLast && (!item.href || item.label === title));
+    return showCurrentBreadcrumb || !(isLast && (!item.href || item.label === title));
   });
 
   return (
@@ -39,7 +46,11 @@ export function AuthenticatedPageHeader({
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
           {visibleBreadcrumbs.map((item, index) => (
             <span key={item.href ?? item.label}>
-              {index > 0 ? <span className={styles.breadcrumbSeparator} aria-hidden="true"> / </span> : null}
+              {index > 0 ? (
+                <svg className={styles.breadcrumbSeparator} width="9" height="9" viewBox="0 0 9 9" aria-hidden="true">
+                  <path d="M3 2l3 2.5L3 7" fill="none" stroke="var(--uo-raw-C6C9CE, #C6C9CE)" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+              ) : null}
               {item.href ? <Link href={item.href}>{item.label}</Link> : <span aria-current="page">{item.label}</span>}
             </span>
           ))}
@@ -53,7 +64,7 @@ export function AuthenticatedPageHeader({
         </div>
         {actions ? <div className={styles.actions}>{actions}</div> : null}
       </div>
-      {meta ? <div className={styles.metaRow}>{meta}</div> : null}
+      {meta ? <div className={styles.metaRow} role="status" aria-label="Current scope and data truth">{meta}</div> : null}
       {tabs ? <div className={styles.tabsRow}>{tabs}</div> : null}
     </header>
   );

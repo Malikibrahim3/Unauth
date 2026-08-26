@@ -1,5 +1,5 @@
-import { ReportRecordsLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
+import { ReportsLoadingFrame } from '@/components/reports/ReportsLoadingFrame';
 
 export default function ReportRecordsLoading() {
-  return <ReportRecordsLoadingSkeleton />;
+  return <ReportsLoadingFrame view="records" />;
 }

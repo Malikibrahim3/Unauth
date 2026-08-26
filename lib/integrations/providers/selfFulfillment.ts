@@ -6,7 +6,7 @@ export const selfFulfillmentProvider: IntegrationProvider = {
   logoSrc: '/providers/self-fulfillment.svg',
   category: 'warehouse_3pl',
   authMode: 'manual_upload',
-  buildStatus: 'live',
+  codeMaturity: 'complete',
   description: 'Low-confidence staff confirmation for merchants without a WMS or 3PL.',
   evidenceCapabilities: ['self_reported_pack_confirmation', 'self_reported_pack_photo'],
   capabilities: { readFulfilment: true, uploadEvidence: true },

@@ -6,7 +6,7 @@ export const gorgiasProvider: IntegrationProvider = {
   logoSrc: '/providers/gorgias.png',
   category: 'helpdesk',
   authMode: 'api_key',
-  buildStatus: 'live',
+  codeMaturity: 'complete',
   description: 'Ticket messages, attachments, and claim context from Gorgias.',
   setupHref: '/sources/setup/gorgias',
   evidenceCapabilities: [

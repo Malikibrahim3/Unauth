@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Scale, ShieldAlert } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Bone, Button, Card, Modal, Select, StatusBadge, Textarea } from '@/components/ui';
+import { BeforeYouConfirm, Bone, Button, Card, Modal, Select, StatusBadge, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -133,8 +133,9 @@ function ResponsibilityDialog({
     <Modal
       open
       onClose={onClose}
-      title={correction ? 'Correct responsibility' : 'Confirm responsibility'}
+      title="Assess responsibility and recoverability"
       description="This is the merchant’s audited assessment. It does not make the customer decision or submit a recovery claim."
+      overlayId="responsibility-assessment-modal"
       size="lg"
       closeOnBackdrop={!busy}
       footer={(
@@ -148,7 +149,7 @@ function ResponsibilityDialog({
     >
       <div className="space-y-4">
         {error ? (
-          <div role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
+          <div role="alert" className="ua-text-body rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3 text-[var(--uo-route-risk-critical)]">
             {error}
           </div>
         ) : null}
@@ -214,7 +215,7 @@ function ResponsibilityDialog({
               {evidence.map((item) => (
                 <Card key={item.id} unstyled variant="muted" className="grid grid-cols-1 items-center gap-2 p-2.5 sm:grid-cols-[1fr_160px]">
                   <div className="min-w-0">
-                    <p className="ua-text-working-title truncate text-[var(--ua-text-primary)]">
+                    <p className="ua-text-working-title truncate text-[var(--uo-route-text-primary)]">
                       {item.title ?? item.evidence_type.replaceAll('_', ' ')}
                     </p>
                     <p className="ua-text-caption-role mt-0.5 line-clamp-2">
@@ -242,12 +243,19 @@ function ResponsibilityDialog({
         <label className="ua-text-body block font-medium">
           {correction ? 'Correction rationale' : 'Confirmation note (optional)'}
           <Textarea
-            className={`mt-1 min-h-24 ${correction ? 'border-[var(--ua-warning-border)]' : ''}`}
+            className={`mt-1 min-h-24 ${correction ? 'border-[var(--uo-route-warning-border)]' : ''}`}
             value={rationale}
             onChange={(event) => setRationale(event.target.value)}
             required={correction}
           />
         </label>
+        <BeforeYouConfirm
+          objectSummary={`${caseId} · responsibility assessment`}
+          valueSummary={recoverability === 'recoverable' ? 'Recoverable value remains bounded by the case’s confirmed loss.' : 'No financial value is changed by this assessment.'}
+          externalAction="None. Opening or submitting a recovery claim is a separate, explicit step."
+          reversible="A later assessment supersedes this one; both records remain visible."
+          appendOnly="A responsibility assessment and its cited supporting and conflicting evidence. The customer decision remains unchanged."
+        />
       </div>
     </Modal>
   );
@@ -272,12 +280,12 @@ export function ResponsibilityAssessmentCard({
     <Card unstyled as="section" variant="panel" className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <Scale className="mt-0.5 shrink-0 text-[var(--ua-action-primary)]" size={18} aria-hidden="true" />
+          <Scale className="mt-0.5 shrink-0 text-[var(--uo-route-action-primary)]" size={18} aria-hidden="true" />
           <div>
-            <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">
+            <p className="text-[length:var(--uo-route-text-metadata-size)] font-semibold text-[var(--uo-route-text-secondary)]">
               Responsibility
             </p>
-            <h2 className="ua-text-section-title mt-1 text-[var(--ua-text-primary)]">
+            <h2 className="ua-text-section-title mt-1 text-[var(--uo-route-text-primary)]">
               Advisory assessment and merchant confirmation
             </h2>
           </div>
@@ -293,7 +301,7 @@ export function ResponsibilityAssessmentCard({
       {loading && !data ? (
         <Bone className="mt-4 h-24" />
       ) : error || !projection ? (
-        <div role="alert" className="ua-text-body mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-[var(--ua-text-secondary)]">
+        <div role="alert" className="ua-text-body mt-4 rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-muted)] p-3 text-[var(--uo-route-text-secondary)]">
           Responsibility assessment is unavailable. No confirmation has been recorded.
         </div>
       ) : (
@@ -301,7 +309,7 @@ export function ResponsibilityAssessmentCard({
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Card unstyled variant="muted" className="p-3">
               <p className="ua-text-caption-role">Current responsibility</p>
-              <p className="ua-text-working-title mt-1 text-[var(--ua-text-primary)]">
+              <p className="ua-text-working-title mt-1 text-[var(--uo-route-text-primary)]">
                 {LOSS_ATTRIBUTION_DISPLAY[projection.loss_attribution ?? 'unknown']}
               </p>
               <p className="ua-text-caption-role mt-1">
@@ -312,7 +320,7 @@ export function ResponsibilityAssessmentCard({
             </Card>
             <Card unstyled variant="muted" className="p-3">
               <p className="ua-text-caption-role">Recovery route</p>
-              <p className="ua-text-working-title mt-1 text-[var(--ua-text-primary)]">
+              <p className="ua-text-working-title mt-1 text-[var(--uo-route-text-primary)]">
                 {LIKELY_OWNER_LABELS[projection.recovery_owner ?? 'unknown']}
               </p>
               <p className="ua-text-caption-role mt-1">
@@ -320,10 +328,10 @@ export function ResponsibilityAssessmentCard({
               </p>
             </Card>
           </div>
-          <div className="mt-3 flex items-start gap-2 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
+          <div className="mt-3 flex items-start gap-2 rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-muted)] p-3">
             {projection.responsibility_confirmation_state === 'unconfirmed'
-              ? <ShieldAlert className="mt-0.5 shrink-0 text-[var(--ua-warning)]" size={15} aria-hidden="true" />
-              : <CheckCircle2 className="mt-0.5 shrink-0 text-[var(--ua-success)]" size={15} aria-hidden="true" />}
+              ? <ShieldAlert className="mt-0.5 shrink-0 text-[var(--uo-route-warning)]" size={15} aria-hidden="true" />
+              : <CheckCircle2 className="mt-0.5 shrink-0 text-[var(--uo-route-success)]" size={15} aria-hidden="true" />}
             <p className="ua-text-caption-role leading-relaxed">
               {projection.responsibility_confirmation_state === 'unconfirmed'
                 ? 'This remains an advisory projection. Provider silence and “no issue found” do not assign responsibility.'
@@ -331,7 +339,7 @@ export function ResponsibilityAssessmentCard({
             </p>
           </div>
           {message ? (
-            <p role="status" className="ua-text-caption-role mt-3 text-[var(--ua-success)]">{message}</p>
+            <p role="status" className="ua-text-caption-role mt-3 text-[var(--uo-route-success)]">{message}</p>
           ) : null}
           {canMutate ? (
             <Button className="mt-3" size="sm" variant="secondary" onClick={() => setOpen(true)}>

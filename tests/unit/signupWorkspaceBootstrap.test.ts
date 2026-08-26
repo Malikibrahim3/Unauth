@@ -20,4 +20,11 @@ describe('clean-account workspace bootstrap', () => {
     expect(setupRoute).toContain('!connectionState.shopify || !connectionState.helpdesk');
     expect(setupRoute).toContain('!isBootstrap && !isSkipAction && !isDemo');
   });
+
+  it('requires workspace administration authority for an existing membership', () => {
+    expect(setupRoute).toContain('PERMISSIONS.MANAGE_SETTINGS');
+    expect(setupRoute).toContain('hasPermission(serviceClient, existingContext');
+    expect(setupRoute).toContain('Workspace administration permission is required.');
+    expect(setupRoute).toContain('Select an active workspace before changing its profile.');
+  });
 });

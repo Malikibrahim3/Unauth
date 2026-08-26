@@ -114,7 +114,6 @@
   padding-bottom: clamp(2rem, 4vw, 3.25rem);
 }
 
-.eyebrow,
 .contents > p,
 .footer > p {
   margin: 0;
@@ -130,7 +129,7 @@
   max-width: 16ch;
   margin: 0;
   color: var(--text);
-  font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Instrument Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(2.25rem, 5vw, 3.5rem);
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -168,6 +167,8 @@
   padding-left: 1rem;
 }
 
+.mobileContents { display: none; }
+
 .contents ol {
   display: grid;
   gap: 0.5rem;
@@ -188,6 +189,8 @@
   font-size: 1rem;
   line-height: 1.72;
 }
+
+.article table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
 
 .article > section + section {
   margin-top: clamp(2rem, 4vw, 3.5rem);
@@ -244,7 +247,8 @@
 
 .notice {
   margin-bottom: 2.5rem;
-  border-left: 3px solid var(--brand-product);
+  border: 1px solid color-mix(in srgb, var(--brand-product) 30%, var(--border-subtle));
+  border-radius: .5rem;
   background: var(--brand-product-soft);
   padding: 1rem 1.125rem;
   color: var(--text-secondary);
@@ -286,7 +290,7 @@
   max-width: 16ch;
   margin: 0;
   color: var(--text);
-  font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Instrument Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(2.25rem, 5vw, 3.5rem);
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -351,8 +355,35 @@
   }
 
   .contents {
-    position: static;
+    display: none;
+  }
+
+  .mobileContents {
+    display: block;
     margin-bottom: 2.5rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: .5rem;
+    padding: .75rem 1rem;
+  }
+
+  .mobileContents summary {
+    cursor: pointer;
+    color: var(--text);
+    font-size: .8125rem;
+    font-weight: 600;
+  }
+
+  .mobileContents ol {
+    display: grid;
+    gap: .5rem;
+    margin: .75rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mobileContents a {
+    color: var(--text-link);
+    font-size: .8125rem;
   }
 }
 
@@ -360,6 +391,7 @@
   .skipLink,
   .header,
   .contents,
+  .mobileContents,
   .footer {
     display: none;
   }

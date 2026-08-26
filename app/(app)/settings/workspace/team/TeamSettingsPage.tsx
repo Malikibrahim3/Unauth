@@ -11,7 +11,15 @@ export default function TeamSettingsPage() {
   return (
     <SettingsPageShell
       title="Team"
-      subtitle="Invite analysts to investigate customers alongside you. The account owner manages billing and team access."
+      subtitle="Invite members, apply exact roles, transfer ownership, and remove access. Every role change is enforced by the server and retained in the audit trail."
+      surfaceId="team-management"
+      layout="wide"
+      truth={{
+        access: "Workspace owner or a permitted administrator",
+        currentState: "Active membership, pending invitations, roles, and ownership",
+        saveBehavior: "Each invite or access change is confirmed separately by the server",
+        impact: "Changes workspace access and append an audit event; ownership transfer is separately confirmed",
+      }}
     >
       <TeamManagementClient />
     </SettingsPageShell>

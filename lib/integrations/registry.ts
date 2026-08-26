@@ -12,9 +12,10 @@ import { stripeProvider } from '@/lib/integrations/providers/stripe';
 import { upsProvider } from '@/lib/integrations/providers/ups';
 import { woocommerceProvider } from '@/lib/integrations/providers/woocommerce';
 import { zendeskProvider } from '@/lib/integrations/providers/zendesk';
+import { plannedCatalogueProviders } from '@/lib/integrations/providers/plannedCatalogue';
 import type {
   CapabilityEvidenceLevel,
-  IntegrationBuildStatus,
+  IntegrationCodeMaturity,
   IntegrationCategory,
   IntegrationProvider,
   LifecycleCapability,
@@ -37,6 +38,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
   shipbobProvider,
   stripeProvider,
   carrierClaimsProvider,
+  ...plannedCatalogueProviders,
 ];
 
 const providerById = new Map(INTEGRATION_PROVIDERS.map((provider) => [provider.id, provider]));
@@ -86,8 +88,8 @@ export function integrationProvidersByCategory(): Record<IntegrationCategory, In
   } as Record<IntegrationCategory, IntegrationProvider[]>);
 }
 
-export function listProvidersByBuildStatus(status: IntegrationBuildStatus): IntegrationProvider[] {
-  return INTEGRATION_PROVIDERS.filter((provider) => provider.buildStatus === status);
+export function listProvidersByCodeMaturity(status: IntegrationCodeMaturity): IntegrationProvider[] {
+  return INTEGRATION_PROVIDERS.filter((provider) => provider.codeMaturity === status);
 }
 
 const EVIDENCE_RANK: Record<CapabilityEvidenceLevel, number> = {
@@ -151,7 +153,7 @@ export function hasValidControlledRuntimeEvidence(
  * - `planned`: nothing applicable has even been implemented.
  */
 export function deriveProviderDisplayStage(provider: IntegrationProvider): ProviderDisplayStage {
-  if (provider.buildStatus === 'slot_only') return 'planned';
+  if (provider.codeMaturity === 'slot_only') return 'planned';
 
   const dims = provider.lifecycle ?? [];
   const applicable = dims.filter((dim) => dim.applicability === 'applicable');

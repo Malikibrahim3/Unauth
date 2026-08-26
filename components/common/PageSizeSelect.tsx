@@ -40,7 +40,7 @@ function PageSizeSelectInner({
   return (
     <div className="ua-text-caption-role flex min-w-0 flex-wrap items-center gap-2">
       <span className="shrink-0">{label}</span>
-      <div className="inline-flex shrink-0 overflow-hidden rounded-[var(--ua-radius-control)] border" style={{ borderColor: 'var(--ua-border-control)', background: 'var(--ua-surface-primary)' }}>
+      <div className="inline-flex shrink-0 overflow-hidden rounded-[var(--uo-route-radius-control)] border" style={{ borderColor: 'var(--uo-route-border-control)', background: 'var(--uo-route-surface-primary)' }}>
         {PAGE_SIZES.map((size) => {
           const active = size === activePageSize;
           return (
@@ -50,10 +50,10 @@ function PageSizeSelectInner({
               scroll={false}
               className={`ua-text-label inline-flex items-center px-2.5 transition-colors ${
                 active
-                  ? 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[inset_0_-2px_0_0_var(--ua-accent-500)]'
-                  : 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]'
+                  ? 'bg-[var(--uo-route-surface-primary)] text-[var(--uo-route-text-primary)] shadow-[inset_0_-2px_0_0_var(--uo-route-accent-500)]'
+                  : 'bg-[var(--uo-route-surface-primary)] text-[var(--uo-route-text-secondary)] hover:bg-[var(--uo-route-surface-hover)]'
               }`}
-              style={{ height: 'calc(var(--ua-control-height-md) - 2px)' }}
+              style={{ height: 'calc(var(--uo-route-control-height-md) - 2px)' }}
               aria-current={active ? 'page' : undefined}
             >
               {size}

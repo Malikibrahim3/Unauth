@@ -14,49 +14,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { TABLES } from '@/lib/supabase/tables';
+import type { Role } from './roles';
+import { PERMISSIONS, type Permission } from './constants';
+
+export { TEAM_INVITABLE_ROLES, TEAM_ROLES } from './roles';
+export type { InvitableRole, Role } from './roles';
+export { PERMISSIONS } from './constants';
+export type { Permission } from './constants';
 
 // ---------------------------------------------------------------------------
 // Permissions – every granular capability in the system
 // ---------------------------------------------------------------------------
-export const PERMISSIONS = {
-  // ── Read / view ──────────────────────────────────────────────────────────
-  VIEW_DASHBOARD:         'view_dashboard',
-  VIEW_AUDIT:             'view_audit',
-  VIEW_CUSTOMERS:         'view_customers',
-  VIEW_LOOKUP:            'view_lookup',
-  VIEW_WATCHLIST:         'view_watchlist',
-  VIEW_CHARGEBACKS:       'view_chargebacks',
-  VIEW_INBOX:             'view_inbox',
-  VIEW_SAVED:             'view_saved',
-  VIEW_TEAM:              'view_team',
-  VIEW_SETTINGS:          'view_settings',
-  VIEW_AUDIT_TRAIL:       'view_audit_trail',   // ← owner/admin only by default
-  MANAGE_WORK_VIEWS:      'manage_work_views',
-
-  // ── Data actions ─────────────────────────────────────────────────────────
-  EXPORT_AUDIT:           'export_audit',
-  LOOKUP_CUSTOMER:        'lookup_customer',
-  UPDATE_CUSTOMER_STATUS: 'update_customer_status',
-  ADD_CUSTOMER_NOTE:      'add_customer_note',
-  DELETE_CUSTOMER_NOTE:   'delete_customer_note',
-  MANAGE_WATCHLIST:       'manage_watchlist',
-  GENERATE_EVIDENCE:      'generate_evidence',
-  SUBMIT_FRAUD_FEEDBACK:  'submit_fraud_feedback',
-  SUBMIT_PAYOUT_DECISIONS: 'submit_payout_decisions', // review/decide/record on support payout cases
-  DISMISS_TRANSACTION:    'dismiss_transaction',
-  HIDE_JOB:               'hide_job',
-
-  // ── Admin / privileged ───────────────────────────────────────────────────
-  BULK_DELETE:            'bulk_delete',
-  MANAGE_TEAM:            'manage_team',
-  MANAGE_SETTINGS:        'manage_settings',
-  GRANT_PERMISSIONS:      'grant_permissions',  // only owner
-} as const;
-
-export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
-
-export type Role = 'owner' | 'admin' | 'analyst' | 'viewer';
-
 // ---------------------------------------------------------------------------
 // Default permission sets per role
 // ---------------------------------------------------------------------------
@@ -81,6 +49,7 @@ const ANALYST_PERMISSIONS: Permission[] = [
   PERMISSIONS.GENERATE_EVIDENCE,
   PERMISSIONS.SUBMIT_FRAUD_FEEDBACK,
   PERMISSIONS.SUBMIT_PAYOUT_DECISIONS,
+  PERMISSIONS.MANAGE_WORK,
   PERMISSIONS.DISMISS_TRANSACTION,
 ];
 
@@ -132,6 +101,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   generate_evidence:       'Generate Evidence Packages',
   submit_fraud_feedback:   'Submit Claim Feedback',
   submit_payout_decisions: 'Review & Decide Payout Cases',
+  manage_work:             'Manage Work Tasks',
   dismiss_transaction:     'Dismiss matched transactions',
   hide_job:                'Hide Upload Jobs',
   bulk_delete:             'Bulk Delete Data',

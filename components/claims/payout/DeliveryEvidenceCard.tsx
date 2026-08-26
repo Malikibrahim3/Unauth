@@ -23,17 +23,17 @@ export function DeliveryEvidenceCard({
     <section
       className="rounded-md p-4 border"
       style={{
-        borderColor: "var(--ua-border-subtle)",
-        background: "var(--ua-surface-primary)",
+        borderColor: "var(--uo-route-border-subtle)",
+        background: "var(--uo-route-surface-primary)",
       }}
     >
       <p
         className="ua-text-label mb-3"
-        style={{ color: "var(--ua-text-secondary)" }}
+        style={{ color: "var(--uo-route-text-secondary)" }}
       >
         Delivery evidence
       </p>
-      <p className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>
+      <p className="ua-text-working-title" style={{ color: "var(--uo-route-text-primary)" }}>
         {line}
       </p>
       <dl className="ua-text-metadata mt-3 grid gap-2 sm:grid-cols-2">
@@ -58,8 +58,8 @@ export function DeliveryEvidenceCard({
         />
       </dl>
       <div
-        className="mt-3 flex flex-wrap gap-2 text-[length:var(--ua-text-metadata-size)]"
-        style={{ color: "var(--ua-text-tertiary)" }}
+        className="mt-3 flex flex-wrap gap-2 text-[length:var(--uo-route-text-metadata-size)]"
+        style={{ color: "var(--uo-route-text-tertiary)" }}
       >
         <CapabilityPill
           label="Delivery photo"
@@ -109,8 +109,8 @@ export function DeliveryEvidenceCard({
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt style={{ color: "var(--ua-text-tertiary)" }}>{label}</dt>
-      <dd className="font-medium" style={{ color: "var(--ua-text-secondary)" }}>
+      <dt style={{ color: "var(--uo-route-text-tertiary)" }}>{label}</dt>
+      <dd className="font-medium" style={{ color: "var(--uo-route-text-secondary)" }}>
         {value}
       </dd>
     </div>
@@ -135,7 +135,7 @@ function CapabilityPill({
   return (
     <span
       className="rounded-full border px-2 py-0.5"
-      style={{ borderColor: "var(--ua-border-subtle)" }}
+      style={{ borderColor: "var(--uo-route-border-subtle)" }}
     >
       {copy}
     </span>

@@ -9,7 +9,7 @@ import { RECOVERY_CASE_STATUSES } from '@/lib/recoveries/types';
 export const dynamic = 'force-dynamic';
 
 const actionSchema = z.object({
-  action: z.enum(['ready', 'submitted', 'chased', 'approved', 'partially_approved', 'rejected', 'appealed', 'paid', 'closed_unrecoverable']),
+  action: z.enum(['ready', 'submitted', 'chased', 'approved', 'partially_approved', 'rejected', 'appealed', 'closed_unrecoverable']),
   note: z.string().trim().max(2_000).optional(),
   amountMinor: z.number().int().min(0).optional(),
   idempotencyKey: z.string().trim().min(8).max(200),
@@ -22,7 +22,6 @@ const actionStatus: Record<Exclude<z.infer<typeof actionSchema>['action'], 'chas
   partially_approved: 'partially_approved',
   rejected: 'rejected',
   appealed: 'appealed',
-  paid: 'paid',
   closed_unrecoverable: 'closed_unrecoverable',
 };
 
@@ -44,14 +43,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!parsed.success) return NextResponse.json({ error: 'Invalid recovery action', details: parsed.error.flatten() }, { status: 400 });
 
   const { action, note, amountMinor, idempotencyKey } = parsed.data;
-  if (['submitted', 'rejected', 'appealed', 'closed_unrecoverable'].includes(action) && !note?.trim()) {
-    return NextResponse.json({ error: 'A note is required for this recovery action.' }, { status: 400 });
+  if (!note?.trim()) {
+    return NextResponse.json({ error: 'A source note is required for every recovery action.' }, { status: 400 });
   }
-  if (['approved', 'partially_approved', 'paid'].includes(action) && amountMinor == null) {
+  if (action === 'ready' && (!recoveryCase.evidence_complete || recoveryCase.evidence_missing.length > 0)) {
+    return NextResponse.json({ error: 'Required evidence must be complete before this recovery can be marked ready.' }, { status: 409 });
+  }
+  if (['approved', 'partially_approved'].includes(action) && amountMinor == null) {
     return NextResponse.json({
-      error: action === 'paid'
-        ? 'A cumulative amount actually received is required.'
-        : 'The approved amount is required.',
+      error: 'The approved amount is required.',
     }, { status: 400 });
   }
   try {
@@ -71,7 +71,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       recoveryCaseId: id,
       status: actionStatus[action],
       note,
-      amountMinor: ['approved', 'partially_approved', 'paid'].includes(action) ? amountMinor : undefined,
+      amountMinor: ['approved', 'partially_approved'].includes(action) ? amountMinor : undefined,
       actorUserId: user.id,
       idempotencyKey,
     });

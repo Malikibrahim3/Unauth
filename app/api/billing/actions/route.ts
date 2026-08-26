@@ -22,11 +22,17 @@ import {
   upgradeSubscriptionImmediate,
 } from '@/lib/billing/stripeClient';
 import { getAppUrl } from '@/lib/utils/appUrl';
+import { safeRedirectPath } from '@/lib/auth/safeRedirect';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { sendEmail } from '@/lib/email/send';
 import { env } from '@/lib/utils/env';
+import {
+  markSubscriptionIntentStatus,
+  markSubscriptionIntentStatusById,
+  persistSubscriptionIntent,
+} from '@/lib/billing/subscriptionIntent';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,8 +47,15 @@ const bodySchema = z.object({
     'resume',
     'contact_scale',
   ]),
-  planId: z.enum(['pro', 'growth', 'free']).optional(),
+  planId: z.enum(['pro', 'growth', 'free', 'scale']).optional(),
+  returnTo: z.string().max(2048).optional(),
 });
+
+function appDestination(appUrl: string, path: string, state?: Record<string, string>) {
+  const destination = new URL(path, appUrl);
+  for (const [key, value] of Object.entries(state ?? {})) destination.searchParams.set(key, value);
+  return destination.toString();
+}
 
 export async function POST(req: NextRequest) {
   const supabase = createClient();
@@ -59,12 +72,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { action, planId } = parsed.data;
+  const { action, planId, returnTo } = parsed.data;
   const state = await getMerchantBillingState(service, ctx.merchantId);
   if (!state) return NextResponse.json({ error: 'Billing state not found' }, { status: 404 });
 
   const appUrl = getAppUrl();
-  const returnPath = '/settings/billing';
+  const returnPath = returnTo ? safeRedirectPath(returnTo) : '/settings/billing';
+  const planSelectionAction = ['checkout', 'upgrade', 'downgrade', 'contact_scale'].includes(action);
+  let selectionIntent: Awaited<ReturnType<typeof persistSubscriptionIntent>> | null = null;
+  if (planSelectionAction) {
+    if (!planId) return NextResponse.json({ error: 'planId required' }, { status: 400 });
+    const suppliedKey = req.headers.get('idempotency-key')?.trim();
+    const requestKey = suppliedKey && /^[A-Za-z0-9:_-]{8,128}$/.test(suppliedKey)
+      ? suppliedKey
+      : `${action}:${planId}:${state.subscription.currentPeriodStart}`;
+    selectionIntent = await persistSubscriptionIntent(service, {
+      merchantId: ctx.merchantId,
+      planId,
+      requestedBy: user.id,
+      logicalOperationId: `billing:${user.id}:${requestKey}`,
+      source: 'billing',
+    });
+  }
 
   if (action === 'contact_scale') {
     const contactEmail = env.BILLING_CONTACT_EMAIL ?? 'hello@unauth.co';
@@ -87,10 +116,20 @@ export async function POST(req: NextRequest) {
     }
     if (action === 'upgrade' && planId) {
       await applyPlanUpgrade(service, ctx.merchantId, planId, { sendEmail: 'plan_upgraded' });
+      await markSubscriptionIntentStatus(service, {
+        merchantId: ctx.merchantId,
+        planId,
+        status: 'confirmed',
+      });
       return NextResponse.json({ ok: true, devMode: true, message: 'Plan upgraded (Stripe not configured).' });
     }
     if (action === 'downgrade' && planId) {
       const result = await scheduleDowngrade(service, ctx.merchantId, planId);
+      await markSubscriptionIntentStatus(service, {
+        merchantId: ctx.merchantId,
+        planId,
+        status: 'confirmed',
+      });
       return NextResponse.json({ ok: true, devMode: true, ...result });
     }
     if (action === 'topup') {
@@ -106,15 +145,23 @@ export async function POST(req: NextRequest) {
       if (!planId) return NextResponse.json({ error: 'planId required' }, { status: 400 });
       const priceId = getPlanStripePriceId(planId);
       if (!priceId) return NextResponse.json({ error: 'Plan not available for checkout' }, { status: 400 });
-      const url = await createSubscriptionCheckoutSession({
+      const session = await createSubscriptionCheckoutSession({
         customerId: state.subscription.stripeCustomerId ?? undefined,
         customerEmail: state.subscription.stripeCustomerId ? undefined : user.email,
         priceId,
         merchantId: ctx.merchantId,
-        successUrl: `${appUrl}${returnPath}?checkout=success`,
-        cancelUrl: `${appUrl}${returnPath}?checkout=cancelled`,
+        planId,
+        subscriptionIntentId: selectionIntent!.id,
+        successUrl: appDestination(appUrl, returnPath, { checkout: 'success' }),
+        cancelUrl: appDestination(appUrl, returnPath, { checkout: 'cancelled' }),
       });
-      return NextResponse.json({ url });
+      await markSubscriptionIntentStatusById(service, {
+        merchantId: ctx.merchantId,
+        intentId: selectionIntent!.id,
+        status: 'checkout_created',
+        checkoutSessionId: session.id,
+      });
+      return NextResponse.json({ url: session.url });
     }
     case 'topup': {
       const priceId = env.STRIPE_PRICE_TOPUP ?? null;
@@ -125,8 +172,8 @@ export async function POST(req: NextRequest) {
         customerId: state.subscription.stripeCustomerId,
         priceId,
         merchantId: ctx.merchantId,
-        successUrl: `${appUrl}${returnPath}?topup=success`,
-        cancelUrl: `${appUrl}${returnPath}?topup=cancelled`,
+        successUrl: appDestination(appUrl, returnPath, { topup: 'success' }),
+        cancelUrl: appDestination(appUrl, returnPath, { topup: 'cancelled' }),
       });
       return NextResponse.json({ url });
     }
@@ -136,7 +183,7 @@ export async function POST(req: NextRequest) {
       }
       const url = await createBillingPortalSession({
         customerId: state.subscription.stripeCustomerId,
-        returnUrl: `${appUrl}${returnPath}`,
+        returnUrl: appDestination(appUrl, returnPath),
       });
       return NextResponse.json({ url });
     }
@@ -158,16 +205,29 @@ export async function POST(req: NextRequest) {
           newPriceId: priceId,
         });
       } else if (priceId) {
-        const url = await createSubscriptionCheckoutSession({
+        const session = await createSubscriptionCheckoutSession({
           customerEmail: user.email,
           priceId,
           merchantId: ctx.merchantId,
-          successUrl: `${appUrl}${returnPath}?checkout=success`,
-          cancelUrl: `${appUrl}${returnPath}?checkout=cancelled`,
+          planId,
+          subscriptionIntentId: selectionIntent!.id,
+          successUrl: appDestination(appUrl, returnPath, { checkout: 'success' }),
+          cancelUrl: appDestination(appUrl, returnPath, { checkout: 'cancelled' }),
         });
-        return NextResponse.json({ url });
+        await markSubscriptionIntentStatusById(service, {
+          merchantId: ctx.merchantId,
+          intentId: selectionIntent!.id,
+          status: 'checkout_created',
+          checkoutSessionId: session.id,
+        });
+        return NextResponse.json({ url: session.url });
       }
       await applyPlanUpgrade(service, ctx.merchantId, planId, { sendEmail: 'plan_upgraded' });
+      await markSubscriptionIntentStatus(service, {
+        merchantId: ctx.merchantId,
+        planId,
+        status: 'confirmed',
+      });
       return NextResponse.json({ ok: true, message: 'Plan upgraded.' });
     }
     case 'downgrade': {
@@ -176,6 +236,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Not a downgrade' }, { status: 400 });
       }
       const result = await scheduleDowngrade(service, ctx.merchantId, planId);
+      await markSubscriptionIntentStatus(service, {
+        merchantId: ctx.merchantId,
+        planId,
+        status: 'confirmed',
+      });
       return NextResponse.json({ ok: true, ...result });
     }
     case 'cancel': {

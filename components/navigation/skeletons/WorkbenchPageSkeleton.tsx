@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 import { Bone } from './primitives';
 import { AuthenticatedChartSkeleton, type AuthChartSkeletonVariant } from './AuthenticatedChartSkeleton';
+import { LoadingRecovery } from './LoadingRecovery';
 
 const KPI_SLOT_KEYS = [
   'kpi-slot-1',
@@ -25,13 +26,13 @@ function InsightBandSkeleton() {
       className="flex items-center gap-3"
       style={{
         padding: '12px 14px',
-        border: '1px solid var(--ua-border-default)',
-        borderRadius: 'var(--ua-radius-surface)',
-        background: 'var(--ua-surface-primary)',
+        border: '1px solid var(--uo-route-border-default)',
+        borderRadius: 'var(--uo-route-radius-surface)',
+        background: 'var(--uo-route-surface-primary)',
         boxShadow: 'none',
       }}
     >
-      <Bone className="h-[30px] w-[30px] rounded-[var(--ua-radius-surface)]" />
+      <Bone className="h-[30px] w-[30px] rounded-[var(--uo-route-radius-surface)]" />
       <Bone className="h-3 w-64 max-w-full" />
     </div>
   );
@@ -47,9 +48,9 @@ function RailSkeleton() {
             key={cardKey}
             style={{
               padding: 14,
-              border: '1px solid var(--ua-border-default)',
-              borderRadius: 'var(--ua-radius-surface)',
-              background: 'var(--ua-surface-primary)',
+              border: '1px solid var(--uo-route-border-default)',
+              borderRadius: 'var(--uo-route-radius-surface)',
+              background: 'var(--uo-route-surface-primary)',
               boxShadow: 'none',
             }}
           >
@@ -78,6 +79,7 @@ export function WorkbenchPageSkeleton({
   visualVariant,
   showInsight = false,
   showRail = false,
+  title = 'workspace page',
   children,
 }: {
   showNav?: boolean;
@@ -90,16 +92,18 @@ export function WorkbenchPageSkeleton({
   showInsight?: boolean;
   /** Reserve the two-column side-summary rail. */
   showRail?: boolean;
+  /** Truthful route identity while final values remain unavailable. */
+  title?: string;
   children: ReactNode;
 }) {
   const mainPanel = <section className={cn(styles.panel, styles.mainPanel)}>{children}</section>;
   return (
-    <div role="status" aria-busy="true" aria-label="Loading page" data-skeleton-variant="workbench">
+    <div role="status" aria-busy="true" aria-label={`Loading ${title}`} data-skeleton-variant="workbench">
       <header className={styles.pageHeader}>
         <div className={styles.headerTop}>
           <div className="min-w-0 space-y-2">
-            <Bone className="h-2.5 w-20" />
-            <Bone className="h-5 w-40" />
+            <p className="ua-loading-context__scope">Current workspace · route scope preserved</p>
+            <p className="ua-loading-context__title">Preparing {title}</p>
             {showNav ? <Bone className="h-3 w-80 max-w-full" /> : null}
           </div>
           {showActions ? <Bone className="h-8 w-28" /> : null}
@@ -141,6 +145,7 @@ export function WorkbenchPageSkeleton({
           )}
         </div>
       </div>
+      <LoadingRecovery title={title} />
     </div>
   );
 }

@@ -42,6 +42,7 @@ export type PageFrameProps = {
   /** At most one secondary and one primary action (§5.1). */
   actions?: ReactNode;
   headerCapabilityId?: string;
+  showCurrentBreadcrumb?: boolean;
 
   // §5.1 body regions, in order.
   /** Adaptive KPI group (§5.3). Omit for detail/builder/settings routes. */
@@ -54,6 +55,8 @@ export type PageFrameProps = {
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  surfaceId?: string;
+  archetype?: string;
 };
 
 export function PageFrame({
@@ -65,15 +68,18 @@ export function PageFrame({
   tabs,
   actions,
   headerCapabilityId,
+  showCurrentBreadcrumb,
   metrics,
   primaryVisual,
   toolbar,
   children,
   footer,
   className,
+  surfaceId,
+  archetype,
 }: PageFrameProps) {
   return (
-    <div className={className}>
+    <div className={className ? `${styles.pageFrame} ${className}` : styles.pageFrame} data-surface-id={surfaceId} data-archetype={archetype}>
       {title ? (
         <AuthenticatedPageHeader
           eyebrow={eyebrow}
@@ -84,6 +90,7 @@ export function PageFrame({
           tabs={tabs}
           actions={actions}
           capabilityId={headerCapabilityId}
+          showCurrentBreadcrumb={showCurrentBreadcrumb}
         />
       ) : null}
       <div className={styles.pageBody}>

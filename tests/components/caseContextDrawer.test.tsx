@@ -3,7 +3,7 @@
  */
 import React from "react";
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { CaseContextDrawer } from "@/components/cases/CaseContextDrawer";
 
 describe("CaseContextDrawer", () => {
@@ -49,9 +49,9 @@ describe("CaseContextDrawer", () => {
     ).toHaveAttribute("href", "/cases/case-1");
 
     // The drawer's focus trap moves initial focus to its primary close
-    // control (the header "Close" button) so keyboard users can dismiss
+    // control (the header close button) so keyboard users can dismiss
     // immediately without tabbing through the panel content.
-    const closeButton = screen.getByRole("button", { name: "Close" });
+    const closeButton = within(screen.getByRole("dialog")).getByRole("button", { name: "Close panel" });
     await waitFor(() => expect(closeButton).toHaveFocus());
 
     fireEvent.click(closeButton);

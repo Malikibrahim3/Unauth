@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { TABLES } from './lib/supabase/tables';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createRequestId, merchantIdHeader, requestIdHeader } from '@/lib/log';
+import { authReturnPath } from '@/lib/auth/routeContinuity';
 
 export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
@@ -81,14 +82,15 @@ export async function proxy(request: NextRequest) {
   if (!user && !isAuthRoute && !isApiRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    url.search = '';
+    url.searchParams.set('next', authReturnPath(`${pathname}${request.nextUrl.search}`));
     const response = NextResponse.redirect(url);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;
   }
 
   if (user && pathname === '/login') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/overview';
+    const url = new URL(authReturnPath(request.nextUrl.searchParams.get('next')), request.nextUrl.origin);
     const response = NextResponse.redirect(url);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;

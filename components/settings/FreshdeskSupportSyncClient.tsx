@@ -225,17 +225,17 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
           style={{
             borderColor:
               state.message.type === 'error'
-                ? 'color-mix(in srgb, var(--ua-risk-critical) 30%, var(--ua-border-default))'
+                ? 'color-mix(in srgb, var(--uo-route-risk-critical) 30%, var(--uo-route-border-default))'
                 : state.message.type === 'warning'
-                ? 'color-mix(in srgb, var(--ua-warning) 30%, var(--ua-border-default))'
-                : 'color-mix(in srgb, var(--ua-success) 30%, var(--ua-border-default))',
+                ? 'color-mix(in srgb, var(--uo-route-warning) 30%, var(--uo-route-border-default))'
+                : 'color-mix(in srgb, var(--uo-route-success) 30%, var(--uo-route-border-default))',
             background:
               state.message.type === 'error'
-                ? 'color-mix(in srgb, var(--ua-risk-critical) 6%, var(--ua-surface-primary))'
+                ? 'color-mix(in srgb, var(--uo-route-risk-critical) 6%, var(--uo-route-surface-primary))'
                 : state.message.type === 'warning'
-                ? 'color-mix(in srgb, var(--ua-warning) 6%, var(--ua-surface-primary))'
-                : 'color-mix(in srgb, var(--ua-success) 6%, var(--ua-surface-primary))',
-            color: 'var(--ua-text-primary)',
+                ? 'color-mix(in srgb, var(--uo-route-warning) 6%, var(--uo-route-surface-primary))'
+                : 'color-mix(in srgb, var(--uo-route-success) 6%, var(--uo-route-surface-primary))',
+            color: 'var(--uo-route-text-primary)',
           }}
         >
           {state.message.text}
@@ -251,7 +251,7 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
               <Bone className="h-3 w-24" />
             </div>
           </div>
-          <Bone className="h-32 rounded-[var(--ua-radius-surface)]" />
+          <Bone className="h-32 rounded-[var(--uo-route-radius-surface)]" />
         </div>
       ) : state.ephemeralSecret ? (
         <FreshdeskWebhookSetupPanel

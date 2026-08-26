@@ -1,31 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFetchJson } from "@/lib/react/useFetchJson";
 import { EvidencePackageFormFields } from "@/components/evidence/EvidencePackageFormFields";
-import {
-  EvidencePackageFormEmptyOrders,
-  EvidencePackageFormIntro,
-  EvidencePackageFormLoadingState,
-  EvidencePackageFormNoClaimsBanner,
-} from "@/components/evidence/EvidencePackageFormStates";
 import type {
   Ce3CheckResponse,
   EvidencePackageFormProps,
   OrdersResponse,
 } from "@/components/evidence/evidencePackageFormTypes";
+import styles from './EvidencePackageOperations.module.css';
 
 export type { EvidencePackageFormProps } from "@/components/evidence/evidencePackageFormTypes";
 
 export function EvidencePackageForm({
   profileId,
   preselectedOrderId = "",
+  caseContextId = "",
+  syncOrderToUrl = false,
   showIntro = true,
   onCancel,
   onSuccess,
 }: EvidencePackageFormProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [userOrderId, setUserOrderId] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,10 +37,10 @@ export function EvidencePackageForm({
     setUserOrderId("");
   }
 
-  const { data: ordersData, loading: loadingOrders } =
+  const { data: ordersData, loading: loadingOrders, error: ordersError, reload: reloadOrders } =
     useFetchJson<OrdersResponse>(`/api/customers/${profileId}/orders`, {
       parse: async (response) => {
-        if (!response.ok) return { orders: [] };
+        if (!response.ok) throw new Error(`Order history could not be loaded (${response.status}).`);
         return response.json() as Promise<OrdersResponse>;
       },
     });
@@ -96,7 +95,7 @@ export function EvidencePackageForm({
       if (onSuccess) {
         onSuccess(packageId);
       } else {
-        router.push("/cases");
+        router.push(caseContextId ? `/cases?selected=${encodeURIComponent(caseContextId)}` : "/cases");
       }
     } catch {
       setError("Failed to compile signal data. Please try again.");
@@ -120,29 +119,24 @@ export function EvidencePackageForm({
     { label: "Merchant notes", available: !!notes.trim(), optional: true },
   ];
 
-  return (
-    <div
-      className={
-        showIntro
-          ? "p-4"
-          : "px-4 py-3"
-      }
-    >
-      <EvidencePackageFormIntro showIntro={showIntro} />
-      <EvidencePackageFormLoadingState loadingOrders={loadingOrders} />
-      <EvidencePackageFormEmptyOrders
-        profileId={profileId}
-        loadingOrders={loadingOrders}
-        hasOrders={orders.length > 0}
-        onCancel={onCancel}
-      />
-      <EvidencePackageFormNoClaimsBanner
-        loadingOrders={loadingOrders}
-        hasOrders={orders.length > 0}
-        hasEligibleOrders={hasEligibleOrders}
-      />
+  function selectOrder(orderId: string) {
+    setUserOrderId(orderId);
+    if (!syncOrderToUrl) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('disputedOrder');
+    if (orderId) next.set('orderId', orderId);
+    else next.delete('orderId');
+    router.replace(`${pathname}${next.size ? `?${next.toString()}` : ''}`, { scroll: false });
+  }
 
-      {!loadingOrders && orders.length > 0 ? (
+  return (
+    <div data-builder-context={caseContextId || undefined} data-show-intro={showIntro || undefined}>
+      {loadingOrders ? <div className={styles.loading} data-state-id="evidence-package-builder-loading" role="status" aria-busy="true"><strong>Loading order history</strong><span>Your customer and case context is preserved. Missing source facts will remain explicitly unavailable.</span></div> : null}
+      {!loadingOrders && ordersError && !ordersData ? <div className={styles.empty} data-state-id="evidence-package-orders-unavailable" role="alert"><strong>Order history unavailable</strong><span>{ordersError} No empty customer history has been inferred.</span><div className={styles.stateActions}><button type="button" onClick={reloadOrders}>Try again</button><button type="button" onClick={() => router.push(`/customers/${profileId}`)}>Back to customer</button></div></div> : null}
+      {!loadingOrders && !ordersError && orders.length === 0 ? <div className={styles.empty} data-state-id="evidence-package-no-orders"><strong>No orders found</strong><span>The connected records contain no orders for this customer. Evidence packages require at least one recorded order.</span><div className={styles.stateActions}><button type="button" onClick={() => router.push(`/customers/${profileId}`)}>Back to customer</button><button type="button" onClick={() => router.push('/sources/connected')}>Review connected sources</button></div></div> : null}
+      {!loadingOrders && !ordersError && orders.length > 0 && !hasEligibleOrders ? <p className={styles.error} data-state-id="evidence-package-no-qualifying-cases">No refund claim or dispute is recorded. Only an order explicitly supplied by the route can remain selected; no case eligibility is inferred.</p> : null}
+
+      {!loadingOrders && !ordersError && orders.length > 0 ? (
         <EvidencePackageFormFields
           profileId={profileId}
           orders={orders}
@@ -154,7 +148,7 @@ export function EvidencePackageForm({
           priorMatchChecking={priorMatchChecking}
           packageIncludes={packageIncludes}
           canSubmit={canSubmit}
-          onOrderChange={setUserOrderId}
+          onOrderChange={selectOrder}
           onNotesChange={setNotes}
           onSubmit={handleSubmit}
           onCancel={onCancel}

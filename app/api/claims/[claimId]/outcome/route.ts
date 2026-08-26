@@ -10,6 +10,8 @@ import { loadClaimForMerchant } from '@/lib/claims/access';
 import { resolveHoldTag } from '@/lib/gorgias/applyHoldTag';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { normalizeApiIdempotencyKey } from '@/lib/api/v1/ingest/requestIdempotency';
+import { prepareDecisionHandoff } from '@/lib/claims/externalAction';
+import { recordDomainEvent } from '@/lib/events/domainEventStore';
 
 const MONETARY_DECISIONS = new Set([
   'approved',
@@ -108,6 +110,39 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     });
 
+    const externalHandoff = await prepareDecisionHandoff(serviceClient, {
+      merchantId: ctx.merchantId,
+      actorUserId: user.id,
+      caseId: claimId,
+      sourceOrderId: claim.source_order_id,
+      requestedAction: claim.requested_action,
+      issueReason: claim.reason_raw ?? claim.reason_normalized,
+      decision: {
+        id: outcome.decision_id,
+        decision: outcome.decision,
+        amountMinor: outcome.amount_minor,
+        currency: outcome.currency,
+      },
+    });
+    if (externalHandoff.status === 'handoff_ready' && typeof externalHandoff.action.id === 'string') {
+      await recordDomainEvent(serviceClient, {
+        merchantId: ctx.merchantId,
+        eventType: 'external_action.handoff_ready',
+        aggregateType: 'external_action',
+        aggregateId: externalHandoff.action.id,
+        idempotencyKey: `external-action:${externalHandoff.action.id}:handoff-ready`,
+        payload: {
+          action_id: externalHandoff.action.id,
+          case_id: claimId,
+          capability_id: externalHandoff.action.capability_id,
+          state_version: Number(externalHandoff.action.state_version ?? 1),
+        },
+        actorType: 'user',
+        actorId: user.id,
+        handlers: ['auditTimelineProjection'],
+      });
+    }
+
     let connectorFollowUp: { attempted: boolean; ok: boolean; error?: string } = {
       attempted: false,
       ok: false,
@@ -126,7 +161,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           merchantId: ctx.merchantId,
           ticketId: ticket.external_id,
           decision: outcome.decision,
-          caseUrl: `${getAppUrl()}/cases?focus=${encodeURIComponent(claimId)}`,
+          caseUrl: `${getAppUrl()}/cases?selected=${encodeURIComponent(claimId)}`,
         });
       }
     }
@@ -147,6 +182,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         note: 'Authorization is recorded. No refund, replacement, credit, or recovery is treated as paid until a source outcome is reconciled.',
       },
       connector_follow_up: connectorFollowUp,
+      external_handoff: externalHandoff,
       replayed: outcome.replayed,
     });
   } catch (error) {

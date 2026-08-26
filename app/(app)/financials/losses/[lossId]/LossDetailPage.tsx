@@ -1,24 +1,23 @@
+import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import {
-  hasPermission,
-  PERMISSIONS,
-} from '@/lib/permissions';
+import { ArrowRight, Check, RefreshCw } from 'lucide-react';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import {
   getRequestServiceClient,
   getRequestUser,
   requirePagePermission,
 } from '@/lib/auth/requestContext';
-import { DetailPageShell } from '@/components/workbench/DetailPageShell';
-import { JoinedSection, OperationalState, StatusBadge, Surface } from '@/components/ui';
-import { StageDotPlot, type StageDotPlotRow } from '@/components/charts/authenticated/operational/StageDotPlot';
 import { getLossReadModel } from '@/lib/losses/readModel';
 import { LossActions } from '@/components/losses/LossActions';
-import { LossWaterfall, type LossWaterfallStep } from '@/components/losses/LossVisuals';
-import { formatConfidencePercent, formatDateTime, formatMoneyOrDash } from '@/lib/utils/format';
+import { UnavailableValue } from '@/components/ui';
+import { formatDateAbsolute, formatDateTime, formatMoneyOrDash } from '@/lib/utils/format';
 import { humanise, label as enumLabel } from '@/lib/ui/labels';
 import { hashId } from '@/lib/ui/displayRef';
 import { providerLabel } from '@/lib/ui/merchantCopy';
+import { TABLES } from '@/lib/supabase/tables';
+import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
+import styles from './LossDetailOperations.module.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,316 +31,319 @@ type LossAmount = {
   outstandingRecoveryMinor: number | null;
 };
 
-const money = (
-  minor: number | null | undefined,
-  currency: string | null | undefined,
-) => formatMoneyOrDash(minor, currency);
+type RecoveryRow = {
+  id: string;
+  status: string;
+  currency: string;
+  merchant_loss_amount: number;
+  eligible_loss_amount: number | null;
+  estimated_recoverable_max: number | null;
+  amount_recovered: number | null;
+  deadline_at: string | null;
+  updated_at: string;
+};
 
-const humaniseField = (value: unknown) => typeof value === 'string' && value ? humanise(value) : '—';
+type NormalizedRecoveryRow = RecoveryRow & {
+  amount_sought_minor: number;
+  amount_approved_minor: number;
+  amount_recovered_minor: number;
+  amount_written_off_minor: number;
+};
 
-function metadataString(value: unknown, key: string): string | null {
-  if (typeof value !== 'object' || value === null || !(key in value)) return null;
-  const candidate = (value as Record<string, unknown>)[key];
-  return typeof candidate === 'string' && candidate.trim() ? candidate : null;
+type TimelineItem = {
+  id: string;
+  at: string;
+  actor: string;
+  action: string;
+  tone: 'blue' | 'green' | 'amber' | 'grey';
+};
+
+type NavigationRow = { id: string; updated_at: string };
+type PartnerLossRow = { id: string; status: string; created_at: string; updated_at: string };
+type PartnerRecoveryRow = {
+  loss_case_id: string | null;
+  status: string;
+  eligible_loss_amount: number | null;
+  amount_recovered: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+const money = (minor: number | null | undefined, currency: string | null | undefined) => formatMoneyOrDash(minor, currency);
+
+// §15.1 canonical outcome mapping — these `lossStatus` values are a confirmed,
+// ledger-recorded loss (the `realised` outcome), not merely informational.
+const REALISED_LOSS_STATUSES = new Set(['denied', 'expired', 'closed_unrecoverable']);
+
+function humaniseField(value: unknown) {
+  return typeof value === 'string' && value ? humanise(value) : 'Unavailable';
 }
 
-function buildWaterfallSteps(loss: Record<string, unknown>, amount: LossAmount): { steps: LossWaterfallStep[]; reconciled: boolean } {
-  const lossMinor = amount.realisedLossMinor ?? amount.estimatedLossMinor;
-  const recoveredMinor = amount.recoveredMinor;
-  if (lossMinor == null || recoveredMinor == null) {
-    return {
-      steps: [
-        { key: 'loss', label: amount.realisedLossMinor != null ? 'Confirmed loss' : 'Estimated loss', valueMinor: lossMinor, direction: 'total' },
-        { key: 'recovered', label: 'Recovered value', valueMinor: recoveredMinor, direction: 'subtract' },
-        { key: 'net', label: 'Net unrecovered', valueMinor: null, direction: 'total' },
-      ],
-      reconciled: false,
-    };
-  }
-
-  const gross = typeof loss.order_value_minor === 'number' ? loss.order_value_minor : null;
-  const refund = typeof loss.refund_value_minor === 'number' ? loss.refund_value_minor : null;
-  const chargeback = typeof loss.chargeback_value_minor === 'number' ? loss.chargeback_value_minor : null;
-  const offsets = refund != null && chargeback != null ? refund + chargeback : null;
-  const netUnrecovered = Math.max(0, lossMinor - recoveredMinor);
-  const sourceFormulaNet = gross != null && offsets != null ? Math.max(0, gross - offsets - recoveredMinor) : null;
-  const hasReconciledSourceFormula = sourceFormulaNet != null && sourceFormulaNet === netUnrecovered;
-
-  if (hasReconciledSourceFormula) {
-    return {
-      steps: [
-        { key: 'gross', label: 'Gross exposure', valueMinor: gross, direction: 'total' },
-        { key: 'offsets', label: 'Refunds and offsets', valueMinor: offsets, direction: 'subtract' },
-        { key: 'recovered', label: 'Recovered value', valueMinor: recoveredMinor, direction: 'subtract' },
-        { key: 'net', label: 'Net unrecovered', valueMinor: sourceFormulaNet, direction: 'total' },
-      ],
-      reconciled: true,
-    };
-  }
-
-  if (gross != null && offsets != null) {
-    return {
-      steps: [
-        { key: 'gross', label: 'Gross exposure', valueMinor: gross, direction: 'total' },
-        { key: 'offsets', label: 'Refunds and offsets', valueMinor: offsets, direction: 'subtract' },
-        { key: 'recovered', label: 'Recovered value', valueMinor: recoveredMinor, direction: 'subtract' },
-        { key: 'net', label: 'Net unrecovered', valueMinor: null, direction: 'total' },
-      ],
-      reconciled: false,
-    };
-  }
-
-  // The canonical loss stage is a complete, auditable formula when order-level
-  // offsets are not available. A present but mismatched source formula above
-  // remains unavailable instead of hiding the reconciliation problem.
-  return {
-    steps: [
-      { key: 'loss', label: amount.realisedLossMinor != null ? 'Confirmed loss' : 'Estimated loss', valueMinor: lossMinor, direction: 'total' },
-      { key: 'recovered', label: 'Recovered value', valueMinor: recoveredMinor, direction: 'subtract' },
-      { key: 'net', label: 'Net unrecovered', valueMinor: netUnrecovered, direction: 'total' },
-    ],
-    reconciled: true,
-  };
+function daysBetween(start: string, end: string) {
+  const value = Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000);
+  return Number.isFinite(value) ? Math.max(0, value) : null;
 }
 
-function activityItems(model: Awaited<ReturnType<typeof getLossReadModel>>) {
-  if (!model) return [];
+function daysUntil(value: string | null | undefined) {
+  if (!value) return null;
+  const days = Math.ceil((Date.parse(value) - Date.now()) / 86_400_000);
+  return Number.isFinite(days) ? days : null;
+}
+
+function activityItems(model: NonNullable<Awaited<ReturnType<typeof getLossReadModel>>>): TimelineItem[] {
   return [
     ...model.events.map((event) => ({
       id: `event:${event.id}`,
       at: event.created_at,
-      label: humaniseField(event.event_type),
-      detail: event.source_provider ? providerLabel(event.source_provider) : 'Loss record activity',
+      actor: event.source_provider ? providerLabel(event.source_provider) : 'Unauth',
+      action: humaniseField(event.event_type),
+      tone: 'blue' as const,
     })),
     ...model.correspondence.map((item) => ({
       id: `correspondence:${item.id}`,
       at: item.received_at ?? item.sent_at ?? item.created_at,
-      label: `${humaniseField(item.direction)} correspondence`,
-      detail: item.subject ?? providerLabel(item.source_provider),
+      actor: item.source_provider ? providerLabel(item.source_provider) : 'Partner',
+      action: `${humaniseField(item.direction)} correspondence${item.subject ? ` — ${item.subject}` : ''}`,
+      tone: item.direction === 'inbound' ? 'green' as const : 'grey' as const,
     })),
     ...model.tasks.map((task) => ({
       id: `task:${task.id}`,
       at: task.updated_at,
-      label: task.title,
-      detail: `Task · ${humaniseField(task.status)}`,
+      actor: 'Operations',
+      action: `${task.title} · ${enumLabel('workflowStatus', task.status)}`,
+      tone: task.status === 'blocked' ? 'amber' as const : 'grey' as const,
     })),
   ].sort((left, right) => Date.parse(right.at) - Date.parse(left.at));
 }
 
-export default async function LossDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+function HeaderLink({ children, href, primary = false }: { children: ReactNode; href: string; primary?: boolean }) {
+  return <Link href={href} data-primary={primary}>{children}</Link>;
+}
+
+export default async function LossDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getRequestUser();
   if (!user) redirect('/login');
   const client = getRequestServiceClient();
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
   if (!ctx) redirect('/overview');
-  const model = await getLossReadModel(client, ctx.merchantId, id);
+
+  const [model, canManage] = await Promise.all([
+    getLossReadModel(client, ctx.merchantId, id),
+    hasPermission(client, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS),
+  ]);
   if (!model) notFound();
 
-  const canManage = await hasPermission(
-    client,
-    ctx,
-    PERMISSIONS.SUBMIT_PAYOUT_DECISIONS,
-  );
-  const primary = model.attributionCandidates.find((candidate) => candidate.is_primary) ?? null;
-  const alternatives = model.attributionCandidates.filter((candidate) => !candidate.is_primary);
+  const navigationResult = await client
+    .from(TABLES.LOSS_CASES)
+    .select('id,updated_at')
+    .eq('merchant_id', ctx.merchantId)
+    .order('updated_at', { ascending: false })
+    .limit(200);
+  const navigationRows = (navigationResult.data ?? []) as NavigationRow[];
+  const navigationIndex = navigationRows.findIndex((row) => row.id === id);
+  const previousId = navigationIndex > 0 ? navigationRows[navigationIndex - 1]?.id ?? null : null;
+  const nextId = navigationIndex >= 0 && navigationIndex < navigationRows.length - 1 ? navigationRows[navigationIndex + 1]?.id ?? null : null;
+
+  const partnerSince = new Date(Date.now() - 90 * 86_400_000).toISOString();
+  const partnerLossResult = model.loss.counterparty_name
+    ? await client
+      .from(TABLES.LOSS_CASES)
+      .select('id,status,created_at,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('counterparty_name', model.loss.counterparty_name)
+      .gte('created_at', partnerSince)
+    : { data: [] };
+  const partnerLosses = (partnerLossResult.data ?? []) as PartnerLossRow[];
+  const partnerRecoveryResult = partnerLosses.length
+    ? await client
+      .from(TABLES.RECOVERY_CASES)
+      .select('loss_case_id,status,eligible_loss_amount,amount_recovered,created_at,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('loss_case_id', partnerLosses.map((loss) => loss.id))
+    : { data: [] };
+  const partnerRecoveries = (partnerRecoveryResult.data ?? []) as PartnerRecoveryRow[];
+
   const amounts = model.amounts as LossAmount[];
-  const amount = amounts[0] ?? null;
-  const waterfall = amount ? buildWaterfallSteps(model.loss as Record<string, unknown>, amount) : { steps: [], reconciled: false };
-  const sourceLabel = metadataString(model.loss.source_metadata, 'source_label');
+  const mixedCurrency = amounts.length > 1;
+  const amount = amounts.length === 1 ? amounts[0] : null;
+  const currency = amount?.currency ?? model.loss.currency ?? null;
+  const recoveries = (model.recoveries as RecoveryRow[]).map((recovery): NormalizedRecoveryRow => {
+    const recoveredMinor = Math.round(Number(recovery.amount_recovered ?? 0) * 100);
+    const soughtMinor = Math.max(
+      recoveredMinor,
+      Math.round(recoverySoughtAmount({
+        merchant_loss_amount: Number(recovery.merchant_loss_amount ?? 0),
+        eligible_loss_amount: recovery.eligible_loss_amount == null ? null : Number(recovery.eligible_loss_amount),
+        estimated_recoverable_max: recovery.estimated_recoverable_max == null ? null : Number(recovery.estimated_recoverable_max),
+        amount_recovered: recovery.amount_recovered == null ? null : Number(recovery.amount_recovered),
+      }) * 100),
+    );
+    return {
+      ...recovery,
+      amount_sought_minor: soughtMinor,
+      amount_approved_minor: ['approved', 'partially_approved', 'paid'].includes(recovery.status) ? soughtMinor : 0,
+      amount_recovered_minor: recoveredMinor,
+      amount_written_off_minor: recovery.status === 'closed_unrecoverable' ? Math.max(0, soughtMinor - recoveredMinor) : 0,
+    };
+  });
+  const matchingRecoveries = currency ? recoveries.filter((recovery) => recovery.currency === currency) : recoveries;
+  const sumKnown = (key: 'amount_sought_minor' | 'amount_approved_minor' | 'amount_recovered_minor') => matchingRecoveries.length
+    ? matchingRecoveries.reduce((sum, row) => sum + (row[key] ?? 0), 0)
+    : null;
+  const claimedMinor = sumKnown('amount_sought_minor');
+  const offeredMinor = sumKnown('amount_approved_minor');
+  const recoveredMinor = sumKnown('amount_recovered_minor');
+  const identifiedMinor = amount?.realisedLossMinor ?? amount?.estimatedLossMinor ?? null;
+  const deadline = matchingRecoveries.map((recovery) => recovery.deadline_at).filter((value): value is string => Boolean(value)).sort()[0] ?? model.loss.claim_deadline_at ?? null;
+  const deadlineDays = daysUntil(deadline);
   const owner = model.loss.counterparty_name ?? enumLabel('counterparty', model.loss.counterparty_type);
-  const title = `${enumLabel('lossCategory', model.loss.case_category)}${model.loss.counterparty_name ? ` · ${model.loss.counterparty_name}` : ''}`;
+  const statusTone = REALISED_LOSS_STATUSES.has(model.loss.status) ? 'realised' : 'info';
+  const reference = `CLM-${hashId(id).slice(1)}`;
+  const caseReference = model.loss.support_payout_case_id ? `CASE-${hashId(model.loss.support_payout_case_id).slice(1)}` : 'case unavailable';
+  const title = `${owner} ${enumLabel('lossCategory', model.loss.case_category).toLowerCase()} claim for ${caseReference}`;
   const activity = activityItems(model);
   const writeOffState = model.loss.written_off_at || model.loss.status === 'closed_unrecoverable'
     ? 'already_written_off'
-    : amounts.length > 1
+    : mixedCurrency
       ? 'mixed_currency'
       : amount?.outstandingRecoveryMinor == null
         ? 'unavailable'
         : amount.outstandingRecoveryMinor <= 0
           ? 'no_outstanding'
           : 'available';
-  const recoveryRows: StageDotPlotRow[] = [
-    {
-      key: 'recoverable',
-      label: 'Recoverable',
-      value: amount?.recoverableMinor ?? null,
-      displayValue: money(amount?.recoverableMinor, amount?.currency),
-      tone: 'primary',
-    },
-    {
-      key: 'recovered',
-      label: 'Recovered',
-      value: amount?.recoveredMinor ?? null,
-      displayValue: money(amount?.recoveredMinor, amount?.currency),
-      tone: 'positive',
-    },
-    {
-      key: 'outstanding',
-      label: 'Outstanding',
-      value: amount?.outstandingRecoveryMinor ?? null,
-      displayValue: money(amount?.outstandingRecoveryMinor, amount?.currency),
-      tone: 'neutral',
-    },
+  const primaryRecovery = recoveries[0] ?? null;
+
+  const totalEligible = partnerRecoveries.reduce((sum, row) => sum + (typeof row.eligible_loss_amount === 'number' ? row.eligible_loss_amount : 0), 0);
+  const totalRecovered = partnerRecoveries.reduce((sum, row) => sum + (typeof row.amount_recovered === 'number' ? row.amount_recovered : 0), 0);
+  const settledByValue = totalEligible > 0 ? Math.round((totalRecovered / totalEligible) * 100) : null;
+  const settled = partnerRecoveries.filter((row) => ['paid', 'approved', 'partially_approved'].includes(row.status));
+  const settlementDurations = settled.map((row) => daysBetween(row.created_at, row.updated_at)).filter((value): value is number => value != null);
+  const averageSettlementDays = settlementDurations.length ? Math.round(settlementDurations.reduce((sum, value) => sum + value, 0) / settlementDurations.length) : null;
+  const rejectedCount = partnerRecoveries.filter((row) => row.status === 'rejected').length;
+
+  const steps = [
+    { label: 'Identified loss', value: identifiedMinor, meta: model.loss.confirmed_at ? `confirmed ${formatDateAbsolute(model.loss.confirmed_at)}` : 'recorded loss basis', tone: 'soft' },
+    { label: 'Claimed from partner', value: claimedMinor, meta: matchingRecoveries.length ? `filed across ${matchingRecoveries.length} recovery ${matchingRecoveries.length === 1 ? 'record' : 'records'}` : 'no partner filing recorded', tone: 'blue' },
+    { label: 'Offered by partner', value: offeredMinor, meta: offeredMinor ? 'partner-approved value' : 'no offer recorded yet', tone: 'neutral' },
+    { label: 'Recovered to ledger', value: recoveredMinor, meta: recoveredMinor ? 'cash recovery recorded' : 'nothing credited yet', tone: 'green' },
+  ];
+  const barBasis = Math.max(identifiedMinor ?? 0, claimedMinor ?? 0, offeredMinor ?? 0, recoveredMinor ?? 0, 1);
+
+  const evidence = model.evidence;
+  const partnerHistory = [
+    { label: 'Claims filed', value: model.loss.counterparty_name ? String(partnerLosses.length) : null, tone: 'default' },
+    { label: 'Settled by value', value: settledByValue == null ? null : `${settledByValue}%`, tone: 'positive' },
+    { label: 'Average days to settle', value: averageSettlementDays == null ? null : `${averageSettlementDays} days`, tone: 'default' },
+    { label: 'Rejected recoveries', value: model.loss.counterparty_name ? String(rejectedCount) : null, tone: rejectedCount ? 'warning' : 'default' },
   ];
 
   return (
-    <DetailPageShell
-      backHref="/financials/losses"
-      backLabel="Losses"
-      title={title}
-      subtitle={`${enumLabel('lossStatus', model.loss.status)} · ${enumLabel('sourceConfidence', model.loss.source_confidence)}`}
-      statusBadge={<StatusBadge family="lossStatus" value={model.loss.status} size="sm" />}
-      meta={[
-        { label: 'Owner', value: owner },
-        ...(sourceLabel ? [{ label: 'Source', value: sourceLabel }] : []),
-        { label: 'Updated', value: formatDateTime(model.loss.updated_at) },
-        { label: 'Reference', value: <span className="ua-text-metadata font-mono">{hashId(id)}</span> },
-      ]}
-      actions={
-        <LossActions
-          lossId={id}
-          canManage={canManage}
-          writeOffAmount={money(amount?.outstandingRecoveryMinor, amount?.currency)}
-          writeOffState={writeOffState}
-        />
-      }
-      tabs={
-        <nav className="ua-text-label flex flex-wrap gap-3" aria-label="Loss detail sections">
-          <a href="#loss-waterfall" className="text-[var(--ua-action-primary)]">Financial formula</a>
-          <a href="#loss-attribution" className="text-[var(--ua-action-primary)]">Attribution</a>
-          <a href="#loss-evidence" className="text-[var(--ua-action-primary)]">Evidence</a>
-          <a href="#loss-activity" className="text-[var(--ua-action-primary)]">Activity</a>
+    <div className={styles.surface} data-surface-id="claim-detail" data-archetype="P7" data-state-id="claim-detail-challenge-6">
+      <header className={styles.pageHeader}>
+        <div>
+          <p><Link href="/overview">Unauth</Link><ArrowRight size={9} /><span>Recovery board › {reference}</span></p>
+          <h1>Claim</h1>
+        </div>
+        <nav aria-label="Claim record navigation">
+          {previousId ? <HeaderLink href={`/financials/losses/${previousId}`}>Previous claim</HeaderLink> : null}
+          {nextId ? <HeaderLink href={`/financials/losses/${nextId}`}>Next claim</HeaderLink> : null}
         </nav>
-      }
-    >
-      <div className="space-y-4">
-        <LossWaterfall
-          currency={amount?.currency ?? null}
-          steps={waterfall.steps}
-          reconciled={waterfall.reconciled}
-        />
+      </header>
 
-        <Surface structure="working" as="section" aria-label="Loss attribution and evidence spine">
-          <JoinedSection id="loss-attribution" aria-labelledby="loss-attribution-title">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 id="loss-attribution-title" className="ua-text-section-title">Attribution</h2>
-                <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">The primary recovery owner is shown separately from candidate explanations.</p>
-              </div>
-              <span className="ua-text-dense font-medium text-[var(--ua-text-secondary)]">{amount?.currency ?? 'Currency unavailable'}</span>
-            </div>
-            <dl className="mt-4 grid gap-x-5 gap-y-3 sm:grid-cols-3">
-              <div>
-                <dt className="ua-text-metadata">Primary attribution</dt>
-                <dd className="ua-text-dense mt-1 font-medium">
-                  {primary ? enumLabel('attribution', primary.attribution) : enumLabel('attribution', model.loss.attribution)}
-                </dd>
-              </div>
-              <div>
-                <dt className="ua-text-metadata">Accountable party</dt>
-                <dd className="ua-text-dense mt-1 font-medium">{primary?.accountable_party_name ?? enumLabel('counterparty', primary?.accountable_party_type ?? model.loss.counterparty_type)}</dd>
-              </div>
-              <div>
-                <dt className="ua-text-metadata">Confidence</dt>
-                <dd className="ua-text-dense mt-1 font-medium">
-                  {primary?.confidence == null ? enumLabel('sourceConfidence', model.loss.source_confidence) : formatConfidencePercent(primary.confidence)}
-                </dd>
-              </div>
-            </dl>
-            {alternatives.length ? (
-              <div className="mt-4 border-t border-[var(--ua-border-subtle)] pt-3">
-                <h3 className="ua-text-working-title text-[var(--ua-text-secondary)]">Candidate explanations</h3>
-                <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {alternatives.map((candidate) => (
-                    <li key={candidate.id} className="ua-text-dense text-[var(--ua-text-secondary)]">
-                      {enumLabel('attribution', candidate.attribution)} · {candidate.accountable_party_name ?? enumLabel('counterparty', candidate.accountable_party_type)}
-                      <span className="ua-text-metadata ml-1">(candidate only)</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </JoinedSection>
+      <section className={styles.claimHeader}>
+        <div className={styles.claimIcon}><RefreshCw size={17} aria-hidden="true" /></div>
+        <div className={styles.claimIdentity}>
+          <div className={styles.identityTopline}>
+            <code>{reference}</code>
+            <span data-tone={statusTone}>{enumLabel('lossStatus', model.loss.status)}</span>
+            {deadlineDays != null && deadlineDays >= 0 && deadlineDays <= 2 ? <span data-tone="warning">Response due {deadlineDays <= 1 ? '24h' : '48h'}</span> : null}
+            {deadlineDays != null && deadlineDays < 0 ? <span data-tone="danger">Partner window closed</span> : null}
+          </div>
+          <h2>{title}</h2>
+          <p>{`Filed ${formatDateAbsolute(model.loss.created_at)}`} · {claimedMinor == null || !currency ? 'Claimed value unavailable' : `${money(claimedMinor, currency)} claimed`} · {deadline ? `partner window closes ${formatDateAbsolute(deadline)}` : 'partner deadline unavailable'}</p>
+        </div>
+        <div className={styles.headerActions}>
+          <LossActions lossId={id} canManage={canManage} writeOffAmountMinor={amount?.outstandingRecoveryMinor ?? null} currency={currency} writeOffState={writeOffState} compact />
+          {primaryRecovery ? <HeaderLink href={`/financials/recovery/${primaryRecovery.id}?action=chase`}>Chase partner</HeaderLink> : null}
+          {primaryRecovery ? <HeaderLink href={`/financials/recovery/${primaryRecovery.id}`} primary>Record partner response</HeaderLink> : null}
+        </div>
+      </section>
 
-          <JoinedSection aria-labelledby="loss-recovery-title">
-            <div>
-              <h2 id="loss-recovery-title" className="ua-text-section-title">Recovery progress</h2>
-              <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">Only reconciled recovery stages are plotted; missing stages stay unavailable.</p>
-            </div>
-            <div className="mt-4">
-              <StageDotPlot rows={recoveryRows} />
-            </div>
-          </JoinedSection>
+      <section className={styles.factStrip} aria-label="Claim facts">
+        <div><span>Claimed</span><strong data-tone={claimedMinor == null || !currency ? 'unavailable' : undefined}>{claimedMinor == null || !currency ? <UnavailableValue reason="No verified claimed amount is recorded" /> : money(claimedMinor, currency)}</strong><small>{model.loss.support_payout_case_id ? `full loss on ${caseReference}` : 'case link unavailable'}</small></div>
+        <div><span>Partner window</span><strong data-tone={deadlineDays == null ? 'unavailable' : deadlineDays <= 2 ? 'warning' : undefined}>{deadlineDays == null ? <UnavailableValue reason="No partner deadline is recorded" /> : deadlineDays < 0 ? 'Closed' : `${deadlineDays} ${deadlineDays === 1 ? 'day' : 'days'} left`}</strong><small>{deadline ? `closes ${formatDateAbsolute(deadline)}` : 'deadline not recorded'}</small></div>
+        <div><span>Filed by</span><strong data-tone={model.loss.owner_user_id ? undefined : 'unavailable'}>{model.loss.owner_user_id ? 'Assigned operator' : <UnavailableValue reason="No operator is assigned to this loss" />}</strong><small>{formatDateTime(model.loss.created_at)}</small></div>
+        <div><span>Expected recovery</span><strong data-tone={model.loss.estimated_recovery_minor == null || !currency ? 'unavailable' : 'positive'}>{model.loss.estimated_recovery_minor == null || !currency ? <UnavailableValue reason="Recovery basis has not been confirmed" /> : money(model.loss.estimated_recovery_minor, currency)}</strong><small>{model.loss.recoverability ? enumLabel('recoverability', model.loss.recoverability) : 'Recovery basis unavailable'}</small></div>
+        <div><span>Realised if unpaid</span><strong data-tone={identifiedMinor == null || !currency ? 'unavailable' : undefined}>{identifiedMinor == null || !currency ? <UnavailableValue reason="No verified confirmed or estimated loss basis is recorded" /> : money(identifiedMinor, currency)}</strong><small>{deadline ? `window basis closes ${formatDateAbsolute(deadline)}` : 'conditional value unavailable'}</small></div>
+      </section>
 
-          <JoinedSection aria-labelledby="loss-linked-title">
-            <h2 id="loss-linked-title" className="ua-text-section-title">Linked records</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {model.loss.support_payout_case_id ? (
-                <Link href={`/cases/${model.loss.support_payout_case_id}`} className="ua-text-dense rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 py-2 font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]">
-                  Open case
-                </Link>
-              ) : null}
-              {model.recoveries.map((recovery) => (
-                <Link key={recovery.id} href={`/financials/recovery/${recovery.id}`} className="ua-text-dense rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 py-2 font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]">
-                  Recovery {hashId(recovery.id)}
-                </Link>
+      <main className={styles.content}>
+        <div className={styles.primaryColumn}>
+          <section className={styles.card}>
+            <h2>Amount progression</h2>
+            <p className={styles.subtitle}>Every step is a recorded fact, not an estimate</p>
+            <div className={styles.steps}>
+              {steps.map((step) => {
+                const unavailable = step.value == null || !currency;
+                const percentage = step.value == null ? 0 : Math.max(12, Math.round((step.value / barBasis) * 100));
+                return (
+                  <div className={styles.step} key={step.label}>
+                    <span><strong>{step.label}</strong><small>{step.meta}</small></span>
+                    <div><i data-tone={unavailable ? 'unavailable' : step.tone} style={{ '--claim-step-width': `${percentage}%` } as CSSProperties}><b>{unavailable ? <UnavailableValue reason="No verified amount is recorded for this stage" /> : step.value === 0 ? 'Nothing yet' : money(step.value, currency)}</b></i></div>
+                    <small>{step.value == null || identifiedMinor == null || identifiedMinor <= 0 ? 'basis unavailable' : step.value === 0 ? 'awaiting partner' : `${Math.round((step.value / identifiedMinor) * 100)}% of identified`}</small>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className={styles.card}>
+            <h2>Correspondence and events</h2>
+            {activity.length ? <ol className={styles.timeline}>
+              {activity.slice(0, 10).map((event, index) => (
+                <li key={event.id}>
+                  <span><i data-tone={event.tone} />{index < Math.min(activity.length, 10) - 1 ? <b /> : null}</span>
+                  <div><p><strong>{event.actor}</strong> {event.action}</p><time>{formatDateTime(event.at)}</time></div>
+                </li>
               ))}
-              {!model.loss.support_payout_case_id && !model.recoveries.length ? <OperationalState kind="empty" title="No linked records" description="This loss is not currently joined to a case or recovery record." /> : null}
-            </div>
-          </JoinedSection>
+            </ol> : <p className={styles.emptyCopy}>No correspondence or events have been recorded.</p>}
+          </section>
+        </div>
 
-          <JoinedSection id="loss-evidence" aria-labelledby="loss-evidence-title">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <h2 id="loss-evidence-title" className="ua-text-section-title">Supporting evidence</h2>
-                <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">Source facts remain labelled with their provider and verification state.</p>
+        <aside className={styles.secondaryColumn}>
+          <section className={styles.railCard}>
+            <h2>Evidence submitted</h2>
+            {evidence.length ? evidence.slice(0, 8).map((item) => (
+              <div className={styles.evidenceRow} key={item.id}>
+                <i><Check size={11} aria-hidden="true" /></i>
+                <span><strong>{humaniseField(item.evidence_type)}</strong><small>{providerLabel(item.source_provider)} · {item.source_verified ? 'source verified' : 'verification unavailable'}</small></span>
               </div>
-              <span className="ua-text-metadata">{model.evidence.length} linked {model.evidence.length === 1 ? 'item' : 'items'}</span>
-            </div>
-            {model.evidence.length ? (
-              <ul className="mt-4 divide-y divide-[var(--ua-border-subtle)]">
-                {model.evidence.map((item) => (
-                  <li key={item.id} className="ua-text-dense flex flex-wrap items-start justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <p className="font-medium">{humaniseField(item.evidence_type)}</p>
-                      <p className="ua-text-caption-role mt-1">
-                        {providerLabel(item.source_provider)} · {item.source_verified ? 'Source verified' : 'Not source verified'}
-                      </p>
-                    </div>
-                    {item.source_url ? <a href={item.source_url} className="ua-text-working-title shrink-0 text-[var(--ua-action-primary)] underline underline-offset-2">Open source</a> : null}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="mt-4"><OperationalState kind="empty" title="No loss-specific evidence linked" description="This does not mean evidence is complete; the ledger has no linked evidence item for this record." /></div>
-            )}
-          </JoinedSection>
+            )) : <p className={styles.emptyCopy}>No claim-specific evidence is linked. This does not mean evidence is complete.</p>}
+          </section>
 
-          <JoinedSection id="loss-activity" aria-labelledby="loss-activity-title">
-            <h2 id="loss-activity-title" className="ua-text-section-title">Activity</h2>
-            {activity.length ? (
-              <ol className="mt-4 divide-y divide-[var(--ua-border-subtle)]">
-                {activity.map((item) => (
-                  <li key={item.id} className="ua-text-dense flex flex-wrap items-baseline justify-between gap-2 py-3">
-                    <div>
-                      <span className="font-medium">{item.label}</span>
-                      <span className="ml-2 text-[var(--ua-text-secondary)]">{item.detail}</span>
-                    </div>
-                    <time className="ua-text-metadata shrink-0">{formatDateTime(item.at)}</time>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <div className="mt-4"><OperationalState kind="empty" title="No loss activity recorded" description="Evidence, correspondence, task, and lifecycle activity will appear here when recorded." /></div>
-            )}
-          </JoinedSection>
-        </Surface>
-      </div>
-    </DetailPageShell>
+          <section className={styles.railCard}>
+            <h2>Partner history</h2>
+            <p className={styles.railSubtitle}>{owner} · trailing 90 days</p>
+            <dl className={styles.partnerHistory}>
+              {partnerHistory.map((item) => (
+                <div key={item.label}>
+                  <dt>{item.label}</dt>
+                  <dd data-tone={item.value == null ? 'unavailable' : item.tone}>
+                    {item.value == null ? <UnavailableValue reason={`No ${item.label.toLowerCase()} value is recorded for this counterparty`} /> : item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <section className={styles.railCard}>
+            <h2>Linked records</h2>
+            {model.loss.support_payout_case_id ? <Link className={styles.linkRow} href={`/cases/${model.loss.support_payout_case_id}`}>Open {caseReference}<ArrowRight size={11} /></Link> : <p className={styles.emptyCopy}>No support case is linked.</p>}
+            {recoveries.map((recovery) => <Link className={styles.linkRow} key={recovery.id} href={`/financials/recovery/${recovery.id}`}>Recovery {hashId(recovery.id)}<ArrowRight size={11} /></Link>)}
+          </section>
+        </aside>
+      </main>
+    </div>
   );
 }
