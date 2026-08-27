@@ -1,7 +1,7 @@
 # Deployment-candidate readiness
 
-Status: clean deployment-candidate branch prepared; PR/push and external gates
-remain pending, 27 August 2026.
+Status: clean deployment-candidate branch verified and ready to push; PR/push
+and external gates remain pending, 27 August 2026.
 
 ## Candidate boundary
 
@@ -31,15 +31,21 @@ approval remain outside this task.
 - Branch: `codex/deployment-readiness-20260826`.
 - Starting branch: `codex/core-cleanup-refactor` at `fedd6903`.
 - Latest fetched `origin/main`: `42089ca7`.
-- Reconciliation: normal merge commit `cfd138f7`; the branch is 0 behind and
-  14 commits ahead of `origin/main` (`git rev-list --left-right --count`).
+- Reconciliation: normal merge commit `cfd138f7`; after this receipt commit the
+  branch is 0 behind and 19 commits ahead of `origin/main`
+  (`git rev-list --left-right --count`). Three pre-existing commits from the
+  starting branch are retained unchanged; the deployment-candidate sequence
+  begins at `1620ad67`.
 - Logical deployment sequence: `1620ad67` application baseline,
   `7b8196ee` canonical authorities/dead paths, `f1840123` dependency and
   repository hygiene, `2dfe5202` extension tooling, `4f00fd74` CI gate,
   `7df4dca6` root security baseline, `029080ee` lint navigation,
   `b73b3120` optional environment handling, `57881dcf` ephemeral verification
-  artifacts, `30f5cf62` isolated build outputs, and `cfd138f7` latest-main
-  merge. The merge is non-rewriting and no force push is permitted.
+  artifacts, `30f5cf62` isolated build outputs, `cfd138f7` latest-main merge,
+  `890742bb` initial deployment receipt, `2187b8bc` Zendesk environment
+  contract, `a1b7a6b4` production-target extension bundle, and `413a40ed`
+  deterministic extension packaging in CI. The merge is non-rewriting and no
+  force push is permitted.
 
 The requested baseline message is `feat: complete merchant-ready UX9
 application`; the authority cleanup is `refactor: consolidate canonical
@@ -105,7 +111,7 @@ The local receipt currently records:
 - lint: zero warnings; root, script, and E2E TypeScript checks passed;
 - Jest: 411 suites passed, 2 intentional opt-in suites skipped, 2,912 tests
   passed, 6 tests skipped, 1 snapshot;
-- static contracts: authority, environment (114 keys), Vercel cron (7
+- static contracts: authority, environment (115 keys), Vercel cron (7
   authenticated routes), surface manifest (64 page modules/119 stable
   surfaces/222 scenarios/55 aliases), UI integrity, merchant copy,
   migration layout (32 unique timestamps), and Supabase contract (150 live
@@ -114,7 +120,9 @@ The local receipt currently records:
 - root audit: full and `--omit=dev` both report zero vulnerabilities; the
   Chrome extension audit also reports zero vulnerabilities;
 - exact production build: Next 16.3.3 generated 105/105 routes with a clean
-  build directory; extension build passed;
+  build directory; build ID `vBX_f9Iv0bN7FV83TeVyZa1b7a6b4b12e63c9061fdcc56079abb78fb409bd`;
+  extension build passed and the checked-in bundle targets
+  `https://app.unauth.co/*`;
 - guarded local browser proof: the disposable loopback Supabase fixture was
   used only with local credentials. The CI-equivalent full run executed 103
   tests and exited green: 102 passed on the first attempt and the one
@@ -123,9 +131,15 @@ The local receipt currently records:
   condition). The isolated 14-test sidebar suite passed 14/14, including
   `/financials/losses`.
 
-The final receipt will append the build ID, final commit SHA, checksums, GitHub
-Actions results, optional preview URL/read-only smoke result, and clean-worktree
-proof. The receipt cannot grant the external approvals above.
+- clean-install receipt: a detached worktree at `a1b7a6b4` ran `npm ci`
+  (995 packages, 0 vulnerabilities) and `verify:ci` passed all 17 deterministic
+  gates. After `413a40ed`, the production-mode extension rebuild and script
+  typecheck passed and left that disposable worktree clean. The final root
+  branch is clean before this documentation commit.
+- final commit SHA after this documentation receipt, checksums, GitHub Actions
+  results, and any optional preview URL/read-only smoke result are recorded
+  below or in the pull request when those external systems are available. The
+  receipt cannot grant the external approvals above.
 
 ## Push and pull-request boundary
 
