@@ -1,150 +1,169 @@
-/**
- * @jest-environment jsdom
- *
- * RUN-06 and RUN-07 regressions.
- *
- * RUN-06: a failed `/api/work/views` request must be reported as
- * "saved views unavailable" with a retry, never silently rendered as
- * "you have no saved views".
- *
- * RUN-07: the table, empty state, selectable IDs and footer counts must all be
- * derived from the same visible result model, so a zero-result search cannot
- * leave an empty table beside an unfiltered footer count or a selection that
- * still targets rows the operator can no longer see.
- */
+/** @jest-environment jsdom */
 import React from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from '@/components/work/WorkQueue';
-import { WorkQueuePulse } from '@/components/work/WorkQueuePulse';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { WorkQueueOperations } from '@/components/work/WorkQueueOperations';
+import type { WorkQueueItem, WorkViewCounts } from '@/lib/work/types';
+
+const push = jest.fn();
+const refresh = jest.fn();
+const replace = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn(), refresh: jest.fn(), replace: jest.fn() }),
+  useRouter: () => ({ push, refresh, replace }),
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
-const VIEW_COUNTS = {
-  open: 2,
-  mine: 0,
-  unassigned: 0,
-  'due-today': 0,
-  overdue: 0,
-  'no-sla': 0,
-  blocked: 0,
-  'evidence-needed': 0,
-  'decision-needed': 0,
-  'integration-exceptions': 0,
-  completed: 0,
-} as WorkViewCounts;
+const VIEW_COUNTS: WorkViewCounts = {
+  open: 52,
+  mine: 3,
+  unassigned: 49,
+  snoozed: 2,
+  'due-today': 4,
+  overdue: 5,
+  'no-sla': 10,
+  blocked: 1,
+  'evidence-needed': 7,
+  'decision-needed': 6,
+  'integration-exceptions': 2,
+  completed: 18,
+};
 
-function task(id: string, title: string): WorkQueueItem {
+function task(id: string, title: string, objectHref = `/cases/${id}`): WorkQueueItem {
   return {
     id,
+    key: `task:${id}`,
     kind: 'task',
     title,
-    description: null,
-    ownerRole: 'analyst',
+    description: 'Review the exact source evidence before recording the next state.',
+    ownerRole: null,
     ownerUserId: null,
+    ownerName: null,
+    ownerInitials: null,
     status: 'open',
-    priority: 'medium',
-    dueAt: null,
-    createdAt: '2026-07-01T09:00:00Z',
-    supportPayoutCaseId: null,
-    objectHref: null,
+    priority: 'high',
+    dueAt: '2026-08-24T09:00:00.000Z',
+    snoozedUntil: null,
+    createdAt: '2026-08-23T09:00:00.000Z',
+    updatedAt: '2026-08-23T09:00:00.000Z',
+    stateVersion: 3,
+    taskKind: 'evidence_gap',
+    waitingParty: 'merchant',
+    supportPayoutCaseId: id,
+    lossCaseId: null,
+    recoveryCaseId: null,
+    objectHref,
     objectLabel: `Case ${id}`,
-    blockingReason: null,
+    blockingReason: 'delivery evidence',
     source: 'shopify',
+    sourceMetadata: {},
+    validActions: ['assign_to_me', 'start', 'snooze'],
   };
 }
 
-const ITEMS = [task('t1', 'Chase carrier response'), task('t2', 'Confirm refund amount')];
+const ITEMS = [task('case-1', 'Review delivery evidence'), task('case-2', 'Record merchant decision')];
 
-function renderQueue(fetchImpl: jest.Mock) {
-  global.fetch = fetchImpl as never;
-  return render(<WorkQueue items={ITEMS} total={7} view="open" viewCounts={VIEW_COUNTS} />);
+function ok(body: unknown) {
+  return Promise.resolve({ ok: true, status: 200, json: async () => body });
 }
 
-const okViews = () => jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ views: [] }) });
+function renderQueue(fetchImpl: jest.Mock = jest.fn().mockImplementation(() => ok({ views: [] }))) {
+  global.fetch = fetchImpl as never;
+  return render(
+    <WorkQueueOperations
+      items={ITEMS}
+      total={52}
+      view="open"
+      viewCounts={VIEW_COUNTS}
+      page={1}
+      pageSize={25}
+      asOf="2026-08-23T10:00:00.000Z"
+      initialQuery=""
+      currentUserId="user-1"
+      canManage
+      canManageViews
+      sourceNotice={null}
+      savedViewId={null}
+    />,
+  );
+}
 
-describe('WorkQueue saved views (RUN-06)', () => {
+describe('canonical Work queue', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/work');
+    push.mockReset();
+    refresh.mockReset();
+    replace.mockReset();
+  });
+
   afterEach(() => jest.restoreAllMocks());
 
-  it('distinguishes an unavailable saved-view request from having no saved views', async () => {
+  it('keeps an unavailable saved-view request distinct from an empty saved-view list', async () => {
     renderQueue(jest.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({ error: 'boom' }) }));
-    expect(await screen.findByText(/couldn’t load your saved views/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /saved views unavailable.*retry/i })).toBeInTheDocument();
   });
 
-  it('shows no saved-view failure notice when the request succeeds', async () => {
-    const fetchMock = okViews();
+  it('uses the exact server total and never renders fictional bulk approval', async () => {
+    renderQueue();
+    expect(await screen.findByText('Showing 1–25 of 52')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /snoozed 2/i })).toHaveAttribute('href', '/work?view=snoozed');
+    expect(screen.queryByText(/bulk approve/i)).not.toBeInTheDocument();
+    expect(screen.getByText('2 rows on this page')).toBeInTheDocument();
+  });
+
+  it('submits search as URL query state without filtering the server page locally', async () => {
+    renderQueue();
+    await screen.findByRole('combobox', { name: /saved work view/i });
+    fireEvent.change(screen.getByRole('textbox', { name: /search work/i }), { target: { value: 'carrier refund' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(push).toHaveBeenCalledWith('/work?search=carrier+refund');
+    expect(screen.getAllByText('Review delivery evidence').length).toBeGreaterThan(0);
+  });
+
+  it('sends optimistic version and a fresh idempotency key for a valid action', async () => {
+    const fetchMock = jest.fn()
+      .mockImplementationOnce(() => ok({ views: [] }))
+      .mockImplementationOnce(() => ok({ task: { id: 'case-1', state_version: 4 } }));
     renderQueue(fetchMock);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/work/views'));
-    expect(screen.queryByText(/couldn’t load your saved views/i)).not.toBeInTheDocument();
+    await screen.findByRole('combobox', { name: /saved work view/i });
+    fireEvent.click(screen.getByRole('button', { name: 'Assign to me' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const [, options] = fetchMock.mock.calls[1];
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/work-tasks/case-1');
+    expect(JSON.parse(options.body)).toEqual({ action: 'assign_to_me', expectedVersion: 3 });
+    expect(options.headers['Idempotency-Key']).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(refresh).toHaveBeenCalled();
   });
 
-  it('retries the saved-view request without discarding the visible views', async () => {
-    const fetchMock = jest
-      .fn()
-      .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ views: [{ id: 'v1', name: 'Ageing chargebacks', definition: { view: 'overdue' }, is_shared: false }] }),
-      });
+  it('handles only the documented queue shortcuts and ignores form input', async () => {
+    const fetchMock = jest.fn()
+      .mockImplementationOnce(() => ok({ views: [] }))
+      .mockImplementationOnce(() => ok({ task: { id: 'case-1', state_version: 4 } }));
     renderQueue(fetchMock);
-    fireEvent.click(await screen.findByRole('button', { name: /try again/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /more views/i }));
-    expect(await screen.findByRole('link', { name: /ageing chargebacks/i })).toBeInTheDocument();
-    expect(screen.queryByText(/couldn’t load your saved views/i)).not.toBeInTheDocument();
-    // Five primary views stay visible; the remaining system and saved views
-    // become reachable through the disclosed selector.
-    expect(within(screen.getByRole('navigation', { name: /work views/i })).getAllByRole('link')).toHaveLength(5);
-    expect(within(screen.getByRole('group', { name: /more work views/i })).getAllByRole('link')).toHaveLength(7);
-  });
-});
+    await screen.findByRole('combobox', { name: /saved work view/i });
 
-describe('WorkQueue visible result model (RUN-07)', () => {
-  afterEach(() => jest.restoreAllMocks());
+    fireEvent.keyDown(document.body, { key: 'j' });
+    expect(window.location.search).toBe('?selected=case-2');
+    fireEvent.keyDown(document.body, { key: 'k' });
+    expect(window.location.search).toBe('?selected=case-1');
 
-  it('renders a zero-result search state instead of an empty table', async () => {
-    renderQueue(okViews());
-    fireEvent.change(await screen.findByRole('searchbox', { name: /search this view/i }), {
-      target: { value: 'nothing matches this' },
-    });
-    expect(screen.getByText(/no results for “nothing matches this”/i)).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.getByText(/0 of 2 loaded results/i)).toBeInTheDocument();
+    fireEvent.keyDown(document.body, { key: 'Enter' });
+    expect(push).toHaveBeenCalledWith(expect.stringContaining('/cases/case-1?return='));
+
+    fireEvent.keyDown(document.body, { key: 'a' });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    const search = screen.getByRole('textbox', { name: /search work/i });
+    search.focus();
+    fireEvent.keyDown(search, { key: 'a' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('reports the visible count and the server total from one model', async () => {
-    renderQueue(okViews());
-    await screen.findByRole('table');
-    expect(screen.getByText('Showing 1–2 of 7')).toBeInTheDocument();
-    fireEvent.change(screen.getByRole('searchbox', { name: /search this view/i }), { target: { value: 'carrier' } });
-    expect(screen.getByText(/1 of 2 loaded results/i)).toBeInTheDocument();
-  });
-
-  it('drops a selection that falls outside the current result set', async () => {
-    renderQueue(okViews());
-    await screen.findByRole('table');
-    fireEvent.click(screen.getAllByRole('checkbox', { name: /select confirm refund amount/i })[0]);
-    expect(screen.getByText('1 selected')).toBeInTheDocument();
-    fireEvent.change(screen.getByRole('searchbox', { name: /search this view/i }), { target: { value: 'carrier' } });
-    expect(screen.queryByText(/selected$/i)).not.toBeInTheDocument();
-    // The out-of-result selection is dropped, not merely hidden: clearing the
-    // search must not resurrect it.
-    fireEvent.change(screen.getByRole('searchbox', { name: /search this view/i }), { target: { value: '' } });
-    expect(screen.queryByText(/selected$/i)).not.toBeInTheDocument();
-    expect(screen.getAllByRole('checkbox', { name: /select confirm refund amount/i })[0]).not.toBeChecked();
-  });
-
-  it('retains a search query in system-view links', async () => {
-    render(<WorkQueue items={ITEMS} total={7} view="open" viewCounts={VIEW_COUNTS} initialQuery="carrier" />);
-    await screen.findByRole('table');
-    expect(screen.getByRole('link', { name: /overdue/i })).toHaveAttribute('href', '/work?view=overdue&q=carrier');
-  });
-
-  it('retains a search query when a deadline band drills into the queue', () => {
-    render(<WorkQueuePulse query="carrier" view="open" bands={{ overdue: 1, 'due-today': 0, 'due-1-3': 0, 'due-4-7': 0, 'due-later': 0, 'no-sla': 0 }} />);
-    expect(screen.getByRole('link', { name: /overdue/i })).toHaveAttribute('href', '/work?view=overdue&q=carrier');
+  it('preserves the exact Work return context in record links', async () => {
+    window.history.replaceState(null, '', '/work?view=overdue&page=2&selected=case-1');
+    renderQueue();
+    const link = await screen.findByRole('link', { name: /open full record/i });
+    expect(link.getAttribute('href')).toContain('/cases/case-1?return=');
+    expect(decodeURIComponent(link.getAttribute('href') ?? '')).toContain('/work?view=overdue&page=2&selected=case-1');
   });
 });

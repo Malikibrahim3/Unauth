@@ -1,15 +1,16 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/navigation/AppNavLink';
 import { type KeyboardEvent, type ReactNode, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { tabContract } from '@/styles/authenticated/contracts';
 
 export interface TabItem {
   value: string;
   label: ReactNode;
   href?: string;
   disabled?: boolean;
+  /** Optional leading icon (F-38) — keeps icon tabs off a local implementation. */
+  icon?: ReactNode;
 }
 
 export interface TabsProps {
@@ -51,10 +52,10 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
   };
 
   return isTrueTabs ? (
-    <div id={id} role="tablist" aria-label={ariaLabel} className={cn(tabContract.root, className)}>
+    <div id={id} role="tablist" aria-label={ariaLabel} className={cn('ua-tabs', className)}>
       {items.map((item, index) => {
         const active = item.value === value;
-        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed text-[var(--ua-text-disabled)]');
+        const classes = cn('ua-tabs__item', active && 'ua-tabs__item--active', item.disabled && 'ua-tabs__item--disabled');
         return (
           <button
             key={item.value}
@@ -70,16 +71,17 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
             onKeyDown={(event) => moveFocus(event, index)}
             className={classes}
           >
+            {item.icon ? <span aria-hidden="true" className="ua-tabs__item-icon">{item.icon}</span> : null}
             {item.label}
           </button>
         );
       })}
     </div>
   ) : isInPageTabs ? (
-    <div id={id} role="group" aria-label={ariaLabel} className={cn(tabContract.root, className)}>
+    <div id={id} role="group" aria-label={ariaLabel} className={cn('ua-tabs', className)}>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed text-[var(--ua-text-disabled)]');
+        const classes = cn('ua-tabs__item', active && 'ua-tabs__item--active', item.disabled && 'ua-tabs__item--disabled');
         return (
           <button
             key={item.value}
@@ -89,16 +91,17 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
             onClick={() => onValueChange?.(item.value)}
             className={classes}
           >
+            {item.icon ? <span aria-hidden="true" className="ua-tabs__item-icon">{item.icon}</span> : null}
             {item.label}
           </button>
         );
       })}
     </div>
   ) : (
-    <nav id={id} aria-label={ariaLabel} className={cn(tabContract.root, className)}>
+    <nav id={id} aria-label={ariaLabel} className={cn('ua-tabs', className)}>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed text-[var(--ua-text-disabled)]');
+        const classes = cn('ua-tabs__item', active && 'ua-tabs__item--active', item.disabled && 'ua-tabs__item--disabled');
         return (
           <Link
             key={item.value}
@@ -109,6 +112,7 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
             className={classes}
             onClick={item.disabled ? (event) => event.preventDefault() : undefined}
           >
+            {item.icon ? <span aria-hidden="true" className="ua-tabs__item-icon">{item.icon}</span> : null}
             {item.label}
           </Link>
         );

@@ -1,0 +1,554 @@
+@layer components {
+  /*
+   * Signal Ledger / I3.2
+   *
+   * Copper (--ua-instrument-active) marks UI interaction state only — a
+   * pressed toggle, a selected control — never a data series (§14.3/D-5).
+   * The "Identified" series and other primary chart-tone data draw from
+   * --ua-outcome-identified (graphite) instead, so the focus ring and the
+   * chart's own primary line are never the same colour (D-4). Petrol carries
+   * observed/source-backed value and slate carries comparison. Status
+   * semantics remain on their dedicated success, warning, and critical roles.
+   */
+  .ua-app {
+    --ua-instrument-active: var(--ua-signal-copper);
+    --ua-instrument-active-soft: var(--ua-signal-copper-soft);
+    --ua-instrument-observed: var(--ua-data-petrol);
+    --ua-instrument-comparison: var(--ua-data-slate);
+    --ua-instrument-open: var(--ua-rule-default);
+    --ua-instrument-field: color-mix(in srgb, var(--ua-paper-primary) 82%, var(--ua-paper-secondary));
+    --ua-instrument-grid: color-mix(in srgb, var(--ua-rule-hairline) 76%, transparent);
+  }
+
+  .ua-app .ua-chart-frame {
+    position: relative;
+    min-width: 0;
+  }
+
+  .ua-app .ua-chart-frame--open {
+    border-block-color: var(--ua-rule-default);
+  }
+
+  .ua-app .ua-chart-frame__header {
+    min-height: 68px;
+    background: var(--ua-instrument-field);
+  }
+
+  .ua-app .ua-chart-frame__header h2 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--ua-font-display);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+
+  .ua-app .ua-chart-frame__header small,
+  .ua-app .ua-chart-frame__footer {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ua-app .ua-chart-frame__plot {
+    background: var(--ua-paper-primary);
+  }
+
+  .ua-app .ua-chart-frame__footer {
+    background: color-mix(in srgb, var(--ua-paper-primary) 72%, var(--ua-paper-secondary));
+  }
+
+  .ua-app .ua-chart-frame__footer a,
+  .ua-app .ua-chart-data summary {
+    color: var(--ua-instrument-active);
+  }
+
+  .ua-app .ua-chart-legend i[data-tone="primary"] {
+    border-radius: 1px;
+    background: var(--ua-outcome-identified);
+  }
+
+  .ua-app .ua-chart-legend i[data-tone="secondary"] {
+    background: var(--ua-instrument-observed);
+  }
+
+  .ua-app .ua-chart-legend i[data-tone="neutral"] {
+    background: var(--ua-instrument-comparison);
+  }
+
+  .ua-app .ua-chart-legend i[data-tone="comparison"] {
+    border-top: 1px dashed var(--ua-instrument-comparison);
+    background: transparent;
+  }
+
+  .ua-app .ua-chart-state[data-kind="unavailable"],
+  .ua-app .ua-chart-state[data-kind="insufficient-history"],
+  .ua-app .ua-chart-state[data-kind="partial"],
+  .ua-app .ua-chart-state[data-kind="mixed-currency"] {
+    position: relative;
+    margin: 10px;
+    border: 1px dotted var(--ua-rule-default);
+    border-radius: var(--ua-radius-control);
+    background: var(--ua-paper-secondary);
+  }
+
+  /* Overview: one canonical position, one active metric, one observed series. */
+  .ua-app [data-instrument-principal="payout-position"] {
+    border: 1px solid var(--ua-rule-default);
+    background: var(--ua-paper-primary);
+    box-shadow: none;
+  }
+
+  .ua-app [data-instrument-principal="payout-position"] > header {
+    background: var(--ua-instrument-field);
+  }
+
+  .ua-app [data-instrument-principal="payout-position"] button[aria-pressed="true"] {
+    background: var(--ua-instrument-active-soft);
+    color: var(--ua-instrument-active);
+  }
+
+  .ua-app [data-testid="financial-plot"] [data-series="active"] {
+    background: var(--ua-outcome-identified);
+  }
+
+  .ua-app [data-testid="financial-plot"] [data-series="observed"] {
+    background: var(--ua-instrument-observed);
+  }
+
+  .ua-app [data-testid="financial-plot"] button[data-selected="true"] {
+    background: color-mix(in srgb, var(--ua-instrument-active-soft) 66%, transparent);
+    box-shadow: inset 0 -1px 0 var(--ua-instrument-active);
+  }
+
+  /* Financial position strips read as a ruled equation, not four KPI cards. */
+  .ua-app [data-surface-id="loss-ledger"] .ua-lead-summary,
+  .ua-app [data-surface-id="recovery-board"] .ua-lead-summary,
+  .ua-app [data-surface-id="reconciliation-exception-workspace"] .ua-lead-summary {
+    border-color: var(--ua-rule-default);
+    background: var(--ua-paper-primary);
+  }
+
+  .ua-app [data-surface-id="loss-ledger"] .ua-lead-summary__lead,
+  .ua-app [data-surface-id="recovery-board"] .ua-lead-summary__lead,
+  .ua-app [data-surface-id="reconciliation-exception-workspace"] .ua-lead-summary__lead {
+    box-shadow: inset 0 2px 0 var(--ua-instrument-active);
+  }
+
+  .ua-app [data-surface-id="loss-ledger"] .ua-lead-summary__lead > dd:not(.ua-lead-summary__description),
+  .ua-app [data-surface-id="recovery-board"] .ua-lead-summary__lead > dd:not(.ua-lead-summary__description) {
+    font-family: var(--ua-font-display);
+  }
+
+  /* Loss cause selection carries the same copper signal into plot and rank. */
+  .ua-app [data-auth-chart="loss-trend"] [data-loss-segment][data-selected="true"] > span {
+    background: var(--ua-instrument-active);
+    box-shadow: inset 0 0 0 1px var(--ua-signal-copper-hover);
+  }
+
+  .ua-app [data-auth-chart="loss-trend"] [data-loss-segment]:not([data-selected="true"]) > span {
+    filter: saturate(0.72);
+  }
+
+  .ua-app [data-chart-id="loss-causes"] [data-selected="true"] {
+    margin-inline: -8px;
+    padding: 5px 8px;
+    background: var(--ua-instrument-active-soft);
+    box-shadow: inset 2px 0 0 var(--ua-instrument-active);
+  }
+
+  .ua-app [data-chart-id="loss-causes"] [data-selected="true"] a,
+  .ua-app [data-chart-id="loss-causes"] [data-selected="true"] strong {
+    color: var(--ua-instrument-active);
+  }
+
+  /* Financial formula: observed values, deductions, and the final active result. */
+  .ua-app .ua-financial-waterfall__row > i {
+    height: 8px;
+    border-radius: 1px;
+    background: var(--ua-paper-muted);
+  }
+
+  .ua-app .ua-financial-waterfall__row > i > b {
+    border-radius: 1px;
+    background: var(--ua-instrument-observed);
+  }
+
+  .ua-app .ua-financial-waterfall__row > i > b[data-direction="subtract"] {
+    background: var(--ua-instrument-comparison);
+  }
+
+  .ua-app .ua-financial-waterfall__row:last-child > i > b {
+    background: var(--ua-instrument-active);
+  }
+
+  .ua-app .ua-financial-waterfall__row:last-child > strong {
+    color: var(--ua-instrument-active);
+  }
+
+  /* Recovery and ledger stages use exact rules and open marks for missing data. */
+  .ua-app [data-auth-chart="stage-dot"] [data-stage][data-tone="primary"] {
+    color: var(--ua-instrument-active);
+  }
+
+  .ua-app [data-auth-chart="stage-dot"] [data-stage][data-tone="neutral"] {
+    color: var(--ua-instrument-comparison);
+  }
+
+  .ua-app [data-auth-chart="stage-dot"] [data-stage][data-availability="unavailable"] {
+    border-block: 1px dotted var(--ua-rule-default);
+  }
+
+  /* Reconciliation keeps queue -> compare -> decide and marks every authority. */
+  .ua-app [data-surface-id="reconciliation-exception-workspace"] [data-signal-rail="true"] {
+    background: var(--ua-instrument-active-soft);
+    box-shadow: inset 2px 0 0 var(--ua-instrument-active);
+  }
+
+  .ua-app [data-surface-id="reconciliation-exception-workspace"] .ua-reconciliation-selection {
+    background: var(--ua-paper-primary);
+  }
+
+  .ua-app [data-surface-id="reconciliation-exception-workspace"] .ua-reconciliation-selection > header {
+    background: var(--ua-instrument-field);
+  }
+
+  .ua-app [data-surface-id="reconciliation-exception-workspace"] .ua-reconciliation-selection [role="table"] {
+    border-color: var(--ua-rule-default);
+    background: var(--ua-paper-primary);
+  }
+
+  /* Named reports stay governed: scope, question, plot, records, proof. */
+  .ua-app [data-surface-id="named-report-record-view"] .ua-named-report-intent {
+    border-color: var(--ua-rule-default);
+    background: var(--ua-instrument-field);
+    padding-inline: 16px;
+  }
+
+  .ua-app [data-surface-id="named-report-record-view"] .ua-named-report-intent h2 {
+    font-family: var(--ua-font-display);
+    color: var(--ua-ink-primary);
+  }
+
+  .ua-app [data-surface-id="financial-reports"] .ua-report-command-index__row:hover {
+    background: var(--ua-instrument-active-soft);
+  }
+
+  .ua-app [data-surface-id="financial-reports"] .ua-report-command-index__row:focus-visible {
+    background: var(--ua-instrument-active-soft);
+    outline: 2px solid var(--ua-border-focus);
+    outline-offset: -2px;
+  }
+
+  /* Every analytical figure ends with a quiet proof line. Scope, as-of,
+   * source and caveats read as metadata, never as another card or badge row. */
+  .ua-app .ua-chart-provenance {
+    display: grid;
+    gap: 0;
+    padding: 0;
+    border-top: 1px dotted var(--ua-rule-default);
+    background: color-mix(in srgb, var(--ua-paper-primary) 88%, var(--ua-paper-secondary));
+    color: var(--ua-text-tertiary);
+    font-family: var(--ua-font-mono);
+    font-size: 9px;
+    line-height: 14px;
+  }
+
+  .ua-app .ua-chart-provenance > summary {
+    display: flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 20px;
+    color: var(--ua-text-secondary);
+    cursor: pointer;
+    font-family: var(--ua-font-sans);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0;
+    list-style: none;
+  }
+
+  .ua-app .ua-chart-provenance > summary::-webkit-details-marker { display: none; }
+
+  .ua-app .ua-chart-provenance > summary::after {
+    color: var(--ua-text-tertiary);
+    content: "+";
+    font-family: var(--ua-font-mono);
+    font-size: 12px;
+  }
+
+  .ua-app .ua-chart-provenance[open] > summary::after { content: "−"; }
+
+  .ua-app .ua-chart-provenance > summary:hover {
+    background: var(--ua-paper-secondary);
+    color: var(--ua-text-primary);
+  }
+
+  .ua-app .ua-chart-provenance > summary:focus-visible {
+    outline: 2px solid var(--ua-border-focus);
+    outline-offset: -2px;
+  }
+
+  .ua-app .ua-chart-provenance:not([open]) > :not(summary) {
+    display: none;
+  }
+
+  .ua-app .ua-chart-provenance dl,
+  .ua-app .ua-chart-provenance ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    margin: 0;
+    padding: 10px 20px 12px;
+    border-top: 1px solid var(--ua-rule-hairline);
+  }
+
+  .ua-app .ua-chart-provenance div {
+    display: inline-flex;
+    min-width: 0;
+    gap: 5px;
+  }
+
+  .ua-app .ua-chart-provenance dt {
+    color: var(--ua-text-tertiary);
+    text-transform: uppercase;
+  }
+
+  .ua-app .ua-chart-provenance dd {
+    min-width: 0;
+    margin: 0;
+    color: var(--ua-text-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  .ua-app .ua-chart-provenance ul {
+    display: grid;
+    gap: 4px;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .ua-app .ua-chart-provenance li {
+    color: var(--ua-text-secondary);
+    list-style: none;
+    overflow-wrap: anywhere;
+  }
+
+  .ua-app .ua-chart-frame[data-completeness="partial"] .ua-chart-frame__header {
+    box-shadow: inset 2px 0 0 var(--ua-warning);
+  }
+
+  .ua-app .ua-chart-frame[data-completeness="partial"] {
+    border-top-color: var(--ua-warning);
+  }
+
+  .ua-app .ua-chart-frame[data-completeness="missing"],
+  .ua-app .ua-chart-frame[data-completeness="unavailable"] {
+    border-style: dotted;
+  }
+
+  /* Insufficient and unavailable plots stay useful without becoming a huge
+   * decorative void: the explanation aligns to the chart grid. */
+  .ua-app .ua-chart-state[data-kind="unavailable"],
+  .ua-app .ua-chart-state[data-kind="insufficient-history"],
+  .ua-app .ua-chart-state[data-kind="partial"],
+  .ua-app .ua-chart-state[data-kind="mixed-currency"] {
+    place-content: center start;
+    justify-items: start;
+    padding-inline: clamp(24px, 7%, 64px);
+    text-align: left;
+  }
+
+  .ua-app .ua-chart-state[data-kind="unavailable"] span,
+  .ua-app .ua-chart-state[data-kind="insufficient-history"] span,
+  .ua-app .ua-chart-state[data-kind="partial"] span,
+  .ua-app .ua-chart-state[data-kind="mixed-currency"] span {
+    max-width: 68ch;
+  }
+
+  .ua-app .ua-chart-state > :where(a, button) {
+    margin-top: 8px;
+  }
+
+  /* Route families keep one instrumentation grammar but distinct analytical
+   * structures. Colour remains reserved for plotted data and explicit state. */
+  .ua-app [data-auth-chart="loss-trend"] .ua-chart-frame__plot {
+    background: color-mix(in srgb, var(--ua-paper-primary) 92%, var(--ua-paper-secondary));
+  }
+
+  /* Sparse immutable history remains useful without being promoted to a
+   * trend. Exact observed intervals render as marks; trajectory lines stay
+   * absent until three dated intervals exist. */
+  .ua-app .ua-observed-history-note {
+    margin: 0;
+    padding: 9px 16px;
+    border-bottom: 1px dotted var(--ua-rule-default);
+    background: var(--ua-paper-secondary);
+    color: var(--ua-text-secondary);
+    font-size: var(--ua-text-caption-size);
+    line-height: 16px;
+  }
+
+  .ua-app .ua-loss-history {
+    min-width: 0;
+  }
+
+  .ua-app .ua-loss-history__plot {
+    display: grid;
+    min-height: 300px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    padding: 16px 14px 10px 8px;
+  }
+
+  .ua-app .ua-loss-history__scale {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1px 10px 29px 0;
+    color: var(--ua-text-tertiary);
+    font-size: var(--ua-text-caption-size);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .ua-app .ua-loss-history__columns {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(var(--ua-loss-points), minmax(38px, 1fr));
+    align-items: end;
+    gap: 8px;
+    border-block: 1px solid var(--ua-instrument-grid);
+  }
+
+  .ua-app .ua-loss-history__columns::before {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 1px;
+    background: var(--ua-instrument-grid);
+    content: "";
+    pointer-events: none;
+  }
+
+  .ua-app .ua-loss-history[data-history="observed-only"] .ua-loss-history__columns {
+    grid-template-columns: repeat(var(--ua-loss-points), minmax(96px, 132px));
+    justify-content: start;
+  }
+
+  .ua-app .ua-loss-history__column {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    height: 266px;
+    min-width: 0;
+    grid-template-rows: 20px minmax(0, 1fr) 28px;
+    align-items: end;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .ua-app .ua-loss-history__column > strong {
+    overflow: hidden;
+    color: var(--ua-text-primary);
+    font-size: var(--ua-text-caption-size);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ua-app .ua-loss-history__bar-wrap {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: end;
+    justify-content: center;
+  }
+
+  .ua-app .ua-loss-history__bar {
+    display: flex;
+    width: min(44px, 72%);
+    min-height: 1px;
+    flex-direction: column-reverse;
+    overflow: hidden;
+    border-radius: var(--ua-radius-xs) var(--ua-radius-xs) 0 0;
+  }
+
+  .ua-app .ua-loss-history__column > span {
+    overflow: hidden;
+    color: var(--ua-text-tertiary);
+    font-size: var(--ua-text-caption-size);
+    line-height: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ua-app [data-report-identity] {
+    position: relative;
+    container-type: inline-size;
+  }
+
+  .ua-app [data-report-identity="financial-stage-waterfall"] > section {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+    align-items: start;
+    gap: 16px;
+  }
+
+  .ua-app [data-report-identity="operations-sla-pressure"] .ua-sla-pressure__row:hover {
+    background: var(--ua-signal-copper-soft);
+  }
+
+  .ua-app [data-report-identity="operations-sla-pressure"] .ua-sla-pressure__row:focus-visible {
+    background: var(--ua-signal-copper-soft);
+    outline: 2px solid var(--ua-border-focus);
+    outline-offset: -2px;
+  }
+
+  .ua-app [data-report-identity] .ua-chart-frame__plot a:focus-visible,
+  .ua-app [data-report-identity] .ua-chart-frame__footer a:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid var(--ua-border-focus);
+    outline-offset: 2px;
+  }
+
+  @container (max-width: 1040px) {
+    .ua-app [data-report-identity="financial-stage-waterfall"] > section {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 1180px) {
+    .ua-app [data-report-identity="financial-stage-waterfall"] > section {
+      grid-template-columns: 1fr;
+    }
+
+    .ua-app .ua-chart-provenance dl {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 16px;
+    }
+
+    .ua-app .ua-chart-provenance div {
+      display: grid;
+      gap: 1px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .ua-app .ua-chart-provenance dl {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ua-app [data-testid="financial-plot"] [data-series],
+    .ua-app .ua-chart-provenance > summary,
+    .ua-app [data-report-identity] :where(a, button) {
+      transition: none;
+    }
+  }
+}

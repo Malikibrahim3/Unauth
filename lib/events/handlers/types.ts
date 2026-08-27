@@ -3,7 +3,7 @@
  * once per (domain_event_id, handler_name) delivery. They must be idempotent:
  * re-running a delivery for the same event must not double-apply side effects.
  *
- * See ARCHITECTURE.md §6.
+ * See ARCHITECTURE.md for the canonical event and case-state owners.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 

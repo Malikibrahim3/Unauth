@@ -7,6 +7,7 @@ import {
   mergeMerchantSettings,
   parseMerchantSettings,
 } from '@/lib/account/merchantProfile';
+import { ensureMerchantBillingAccount } from '@/lib/billing/merchantBilling';
 
 type ServiceClient = SupabaseClient<Database>;
 
@@ -18,6 +19,7 @@ export interface MerchantSetupInput {
   monthlyOrderVolume?: string | null;
   primaryFraudConcern?: string | null;
   profileComplete?: boolean;
+  onboardingDeferredAt?: string | null;
   setupComplete?: boolean;
 }
 
@@ -53,12 +55,18 @@ export async function upsertMerchantForUser(
     input.profileComplete === true
     || setupComplete
     || Boolean(existingProfile?.onboarding_profile_complete);
+  const onboardingDeferredAt = setupComplete || profileComplete
+    ? null
+    : input.onboardingDeferredAt !== undefined
+      ? input.onboardingDeferredAt
+      : existingProfile?.onboarding_deferred_at ?? null;
 
   const settingsPatch = {
     platform,
     monthly_order_volume: monthlyOrderVolume,
     primary_fraud_concern: primaryFraudConcern,
     onboarding_profile_complete: profileComplete,
+    onboarding_deferred_at: onboardingDeferredAt,
     setup_complete: setupComplete,
   };
 
@@ -86,6 +94,7 @@ export async function upsertMerchantForUser(
       throw new Error(`Failed to save merchant profile: ${updateError.message}`);
     }
 
+    await ensureMerchantBillingAccount(serviceClient, existingContext.merchantId);
     return { id: existingContext.merchantId, setup_complete: setupComplete };
   }
 
@@ -130,6 +139,8 @@ export async function upsertMerchantForUser(
   if (memberError) {
     throw new Error(`Failed to create merchant membership: ${memberError.message}`);
   }
+
+  await ensureMerchantBillingAccount(serviceClient, merchantId);
 
   return { id: merchantId, setup_complete: setupComplete };
 }

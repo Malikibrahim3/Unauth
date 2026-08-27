@@ -30,11 +30,11 @@ export function sourceLabel(source: string | null | undefined): string {
 export function SourceBadge({ source, className }: { source: string | null | undefined; className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-[var(--ua-badge-radius-meta)] py-0.5 pr-2 text-[length:var(--ua-text-metadata-size)] font-medium ${className ?? ''}`}
+      className={`inline-flex items-center gap-1.5 rounded-[var(--uo-route-badge-radius-meta)] py-0.5 pr-2 text-[length:var(--uo-route-text-metadata-size)] font-medium ${className ?? ''}`}
       style={{
-        color: 'var(--ua-text-secondary)',
-        backgroundColor: 'var(--ua-surface-muted)',
-        border: '1px solid var(--ua-border-subtle)',
+        color: 'var(--uo-route-text-secondary)',
+        backgroundColor: 'var(--uo-route-surface-muted)',
+        border: '1px solid var(--uo-route-border-subtle)',
       }}
       title={`Source: ${sourceLabel(source)}`}
     >

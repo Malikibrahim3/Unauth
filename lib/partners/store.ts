@@ -1,31 +1,36 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { z } from 'zod';
-import { TABLES } from '@/lib/supabase/tables';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import { TABLES } from "@/lib/supabase/tables";
 import {
   PARTNER_RULE_CLAIM_TYPES,
   PARTNER_TYPES,
   RECOVERY_TYPES,
   type Partner,
   type PartnerRecoveryRule,
-} from '@/lib/partners/types';
+} from "@/lib/partners/types";
 
 const partnerTypeSchema = z.enum(PARTNER_TYPES);
 const recoveryTypeSchema = z.enum(RECOVERY_TYPES);
 const partnerRuleClaimTypeSchema = z.enum(PARTNER_RULE_CLAIM_TYPES);
-const partnerContactChannelSchema = z.enum(['email', 'portal', 'manual', 'api']);
+const partnerContactChannelSchema = z.enum([
+  "email",
+  "portal",
+  "manual",
+  "api",
+]);
 
 export const createPartnerSchema = z.object({
   merchant_id: z.string().uuid(),
   partner_type: partnerTypeSchema,
   name: z.string().trim().min(1).max(160),
   external_reference: z.string().trim().max(160).nullish(),
-  contact_email: z.string().trim().email().max(240).nullish().or(z.literal('')),
-  contact_url: z.string().trim().url().max(500).nullish().or(z.literal('')),
+  contact_email: z.string().trim().email().max(240).nullish().or(z.literal("")),
+  contact_url: z.string().trim().url().max(500).nullish().or(z.literal("")),
   notes: z.string().trim().max(2000).nullish(),
   default_contact_channel: partnerContactChannelSchema.nullish(),
   response_sla_hours: z.number().int().min(1).max(2160).nullish(),
   contact_instructions: z.string().trim().max(4000).nullish(),
-  status: z.enum(['active', 'inactive']).default('active'),
+  status: z.enum(["active", "inactive"]).default("active"),
 });
 
 export const createPartnerRecoveryRuleSchema = z.object({
@@ -40,20 +45,95 @@ export const createPartnerRecoveryRuleSchema = z.object({
   deadline_days: z.number().int().min(0).nullable().optional(),
   liability_cap_amount: z.number().finite().min(0).nullable().optional(),
   liability_cap_currency: z.string().trim().max(8).nullable().optional(),
-  liability_cap_basis: z.enum(['fixed', 'declared_value', 'insured_value', 'contractual', 'unknown']).nullable().optional(),
-  submission_method: z.enum(['portal', 'email', 'api', 'unknown']).nullable().optional(),
-  submission_url: z.string().trim().url().max(500).nullable().optional().or(z.literal('')),
-  submission_email: z.string().trim().email().max(240).nullable().optional().or(z.literal('')),
-  source_type: z.enum(['unauth_default', 'merchant_configured', 'contract_extracted']).default('merchant_configured'),
-  confidence: z.enum(['high', 'medium', 'low']).default('medium'),
+  liability_cap_basis: z
+    .enum([
+      "fixed",
+      "declared_value",
+      "insured_value",
+      "contractual",
+      "unknown",
+    ])
+    .nullable()
+    .optional(),
+  submission_method: z
+    .enum(["portal", "email", "api", "unknown"])
+    .nullable()
+    .optional(),
+  submission_url: z
+    .string()
+    .trim()
+    .url()
+    .max(500)
+    .nullable()
+    .optional()
+    .or(z.literal("")),
+  submission_email: z
+    .string()
+    .trim()
+    .email()
+    .max(240)
+    .nullable()
+    .optional()
+    .or(z.literal("")),
+  source_type: z
+    .enum(["unauth_default", "merchant_configured", "contract_extracted"])
+    .default("merchant_configured"),
+  confidence: z.enum(["high", "medium", "low"]).default("medium"),
   active: z.boolean().default(true),
+  version_number: z.number().int().min(1).default(1),
+  supersedes_rule_id: z.string().uuid().nullable().optional(),
+  jurisdiction: z.string().trim().max(120).nullable().optional(),
+  service_codes: z.array(z.string().trim().min(1).max(80)).default([]),
+  effective_from: z.string().datetime({ offset: true }).nullable().optional(),
+  effective_to: z.string().datetime({ offset: true }).nullable().optional(),
+  claimant_roles: z.array(z.string().trim().min(1).max(80)).default([]),
+  minimum_wait_days: z.number().int().min(0).nullable().optional(),
+  deadline_basis: z
+    .enum([
+      "dispatch",
+      "delivery",
+      "due_date",
+      "eligible_claim_date",
+      "handoff",
+      "other",
+    ])
+    .nullable()
+    .optional(),
+  notice_deadline_days: z.number().int().min(0).nullable().optional(),
+  complete_pack_deadline_days: z.number().int().min(0).nullable().optional(),
+  critical_requirements: z.record(z.unknown()).default({}),
+  exclusions: z.record(z.unknown()).default({}),
+  compensation_terms: z.record(z.unknown()).default({}),
+  terms_source_url: z
+    .string()
+    .trim()
+    .url()
+    .max(2000)
+    .nullable()
+    .optional()
+    .or(z.literal("")),
+  source_document_id: z.string().uuid().nullable().optional(),
+  source_published_at: z
+    .string()
+    .datetime({ offset: true })
+    .nullable()
+    .optional(),
+  reviewed_at: z.string().datetime({ offset: true }).nullable().optional(),
+  reviewed_by: z.string().uuid().nullable().optional(),
+  approved_at: z.string().datetime({ offset: true }).nullable().optional(),
+  approved_by: z.string().uuid().nullable().optional(),
+  rule_approval_status: z
+    .enum(["unconfirmed", "approved", "revoked"])
+    .default("unconfirmed"),
 });
 
 export type CreatePartnerInput = z.input<typeof createPartnerSchema>;
-export type CreatePartnerRecoveryRuleInput = z.input<typeof createPartnerRecoveryRuleSchema>;
+export type CreatePartnerRecoveryRuleInput = z.input<
+  typeof createPartnerRecoveryRuleSchema
+>;
 
 function cleanOptionalString(value: string | null | undefined): string | null {
-  if (typeof value !== 'string') return null;
+  if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
 }
@@ -66,26 +146,29 @@ async function requireMerchantPartner(
   if (!partnerId) return;
   const { data, error } = await client
     .from(TABLES.PARTNERS)
-    .select('id')
-    .eq('id', partnerId)
-    .eq('merchant_id', merchantId)
+    .select("id")
+    .eq("id", partnerId)
+    .eq("merchant_id", merchantId)
     .maybeSingle();
-  if (error) throw new Error(`Failed to validate recovery partner: ${error.message}`);
-  if (!data) throw new Error('Recovery partner does not belong to this merchant');
+  if (error)
+    throw new Error(`Failed to validate recovery partner: ${error.message}`);
+  if (!data)
+    throw new Error("Recovery partner does not belong to this merchant");
 }
 
 export async function listPartners(
   client: SupabaseClient,
   merchantId: string,
-  filters: { status?: 'active' | 'inactive'; partnerType?: string } = {},
+  filters: { status?: "active" | "inactive"; partnerType?: string } = {},
 ): Promise<Partner[]> {
   let query = client
     .from(TABLES.PARTNERS)
-    .select('*')
-    .eq('merchant_id', merchantId)
-    .order('name', { ascending: true });
-  if (filters.status) query = query.eq('status', filters.status);
-  if (filters.partnerType) query = query.eq('partner_type', filters.partnerType);
+    .select("*")
+    .eq("merchant_id", merchantId)
+    .order("name", { ascending: true });
+  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.partnerType)
+    query = query.eq("partner_type", filters.partnerType);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to list partners: ${error.message}`);
   return (data ?? []) as Partner[];
@@ -112,10 +195,16 @@ export async function createPartner(
   return data as Partner;
 }
 
-export const updatePartnerSchema = createPartnerSchema.partial().omit({ merchant_id: true });
-export const updatePartnerRecoveryRuleSchema = createPartnerRecoveryRuleSchema.partial().omit({ merchant_id: true });
+export const updatePartnerSchema = createPartnerSchema
+  .partial()
+  .omit({ merchant_id: true });
+export const updatePartnerRecoveryRuleSchema = createPartnerRecoveryRuleSchema
+  .partial()
+  .omit({ merchant_id: true });
 export type UpdatePartnerInput = z.input<typeof updatePartnerSchema>;
-export type UpdatePartnerRecoveryRuleInput = z.input<typeof updatePartnerRecoveryRuleSchema>;
+export type UpdatePartnerRecoveryRuleInput = z.input<
+  typeof updatePartnerRecoveryRuleSchema
+>;
 
 export async function updatePartner(
   client: SupabaseClient,
@@ -125,18 +214,25 @@ export async function updatePartner(
 ): Promise<Partner> {
   const parsed = updatePartnerSchema.parse(patch);
   const payload: Record<string, unknown> = { ...parsed };
-  if ('contact_email' in parsed) payload.contact_email = cleanOptionalString(parsed.contact_email);
-  if ('contact_url' in parsed) payload.contact_url = cleanOptionalString(parsed.contact_url);
-  if ('external_reference' in parsed) payload.external_reference = cleanOptionalString(parsed.external_reference);
-  if ('notes' in parsed) payload.notes = cleanOptionalString(parsed.notes);
-  if ('contact_instructions' in parsed) {
-    payload.contact_instructions = cleanOptionalString(parsed.contact_instructions);
+  if ("supersedes_rule_id" in parsed)
+    payload.supersedes_rule_id = parsed.supersedes_rule_id ?? null;
+  if ("contact_email" in parsed)
+    payload.contact_email = cleanOptionalString(parsed.contact_email);
+  if ("contact_url" in parsed)
+    payload.contact_url = cleanOptionalString(parsed.contact_url);
+  if ("external_reference" in parsed)
+    payload.external_reference = cleanOptionalString(parsed.external_reference);
+  if ("notes" in parsed) payload.notes = cleanOptionalString(parsed.notes);
+  if ("contact_instructions" in parsed) {
+    payload.contact_instructions = cleanOptionalString(
+      parsed.contact_instructions,
+    );
   }
   const { data, error } = await client
     .from(TABLES.PARTNERS)
     .update(payload)
-    .eq('merchant_id', merchantId)
-    .eq('id', partnerId)
+    .eq("merchant_id", merchantId)
+    .eq("id", partnerId)
     .select()
     .single();
   if (error) throw new Error(`Failed to update partner: ${error.message}`);
@@ -150,21 +246,72 @@ export async function updatePartnerRecoveryRule(
   patch: UpdatePartnerRecoveryRuleInput,
 ): Promise<PartnerRecoveryRule> {
   const parsed = updatePartnerRecoveryRuleSchema.parse(patch);
-  if ('partner_id' in parsed) {
+  if ("partner_id" in parsed) {
     await requireMerchantPartner(client, merchantId, parsed.partner_id);
   }
   const payload: Record<string, unknown> = { ...parsed };
-  if ('submission_url' in parsed) payload.submission_url = cleanOptionalString(parsed.submission_url);
-  if ('submission_email' in parsed) payload.submission_email = cleanOptionalString(parsed.submission_email);
+  if ("submission_url" in parsed)
+    payload.submission_url = cleanOptionalString(parsed.submission_url);
+  if ("submission_email" in parsed)
+    payload.submission_email = cleanOptionalString(parsed.submission_email);
+  if ("terms_source_url" in parsed)
+    payload.terms_source_url = cleanOptionalString(parsed.terms_source_url);
   const { data, error } = await client
     .from(TABLES.PARTNER_RECOVERY_RULES)
     .update(payload)
-    .eq('merchant_id', merchantId)
-    .eq('id', ruleId)
-    .select('*, partner:partners(*)')
+    .eq("merchant_id", merchantId)
+    .eq("id", ruleId)
+    .select("*, partner:partners(*)")
     .single();
-  if (error) throw new Error(`Failed to update partner recovery rule: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to update partner recovery rule: ${error.message}`);
   return data as PartnerRecoveryRule;
+}
+
+/**
+ * Versioned rule creation. Once a rule is referenced by a recommendation it
+ * must be superseded, never edited in place.
+ */
+export async function createPartnerRecoveryRuleVersion(
+  client: SupabaseClient,
+  input: CreatePartnerRecoveryRuleInput & {
+    supersedes_rule_id?: string | null;
+  },
+): Promise<PartnerRecoveryRule> {
+  const parsed = createPartnerRecoveryRuleSchema.parse(input);
+  await requireMerchantPartner(client, parsed.merchant_id, parsed.partner_id);
+  if (parsed.supersedes_rule_id) {
+    const prior = await client
+      .from(TABLES.PARTNER_RECOVERY_RULES)
+      .select("id,merchant_id,version_number")
+      .eq("id", parsed.supersedes_rule_id)
+      .eq("merchant_id", parsed.merchant_id)
+      .maybeSingle();
+    if (prior.error)
+      throw new Error(
+        `Failed to read superseded recovery rule: ${prior.error.message}`,
+      );
+    if (!prior.data)
+      throw new Error(
+        "Superseded recovery rule does not belong to this merchant",
+      );
+    if (!("version_number" in input) || input.version_number == null) {
+      parsed.version_number = Number(prior.data.version_number ?? 1) + 1;
+    }
+  }
+  const created = await createPartnerRecoveryRule(client, parsed);
+  if (parsed.supersedes_rule_id) {
+    const { error } = await client
+      .from(TABLES.PARTNER_RECOVERY_RULES)
+      .update({ active: false })
+      .eq("merchant_id", parsed.merchant_id)
+      .eq("id", parsed.supersedes_rule_id);
+    if (error)
+      throw new Error(
+        `Failed to deactivate superseded recovery rule: ${error.message}`,
+      );
+  }
+  return created;
 }
 
 export async function listPartnerRecoveryRules(
@@ -179,16 +326,20 @@ export async function listPartnerRecoveryRules(
 ): Promise<PartnerRecoveryRule[]> {
   let query = client
     .from(TABLES.PARTNER_RECOVERY_RULES)
-    .select('*, partner:partners(*)')
-    .eq('merchant_id', merchantId)
-    .order('active', { ascending: false })
-    .order('created_at', { ascending: false });
-  if (filters.partnerId) query = query.eq('partner_id', filters.partnerId);
-  if (filters.recoveryType) query = query.eq('recovery_type', filters.recoveryType);
-  if (filters.claimType) query = query.eq('applies_to_claim_type', filters.claimType);
-  if (typeof filters.active === 'boolean') query = query.eq('active', filters.active);
+    .select("*, partner:partners(*)")
+    .eq("merchant_id", merchantId)
+    .order("active", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (filters.partnerId) query = query.eq("partner_id", filters.partnerId);
+  if (filters.recoveryType)
+    query = query.eq("recovery_type", filters.recoveryType);
+  if (filters.claimType)
+    query = query.eq("applies_to_claim_type", filters.claimType);
+  if (typeof filters.active === "boolean")
+    query = query.eq("active", filters.active);
   const { data, error } = await query;
-  if (error) throw new Error(`Failed to list partner recovery rules: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to list partner recovery rules: ${error.message}`);
   return (data ?? []) as PartnerRecoveryRule[];
 }
 
@@ -206,9 +357,10 @@ export async function createPartnerRecoveryRule(
       submission_url: cleanOptionalString(parsed.submission_url),
       submission_email: cleanOptionalString(parsed.submission_email),
     })
-    .select('*, partner:partners(*)')
+    .select("*, partner:partners(*)")
     .single();
-  if (error) throw new Error(`Failed to create partner recovery rule: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to create partner recovery rule: ${error.message}`);
   return data as PartnerRecoveryRule;
 }
 
@@ -226,9 +378,38 @@ export async function findBestPartnerRecoveryRule(
     claimType: input.claimType,
     active: true,
   });
+  // Rows created before the approval column existed have no status in typed
+  // fixtures; treat only that legacy absence as approved. New database rows
+  // default to unconfirmed and must not become a claim basis.
+  const usable = rules.filter(
+    (rule) =>
+      rule.rule_approval_status === "approved" ||
+      rule.rule_approval_status == null,
+  );
   if (input.partnerId) {
-    const exact = rules.find((rule) => rule.partner_id === input.partnerId);
-    if (exact) return exact;
+    const exactContract = usable.find(
+      (rule) =>
+        rule.partner_id === input.partnerId &&
+        rule.source_type === "contract_extracted",
+    );
+    if (exactContract) return exactContract;
+    const exactConfigured = usable.find(
+      (rule) =>
+        rule.partner_id === input.partnerId &&
+        rule.source_type === "merchant_configured",
+    );
+    if (exactConfigured) return exactConfigured;
   }
-  return rules.find((rule) => rule.partner_id != null) ?? rules[0] ?? null;
+  return (
+    usable.find(
+      (rule) =>
+        rule.source_type === "merchant_configured" && rule.partner_id != null,
+    ) ??
+    usable.find(
+      (rule) =>
+        rule.source_type === "unauth_default" &&
+        rule.rule_approval_status === "approved",
+    ) ??
+    null
+  );
 }

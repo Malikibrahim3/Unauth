@@ -12,6 +12,7 @@ import { performV1Lookup } from "@/lib/api/v1/lookup";
 import { v1OptionsResponse, withV1Cors } from "@/lib/api/v1/cors";
 import { withRequestLogging } from "@/lib/log";
 import { enforceEntitlement } from "@/lib/product/requireEntitlement";
+import { createHash } from "node:crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 async function GETHandler(request: NextRequest) {
-  const authResult = await validateApiKey(request);
+  const authResult = await validateApiKey(request, 'lookup:read');
   if (!isValidatedApiKey(authResult)) return withV1Cors(authResult, request);
 
   const service = createServiceClient();
@@ -99,6 +100,11 @@ async function GETHandler(request: NextRequest) {
     claimId,
     ticketRef,
     orderRef,
+    logicalOperationId: `api-lookup:${authResult.keyId}:${request.headers.get("idempotency-key")?.trim() || createHash("sha256").update(request.url).digest("hex")}`,
+    sourceObject: {
+      type: claimId ? "claim" : ticketRef ? "ticket" : orderRef ? "order" : "lookup_request",
+      id: claimId ?? ticketRef ?? orderRef ?? createHash("sha256").update(request.url).digest("hex"),
+    },
     metadata: { request_source: "api" },
   });
 

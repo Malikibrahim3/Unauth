@@ -1,6 +1,7 @@
 import { Tabs } from "@/components/ui/Tabs";
+import type { IntegrationsView } from "@/lib/integrations/catalogueView";
 
-export type IntegrationsView = "connected" | "browse" | "imports";
+export type { IntegrationsView } from "@/lib/integrations/catalogueView";
 
 export function IntegrationsTabs({
   active,
@@ -13,23 +14,23 @@ export function IntegrationsTabs({
 }) {
   return (
     <Tabs
-      aria-label="Integration views"
+      aria-label="Source views"
       value={active}
       items={[
         {
           value: "connected",
-          label: <>Connected <span className="ml-1 tabular-nums text-[var(--ua-text-tertiary)]">{connectedCount}</span></>,
-          href: "/integrations?view=connected",
+          label: <>Connected <span className="ml-1 tabular-nums text-[var(--uo-route-text-tertiary)]">{connectedCount}</span></>,
+          href: "/sources/connected?view=connected",
         },
         {
           value: "browse",
-          label: <>Browse integrations <span className="ml-1 tabular-nums text-[var(--ua-text-tertiary)]">{catalogueCount}</span></>,
-          href: "/integrations?view=browse",
+          label: <>Catalogue <span className="ml-1 tabular-nums text-[var(--uo-route-text-tertiary)]">{catalogueCount}</span></>,
+          href: "/sources/browse",
         },
         {
           value: "imports",
-          label: "Imports & API",
-          href: "/integrations/imports",
+          label: "Imports",
+          href: "/sources/imports",
         },
       ]}
     />

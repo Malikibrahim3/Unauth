@@ -1,4 +1,4 @@
-import { RECOVERY_BOARD_COLUMNS, eventTypeForStatus, nextStatusPatch } from '@/lib/recoveries/status';
+import { RECOVERY_BOARD_COLUMNS, evidencePackStatus, eventTypeForStatus, nextStatusPatch } from '@/lib/recoveries/status';
 import { RECOVERY_CASE_STATUSES } from '@/lib/recoveries/types';
 import { markRecoveryCaseChased } from '@/lib/recoveries/store';
 
@@ -8,6 +8,16 @@ describe('recovery board status visibility (CR-3)', () => {
     for (const status of RECOVERY_CASE_STATUSES) {
       expect(covered.filter((s) => s === status)).toHaveLength(1);
     }
+  });
+});
+
+describe('recovery evidence-pack semantics', () => {
+  it.each([
+    [{ evidence_required: [], evidence_missing: [], evidence_complete: true }, 'not_applicable'],
+    [{ evidence_required: ['tracking'], evidence_missing: [], evidence_complete: true }, 'complete'],
+    [{ evidence_required: ['tracking'], evidence_missing: ['tracking'], evidence_complete: false }, 'partial'],
+  ] as const)('projects %j as %s independently of lifecycle', (input, expected) => {
+    expect(evidencePackStatus(input)).toBe(expected);
   });
 });
 

@@ -1,26 +1,29 @@
 /*
- * Unauth authenticated design system — single entry point.
- * ---------------------------------------------------------
- * This is the only visual authority for signed-in product surfaces
- * (`.ua-app` / `.ua-auth-surface`). Public/landing tokens intentionally
- * remain in app/globals.css and are not inherited here.
- *
- * Import this file — and only this file — from the root application layout.
- * Selectors stay scoped to authenticated/product surfaces, so public landing
- * artwork remains isolated. Do not import individual files below directly or
- * add a second authenticated stylesheet entry point.
- *
- * See README.md for the component taxonomy and the --ua-* token contract.
+ * Unauth product UI replacement foundation.
+ * This file is the only authenticated stylesheet entry point. It intentionally
+ * has no imports from the superseded visual system. Dashboard Design
+ * Challenge 8 remains the final supplied visual authority for public-entry
+ * composition; the live public default is a white-heavy light bridge.
  */
-@import "./tokens.css";
-@import "./foundations.css";
-@import "./typography.css";
-@import "./surfaces.css";
-@import "./controls.css";
-@import "./status.css";
-@import "./tables.css";
-@import "./composition.css";
-@import "./instrument.css";
-@import "./overlays.css";
-@import "./states.css";
-@import "./responsive.css";
+@import "./dashboard-design-challenge-6-palette.css";
+@import "./replacement.css";
+@import "../p07.css";
+@import "./i2-4.css";
+/* I3.0 is the canonical authenticated token and shared-shell layer. */
+@import "./i3-0.css";
+/* I3.1 owns operational evidence, authority and selected-object continuity. */
+@import "./i3-1.css";
+/* I3.2 owns the financial and analytical Signal Ledger grammar. */
+@import "./i3-2.css";
+/* I3.3 owns source trust, provider detail, setup and import personality. */
+@import "./i3-3.css";
+/* I3.4 owns supporting surfaces, overlay completion and dark parity. */
+@import "./i3-4.css";
+/* Challenge 8 owns authenticated geometry. */
+@import "./dashboard-design-challenge-6-shell.css";
+/* Existing route translations remain data/behavior boundaries. */
+@import "./dashboard-design-challenge-6.css";
+/* Existing public-entry and onboarding composition. */
+@import "./dashboard-design-challenge-6-entry.css";
+/* Legacy compatibility aliases remain isolated from the authenticated theme root. */
+@import "./color-modes.css";

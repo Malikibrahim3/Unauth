@@ -395,7 +395,7 @@ function markdownTable(rows, columns) {
 
 function writeEvalReport(file, summary, missed, falsePositives, weakSignals, patternMetrics) {
   const lines = [];
-  lines.push(`# ParcelClaim Synthetic Evaluation Report`);
+  lines.push(`# Unauth Synthetic Evaluation Report`);
   lines.push("");
   lines.push(`Dataset: \`${path.basename(summary.input)}\``);
   lines.push(`Orders evaluated: ${summary.orders}`);
@@ -443,7 +443,7 @@ function writeEvalReport(file, summary, missed, falsePositives, weakSignals, pat
 
 function writeIdentityReport(file, summary, identity) {
   const lines = [];
-  lines.push(`# ParcelClaim Identity Resolution Report`);
+  lines.push(`# Unauth Identity Resolution Report`);
   lines.push("");
   lines.push(`Dataset: \`${path.basename(summary.input)}\``);
   lines.push("");
@@ -789,7 +789,7 @@ async function evaluateAll(options) {
   if (!summaries.length) throw new Error(`No dataset found at ${input} or tiered merchant_dataset_tier*.csv files in ${outputDir}`);
   if (summaries.length > 1) {
     const lines = [];
-    lines.push("# ParcelClaim Synthetic Evaluation Report");
+    lines.push("# Unauth Synthetic Evaluation Report");
     lines.push("");
     lines.push("Multi-tier evaluation summary. Tier-specific reports are written next to each tiered dataset.");
     lines.push("");
@@ -801,7 +801,7 @@ async function evaluateAll(options) {
     }
     fs.writeFileSync(path.join(outputDir, "eval-report.md"), lines.join("\n"));
     const identityLines = [];
-    identityLines.push("# ParcelClaim Identity Resolution Report");
+    identityLines.push("# Unauth Identity Resolution Report");
     identityLines.push("");
     identityLines.push("Multi-tier identity summary. Tier-specific identity reports contain missed-link and false-merge examples.");
     identityLines.push("");

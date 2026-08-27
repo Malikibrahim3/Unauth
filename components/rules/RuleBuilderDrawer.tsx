@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { Button, Drawer, Input, Card, Textarea } from '@/components/ui';
+import { Button, Drawer, Input, Textarea } from '@/components/ui';
 import type { ConditionOperator, MerchantRule, RuleAction, RuleCondition } from '@/lib/rules-engine';
 import { RULE_FIELDS } from '@/lib/rules/fields';
 import { ACTION_LABELS, summarizeConditions } from '@/lib/rules/summary';
-import { cn } from '@/lib/utils';
 import { ConditionBlock } from './ConditionBlock';
+import styles from './AutomationControls.module.css';
 
 export interface RuleDraftPayload {
   name: string;
@@ -25,6 +25,7 @@ interface RuleBuilderDrawerProps {
   onClose: () => void;
   /** Returns true on success so the drawer can close itself. */
   onSubmit: (payload: RuleDraftPayload, id?: string) => Promise<boolean>;
+  overlayId?: string;
 }
 
 const ACTIONS: RuleAction[] = ['approve', 'manual_review', 'deny'];
@@ -56,6 +57,7 @@ export function RuleBuilderDrawer({
   initialRule,
   onClose,
   onSubmit,
+  overlayId,
 }: RuleBuilderDrawerProps) {
   const [name, setName] = useState(() => (mode === 'edit' ? initialRule?.name ?? '' : ''));
   const [description, setDescription] = useState(() => (mode === 'edit' ? initialRule?.description ?? '' : ''));
@@ -109,16 +111,18 @@ export function RuleBuilderDrawer({
       onClose={onClose}
       width={620}
       title={mode === 'edit' ? 'Edit payout rule' : 'New payout rule'}
+      overlayId={overlayId}
+      signalRail={mode === 'edit'}
       footer={
-        <div className="flex items-center justify-between gap-3 px-5 py-4">
+        <div className={styles.editorFooter}>
           {error ? (
-            <span className="text-caption" style={{ color: 'var(--ua-risk-high)' }}>{error}</span>
+            <span className="text-caption" style={{ color: 'var(--uo-route-risk-high)' }}>{error}</span>
           ) : (
-            <span className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
+            <span className="text-caption" style={{ color: 'var(--uo-route-text-tertiary)' }}>
               Unauth runs your rules — you own the decision.
             </span>
           )}
-          <div className="flex shrink-0 items-center gap-2">
+          <div className={styles.editorActions}>
             <Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button>
             <Button variant="primary" onClick={handleSave} disabled={!canSave} loading={saving}>
               Save rule
@@ -127,7 +131,12 @@ export function RuleBuilderDrawer({
         </div>
       }
     >
-      <div className="flex flex-col gap-6 p-5">
+      <div className="grid gap-1 p-5">
+        <ol className={styles.builderGuide} aria-label="Rule draft steps">
+          {['Goal', 'Conditions', 'Recommendation', 'Review'].map((step, index) => (
+            <li key={step} data-current={index === 0 ? 'true' : undefined}><span>{index + 1}</span>{step}</li>
+          ))}
+        </ol>
         {/* Name */}
         <Field label="Rule name" required>
           <Input
@@ -149,18 +158,18 @@ export function RuleBuilderDrawer({
         </Field>
 
         {/* Causal rule anatomy: a case reaches the rule, conditions decide a match, then Unauth recommends. */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+        <section className={styles.editorSection}>
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <span className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>If</span>
-              <p className="mt-0.5 text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
+              <span className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>If</span>
+              <p className="mt-0.5 text-caption" style={{ color: 'var(--uo-route-text-tertiary)' }}>
                 When a case reaches this rule, check these conditions.
               </p>
             </div>
             {conditions.length > 1 && (
               <div
-                className="inline-flex overflow-hidden rounded-[var(--ua-radius-control)]"
-                style={{ border: '1px solid var(--ua-border-default)' }}
+                className="inline-flex overflow-hidden rounded-[var(--uo-route-radius-control)]"
+                style={{ border: '1px solid var(--uo-route-border-default)' }}
               >
                 <SegmentButton active={operator === 'and'} onClick={() => setOperator('and')}>
                   Match ALL
@@ -183,8 +192,8 @@ export function RuleBuilderDrawer({
 
           {conditions.length === 0 && (
             <div
-              className="flex items-start gap-2 rounded-[var(--ua-radius-control)] p-3 text-caption"
-              style={{ background: 'var(--ua-surface-muted)', color: 'var(--ua-risk-medium, var(--ua-text-secondary))' }}
+              className="flex items-start gap-2 rounded-[var(--uo-route-radius-control)] p-3 text-caption"
+              style={{ background: 'var(--uo-route-surface-muted)', color: 'var(--uo-route-risk-medium, var(--uo-route-text-secondary))' }}
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>This rule has no conditions — it will match every case and always recommend <strong>{ACTION_LABELS[action]}</strong>.</span>
@@ -201,11 +210,11 @@ export function RuleBuilderDrawer({
               Add condition
             </Button>
           </div>
-        </div>
+        </section>
 
         {/* Recommended action */}
         <Field label="Recommend" hint="What Unauth recommends when this rule matches. An authorised merchant user still decides the case.">
-          <div className="grid grid-cols-3 gap-2">
+          <div className={styles.choiceList} role="radiogroup" aria-label="Recommendation">
             {ACTIONS.map((a) => {
               const active = action === a;
               return (
@@ -215,7 +224,8 @@ export function RuleBuilderDrawer({
                   role="radio"
                   aria-checked={active}
                   onClick={() => setAction(a)}
-                  className={cn('ua-option-tile', active && 'is-selected')}
+                    className={styles.choice}
+                    data-active={active}
                 >
                   {ACTION_LABELS[a]}
                 </button>
@@ -225,17 +235,20 @@ export function RuleBuilderDrawer({
         </Field>
 
         {/* Live preview */}
-        <Card unstyled variant="muted" className="p-4">
-          <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
+        <section className={styles.editorSection}>
+          <span className={styles.factLabel}>
             When → If → Recommend
           </span>
-          <p className="mt-2 text-body-sm" style={{ color: 'var(--ua-text-primary)' }}>
+          <p className={styles.detailCopy}>
             If {preview}
           </p>
-          <p className="ua-text-working-title mt-3" style={{ color: 'var(--ua-text-primary)' }}>
+          <p className={styles.surfaceTitle}>
             Recommend: {ACTION_LABELS[action]}
           </p>
-        </Card>
+          <p className={styles.reviewBoundary}>
+            Saving creates or updates a draft only. It does not simulate, publish, record a merchant decision, contact a provider, or move money.
+          </p>
+        </section>
       </div>
     </Drawer>
   );
@@ -255,13 +268,13 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
+      <span className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
         {label}
-        {required && <span style={{ color: 'var(--ua-risk-high)' }}> *</span>}
+        {required && <span style={{ color: 'var(--uo-route-risk-high)' }}> *</span>}
       </span>
       {children}
       {hint && (
-        <span className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>{hint}</span>
+        <span className="text-caption" style={{ color: 'var(--uo-route-text-tertiary)' }}>{hint}</span>
       )}
     </label>
   );
@@ -282,8 +295,8 @@ function SegmentButton({
       onClick={onClick}
       className="px-2.5 py-1 text-caption font-medium transition-colors"
       style={{
-        background: active ? 'var(--ua-action-primary)' : 'transparent',
-        color: active ? 'var(--ua-action-primary-fg)' : 'var(--ua-text-secondary)',
+        background: active ? 'var(--uo-route-action-primary)' : 'transparent',
+        color: active ? 'var(--uo-route-action-primary-fg)' : 'var(--uo-route-text-secondary)',
       }}
     >
       {children}

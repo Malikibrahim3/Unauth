@@ -57,10 +57,10 @@ export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'flex h-7 w-7 items-center justify-center rounded-full',
-          'bg-[var(--ua-action-primary)] text-[var(--ua-text-inverse)]',
+          'bg-[var(--uo-route-action-primary)] text-[var(--uo-route-text-inverse)]',
           'text-xs font-bold leading-none',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
-          'transition-colors hover:bg-[var(--ua-action-primary-hover)] active:bg-[var(--ua-action-primary-pressed)]',
+          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)] focus-visible:outline-offset-2',
+          'transition-colors hover:bg-[var(--uo-route-action-primary-hover)] active:bg-[var(--uo-route-action-primary-pressed)]',
           'select-none',
         )}
       >
@@ -73,32 +73,32 @@ export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
           aria-hidden={phase === 'exiting' ? true : undefined}
           className={cn(
             'absolute right-0 top-full mt-1 z-50',
-            'w-48 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)]',
-            'bg-[var(--ua-surface-primary)] shadow-[var(--ua-shadow-menu)]',
+            'w-48 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-default)]',
+            'bg-[var(--uo-route-surface-primary)] shadow-[var(--uo-route-shadow-menu)]',
             'py-1',
           )}
           style={{
             opacity: isOpen ? 1 : 0,
             transform: `translateY(${isOpen ? 0 : 2}px)`,
-            transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--ua-ease-standard), transform ${DURATION.fast}ms var(--ua-ease-standard)` : 'none',
+            transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--uo-route-ease-standard), transform ${DURATION.fast}ms var(--uo-route-ease-standard)` : 'none',
             pointerEvents: phase === 'exiting' ? 'none' : undefined,
           }}
         >
           {(name || email) && (
-            <div className="px-3 py-2 border-b border-[var(--ua-border-subtle)]">
-              {name ? <p className="ua-text-working-title text-[var(--ua-text-primary)] truncate">{name}</p> : null}
-              {email ? <p className="text-caption text-[var(--ua-text-secondary)] truncate">{email}</p> : null}
+            <div className="px-3 py-2 border-b border-[var(--uo-route-border-subtle)]">
+              {name ? <p className="ua-text-working-title text-[var(--uo-route-text-primary)] truncate">{name}</p> : null}
+              {email ? <p className="text-caption text-[var(--uo-route-text-secondary)] truncate">{email}</p> : null}
             </div>
           )}
 
           <Link
-            href="/settings"
+            href="/settings/workspace/account"
             role="menuitem"
             onClick={() => setOpen(false)}
             className={cn(
               'flex w-full items-center gap-2 px-3 py-2',
-              'text-body-sm text-[var(--ua-text-primary)]',
-              'hover:bg-[var(--ua-surface-secondary)] transition-colors duration-[var(--ua-duration-fast)]',
+              'text-body-sm text-[var(--uo-route-text-primary)]',
+              'hover:bg-[var(--uo-route-surface-secondary)] transition-colors duration-[var(--uo-route-duration-fast)]',
             )}
           >
             Account settings
@@ -110,8 +110,8 @@ export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
             onClick={handleSignOut}
             className={cn(
               'flex w-full items-center gap-2 px-3 py-2',
-              'text-body-sm text-[var(--ua-risk-critical)]',
-              'hover:bg-[var(--ua-surface-secondary)] transition-colors duration-[var(--ua-duration-fast)]',
+              'text-body-sm text-[var(--uo-route-risk-critical)]',
+              'hover:bg-[var(--uo-route-surface-secondary)] transition-colors duration-[var(--uo-route-duration-fast)]',
             )}
           >
             Sign out

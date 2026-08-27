@@ -2,48 +2,25 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import type { ConnectorCatalogueItem } from "@/lib/connectors/catalogue";
-import type { EffectiveConnectionBadge } from "@/lib/connections/effectiveStatus";
-import type { ConnectionReadModel } from "@/lib/connections/readModel";
+import { ProviderLogo } from "@/components/identity/ProviderLogo";
 import { useLiveConnectionStatus } from "@/components/integrations/useLiveConnectionStatus";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { ProviderLogo } from "@/components/identity/ProviderLogo";
+import { categoryLabel, type CatalogueRowItem } from "@/lib/integrations/catalogueView";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
-import { humanise } from "@/lib/ui/labels";
-import type { IntegrationCategory } from "@/lib/integrations/types";
-import styles from "./IntegrationsWorkspace.module.css";
+import styles from "@/components/sources/SourcesSurface.module.css";
 
-export type CatalogueRowItem = ConnectorCatalogueItem & {
-  badge: EffectiveConnectionBadge;
-  noteTone?: "warning" | "danger" | null;
-  readModel?: ConnectionReadModel;
-};
-
-const CATEGORY_LABELS: Record<IntegrationCategory, string> = {
-  commerce: "Commerce",
-  helpdesk: "Helpdesk",
-  tracking: "Tracking",
-  carrier: "Carrier",
-  warehouse_3pl: "Warehouse / 3PL",
-  returns: "Returns",
-  payments_disputes: "Payments / disputes",
-  documents: "Documents",
-};
-
-export function categoryLabel(category: string) {
-  return CATEGORY_LABELS[category as IntegrationCategory] ?? humanise(category);
-}
+export { categoryLabel } from "@/lib/integrations/catalogueView";
+export type { CatalogueRowItem } from "@/lib/integrations/catalogueView";
 
 function accountLabel(item: CatalogueRowItem) {
   const account = item.account ?? categoryLabel(item.category);
-  if (item.connectionCount > 1) return `${account} · ${item.connectionCount} accounts`;
-  return account;
+  return item.connectionCount > 1 ? `${account} · ${item.connectionCount} accounts` : account;
 }
 
 function activityLabel(item: CatalogueRowItem) {
   if (item.lastDataReceivedAt) return formatDateTime(item.lastDataReceivedAt);
   if (item.badge === "sync_pending") return "Initial import pending";
-  if (item.freshness.confidence === "unavailable") return "On-demand check";
+  if (item.freshness.confidence === "unavailable") return "Not measurable";
   return "No activity yet";
 }
 
@@ -53,13 +30,13 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
     [item.badge, item.lastError, item.noteTone],
   );
   const live = useLiveConnectionStatus(item.id, initialLiveState);
-  const noteColor = live.noteTone === "warning" ? "var(--ua-warning)" : "var(--ua-critical)";
+
   return (
-    <li className={styles.connectionRow}>
+    <li className={styles.connectionRow} data-state-id={`source-connection-${live.status}`} data-trust-state={live.status}>
       <div className={styles.providerCell}>
         <ProviderLogo provider={item.id} name={item.name} />
         <div className={styles.providerIdentity}>
-          <Link href={`/integrations/${item.id}`} className={styles.providerLink}>{item.name}</Link>
+          <Link href={`/sources/${item.id}`} className={styles.providerLink}>{item.name}</Link>
           <span className={styles.providerMeta}>{accountLabel(item)}</span>
         </div>
       </div>
@@ -67,21 +44,29 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
         <span className={styles.mobileLabel}>Status</span>
         <StatusBadge family="workflowStatus" value={live.status} />
       </div>
-      <div className={styles.coverage}>
+      <div>
         <span className={styles.mobileLabel}>Data covered</span>
         <span className={styles.coverageText}>{item.description}</span>
-        {live.note ? <span role="status" className={styles.note} style={{ color: noteColor }}>{live.note}</span> : null}
+        {live.note ? (
+          <span
+            role="status"
+            className={styles.providerMeta}
+            style={{ color: live.noteTone === "warning" ? "var(--uo-route-warning)" : "var(--uo-route-critical)" }}
+          >
+            {live.note}
+          </span>
+        ) : null}
       </div>
-      <div className="ua-text-working-title text-left tabular-nums text-[var(--ua-text-primary)] md:text-right">
+      <div className="text-left tabular-nums md:text-right">
         <span className={styles.mobileLabel}>Records</span>
-        {formatNumber(item.importedRecords)}
+        <span className="ua-text-dense font-medium text-[var(--uo-route-text-primary)]">{item.importedRecordsKnown === false ? "Unavailable" : formatNumber(item.importedRecords)}</span>
       </div>
-      <div className={styles.cellText}>
+      <div className={styles.cellCopy}>
         <span className={styles.mobileLabel}>Last data</span>
         {activityLabel(item)}
       </div>
-      <div className={styles.actionCell}>
-        <Link href={`/integrations/${item.id}`} className={styles.actionLink}>Manage</Link>
+      <div className="text-right">
+        <Link href={`/sources/${item.id}`} className={styles.actionLink}>Manage</Link>
       </div>
     </li>
   );

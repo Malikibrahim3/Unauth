@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { FL_NAV, FL_ROUTES } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
@@ -30,7 +30,7 @@ export default function FoundationNav() {
       <header className={`${styles.heroNavbar} ${styles.heroNavbarLight}`}>
         <div className={styles.heroNavbarInner}>
           <Link href="/landing" prefetch={false} aria-label="Unauth home" className={styles.heroNavLogoGroup}>
-            <UnauthLogo kind="lockup" tone="graphite" height={22} priority alt="" decorative />
+            <UnauthLogo kind="wordmark" tone="graphite" height={24} priority alt="" decorative />
           </Link>
 
           <div className={styles.heroNavActions}>
@@ -46,11 +46,8 @@ export default function FoundationNav() {
               <Link href={FL_ROUTES.login} prefetch={false} className={styles.heroNavSignIn}>
                 {FL_NAV.signIn}
               </Link>
-              <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroNavCta} aria-label={FL_NAV.cta}>
+              <Link href={FL_ROUTES.gateInAction} prefetch={false} className={styles.heroNavCta} aria-label={FL_NAV.cta}>
                 <span className={styles.heroNavCtaText}>{FL_NAV.cta}</span>
-                <span className={styles.heroNavCtaArrow} aria-hidden>
-                  <ChevronRight size={14} strokeWidth={2.25} />
-                </span>
               </Link>
               <button
                 ref={toggleRef}
@@ -94,15 +91,12 @@ export default function FoundationNav() {
           </Link>
           <div className="mt-2 border-t border-[rgba(0,0,0,0.08)] pt-2">
             <Link
-              href={FL_ROUTES.audit}
+              href={FL_ROUTES.gateInAction}
               prefetch={false}
               onClick={() => setOpen(false)}
               className={`${styles.heroNavCta} w-full`}
             >
               <span className={styles.heroNavCtaText}>{FL_NAV.cta}</span>
-              <span className={styles.heroNavCtaArrow} aria-hidden>
-                <ChevronRight size={14} strokeWidth={2.25} />
-              </span>
             </Link>
           </div>
         </div>

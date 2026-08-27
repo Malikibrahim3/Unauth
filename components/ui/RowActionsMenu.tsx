@@ -100,7 +100,7 @@ export function RowActionsMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ua-surface-muted)] disabled:text-[var(--ua-text-disabled)]"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--uo-route-radius-control)] text-[var(--uo-route-text-secondary)] hover:bg-[var(--uo-route-surface-hover)] hover:text-[var(--uo-route-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)] disabled:cursor-not-allowed disabled:bg-[var(--uo-route-surface-muted)] disabled:text-[var(--uo-route-text-disabled)]"
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -111,15 +111,15 @@ export function RowActionsMenu({
           role="menu"
           aria-label={label}
           aria-hidden={phase === "exiting" ? true : undefined}
-          className="fixed z-[var(--ua-z-dropdown)] min-w-[168px] overflow-hidden rounded-[var(--ua-radius-control)] border bg-[var(--ua-surface-overlay)] py-1 shadow-[var(--ua-shadow-menu)]"
+          className="fixed z-[var(--uo-route-z-dropdown)] min-w-[168px] overflow-hidden rounded-[var(--uo-route-radius-control)] border bg-[var(--uo-route-surface-overlay)] py-1 shadow-[var(--uo-route-shadow-menu)]"
           style={{
             left: position.left,
             top: position.top,
             bottom: position.bottom,
-            borderColor: "var(--ua-border-default)",
+            borderColor: "var(--uo-route-border-default)",
             opacity: isOpen ? 1 : 0,
             transform: `translateY(${isOpen ? 0 : 2}px)`,
-            transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--ua-ease-standard), transform ${DURATION.fast}ms var(--ua-ease-standard)` : "none",
+            transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--uo-route-ease-standard), transform ${DURATION.fast}ms var(--uo-route-ease-standard)` : "none",
             pointerEvents: phase === "exiting" ? "none" : undefined,
           }}
         >
@@ -143,13 +143,13 @@ export function RowActionsMenu({
                   moveFocus(-1, index);
                 }
               }}
-              className="flex w-full items-center px-3 py-1.5 text-left text-sm hover:bg-[var(--ua-surface-hover)] focus-visible:bg-[var(--ua-surface-hover)] focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-[var(--ua-surface-muted)] disabled:text-[var(--ua-text-disabled)]"
+              className="flex w-full items-center px-3 py-1.5 text-left text-sm hover:bg-[var(--uo-route-surface-hover)] focus-visible:bg-[var(--uo-route-surface-hover)] focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-[var(--uo-route-surface-muted)] disabled:text-[var(--uo-route-text-disabled)]"
               style={{
                 color: action.disabled
-                  ? "var(--ua-text-disabled)"
+                  ? "var(--uo-route-text-disabled)"
                   : action.tone === "danger"
-                    ? "var(--ua-risk-critical)"
-                    : "var(--ua-text-primary)",
+                    ? "var(--uo-route-risk-critical)"
+                    : "var(--uo-route-text-primary)",
               }}
             >
               {action.label}

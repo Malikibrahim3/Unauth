@@ -28,7 +28,7 @@ const LEGAL_LINKS = [
  */
 export function LegalDocument({ title, summary, updated, contents, children }: LegalDocumentProps) {
   return (
-    <main id="main-content" className={styles.document} tabIndex={-1}>
+    <main id="main-content" className={styles.document} tabIndex={-1} data-surface-id="public-legal-document" data-archetype="P11">
       <div className={styles.intro}>
         <h1>{title}</h1>
         {summary ? <p className={styles.summary}>{summary}</p> : null}
@@ -36,6 +36,10 @@ export function LegalDocument({ title, summary, updated, contents, children }: L
       </div>
 
       <div className={styles.contentGrid}>
+        <details className={styles.mobileContents}>
+          <summary>On this page</summary>
+          <ol>{contents.map((item) => <li key={item.href}><a href={item.href}>{item.label}</a></li>)}</ol>
+        </details>
         <nav className={styles.contents} aria-label="On this page">
           <p>On this page</p>
           <ol>
@@ -51,13 +55,14 @@ export function LegalDocument({ title, summary, updated, contents, children }: L
       </div>
 
       <footer className={styles.footer}>
-        <p>Related legal documents</p>
+        <p>Related documents and contact</p>
         <nav aria-label="Related legal documents">
           {LEGAL_LINKS.map((link) => (
             <Link key={link.href} href={link.href}>
               {link.label}
             </Link>
           ))}
+          <a href="mailto:privacy@unauth.co">Contact privacy</a>
         </nav>
       </footer>
     </main>

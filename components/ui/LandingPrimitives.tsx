@@ -192,7 +192,7 @@ export type ThreadPanelMessage = {
 };
 
 export function ThreadPanel({
-  channel = 'Thread in #cases',
+  channel = 'Thread in #claims',
   messages,
   className,
 }: {
@@ -280,7 +280,8 @@ function ThreadComposer() {
           <ImageIcon size={20} />
         </div>
 
-        <button
+        <div
+          aria-hidden="true"
           className="flex h-[34px] overflow-hidden rounded-md text-white"
           style={{
             background: '#A85040',
@@ -294,7 +295,7 @@ function ThreadComposer() {
           <span className="flex h-full w-[34px] items-center justify-center">
             <ChevronDown size={16} />
           </span>
-        </button>
+        </div>
       </div>
     </div>
   );

@@ -66,14 +66,18 @@ describe("app route registry", () => {
   "Overview",
   "Work",
   "Cases",
-  "Losses",
-  "Recovery",
   "Customers",
-  "Rules",
-  "Flows",
+  "Loss ledger",
+  "Recovery board",
+  "Reconciliation",
   "Reports",
-  "Integrations",
+  "Payout rules",
+  "Flows",
+  "Connected",
+  "Imports",
   "Settings",
+  "Notifications",
+  "Help",
 ]
 `);
   });

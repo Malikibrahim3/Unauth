@@ -3,14 +3,15 @@ import { z } from 'zod';
 import { getRequestServiceClient, getRequestUser, requirePagePermission } from '@/lib/auth/requestContext';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
+import { workSavedViewDefinitionSchema } from '@/lib/work/types';
 
 export const dynamic = 'force-dynamic';
 
 const viewSchema = z.object({
   name: z.string().trim().min(1).max(80),
-  definition: z.record(z.unknown()).default({}),
+  definition: workSavedViewDefinitionSchema,
   isShared: z.boolean().default(false),
-});
+}).strict();
 
 export async function GET() {
   const user = await getRequestUser();
@@ -26,7 +27,15 @@ export async function GET() {
     .or(`owner_user_id.eq.${user.id},is_shared.eq.true`)
     .order('updated_at', { ascending: false });
   if (error) return NextResponse.json({ error: 'Unable to load saved Work views' }, { status: 500 });
-  return NextResponse.json({ views: data ?? [] });
+  const views = [];
+  for (const row of data ?? []) {
+    const definition = workSavedViewDefinitionSchema.safeParse(row.definition);
+    if (!definition.success) {
+      return NextResponse.json({ error: 'A saved Work view has an invalid definition and needs repair' }, { status: 500 });
+    }
+    views.push({ ...row, definition: definition.data });
+  }
+  return NextResponse.json({ views });
 }
 
 export async function POST(request: NextRequest) {

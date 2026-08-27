@@ -9,7 +9,7 @@
  * persistence helper. The reducer is the single source of truth for how a set
  * of ledger entries collapses into per-currency state totals.
  *
- * See ARCHITECTURE.md §4.
+ * See ARCHITECTURE.md for the canonical money and ledger owners.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

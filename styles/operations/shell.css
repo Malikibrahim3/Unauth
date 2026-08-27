@@ -1,0 +1,232 @@
+@layer components {
+  /*
+   * Evidence Operations / Evidence Operations
+   *
+   * This layer is intentionally scoped to `.ua-app`. Typography and component
+   * rules remain here; the final authenticated mode bridge owns semantic
+   * colour roles. Auth, Landing and public/legal surfaces do not inherit this
+   * layer.
+   */
+  .ua-app {
+    --uo-route-font-display: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --uo-route-text-detail-identity-size: 34px;
+    --uo-route-text-detail-identity-weight: 600;
+    --uo-route-text-detail-identity-leading: 38px;
+    --uo-route-text-detail-identity-tracking: -0.025em;
+
+    background: var(--uo-route-canvas);
+  }
+
+  .ua-app-shell__main,
+  .ua-app-shell__scroll {
+    background: var(--uo-route-canvas);
+  }
+
+  .ua-primary-nav {
+    color-scheme: light;
+    border-right-color: var(--uo-route-nav-border);
+    background: var(--uo-route-nav-background);
+    color: var(--uo-route-nav-text);
+  }
+
+  .ua-primary-nav__brand {
+    border-bottom-color: var(--uo-route-nav-border);
+  }
+
+  .ua-primary-nav__brand > button,
+  .ua-primary-nav__account > button {
+    color: var(--uo-route-nav-text-muted);
+  }
+
+  .ua-primary-nav__brand > button:hover,
+  .ua-primary-nav__account > button:hover {
+    background: var(--uo-route-nav-hover);
+    color: var(--uo-route-nav-text-active);
+  }
+
+  .ua-workspace-select span,
+  .ua-primary-nav__groups section > p,
+  .ua-primary-nav__groups a small,
+  .ua-primary-nav__account small {
+    color: var(--uo-route-nav-text-muted);
+  }
+
+  .ua-workspace-select select {
+    border-color: var(--uo-route-nav-border);
+    background: var(--uo-route-nav-hover);
+    color: var(--uo-route-nav-text-active);
+  }
+
+  .ua-primary-nav__groups a {
+    position: relative;
+    color: var(--uo-route-nav-text);
+  }
+
+  .ua-primary-nav__groups a:hover {
+    background: var(--uo-route-nav-hover);
+    color: var(--uo-route-nav-text-active);
+  }
+
+  .ua-primary-nav__groups a[aria-current="page"] {
+    background: var(--uo-route-nav-selected);
+    color: var(--uo-route-nav-text-active);
+  }
+
+  .ua-primary-nav__groups a[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    inset-block: 7px;
+    left: 0;
+    width: 2px;
+    border-radius: 0;
+    background: var(--uo-route-nav-signal);
+  }
+
+  .ua-primary-nav__account {
+    border-top-color: var(--uo-route-nav-border);
+  }
+
+  .ua-primary-nav__account > div {
+    background: var(--uo-route-nav-selected);
+    color: var(--uo-route-nav-signal);
+  }
+
+  .ua-primary-nav__account strong {
+    color: var(--uo-route-nav-text-active);
+  }
+
+  .ua-app-header {
+    border-bottom-color: var(--uo-route-rule-default);
+    background: color-mix(in srgb, var(--uo-route-paper-primary) 94%, var(--uo-route-paper-secondary));
+  }
+
+  .ua-app-header__context strong,
+  .ua-app h1,
+  .ua-modal__header h2,
+  .ua-drawer__header h2,
+  .ua-inspector__header h2,
+  .ua-chart-frame__header h2,
+  .ua-text-page-title,
+  .ua-text-section-title,
+  .ua-text-hero-value,
+  .ua-text-kpi,
+  .ua-chart-kpi strong,
+  .ua-overview-kpi .ua-product-value {
+    font-family: var(--uo-route-font-display);
+  }
+
+  .ua-text-page-title,
+  .ua-text-hero-value {
+    letter-spacing: -0.025em;
+  }
+
+  .ua-working-surface,
+  .ua-section-card,
+  .ua-card--panel,
+  .ua-chart-frame,
+  .ua-inspector {
+    border-color: var(--uo-route-rule-default);
+    background: var(--uo-route-paper-primary);
+  }
+
+  .ua-working-surface__header,
+  .ua-section-card__header,
+  .ua-chart-frame__header,
+  .ua-registry-surface__toolbar {
+    background: color-mix(in srgb, var(--uo-route-paper-primary) 84%, var(--uo-route-paper-secondary));
+  }
+
+  .ua-inset-group,
+  .ua-operational-state,
+  .ua-empty-state,
+  .ua-chart-state {
+    background: var(--uo-route-paper-secondary);
+  }
+
+  .ua-operational-state,
+  .ua-empty-state,
+  .ua-chart-state {
+    border-block: 1px dotted var(--uo-route-rule-default);
+  }
+
+  .ua-app :where(button, a)[aria-pressed="true"],
+  .ua-app :where(button, a)[aria-selected="true"] {
+    color: var(--uo-route-signal-copper-hover);
+  }
+
+  .ua-tabs__item--active {
+    border-color: var(--uo-route-signal-copper);
+  }
+
+  .ua-filter-chip--active {
+    border-color: var(--uo-route-signal-copper-light);
+    background: var(--uo-route-signal-copper-soft);
+    color: var(--uo-route-signal-copper-hover);
+  }
+
+  .ua-data-table__row[aria-selected="true"] .ua-data-table__cell {
+    background: var(--uo-route-signal-copper-soft);
+    box-shadow: inset 0 1px 0 var(--uo-route-signal-copper-light), inset 0 -1px 0 var(--uo-route-signal-copper-light);
+  }
+
+  .ua-data-table__row[aria-selected="true"] .ua-data-table__cell:first-child {
+    box-shadow: inset 2px 0 0 var(--uo-route-signal-copper), inset 0 1px 0 var(--uo-route-signal-copper-light), inset 0 -1px 0 var(--uo-route-signal-copper-light);
+  }
+
+  .ua-inspector,
+  .ua-drawer[data-signal-rail="true"] {
+    box-shadow: inset 2px 0 0 var(--uo-route-signal-copper);
+  }
+
+  .ua-modal,
+  .ua-drawer,
+  .ua-command-palette,
+  .ua-app [role="menu"],
+  .ua-app [role="tooltip"] {
+    border-color: var(--uo-route-rule-default);
+    background: var(--uo-route-paper-raised);
+  }
+
+  .ua-modal__header,
+  .ua-drawer__header,
+  .ua-command-palette__input {
+    background: color-mix(in srgb, var(--uo-route-paper-raised) 84%, var(--uo-route-paper-secondary));
+  }
+
+  .ua-command-palette__results button[aria-selected="true"] {
+    box-shadow: inset 2px 0 0 var(--uo-route-signal-copper);
+  }
+
+  .ua-command-palette__results i {
+    background: var(--uo-route-paper-secondary);
+    color: var(--uo-route-data-petrol);
+  }
+
+  .ua-checkbox,
+  .ua-switch input:checked + .ua-switch__track {
+    accent-color: var(--uo-route-signal-copper);
+  }
+
+  .ua-audit-timeline__marker {
+    background: var(--uo-route-data-petrol);
+    box-shadow: 0 0 0 1px var(--uo-route-data-petrol);
+  }
+
+  .ua-chart-legend i[data-tone="secondary"] {
+    background: var(--uo-route-data-petrol);
+  }
+
+  .ua-chart-legend i[data-tone="neutral"],
+  .ua-chart-legend i[data-tone="comparison"] {
+    background: var(--uo-route-data-slate);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ua-primary-nav__groups a[aria-current="page"]::before,
+    .ua-tabs__item--active,
+    .ua-data-table__row[aria-selected="true"] .ua-data-table__cell,
+    .ua-command-palette__results button[aria-selected="true"] {
+      transition: background-color 160ms var(--uo-route-ease-standard), color 160ms var(--uo-route-ease-standard), border-color 160ms var(--uo-route-ease-standard), box-shadow 160ms var(--uo-route-ease-standard);
+    }
+  }
+}

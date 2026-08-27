@@ -166,7 +166,7 @@ export async function getStoredIntegrationViews(
     const row = storedIntegration;
     return {
       ...provider,
-      status: provider.buildStatus === 'slot_only' ? 'not_connected' : activeStatus(row?.status),
+      status: provider.codeMaturity === 'slot_only' ? 'not_connected' : activeStatus(row?.status),
       lastSyncAt: row?.last_sync_at ?? null,
       lastError: publicConnectionErrorMessage(row?.last_error_code, row?.last_error),
       detail: row?.provider_account_name ?? row?.provider_account_id ?? null,
@@ -364,7 +364,7 @@ export async function getShopifyCredential(
 }
 
 export function assertLiveProvider(provider: IntegrationProvider): void {
-  if (provider.buildStatus === 'slot_only') {
+  if (provider.codeMaturity === 'slot_only') {
     throw new Error('provider_is_slot_only');
   }
 }

@@ -3,16 +3,16 @@
  * the high-volume case dataset to the canonical big-merchant seeder.
  *
  * This account is intentionally synthetic. It uses .test domains, is_demo=true,
- * and the application displays its demo-data banner so it cannot be mistaken
- * for a real company connection.
+ * and synthetic connector metadata so no provider credentials are mistaken for
+ * a real company connection.
  *
  * Usage:
  *   node scripts/seed-enterprise-demo.mjs
  *   SEED_OWNER_PASSWORD='...' node scripts/seed-enterprise-demo.mjs
- *   node scripts/seed-enterprise-demo.mjs --reset
+ *   node scripts/seed-enterprise-demo.mjs --verify-only
  */
 
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -42,17 +42,22 @@ if (!SUPABASE_URL || !SERVICE_ROLE) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
-const MERCHANT_ID = 'd7a2f6c1-6a58-4d32-8c04-6f4e4f8c9b11';
-const MEMBERSHIP_ID = 'd7a2f6c1-6a58-4d32-8c04-6f4e4f8c9b13';
-const COMPANY_NAME = 'Northstar Commerce Group (Demo)';
-const OWNER_EMAIL = 'ops@northstar-demo.test';
+const MERCHANT_ID = '4f5a8c25-6dcb-4b90-9e16-3a91c27d8f44';
+const MEMBERSHIP_ID = '7e2c6f19-1b4a-4d83-a6f0-9c5e2b7a8d31';
+const COMPANY_NAME = 'Asterlane Commerce Group';
+const LEGACY_COMPANY_NAME = 'Asterlane Commerce Group (Demo)';
+const OWNER_EMAIL = 'demo@asterlane-demo.test';
+const DEFAULT_OWNER_PASSWORD = 'AsterlaneDemo2026!';
 const OWNER_NAME = 'Avery Mercer';
-const SEED_TAG = 'northstar-enterprise-demo';
-const SEED_PREFIX = 'seed-northstar-enterprise';
-const CUSTOMER_EMAIL_DOMAIN = 'northstar-demo.test';
-const ORDER_NUMBER_PREFIX = 'NSC';
-const STORE_DOMAIN = 'northstar-commerce-demo.myshopify.test';
+const SEED_TAG = 'asterlane-enterprise-demo';
+const SEED_PREFIX = 'seed-asterlane-enterprise';
+const CUSTOMER_EMAIL_DOMAIN = 'asterlane-demo.test';
+const ORDER_NUMBER_PREFIX = 'ALG';
+const STORE_DOMAIN = 'asterlane-commerce-demo.myshopify.test';
+const BACKGROUND_ORDER_COUNT = 50_000;
+const OPERATIONAL_CASE_COUNT = 392;
 const RESET_ONLY = process.argv.includes('--reset');
+const VERIFY_ONLY = process.argv.includes('--verify-only');
 
 const ANCHOR = new Date();
 ANCHOR.setUTCMinutes(0, 0, 0);
@@ -79,8 +84,15 @@ function uuid(label) {
   return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
 }
 
-function generatePassword() {
-  return `${randomBytes(18).toString('base64url')}N!7`;
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => `${JSON.stringify(key)}:${canonicalJson(entry)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
 }
 
 async function checked(label, query) {
@@ -144,7 +156,7 @@ const RULES = [
     description: 'Route higher exposure cases to an analyst before payout.',
     action: 'manual_review',
     priority: 100,
-    conditions: [{ field: 'amount_at_risk', operator: 'greater_than', value: 150 }],
+    conditions: [{ field: 'amount_at_risk', operator: 'greater_than', value: 150_000 }],
   },
 ].map((rule, index) => ({
   ...rule,
@@ -158,13 +170,19 @@ async function ensureOwner() {
   const { data: list, error: listError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (listError) throw new Error(`auth list failed: ${listError.message}`);
 
-  const fixedIdUser = list.users.find((user) => user.id === 'd7a2f6c1-6a58-4d32-8c04-6f4e4f8c9b12');
   const emailUser = list.users.find((user) => user.email?.toLowerCase() === OWNER_EMAIL);
-  if (fixedIdUser && fixedIdUser.email?.toLowerCase() !== OWNER_EMAIL) {
-    throw new Error('The deterministic Northstar owner id is already used by another email.');
+  if (emailUser) {
+    const memberships = await checked(
+      'owner membership lookup',
+      supabase.from('merchant_users').select('merchant_id').eq('user_id', emailUser.id),
+    );
+    const foreignMembership = (memberships ?? []).find((membership) => membership.merchant_id !== MERCHANT_ID);
+    if (foreignMembership) {
+      throw new Error(`Demo owner email is already attached to merchant ${foreignMembership.merchant_id}.`);
+    }
   }
-  const existing = fixedIdUser ?? emailUser;
-  const password = process.env.SEED_OWNER_PASSWORD ?? generatePassword();
+  const existing = emailUser;
+  const password = process.env.SEED_OWNER_PASSWORD ?? DEFAULT_OWNER_PASSWORD;
   const metadata = {
     ...(existing?.user_metadata ?? {}),
     full_name: OWNER_NAME,
@@ -181,12 +199,11 @@ async function ensureOwner() {
   if (existing) {
     const { data, error } = await supabase.auth.admin.updateUserById(existing.id, {
       email: OWNER_EMAIL,
-      password,
       email_confirm: true,
       user_metadata: metadata,
     });
     if (error) throw new Error(`auth update failed: ${error.message}`);
-    return { user: data.user, password };
+    return { user: data.user, password: null };
   }
 
   const { data, error } = await supabase.auth.admin.createUser({
@@ -204,8 +221,8 @@ async function ensureMerchant() {
     'merchant lookup',
     supabase.from('merchants').select('id,name,is_demo').eq('id', MERCHANT_ID).maybeSingle(),
   );
-  if (existing && existing.name !== COMPANY_NAME) {
-    throw new Error(`Deterministic Northstar merchant id is already used by ${existing.name}.`);
+  if (existing && ![COMPANY_NAME, LEGACY_COMPANY_NAME].includes(existing.name)) {
+    throw new Error(`Deterministic Asterlane merchant id is already used by ${existing.name}.`);
   }
   await checked('merchant upsert', supabase.from('merchants').upsert({
     id: MERCHANT_ID,
@@ -255,25 +272,62 @@ async function ensureRules(ownerId) {
     created_at: rule.createdAt,
     updated_at: rule.updatedAt,
   }));
-  const versionRows = RULES.map((rule) => ({
-    id: rule.versionId,
-    merchant_id: MERCHANT_ID,
-    merchant_rule_id: rule.id,
-    version: 1,
-    status: 'published',
-    name: rule.name,
-    description: rule.description,
-    conditions: rule.conditions,
-    action: rule.action,
-    condition_operator: 'and',
-    priority: rule.priority,
-    created_by: ownerId,
-    published_by: ownerId,
-    created_at: rule.createdAt,
-    published_at: rule.updatedAt,
-  }));
   await checked('merchant rules upsert', supabase.from('merchant_rules').upsert(ruleRows, { onConflict: 'id' }));
-  await checked('merchant rule versions upsert', supabase.from('merchant_rule_versions').upsert(versionRows, { onConflict: 'id' }));
+
+  const existingVersions = await checked(
+    'merchant rule versions lookup',
+    supabase
+      .from('merchant_rule_versions')
+      .select('id,merchant_rule_id,version,status,name,description,conditions,action,condition_operator,priority')
+      .eq('merchant_id', MERCHANT_ID)
+      .in('merchant_rule_id', RULES.map((rule) => rule.id)),
+  );
+  const versionRows = RULES.flatMap((rule) => {
+    const latest = (existingVersions ?? [])
+      .filter((version) => version.merchant_rule_id === rule.id)
+      .sort((a, b) => b.version - a.version)[0];
+    const unchanged = latest
+      && latest.status === 'published'
+      && latest.name === rule.name
+      && latest.description === rule.description
+      && latest.action === rule.action
+      && latest.condition_operator === 'and'
+      && latest.priority === rule.priority
+      && canonicalJson(latest.conditions) === canonicalJson(rule.conditions);
+    if (unchanged) return [];
+    const version = latest ? latest.version + 1 : 1;
+    return [{
+      id: version === 1 ? rule.versionId : uuid(`rule-version:${rule.key}:v${version}`),
+      merchant_id: MERCHANT_ID,
+      merchant_rule_id: rule.id,
+      version,
+      status: 'draft',
+      name: rule.name,
+      description: rule.description,
+      conditions: rule.conditions,
+      action: rule.action,
+      condition_operator: 'and',
+      priority: rule.priority,
+      created_by: ownerId,
+      published_by: null,
+      supersedes_version_id: latest?.id ?? null,
+      created_at: new Date().toISOString(),
+      published_at: null,
+    }];
+  });
+  if (versionRows.length > 0) {
+    await checked('merchant rule versions insert', supabase.from('merchant_rule_versions').insert(versionRows));
+    for (const version of versionRows) {
+      await checked(
+        'merchant rule version publish',
+        supabase.rpc('publish_merchant_rule_version', {
+          p_merchant_id: MERCHANT_ID,
+          p_rule_id: version.merchant_rule_id,
+          p_actor_id: ownerId,
+        }),
+      );
+    }
+  }
 }
 
 async function ensureBilling() {
@@ -322,19 +376,23 @@ async function ensureConnections() {
       data_fresh_through: syncAt,
       webhook_status: 'active',
       webhook_last_received_at: syncAt,
-      imported_record_count: 56,
-      display_name: 'Northstar Commerce storefront',
-      provider_account_id: 'northstar-shopify-demo',
-      provider_account_name: 'Northstar Commerce online store',
-      provider_base_url: 'https://northstar-commerce-demo.myshopify.test',
-      capabilities_snapshot: { read: true, writeback: false, synthetic: true },
-      granted_scopes: ['read_orders', 'read_customers', 'read_fulfillments'],
+      imported_record_count: BACKGROUND_ORDER_COUNT + OPERATIONAL_CASE_COUNT,
+      display_name: 'Asterlane Commerce storefront',
+      provider_account_id: 'asterlane-shopify-demo',
+      provider_account_name: 'Asterlane Commerce online store',
+      provider_base_url: 'https://asterlane-commerce-demo.myshopify.test',
+      capabilities_snapshot: { read: true, read_disputes: true, read_settlements: true, writeback: false, synthetic: true },
+      granted_scopes: ['read_orders', 'read_customers', 'read_fulfillments', 'read_shopify_payments_disputes'],
       subscribed: true,
       environment: 'production',
       connector_version: 'demo-2026.08',
       connection_created_at: daysAgoIso(240, 10),
       last_verified_at: syncAt,
       last_verification_status: 'verified',
+      last_error_code: null,
+      last_error_message: null,
+      last_error: null,
+      last_error_at: null,
       updated_at: syncAt,
     },
     {
@@ -347,17 +405,23 @@ async function ensureConnections() {
       last_sync_at: syncAt,
       last_sync_started_at: daysAgoIso(0, 8),
       last_sync_completed_at: syncAt,
-      imported_record_count: 124,
-      display_name: 'Northstar Support workspace',
-      provider_account_id: 'northstar-gorgias-demo',
-      provider_account_name: 'Northstar Commerce Support',
-      provider_base_url: 'https://northstar-commerce-demo.gorgias.test',
+      imported_record_count: OPERATIONAL_CASE_COUNT,
+      display_name: 'Asterlane Support workspace',
+      provider_account_id: 'asterlane-gorgias-demo',
+      provider_account_name: 'Asterlane Commerce Support',
+      provider_base_url: 'https://asterlane-commerce-demo.gorgias.test',
       capabilities_snapshot: { read: true, writeback: false, synthetic: true },
       granted_scopes: ['read:tickets', 'read:customers'],
       subscribed: true,
       environment: 'production',
       connector_version: 'demo-2026.08',
       connection_created_at: daysAgoIso(240, 10),
+      last_verified_at: syncAt,
+      last_verification_status: 'verified',
+      last_error_code: null,
+      last_error_message: null,
+      last_error: null,
+      last_error_at: null,
       updated_at: syncAt,
     },
     {
@@ -372,11 +436,11 @@ async function ensureConnections() {
       last_sync_completed_at: syncAt,
       last_successful_sync_at: syncAt,
       data_fresh_through: syncAt,
-      imported_record_count: 124,
-      display_name: 'Northstar fulfilment network',
-      provider_account_id: 'northstar-shipbob-demo',
-      provider_account_name: 'Northstar UK Fulfilment',
-      provider_base_url: 'https://northstar-fulfilment.test',
+      imported_record_count: OPERATIONAL_CASE_COUNT,
+      display_name: 'Asterlane fulfilment network',
+      provider_account_id: 'asterlane-shipbob-demo',
+      provider_account_name: 'Asterlane UK Fulfilment',
+      provider_base_url: 'https://asterlane-fulfilment.test',
       capabilities_snapshot: { read: true, writeback: false, synthetic: true },
       granted_scopes: ['read_orders', 'read_shipments'],
       subscribed: true,
@@ -385,6 +449,10 @@ async function ensureConnections() {
       connection_created_at: daysAgoIso(210, 10),
       last_verified_at: syncAt,
       last_verification_status: 'verified',
+      last_error_code: null,
+      last_error_message: null,
+      last_error: null,
+      last_error_at: null,
       updated_at: syncAt,
     },
     {
@@ -394,17 +462,28 @@ async function ensureConnections() {
       category: 'carrier',
       status: 'connected',
       auth_mode: 'api_key',
-      display_name: 'Northstar carrier evidence',
-      provider_account_id: 'northstar-ups-demo',
-      provider_account_name: 'Northstar UPS business account',
-      provider_base_url: 'https://northstar-carrier-evidence.test',
-      capabilities_snapshot: { read: true, writeback: false, synthetic: true },
-      granted_scopes: ['tracking', 'proof_of_delivery'],
-      imported_record_count: 0,
+      display_name: 'Asterlane carrier evidence',
+      provider_account_id: 'asterlane-ups-demo',
+      provider_account_name: 'Asterlane UPS business account',
+      provider_base_url: 'https://asterlane-carrier-evidence.test',
+      capabilities_snapshot: { read: true, writeback: false, synthetic: true, on_demand_evidence: true },
+      granted_scopes: ['tracking', 'tracking_events', 'proof_of_delivery', 'signature'],
+      last_sync_at: syncAt,
+      last_sync_started_at: daysAgoIso(0, 8),
+      last_sync_completed_at: syncAt,
+      last_successful_sync_at: syncAt,
+      data_fresh_through: syncAt,
+      imported_record_count: OPERATIONAL_CASE_COUNT,
       subscribed: false,
       environment: 'production',
       connector_version: 'demo-2026.08',
       connection_created_at: daysAgoIso(190, 10),
+      last_verified_at: syncAt,
+      last_verification_status: 'verified',
+      last_error_code: null,
+      last_error_message: null,
+      last_error: null,
+      last_error_at: null,
       updated_at: syncAt,
     },
   ];
@@ -418,10 +497,10 @@ async function ensureConnections() {
     store_url: `https://${STORE_DOMAIN}`,
     status: 'active',
     credentials_encrypted: 'demo-synthetic-no-live-credentials',
-    scopes: ['read_orders', 'read_customers', 'read_fulfillments'],
+    scopes: ['read_orders', 'read_customers', 'read_fulfillments', 'read_shopify_payments_disputes'],
     installed_at: daysAgoIso(240, 10),
     last_sync_at: syncAt,
-    collector_metadata: { account_name: 'Northstar Commerce online store', synthetic: true },
+    collector_metadata: { account_name: 'Asterlane Commerce online store', synthetic: true, payment_disputes: true },
     last_verified_at: syncAt,
     last_verification_status: 'verified',
     updated_at: syncAt,
@@ -431,9 +510,9 @@ async function ensureConnections() {
     id: uuid('legacy:gorgias'),
     merchant_id: MERCHANT_ID,
     provider: 'gorgias',
-    provider_account_id: 'northstar-gorgias-demo',
-    provider_account_name: 'Northstar Commerce Support',
-    provider_base_url: 'https://northstar-commerce-demo.gorgias.test',
+    provider_account_id: 'asterlane-gorgias-demo',
+    provider_account_name: 'Asterlane Commerce Support',
+    provider_base_url: 'https://asterlane-commerce-demo.gorgias.test',
     status: 'active',
     access_token_encrypted: 'demo-synthetic-no-live-credentials',
     scopes: [
@@ -452,30 +531,43 @@ async function ensureConnections() {
 }
 
 async function main() {
-  const { user, password } = await ensureOwner();
+  let user;
+  let password = null;
+  if (VERIFY_ONLY) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) throw new Error(`auth list failed: ${error.message}`);
+    user = data.users.find((candidate) => candidate.email?.toLowerCase() === OWNER_EMAIL) ?? null;
+    if (!user) throw new Error(`Existing Asterlane demo owner ${OWNER_EMAIL} was not found.`);
+  } else {
+    ({ user, password } = await ensureOwner());
+  }
   if (!user?.id) throw new Error('Auth user was created without an id.');
-  await ensureMerchant();
-  await ensureMembership(user.id);
-  await ensureRules(user.id);
-  await ensureBilling();
-  await ensureConnections();
+  if (!VERIFY_ONLY) {
+    await ensureMerchant();
+    await ensureMembership(user.id);
+    await ensureRules(user.id);
+    await ensureBilling();
+    await ensureConnections();
+  }
 
   process.env.SEED_MERCHANT_ID = MERCHANT_ID;
   process.env.SEED_TAG = SEED_TAG;
   process.env.SEED_PREFIX = SEED_PREFIX;
   process.env.SEED_CUSTOMER_EMAIL_DOMAIN = CUSTOMER_EMAIL_DOMAIN;
-  process.env.SEED_CUSTOMER_COUNT = '320';
+  process.env.SEED_CUSTOMER_COUNT = '10000';
+  process.env.SEED_BACKGROUND_ORDER_COUNT = String(BACKGROUND_ORDER_COUNT);
+  process.env.SEED_CASE_AMOUNT_SCALE = '1000';
   process.env.SEED_ORDER_NUMBER_PREFIX = ORDER_NUMBER_PREFIX;
   process.env.SEED_SOURCE_SYSTEM = 'shopify';
-  process.env.SEED_SOURCE_NAME = 'northstar_demo_import';
+  process.env.SEED_SOURCE_NAME = 'asterlane_demo_import';
   process.env.SEED_SOURCE_LABEL = SEED_TAG;
   process.env.SEED_RECIPIENT_USER_ID = user.id;
   process.env.SEED_USE_GENERATED_RULE_IDS = '1';
 
   await import(pathToFileURL(path.join(__dirname, 'seed-simeon-big-merchant.mjs')).href);
 
-  console.log(`\nNorthstar demo login\nEmail: ${OWNER_EMAIL}\nPassword: ${password}\nWorkspace: ${COMPANY_NAME}\nMerchant ID: ${MERCHANT_ID}`);
-  console.log(`Mode: ${RESET_ONLY ? 'reset-only' : 'seeded'} · synthetic connections are marked as demo data.`);
+  console.log(`\nAsterlane demo login\nEmail: ${OWNER_EMAIL}\nPassword: ${password ? 'created from the existing demo credential source' : 'unchanged'}\nWorkspace: ${COMPANY_NAME}\nMerchant ID: ${MERCHANT_ID}`);
+  console.log(`Mode: ${RESET_ONLY ? 'reset-only' : VERIFY_ONLY ? 'verify-only' : 'seeded'} · synthetic connections are marked as demo data.`);
 }
 
 main().catch((error) => {

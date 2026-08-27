@@ -3,9 +3,9 @@
  */
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { IntegrationsWorkspace } from '@/components/integrations/IntegrationsWorkspace';
-import type { CatalogueRowItem } from '@/components/integrations/ConnectorRow';
+import type { CatalogueRowItem } from '@/lib/integrations/catalogueView';
 
 function catalogueItem(overrides: Partial<CatalogueRowItem> = {}): CatalogueRowItem {
   return {
@@ -82,5 +82,90 @@ describe('Integrations workspace evidence taxonomy', () => {
     const supplementalSection = screen.getByRole('heading', { name: 'Supplemental records' }).closest('section');
     expect(supplementalSection).not.toBeNull();
     expect(within(supplementalSection!).getByText('CSV / manual import')).toBeInTheDocument();
+  });
+
+  it('defaults to actionable source issues and keeps the complete matrix behind progressive disclosure', () => {
+    render(
+      <IntegrationsWorkspace
+        initialView="connected"
+        items={[
+          catalogueItem({
+            status: 'connected',
+            connectionId: 'connection-shopify',
+            connectionCount: 1,
+            badge: 'stale',
+            importedRecords: 155,
+            lastDataReceivedAt: '2026-07-19T22:18:00.000Z',
+            freshness: {
+              confidence: 'measured',
+              deliveryModel: 'webhook',
+              lastDataReceivedAt: '2026-07-19T22:18:00.000Z',
+              lastSyncAttemptAt: '2026-07-18T22:49:00.000Z',
+            },
+            capabilities: [{ id: 'orders.read', level: 'read', support: 'supported', scopes: [], description: 'Read orders', availability: 'enabled', availabilityReason: 'Available for this connection.' }],
+          }),
+          catalogueItem({
+            id: 'gorgias',
+            name: 'Gorgias',
+            category: 'helpdesk',
+            status: 'connected',
+            connectionId: 'connection-gorgias',
+            connectionCount: 1,
+            badge: 'connected',
+            importedRecords: 42,
+            capabilities: [{ id: 'tickets.read', level: 'read', support: 'supported', scopes: [], description: 'Read support tickets', availability: 'enabled', availabilityReason: 'Available for this connection.' }],
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Needs attention · 1' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/The latest provider data is outside its expected freshness window/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Review connection/i })).toHaveAttribute('href', '/sources/shopify');
+    expect(screen.queryByRole('region', { name: 'Complete source coverage' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'All coverage' }));
+    expect(screen.getByRole('region', { name: 'Complete source coverage' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Stale Freshness expired/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByText('Not supported').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /Not supported Not provided/i })).not.toBeInTheDocument();
+
+    const supportCell = screen.getByRole('button', { name: /Available on demand 1 capability enabled/i });
+    fireEvent.click(supportCell);
+    const inspector = screen.getByRole('region', { name: 'Selected source trust detail' });
+    expect(within(inspector).getByText('Gorgias · Support requests')).toBeInTheDocument();
+    expect(within(inspector).getByText(/Not measurable for this delivery model/i)).toBeInTheDocument();
+    expect(within(inspector).getByText(/42 provider records indexed/i)).toBeInTheDocument();
+    expect(within(inspector).getByRole('link', { name: /View source/i })).toHaveAttribute('href', '/sources/gorgias');
+    expect(within(inspector).queryByText(/repair/i)).not.toBeInTheDocument();
+  });
+
+  it('names verification separately instead of calling fully enabled capabilities partial', () => {
+    render(
+      <IntegrationsWorkspace
+        initialView="connected"
+        items={[
+          catalogueItem({
+            id: 'fedex',
+            name: 'FedEx',
+            category: 'carrier',
+            status: 'connected',
+            connectionId: 'connection-fedex',
+            connectionCount: 1,
+            badge: 'verification_unavailable',
+            capabilities: [
+              { id: 'tracking.read', level: 'read', support: 'supported', scopes: [], description: 'Read tracking', availability: 'enabled', availabilityReason: 'Enabled.' },
+              { id: 'delivery.read', level: 'read', support: 'supported', scopes: [], description: 'Read delivery events', availability: 'enabled', availabilityReason: 'Enabled.' },
+              { id: 'shipment.read', level: 'read', support: 'supported', scopes: [], description: 'Read shipments', availability: 'enabled', availabilityReason: 'Enabled.' },
+            ],
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByText('Verification unavailable').length).toBeGreaterThan(0);
+    expect(screen.getByText(/capabilities are enabled, but runtime verification is unavailable/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Review verification/i })).toHaveAttribute('href', '/sources/fedex');
+    expect(screen.queryByText(/Partial/i)).not.toBeInTheDocument();
   });
 });

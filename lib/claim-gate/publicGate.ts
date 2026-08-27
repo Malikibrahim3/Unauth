@@ -173,7 +173,7 @@ async function findExistingCase(input: {
 }
 
 function caseUrl(claimId: string): string {
-  return `${getAppUrl()}/claims?focus=${encodeURIComponent(claimId)}`;
+  return `${getAppUrl()}/claims?selected=${encodeURIComponent(claimId)}`;
 }
 
 function deliverySummary(evidence: ClaimGateEvidence): PublicGateResponse['evidence_summary'] {

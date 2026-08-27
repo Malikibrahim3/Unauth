@@ -1,44 +1,46 @@
 # Unauth
 
-Unauth is a source-agnostic evidence reconciliation, decision-support, and recovery-control platform for ecommerce merchants.
+Unauth is an evidence-led operations console for merchant cases, recoveries,
+reconciliation, and source health.
 
-It brings commerce, helpdesk, fulfillment, payment, and manually imported records into one merchant-scoped operational model. Unauth reconciles identities, events, and money; gives the merchant separate customer-action, responsibility, and recovery recommendations; observes the outcome the merchant actually took; and tracks provider credits through reconciliation. The merchant always controls the outcome.
+## Local setup
 
-The signed-in product is organized around **Overview**, **Work**, **Cases**, **Losses**, **Recovery**, **Customers**, **Rules and Flows**, **Reports**, **Integrations**, and **Settings**. Provider-specific integrations feed the same cases, records, timeline, and financial ledger; no provider defines the product model.
+- Use Node `22.x` and npm `10.x` (`npm@10.9.2` is the pinned toolchain).
+- Copy `.env.local.example` to `.env.local` and fill only the values needed for
+  the local surface or test you are running. Server-only secrets never belong in
+  client code, fixtures, screenshots, or commits.
+- Install reproducibly with `npm ci`, then start with `npm run dev`.
 
-Unauth does not ask AI to guess who is at fault. APIs show what systems recorded, not always what was physically inside a parcel. When the evidence is incomplete, Unauth says **responsibility unresolved** and requests the exact missing artifact.
+## Canonical owners
 
-## Local development
+`ARCHITECTURE.md` is the authority index. Product semantics and truth boundaries
+live in `PRODUCT.md`; visual, responsive, and theme rules live in `DESIGN.md`;
+MVP+ scope lives in `docs/product/MVP_PLUS_SCOPE.md`; routes and redirects live
+in the files listed by the authority index; page ownership is the executable
+`lib/surfaces/manifest.ts`; provider lifecycle and executable adapters remain
+separate registries; billing is `lib/billing/plans.ts`; environment validation
+is `lib/utils/env.ts`; migration order is the release migration manifest plus
+immutable files under `supabase/migrations`.
 
-Requirements: Node.js 22, npm, and a Supabase project.
+## Verification
 
-```bash
-npm install
-cp .env.local.example .env.local
-npm run dev
-```
+- `npm run verify:ci` runs deterministic repository, type, lint, Jest, eval,
+  extension, and production-build gates without touching staging or production.
+- Focused checks include `npm run verify:authority`, `npm run verify:env`,
+  `npm run verify:vercel`, `npm run verify:surface-manifest`,
+  `npm run verify:ui-integrity`, `npm run verify:merchant-copy`,
+  `npm run verify:migration-layout`, and `npm run audit:supabase-contract`.
+- `npm run verify:dead-code` is a framework-aware report-only candidate scan.
+  Candidates require static, dynamic, manifest, script, runtime-file, and test
+  evidence before deletion; uncertain paths stay and are recorded.
+- The guarded local release/browser suites require a positively identified
+  disposable loopback Supabase. Staging/provider lifecycle checks are manual or
+  protected by environment credentials.
 
-Fill in the required values documented in `.env.local.example`. Apply the ordered migrations in `supabase/migrations/` with the Supabase CLI or your normal deployment process. Never edit an already-applied migration; add a new forward migration.
+## Deployment boundary
 
-## Validation
-
-```bash
-npm run typecheck
-npm run lint
-npm run lint:authenticated-design
-npm test -- --runInBand
-npm run build
-```
-
-Browser tests require an isolated non-production environment and explicit test credentials. See [`docs/TESTING.md`](docs/TESTING.md).
-
-## Documentation
-
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — system boundaries and canonical contracts
-- [`docs/PRODUCT.md`](docs/PRODUCT.md) — product model and terminology
-- [`docs/CONNECTORS.md`](docs/CONNECTORS.md) — provider capabilities and lifecycle
-- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — environments, migrations, deployment, and rollback
-- [`docs/SECURITY.md`](docs/SECURITY.md) — security invariants and outstanding rotations
-- [`docs/TESTING.md`](docs/TESTING.md) — local, integration, and browser validation
-
-The authenticated design system lives in [`styles/authenticated/README.md`](styles/authenticated/README.md).
+A preview may be created for read-only smoke testing. Production deployment,
+merge, remote migrations, provider writes, real-user invitations, and legal or
+release approval are separate decisions. Current external blockers and UX9
+acceptance status are recorded in `docs/product/DEPLOYMENT_READINESS.md`,
+`docs/product/MR6_HANDOFF.md`, and `docs/product/UX9_STATUS.md`.

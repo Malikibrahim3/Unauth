@@ -179,7 +179,7 @@ describe('Shopify OAuth routes', () => {
       const req = new NextRequest('http://localhost:3000/api/shopify/install?shop=bad.store.example');
       const res = await installGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/integrations?shopify_error=public_domain',
+        'http://localhost:3000/sources/connected?shopify_error=public_domain',
       );
     });
 
@@ -215,7 +215,7 @@ describe('Shopify OAuth routes', () => {
       const res = await callbackGET(req);
       expect(res.status).toBe(200);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/integrations?shopify_connected=1&shop=merchant-a.myshopify.com',
+        'http://localhost:3000/sources/connected?shopify_connected=1&shop=merchant-a.myshopify.com',
       );
 
       expect(consumeOAuthConnectionTransaction).toHaveBeenCalledWith(expect.anything(), {
@@ -251,7 +251,7 @@ describe('Shopify OAuth routes', () => {
 
       const res = await callbackGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/integrations?shopify_error=invalid_state',
+        'http://localhost:3000/sources/connected?shopify_error=invalid_state',
       );
     });
 
@@ -297,7 +297,7 @@ describe('Shopify OAuth routes', () => {
 
       const res = await callbackGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/integrations?shopify_error=invalid_state',
+        'http://localhost:3000/sources/connected?shopify_error=invalid_state',
       );
     });
 
@@ -317,7 +317,7 @@ describe('Shopify OAuth routes', () => {
 
       const res = await callbackGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/integrations?shopify_error=invalid_hmac',
+        'http://localhost:3000/sources/connected?shopify_error=invalid_hmac',
       );
       expect(consumeOAuthConnectionTransaction).not.toHaveBeenCalled();
       expect(persistShopifyOAuthConnection).not.toHaveBeenCalled();
@@ -343,7 +343,7 @@ describe('Shopify OAuth routes', () => {
 
       const res = await callbackGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/integrations?shopify_error=invalid_or_replayed_state',
+        'http://localhost:3000/sources/connected?shopify_error=invalid_or_replayed_state',
       );
       expect(persistShopifyOAuthConnection).not.toHaveBeenCalled();
     });

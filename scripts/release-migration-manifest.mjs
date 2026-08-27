@@ -28,30 +28,38 @@ export const ACTIVE_MIGRATIONS = Object.freeze([
   '20260727100000_work_views_claimed_items_grants.sql',
   '20260727130000_recovery_source_freshness.sql',
   '20260801120000_repair_release1_investigation_schema_drift.sql',
+  '20260813120000_distinctive_analytics_read_models.sql',
+  '20260822100000_cases_external_recovery_truth.sql',
+  '20260822110000_repair_required_schema_drift.sql',
+  '20260822120000_repair_cases_runtime_read_models.sql',
+  '20260822130000_reconcile_live_schema_to_canonical.sql',
+  '20260822140000_restore_canonical_privileges.sql',
+  '20260823100000_mr0_commercial_authority.sql',
+  '20260823130000_mr3_work_and_external_actions.sql',
+  '20260823160000_mr4_recovery_money_truth.sql',
+  '20260823190000_mr5_merchant_administration.sql',
 ]);
 
 export const ACTIVE_MIGRATION_VERSIONS = Object.freeze(
   ACTIVE_MIGRATIONS.map((file) => file.slice(0, 14)),
 );
 
-// The repair migration is a no-op on a clean replay because the original
-// Release 1 migration already creates these objects. The canonical schema
-// hash therefore remains stable while drifted environments can be repaired.
+// Canonical hash of a clean replay of the active migration set.
 export const EXPECTED_SCHEMA_HASH =
-  'f42c76ae8370f5332d18183ce85d18b3245679e73f556f7bf55120f11c4e62e5';
+  '0dfb4b880981fad7fcee185bd2d77533f4546256d97622ef6622ebac30ac3479';
 
 export const EXPECTED_CANONICAL_COUNTS = Object.freeze({
-  tables: '143',
+  tables: '150',
   views: '2',
   sequences: '2',
   enums: '45',
-  columns: '2089',
-  not_null_columns: '1177',
-  constraints: '789',
-  indexes: '536',
-  functions: '90',
-  triggers: '102',
-  policies: '161',
+  columns: '2269',
+  not_null_columns: '1268',
+  constraints: '877',
+  indexes: '570',
+  functions: '126',
+  triggers: '112',
+  policies: '166',
 });
 
 export function assertActiveMigrationLayout(actualMigrations) {

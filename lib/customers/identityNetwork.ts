@@ -251,6 +251,45 @@ export async function resolveIdentityForSourceCustomerId(
   return { customer, identityId };
 }
 
+/**
+ * Resolve the identity used by merchant-side customer state from either the
+ * canonical merchant customer route id or a legacy source customer id.
+ * Both branches prove merchant ownership before returning an identity.
+ */
+export async function resolveIdentityForCustomerRouteId(
+  service: SupabaseClient,
+  merchantId: string,
+  customerRouteId: string,
+): Promise<{ customer: { id: string } | null; identityId: string | null }> {
+  const { data: canonical } = await service
+    .from('merchant_customers')
+    .select('id, identity_id, superseded_by')
+    .eq('merchant_id', merchantId)
+    .eq('id', customerRouteId)
+    .maybeSingle() as unknown as {
+      data: { id: string; identity_id: string | null; superseded_by: string | null } | null;
+    };
+
+  if (canonical) {
+    if (!canonical.superseded_by) {
+      return { customer: { id: canonical.id }, identityId: canonical.identity_id };
+    }
+    const { data: active } = await service
+      .from('merchant_customers')
+      .select('id, identity_id')
+      .eq('merchant_id', merchantId)
+      .eq('id', canonical.superseded_by)
+      .maybeSingle() as unknown as {
+        data: { id: string; identity_id: string | null } | null;
+      };
+    return active
+      ? { customer: { id: active.id }, identityId: active.identity_id }
+      : { customer: null, identityId: null };
+  }
+
+  return resolveIdentityForSourceCustomerId(service, merchantId, customerRouteId);
+}
+
 export type IdentitySibling = {
   id: string;
   email: string | null;

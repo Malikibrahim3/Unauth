@@ -139,7 +139,7 @@ function accountabilitySummary(accountability: AccountabilityResult) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await validateApiKey(req);
+  const auth = await validateApiKey(req, 'cases:write');
   if (!isValidatedApiKey(auth)) return auth;
   if (!isPublicClaimGateEnabled()) {
     return NextResponse.json(publicClaimGateUnavailableBody(), {

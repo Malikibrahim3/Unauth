@@ -1,161 +1,53 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
-import { normalizeShopInput } from '@/lib/shopify/normalizeShopInput';
+import { useState } from "react";
+import { BeforeYouConfirm, Button, FormField, Input, Modal } from "@/components/ui";
+import { normalizeShopInput } from "@/lib/shopify/normalizeShopInput";
 
-export function SyncStatusConnectModal({
-  initialValue,
-  onClose,
-}: {
-  initialValue?: string;
-  onClose: () => void;
-}) {
-  const [value, setValue] = useState(initialValue ?? '');
-  const [inputError, setInputError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
+export function SyncStatusConnectModal({ initialValue, onClose }: { initialValue?: string; onClose: () => void }) {
+  const [value, setValue] = useState(initialValue ?? "");
+  const [inputError, setInputError] = useState("");
+  const normalized = normalizeShopInput(value);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (!dialog.open) dialog.showModal();
-    return () => {
-      if (dialog.open) dialog.close();
-    };
-  }, []);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function continueToShopify() {
     const result = normalizeShopInput(value);
-    if (result.error === 'empty') {
-      setInputError('Please enter your Shopify Admin URL.');
-      inputRef.current?.focus();
-      return;
-    }
-    if (result.error === 'public_domain') {
-      setInputError(
-        'That looks like a public website address. Please enter your Shopify Admin URL instead - for example admin.shopify.com/store/your-store.',
-      );
-      inputRef.current?.focus();
-      return;
-    }
-    if (result.error === 'invalid') {
-      setInputError('We could not recognise that as a Shopify Admin URL. Try admin.shopify.com/store/your-store.');
-      inputRef.current?.focus();
-      return;
-    }
-    window.location.href = `/api/shopify/install?shop=${encodeURIComponent(result.domain as string)}`;
+    if (result.error === "empty") return setInputError("Enter the Shopify Admin URL.");
+    if (result.error === "public_domain") return setInputError("Use the Shopify Admin URL, not the public storefront address.");
+    if (result.error === "invalid") return setInputError("Use admin.shopify.com/store/your-store or your-store.myshopify.com.");
+    // This endpoint starts an external Shopify OAuth navigation, so it must be a top-level browser navigation.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign(`/api/shopify/install?shop=${encodeURIComponent(result.domain as string)}`);
   }
 
   return (
-    <dialog
-      ref={dialogRef}
-      className="fixed inset-0 z-50 m-0 flex max-h-none max-w-none items-center justify-center border-0 bg-transparent p-4 backdrop:bg-[var(--ua-backdrop)] open:flex"
-      aria-labelledby="connect-shopify-title"
-      onClose={onClose}
-    >
-      <button
-        type="button"
-        className="absolute inset-0 cursor-default"
-        aria-label="Close connect Shopify dialog"
-        onClick={onClose}
-      />
-      <div
-        className="relative w-full max-w-md rounded-md p-6 shadow-xl"
-        style={{ background: 'var(--ua-surface-primary)', border: '1px solid var(--ua-border-subtle)' }}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 rounded p-1 opacity-50 hover:opacity-100"
-          style={{ color: 'var(--ua-text-secondary)' }}
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        <h2
-          id="connect-shopify-title"
-          className="ua-text-section-title mb-1"
-          style={{ color: 'var(--ua-text-primary)' }}
-        >
-          Connect Shopify
-        </h2>
-        <p className="ua-text-caption-role mb-5" style={{ color: 'var(--ua-text-secondary)' }}>
-          We use this only to send you to the correct Shopify approval screen.
+    <Modal open onClose={onClose} title="Connect Shopify" description="Normalise and verify the admin URL before authorising" overlayId="connect-shopify-modal" size="lg">
+      <form onSubmit={(event) => { event.preventDefault(); continueToShopify(); }} className="space-y-4">
+        <p className="ua-text-body rounded-[10px] border border-[var(--uo-route-info-border)] bg-[var(--uo-route-info-bg)] p-3 text-[var(--uo-route-info)]">
+          Shopify authorises against your admin domain, not your storefront domain. Unauth normalises what you type and shows the exact URL it will send you to.
         </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="shopify-admin-url"
-              className="ua-text-label block mb-1.5"
-              style={{ color: 'var(--ua-text-primary)' }}
-            >
-              Shopify Admin URL
-            </label>
-            <input
-              ref={inputRef}
-              id="shopify-admin-url"
-              type="text"
-              value={value}
-              onChange={(e) => { setValue(e.target.value); setInputError(''); }}
-              placeholder="admin.shopify.com/store/your-store"
-              className="ua-text-body w-full rounded-md border px-3 py-2 outline-none focus:ring-1"
-              style={{
-                borderColor: inputError ? 'var(--ua-critical)' : 'var(--ua-border-subtle)',
-                background: 'var(--ua-surface-secondary)',
-                color: 'var(--ua-text-primary)',
-              }}
-              autoComplete="off"
-              spellCheck={false}
-              data-testid="shopify-admin-url-input"
-            />
-            {inputError ? (
-              <p className="ua-text-caption-role mt-1.5" style={{ color: 'var(--ua-critical)' }} role="alert">
-                {inputError}
-              </p>
-            ) : (
-              <p className="ua-text-caption-role mt-1.5" style={{ color: 'var(--ua-text-secondary)' }}>
-                Paste the Shopify Admin URL for the store you want to connect. You can find it in Shopify Admin, usually as{' '}
-                <code className="font-mono">admin.shopify.com/store/your-store</code>.
-              </p>
-            )}
+        <FormField label="Shopify Admin URL" error={inputError || undefined} hint="Find this address in Shopify Admin. It usually begins admin.shopify.com/store/.">
+          <Input id="shopify-admin-url" value={value} onChange={(event) => { setValue(event.target.value); setInputError(""); }} placeholder="admin.shopify.com/store/your-store" autoComplete="off" spellCheck={false} data-testid="shopify-admin-url-input" />
+        </FormField>
+        <section className="rounded-[10px] border border-[var(--uo-route-border-default)] p-3">
+          <p className="ua-text-label text-[var(--uo-route-text-secondary)]">Will authorise against</p>
+          <p className="mt-2 break-all font-mono text-xs text-[var(--uo-route-text-primary)]">
+            {normalized.domain ? `https://${normalized.domain}/admin/oauth` : '— Enter a valid Shopify admin URL'}
+          </p>
+          <div className="mt-3 grid gap-2 ua-text-body text-[var(--uo-route-text-secondary)]">
+            <p>Read orders, customers and refunds <span className="float-right ua-text-metadata">Required</span></p>
+            <p>Read fulfilments and shipments <span className="float-right ua-text-metadata">Required</span></p>
+            <p>Write anything <span className="float-right ua-text-metadata">Never requested</span></p>
           </div>
-
-          <div className="flex items-center justify-end gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="ua-text-label rounded-md px-4 py-2"
-              style={{ color: 'var(--ua-text-secondary)', background: 'var(--ua-surface-secondary)' }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="ua-text-working-title rounded-md px-4 py-2"
-              style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
-              data-testid="shopify-connect-submit"
-            >
-              Continue to Shopify
-            </button>
-          </div>
-        </form>
-      </div>
-    </dialog>
+        </section>
+        <BeforeYouConfirm
+          objectSummary={`New Shopify connection${normalized.domain ? ` · ${normalized.domain}` : ''}`}
+          valueSummary="No financial value changes. Ingestion only."
+          externalAction="Yes. You leave Unauth for Shopify to approve the displayed read-only scopes."
+          reversible="Yes. Disconnecting stops ingestion and keeps canonical records already held."
+          appendOnly="A connection record, Shopify authorization result and an audit entry. A first sync starts only after Shopify confirms access."
+        />
+        <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" data-testid="shopify-connect-submit">Continue to Shopify</Button></div>
+      </form>
+    </Modal>
   );
 }

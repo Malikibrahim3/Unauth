@@ -8,7 +8,7 @@
  *   declared support + granted scope + merchant writeback + connection health
  *     -> enabled | permission_missing | merchant_disabled | degraded | unsupported
  *
- * See ARCHITECTURE.md §5.
+ * See ARCHITECTURE.md for the executable adapter owner.
  */
 import type { ConnectorCapability, RuntimeAvailability, RuntimeCapability } from '@/lib/connectors/capabilities';
 

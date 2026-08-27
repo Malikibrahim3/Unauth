@@ -132,6 +132,50 @@ describe('recovery store', () => {
     });
   });
 
+  it('rejects a ready transition while required evidence is incomplete', async () => {
+    const state = {
+      recoveryCase: {
+        id: '00000000-0000-0000-0000-000000000020',
+        merchant_id: '00000000-0000-0000-0000-000000000001',
+        support_payout_case_id: '00000000-0000-0000-0000-000000000010',
+        partner_id: null,
+        recovery_type: 'carrier_claim',
+        owner_type: 'carrier',
+        status: 'evidence_needed',
+        merchant_loss_amount: 80,
+        eligible_loss_amount: 80,
+        estimated_recoverable_min: 20,
+        estimated_recoverable_max: 60,
+        amount_recovered: null,
+        currency: 'GBP',
+        deadline_at: null,
+        next_chase_at: null,
+        last_chased_at: null,
+        evidence_required: ['tracking'],
+        evidence_missing: ['tracking'],
+        evidence_complete: false,
+        rejection_reason: null,
+        calculation_reason: [],
+        excluded_costs: [],
+        internal_owner_user_id: null,
+        created_at: '2026-06-19T00:00:00.000Z',
+        updated_at: '2026-06-19T00:00:00.000Z',
+      },
+      rules: [],
+      insertedEvents: [],
+    };
+
+    await expect(updateRecoveryCaseStatus(fakeClient(state), {
+      merchantId: '00000000-0000-0000-0000-000000000001',
+      recoveryCaseId: '00000000-0000-0000-0000-000000000020',
+      status: 'ready_to_submit',
+      note: 'Recovery pack reviewed.',
+      idempotencyKey: 'recovery-status-test-2',
+    })).rejects.toThrow(/Required recovery evidence is incomplete/);
+
+    expect(state.insertedEvents).toHaveLength(0);
+  });
+
   const baseCreateInput = {
     merchant_id: '00000000-0000-0000-0000-000000000001',
     support_payout_case_id: '00000000-0000-0000-0000-000000000010',
@@ -218,5 +262,37 @@ describe('partner recovery rule matching', () => {
     });
 
     expect(rule?.id).toBe('partner-rule');
+  });
+
+  it('does not use an explicitly unconfirmed configured rule as a claim basis', async () => {
+    const state = {
+      recoveryCase: {},
+      insertedEvents: [],
+      rules: [
+        {
+          id: 'unconfirmed-configured',
+          partner_id: '00000000-0000-0000-0000-000000000002',
+          source_type: 'merchant_configured',
+          rule_approval_status: 'unconfirmed',
+          active: true,
+        },
+        {
+          id: 'approved-default',
+          partner_id: null,
+          source_type: 'unauth_default',
+          rule_approval_status: 'approved',
+          active: true,
+        },
+      ],
+    };
+
+    const rule = await findBestPartnerRecoveryRule(fakeClient(state), {
+      merchantId: '00000000-0000-0000-0000-000000000001',
+      recoveryType: 'carrier_claim',
+      claimType: 'item_not_received',
+      partnerId: '00000000-0000-0000-0000-000000000002',
+    });
+
+    expect(rule?.id).toBe('approved-default');
   });
 });

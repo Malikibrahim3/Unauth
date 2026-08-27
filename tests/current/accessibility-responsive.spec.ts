@@ -1,34 +1,35 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const CORE_ROUTES = [
-  "/dashboard",
+  "/overview",
   "/work",
-  "/claims",
-  "/losses",
-  "/recoveries",
+  "/cases",
+  "/financials/losses",
+  "/financials/recovery",
+  "/financials/reconciliation",
   "/customers",
-  "/rules",
-  "/flows",
-  "/integrations",
-  "/reports",
+  "/controls/rules",
+  "/controls/flows",
+  "/sources/connected",
+  "/financials/reports",
   "/notifications",
-  "/settings/account",
-  "/integrations/imports",
-  "/flows/runs",
-  "/rules/recovery",
+  "/settings/workspace/account",
+  "/sources/imports",
+  "/controls/flows/runs",
+  "/controls/rules/recovery",
   "/settings/billing",
-  "/settings/team",
-  "/settings/platform",
-  "/settings/agreements",
-  "/settings/api-integrations",
-  "/settings/notifications",
-  "/settings/data-privacy",
-  "/settings/audit-trail",
-  "/settings/integrations/shopify",
-  "/settings/integrations/gorgias",
-  "/settings/integrations/zendesk",
-  "/settings/integrations/freshdesk",
-  "/settings/integrations/chrome",
+  "/settings/workspace/team",
+  "/settings/product/platform",
+  "/settings/legal/agreements",
+  "/settings/developers/api-access",
+  "/settings/product/notifications",
+  "/settings/legal/data-privacy",
+  "/settings/governance/audit-trail",
+  "/sources/setup/shopify",
+  "/sources/setup/gorgias",
+  "/sources/setup/zendesk",
+  "/sources/setup/freshdesk",
+  "/sources/setup/chrome",
   "/help",
 ] as const;
 const VIEWPORTS = [
@@ -117,12 +118,10 @@ test.describe("release accessibility and responsive gates", () => {
       for (const viewport of VIEWPORTS) {
         await page.setViewportSize(viewport);
         if (viewport.width < 1024) {
-          // The current shell reflows at narrow widths; the old blocking
-          // desktop-required boundary is retained only as a compatibility
-          // selector and must not gate the product.
-          await expect(page.locator(".ua-desktop-required")).toHaveCount(0);
-          await expect(page.locator(".ua-desktop-product")).toBeVisible();
-          await expect(page.locator("main")).toBeVisible();
+          await expect(page.locator(".ua-desktop-required")).toBeVisible();
+          await expect(page.getByRole("heading", { name: "Unauth requires a desktop" })).toBeVisible();
+          await expect(page.locator(".ua-desktop-product")).toBeHidden();
+          continue;
         } else {
           await expect(page.locator(".ua-desktop-required")).toBeHidden();
           await expect(page.locator(".ua-desktop-product")).toBeVisible();
@@ -180,14 +179,14 @@ test.describe("release accessibility and responsive gates", () => {
   test("command palette and dialogs preserve keyboard escape behavior", async ({
     page,
   }) => {
-    await page.goto("/dashboard");
-    await page.getByRole("button", { name: "Search (⌘K)" }).click();
+    await page.goto("/overview");
+    await page.getByRole("button", { name: "Search and navigate" }).click();
     await expect(
-      page.getByRole("dialog", { name: "Command palette" }),
+      page.getByRole("dialog", { name: "Search and navigate" }),
     ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(
-      page.getByRole("dialog", { name: "Command palette" }),
+      page.getByRole("dialog", { name: "Search and navigate" }),
     ).toHaveCount(0);
   });
 });

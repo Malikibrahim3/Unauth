@@ -4,12 +4,14 @@ import { TABLES } from '@/lib/supabase/tables';
 import { hashApiKey, isValidApiKeyFormat } from '@/lib/api/apiKeys';
 import { incrementAndCheckApiKeyMinuteLimit } from '@/lib/api/v1/rateLimit';
 import { getClientIp } from '@/lib/ratelimit';
+import { merchantHasMachineApiAccess, type ApiScope } from '@/lib/api/accessPolicy';
 
 export type ValidatedApiKey = {
   merchantId: string;
   keyId: string;
   rateLimitPerMinute: number;
   requestIp: string;
+  scopes: ApiScope[];
 };
 
 type ApiKeyRow = {
@@ -17,6 +19,7 @@ type ApiKeyRow = {
   merchant_id: string;
   rate_limit_per_minute: number;
   revoked_at: string | null;
+  scopes: ApiScope[];
 };
 
 function parseBearerToken(request: NextRequest): string | null {
@@ -27,7 +30,7 @@ function parseBearerToken(request: NextRequest): string | null {
 }
 
 export type ApiKeyValidationError = {
-  status: 401 | 429 | 500;
+  status: 401 | 403 | 429 | 500;
   message: string;
 };
 
@@ -36,7 +39,8 @@ export type ApiKeyValidationError = {
  */
 export async function validateApiKeyPlaintext(
   plaintext: string,
-  requestIp: string
+  requestIp: string,
+  requiredScope: ApiScope,
 ): Promise<ValidatedApiKey | ApiKeyValidationError> {
   if (!plaintext.trim()) {
     return { status: 401, message: 'API key is required' };
@@ -51,7 +55,7 @@ export async function validateApiKeyPlaintext(
 
   const { data: row, error } = await service
     .from(TABLES.MERCHANT_API_KEYS)
-    .select('id, merchant_id, rate_limit_per_minute, revoked_at')
+    .select('id, merchant_id, rate_limit_per_minute, revoked_at, scopes')
     .eq('key_hash', keyHash)
     .maybeSingle() as unknown as { data: ApiKeyRow | null; error: { message: string } | null };
 
@@ -62,6 +66,15 @@ export async function validateApiKeyPlaintext(
 
   if (!row || row.revoked_at) {
     return { status: 401, message: 'Invalid or revoked API key' };
+  }
+
+  if (!(await merchantHasMachineApiAccess(service, row.merchant_id))) {
+    return { status: 403, message: 'Machine API access is not enabled for this workspace' };
+  }
+
+  const scopes = Array.isArray(row.scopes) ? row.scopes : [];
+  if (!scopes.includes(requiredScope)) {
+    return { status: 403, message: `API key is missing required scope: ${requiredScope}` };
   }
 
   const limit = row.rate_limit_per_minute ?? 60;
@@ -91,6 +104,7 @@ export async function validateApiKeyPlaintext(
     keyId: row.id,
     rateLimitPerMinute: limit,
     requestIp,
+    scopes,
   };
 }
 
@@ -99,7 +113,8 @@ export async function validateApiKeyPlaintext(
  * Returns merchant context or a NextResponse error (401 / 429).
  */
 export async function validateApiKey(
-  request: NextRequest
+  request: NextRequest,
+  requiredScope: ApiScope,
 ): Promise<ValidatedApiKey | NextResponse> {
   const requestIp = getClientIp(request.headers);
   const plaintext = parseBearerToken(request);
@@ -108,7 +123,7 @@ export async function validateApiKey(
     return NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 });
   }
 
-  const result = await validateApiKeyPlaintext(plaintext, requestIp);
+  const result = await validateApiKeyPlaintext(plaintext, requestIp, requiredScope);
   if ('status' in result) {
     if (result.status === 429) {
       return NextResponse.json(

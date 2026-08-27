@@ -22,17 +22,11 @@ describe('release migration proof contract', () => {
     expect(new Set(listed.map((file) => file?.slice(0, 14))).size).toBe(files.length);
   });
 
-  it('keeps replay and rollout verifiers on the shared manifest', () => {
+  it('keeps the active replay verifier on the shared manifest', () => {
     expect(read('scripts/verify-canonical-database.mjs')).toContain(
       "from './release-migration-manifest.mjs'",
     );
-    expect(read('scripts/verify-local-rollout-rehearsal.mjs')).toContain(
-      "from './release-migration-manifest.mjs'",
-    );
     expect(read('scripts/verify-canonical-database.mjs')).toContain(
-      '--allow-destructive-local-reset',
-    );
-    expect(read('scripts/verify-local-rollout-rehearsal.mjs')).toContain(
       '--allow-destructive-local-reset',
     );
   });

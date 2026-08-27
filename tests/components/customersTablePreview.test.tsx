@@ -11,7 +11,7 @@ const mockReplace = jest.fn();
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace }),
   usePathname: () => '/customers',
-  useSearchParams: () => new URLSearchParams('preview=customer:customer-1'),
+  useSearchParams: () => new URLSearchParams('selected=customer-1'),
 }));
 
 jest.mock('@/components/customers/CustomerPreviewDrawer', () => ({
@@ -30,11 +30,15 @@ describe('CustomersTableClient preview state', () => {
       primary_email: 'customer@example.invalid',
       names: ['Customer One'],
       total_orders: 1,
+      order_coverage: 'complete',
       total_spent: 25,
       total_spent_currency: 'GBP',
       has_mixed_currency: false,
       payout_cases_total: 1,
       payout_cases_open: 1,
+      case_coverage: 'complete',
+      has_refund_case: false,
+      has_chargeback_case: false,
       last_order_at: '2026-07-20T12:00:00.000Z',
     }]} />);
 

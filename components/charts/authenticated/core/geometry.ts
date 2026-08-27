@@ -1,7 +1,7 @@
 /**
  * Plot-geometry SSOT for the authenticated chart language (T1–T10).
  * Every hardcoded plot dimension in a chart component must come from here —
- * panel-level chrome (radii, shadows, control heights) still comes from --ua-* tokens.
+ * panel-level chrome (radii, shadows, control heights) still comes from --uo-route-* tokens.
  */
 
 // T3 — trend line
@@ -37,10 +37,18 @@ export const RANKED_BAR_HEIGHT = HORIZONTAL_BAR_HEIGHT;
 /** Mini meters. */
 export const METER_HEIGHT = 8;
 export const DOT_PLOT_MARK_DIAMETER = 8;
-export const COMPARISON_DASH: [number, number] = [5, 4];
+/** §18.4 — comparison series: dashed 4 2, distinguishable from forecast (dotted) and reference (dash 6 3) by stroke pattern, not colour alone. */
+export const COMPARISON_DASH: [number, number] = [4, 2];
 export const COMPARISON_LINE_WIDTH = 1.5;
 export const COMPARISON_DOT_R = 2.5;
 export const COMPARISON_DOT_RING = 2;
+/** §18.4 — forecast series: dotted 2 3. */
+export const FORECAST_DASH: [number, number] = [2, 3];
+/** §18.4 — reference/maximum/threshold rule: 1px dash 6 3. */
+export const REFERENCE_DASH: [number, number] = [6, 3];
+export const REFERENCE_LINE_WIDTH = 1;
+/** §18.4 — selected/hovered mark: +2px ring in --uo-route-analytical-selected. */
+export const SELECTED_RING_WIDTH = 2;
 
 // T5 — dot-matrix
 export const MATRIX_CELL = 7;

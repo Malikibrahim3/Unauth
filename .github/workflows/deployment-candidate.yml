@@ -1,0 +1,54 @@
+name: Deployment Candidate
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deployment-candidate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Deterministic repository gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Safe CI-only values let static/build checks run without any provider,
+      # database, staging, or production credentials.
+      IDENTITY_SALT: ci-salt-000000000000000000000000000000000000
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      VERCEL_ENV: development
+      NODE_ENV: test
+      CI: 'true'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run deterministic deployment gates
+        run: npm run verify:ci
+
+      - name: Verify production E2E authentication exclusion
+        run: npm run verify:vercel

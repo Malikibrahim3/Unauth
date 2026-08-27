@@ -10,7 +10,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ eventId: string }> },
 ) {
-  const auth = await authenticateIngest(request);
+  const auth = await authenticateIngest(request, 'imports:read');
   if (auth instanceof NextResponse) return auth;
   const { eventId } = await params;
   if (!eventIdSchema.safeParse(eventId).success) {

@@ -30,8 +30,10 @@ export const TABLES = {
   MERCHANT_CREDITS: 'merchant_credits',
   CREDIT_TOPUP_LOG: 'credit_topup_log',
   BILLING_EVENTS_LOG: 'billing_events_log',
+  SUBSCRIPTION_INTENTS: 'subscription_intents',
   CONTEXT_CREDIT_EVENTS: 'context_credit_events',
   WATCHLIST_ENTRIES: 'merchant_identity_state',
+  CLAIM_EVIDENCE: 'claim_evidence',
   EVIDENCE_PACKAGES: 'evidence_packages',
   MERCHANT_API_KEYS: 'merchant_api_keys',
   EVIDENCE_DOWNLOAD_TOKENS: 'evidence_download_tokens',
@@ -136,6 +138,12 @@ export const TABLES = {
   CASE_RECOMMENDATION_SNAPSHOTS: 'case_recommendation_snapshots',
   CASE_OUTCOME_EVENTS: 'case_outcome_events',
   PROVIDER_CREDIT_RECORDS: 'provider_credit_records',
+  PROVIDER_CREDIT_EVENTS: 'provider_credit_events',
+  RECOVERY_CLAIM_PACKS: 'recovery_claim_packs',
+  RECOVERY_CLAIM_SUBMISSIONS: 'recovery_claim_submissions',
+  RECOVERY_PROVIDER_RESPONSES: 'recovery_provider_responses',
+  WORKSPACE_DELETION_JOBS: 'workspace_deletion_jobs',
+  WORKSPACE_DELETION_RECEIPTS: 'workspace_deletion_receipts',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */

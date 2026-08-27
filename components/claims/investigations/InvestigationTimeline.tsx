@@ -56,11 +56,11 @@ export function InvestigationTimeline({
         const Icon = item.icon;
         return (
           <li key={item.key} className="flex items-center justify-between gap-3 text-xs">
-            <span className="inline-flex items-center gap-2 text-[var(--ua-text-primary)]">
+            <span className="inline-flex items-center gap-2 text-[var(--uo-route-text-primary)]">
               <Icon size={13} aria-hidden="true" />
               {item.label}
             </span>
-            <time className="text-[var(--ua-text-secondary)]" dateTime={item.at}>
+            <time className="text-[var(--uo-route-text-secondary)]" dateTime={item.at}>
               {formatDateTime(item.at)}
             </time>
           </li>

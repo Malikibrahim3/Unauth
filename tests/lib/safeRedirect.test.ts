@@ -9,7 +9,7 @@ describe("safeRedirectPath", () => {
     "//evil.example",
     "/\\evil.example",
   ])("rejects unsafe redirect %s", (candidate) =>
-    expect(safeRedirectPath(candidate)).toBe("/dashboard"),
+    expect(safeRedirectPath(candidate)).toBe("/overview"),
   );
 
   it("preserves a same-origin application path, query and fragment", () => {

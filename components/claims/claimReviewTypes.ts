@@ -123,6 +123,7 @@ export type ClaimRecord = {
   currency?: string | null;
   first_viewed_at?: string | null;
   assigned_to?: string | null;
+  assigned_to_name?: string | null;
   snoozed_until?: string | null;
   evidence_count?: number;
   submitted_at?: string | null;

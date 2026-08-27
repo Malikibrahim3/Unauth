@@ -1,0 +1,549 @@
+@layer components {
+  /*
+   * Signal Ledger / I3.4
+   *
+   * Supporting surfaces remain quiet paper documents inside the light-stone
+   * operating frame. Deep green identifies the current setting, unread object,
+   * selected search result or floating work object; semantic colours retain
+   * their own jobs.
+   */
+
+  .ua-app .ua-settings-local-rail {
+    border-right-color: var(--ua-rule-default);
+    background: var(--ua-paper-secondary);
+  }
+
+  .ua-app .ua-settings-local-rail__heading {
+    border-bottom-color: var(--ua-rule-default);
+  }
+
+  .ua-app .ua-settings-local-rail__heading p {
+    color: var(--ua-text-primary);
+    font-family: var(--ua-font-display);
+    letter-spacing: -0.02em;
+  }
+
+  .ua-app .ua-settings-nav__group-label {
+    color: var(--ua-text-tertiary);
+    font-family: var(--ua-font-mono);
+    font-size: var(--ua-text-metadata-size);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .ua-app .ua-settings-nav--vertical .ua-settings-nav__link {
+    position: relative;
+    border: 1px solid transparent;
+    background: transparent;
+  }
+
+  .ua-app .ua-settings-nav--vertical .ua-settings-nav__link:hover {
+    border-color: var(--ua-rule-hairline);
+    background: color-mix(in srgb, var(--ua-paper-primary) 58%, var(--ua-paper-secondary));
+  }
+
+  .ua-app .ua-settings-nav--vertical .ua-settings-nav__link[aria-current="page"] {
+    border-color: var(--ua-signal-copper-light);
+    background: var(--ua-signal-copper-soft);
+    color: var(--ua-signal-copper-hover);
+    box-shadow: inset 2px 0 0 var(--ua-signal-copper);
+  }
+
+  .ua-app .ua-settings-content .ua-settings-form > :where(.ua-working-surface, .ua-section-card) {
+    border-color: var(--ua-rule-default);
+    background: var(--ua-paper-primary);
+    box-shadow: none;
+  }
+
+  .ua-app [data-theme-option][data-selected="true"] {
+    background: var(--ua-signal-copper-soft) !important;
+    color: var(--ua-signal-copper-hover) !important;
+    box-shadow: inset 2px 0 0 var(--ua-signal-copper);
+  }
+
+  .ua-app .ua-settings-form :where(.ua-section-card, .ua-working-surface):has(.ua-button--danger) {
+    border-top-color: var(--ua-critical-border);
+  }
+
+  .ua-app [data-notification-state="unread"] {
+    position: relative;
+    background: color-mix(in srgb, var(--ua-paper-primary) 82%, var(--ua-signal-copper-soft));
+    box-shadow: inset 2px 0 0 var(--ua-signal-copper);
+  }
+
+  .ua-app [data-notification-state="unread"]:hover {
+    background: var(--ua-signal-copper-soft);
+  }
+
+  .ua-app [data-notification-state="read"] {
+    background: var(--ua-paper-primary);
+  }
+
+  .ua-app [data-notification-state] > button:focus-visible {
+    position: relative;
+    z-index: 1;
+    background: var(--ua-signal-copper-soft);
+    box-shadow: inset 2px 0 0 var(--ua-signal-copper), 0 0 0 2px var(--ua-border-focus);
+  }
+
+  .ua-app [data-surface-id="workspace-entity-search"] > :first-child,
+  .ua-app [data-surface-id="help-centre-index"] .ua-working-surface > :first-child {
+    background: color-mix(in srgb, var(--ua-paper-primary) 84%, var(--ua-paper-secondary));
+  }
+
+  .ua-app .ua-modal,
+  .ua-app .ua-drawer,
+  .ua-app .ua-command-palette,
+  .ua-app [role="menu"],
+  .ua-app [role="tooltip"] {
+    border-color: var(--ua-rule-default);
+    background: var(--ua-paper-raised);
+    box-shadow: var(--ua-shadow-overlay);
+  }
+
+  .ua-app .ua-modal__header,
+  .ua-app .ua-drawer__header,
+  .ua-app .ua-command-palette__input,
+  .ua-app .ua-command-palette__footer {
+    border-color: var(--ua-rule-default);
+    background: color-mix(in srgb, var(--ua-paper-raised) 80%, var(--ua-paper-secondary));
+  }
+
+  .ua-app .ua-drawer[data-signal-rail="true"] .ua-drawer__header,
+  .ua-app [data-overlay-id*="builder"] .ua-drawer__header,
+  .ua-app [data-overlay-id*="builder"] .ua-modal__header,
+  .ua-app [data-overlay-id="flow-run-payload-inspector"] {
+    box-shadow: inset 2px 0 0 var(--ua-signal-copper);
+  }
+
+  .ua-app .ua-command-palette__group h2 {
+    margin: 8px 8px 4px;
+    color: var(--ua-text-tertiary);
+    font-family: var(--ua-font-mono);
+    font-size: var(--ua-text-metadata-size);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .ua-app .ua-command-palette__results button[aria-selected="true"] {
+    background: var(--ua-signal-copper-soft);
+    color: var(--ua-text-primary);
+    box-shadow: inset 2px 0 0 var(--ua-signal-copper);
+  }
+
+  .ua-app .ua-command-palette__results > p[role="alert"] {
+    border-block: 1px dotted var(--ua-critical-border);
+    background: var(--ua-critical-bg);
+    color: var(--ua-critical);
+  }
+
+  .ua-app .ua-command-palette__results > p[role="status"] {
+    border-block: 1px dotted var(--ua-warning-border);
+    background: var(--ua-warning-bg);
+    color: var(--ua-warning);
+  }
+
+  /* Settings read as one controlled document. Each route keeps its own
+   * content and mutation boundary without decorative category colour. */
+  .ua-app [data-settings-document] {
+    position: relative;
+    display: grid;
+    gap: 16px;
+  }
+
+  .ua-app [data-settings-document] > .ua-working-surface {
+    border-color: var(--ua-rule-default);
+  }
+
+  .ua-app [data-settings-document] .ua-joined-section + .ua-joined-section {
+    border-top-style: dotted;
+  }
+
+  .ua-app [data-settings-document] .ua-joined-section > :is(h2, h3):first-child {
+    font-family: var(--ua-font-display);
+    letter-spacing: -0.008em;
+  }
+
+  .ua-app [data-settings-document] :where(input, select, textarea, button, a):focus-visible {
+    scroll-margin-block: calc(var(--ua-utility-header-height) + 20px);
+  }
+
+  .ua-app [data-settings-document] :where([role="status"], [role="alert"]) {
+    border-radius: var(--ua-radius-control);
+  }
+
+  /* Inbox composition is a truthful count of non-empty unread consequence
+   * families. Equal columns avoid implying a quantitative scale. */
+  .ua-app .ua-notification-signal {
+    display: grid;
+    grid-template-columns: minmax(150px, .42fr) minmax(0, 1.58fr);
+    border-block: 1px solid var(--ua-rule-default);
+    background: var(--ua-paper-secondary);
+  }
+
+  .ua-app .ua-notification-signal__intro {
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    padding: 12px 20px;
+    border-right: 1px solid var(--ua-rule-default);
+  }
+
+  .ua-app .ua-notification-signal__intro span {
+    color: var(--ua-text-tertiary);
+    font-family: var(--ua-font-mono);
+    font-size: 9px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .ua-app .ua-notification-signal__intro strong {
+    color: var(--ua-text-primary);
+    font-family: var(--ua-font-display);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .ua-app .ua-notification-signal__composition {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    margin: 0;
+  }
+
+  .ua-app .ua-notification-signal__composition > div {
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    padding: 10px 14px;
+    border-top: 2px solid var(--ua-data-slate);
+    border-left: 1px solid var(--ua-rule-hairline);
+    background: var(--ua-paper-primary);
+  }
+
+  .ua-app .ua-notification-signal__composition > div:first-child { border-left: 0; }
+  .ua-app .ua-notification-signal__composition > div[data-tone="attention"] { border-top-color: var(--ua-warning); }
+  .ua-app .ua-notification-signal__composition > div[data-tone="decision"] { border-top-color: var(--ua-signal-copper); }
+  .ua-app .ua-notification-signal__composition > div[data-tone="outcome"] { border-top-color: var(--ua-data-petrol); }
+
+  .ua-app .ua-notification-signal__composition dt {
+    overflow: hidden;
+    color: var(--ua-text-tertiary);
+    font-size: 10px;
+    line-height: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ua-app .ua-notification-signal__composition dd {
+    margin: 0;
+    color: var(--ua-text-primary);
+    font-family: var(--ua-font-display);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 22px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ua-app .ua-notification-empty {
+    display: grid;
+    min-height: 220px;
+    align-content: center;
+    justify-items: start;
+    padding-inline: clamp(24px, 7%, 64px);
+    border-top: 1px dotted var(--ua-rule-default);
+    background: var(--ua-paper-secondary);
+  }
+
+  .ua-app .ua-notification-empty p { margin-inline: 0; }
+
+  /* Search foregrounds the canonical record query; type/source remain a
+   * compact scope line and navigation remains a visibly separate authority. */
+  .ua-app .ua-search-query {
+    position: relative;
+    background: var(--ua-paper-primary);
+  }
+
+  .ua-app .ua-search-query::before {
+    position: absolute;
+    inset-block: 10px;
+    left: 0;
+    width: 2px;
+    background: var(--ua-signal-copper);
+    content: "";
+  }
+
+  .ua-app .ua-search-query input {
+    font-family: var(--ua-font-display);
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.008em;
+  }
+
+  .ua-app .ua-search-query:focus-within {
+    box-shadow: inset 0 0 0 2px var(--ua-border-focus);
+  }
+
+  .ua-app .ua-search-scope {
+    align-items: end;
+    background: color-mix(in srgb, var(--ua-paper-primary) 72%, var(--ua-paper-secondary));
+  }
+
+  .ua-app .ua-search-scope__note {
+    max-width: 64ch;
+    padding-bottom: 4px;
+    border-bottom: 1px dotted var(--ua-rule-default);
+  }
+
+  .ua-app .ua-search-result-group > h3 {
+    font-family: var(--ua-font-mono);
+    font-size: 9px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .ua-app .ua-search-result {
+    position: relative;
+    transition: background-color 140ms var(--ua-ease-standard), box-shadow 140ms var(--ua-ease-standard);
+  }
+
+  .ua-app .ua-search-result:hover,
+  .ua-app .ua-search-result:focus-visible {
+    background: var(--ua-signal-copper-soft);
+    box-shadow: inset 2px 0 0 var(--ua-signal-copper);
+  }
+
+  .ua-app .ua-search-result:focus-visible {
+    box-shadow: inset 2px 0 0 var(--ua-signal-copper), 0 0 0 2px var(--ua-border-focus);
+  }
+
+  /* Help contains one real product diagram: the authority sequence operators
+   * must preserve in every case. */
+  .ua-app .ua-help-ledger {
+    overflow: hidden;
+    border-color: var(--ua-rule-default);
+  }
+
+  .ua-app .ua-help-ledger > header {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--ua-rule-hairline);
+    background: var(--ua-paper-secondary);
+  }
+
+  .ua-app .ua-help-ledger > header > span {
+    color: var(--ua-data-petrol);
+    font-family: var(--ua-font-mono);
+    font-size: 9px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .ua-app .ua-help-ledger h2 {
+    margin: 5px 0 0;
+    color: var(--ua-text-primary);
+    font-family: var(--ua-font-display);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  .ua-app .ua-help-ledger p {
+    margin: 4px 0 0;
+    color: var(--ua-text-secondary);
+    font-size: 11px;
+    line-height: 16px;
+  }
+
+  .ua-app .ua-help-ledger ol {
+    margin: 0;
+    padding: 6px 0;
+    list-style: none;
+  }
+
+  .ua-app .ua-help-ledger li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 2px;
+    min-height: 48px;
+    align-items: center;
+    padding: 7px 14px 7px 8px;
+  }
+
+  .ua-app .ua-help-ledger li:not(:last-child)::after {
+    position: absolute;
+    top: 34px;
+    bottom: -14px;
+    left: 18px;
+    border-left: 1px dotted var(--ua-rule-default);
+    content: "";
+  }
+
+  .ua-app .ua-help-ledger li > span {
+    display: grid;
+    z-index: 1;
+    width: 21px;
+    height: 21px;
+    place-items: center;
+    border: 1px solid var(--ua-data-slate);
+    border-radius: 50%;
+    background: var(--ua-paper-primary);
+    color: var(--ua-text-secondary);
+    font-family: var(--ua-font-mono);
+    font-size: 9px;
+  }
+
+  .ua-app .ua-help-ledger li[data-authority="recommendation"] > span { border-color: var(--ua-signal-copper); color: var(--ua-signal-copper); }
+  .ua-app .ua-help-ledger li[data-authority="decision"] > span { border-color: var(--ua-ink-primary); background: var(--ua-ink-primary); color: var(--ua-paper-primary); }
+  .ua-app .ua-help-ledger li[data-authority="outcome"] > span { border-color: var(--ua-data-petrol); color: var(--ua-data-petrol); }
+
+  .ua-app .ua-help-ledger li div { display: grid; gap: 1px; }
+  .ua-app .ua-help-ledger li strong { color: var(--ua-text-primary); font-size: 11px; font-weight: 600; }
+  .ua-app .ua-help-ledger li small { color: var(--ua-text-tertiary); font-size: 9px; }
+
+  .ua-app .ua-help-ledger > a {
+    display: flex;
+    min-height: 38px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--ua-rule-hairline);
+    color: var(--ua-text-link);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .ua-app .ua-help-ledger > a:hover {
+    background: var(--ua-signal-copper-soft);
+  }
+
+  .ua-app .ua-help-ledger > a:focus-visible {
+    background: var(--ua-signal-copper-soft);
+    box-shadow: inset 0 0 0 2px var(--ua-border-focus);
+    outline: 0;
+  }
+
+  .ua-app .ua-help-empty {
+    width: 100%;
+    max-width: 560px;
+    justify-self: start;
+    padding-inline: clamp(20px, 6%, 52px);
+  }
+
+  .ua-app .ua-help-empty button:focus-visible {
+    border-radius: var(--ua-radius-control);
+    box-shadow: 0 0 0 2px var(--ua-border-focus);
+    outline: 0;
+  }
+
+  @media (max-width: 1180px) {
+    .ua-app .ua-notification-signal {
+      grid-template-columns: 132px minmax(0, 1fr);
+    }
+
+    .ua-app .ua-notification-signal__intro {
+      padding-inline: 14px;
+    }
+
+    .ua-app .ua-notification-signal__composition > div {
+      padding-inline: 10px;
+    }
+
+    .ua-app .ua-notification-signal__composition dt {
+      white-space: normal;
+    }
+
+    .ua-app [data-settings-document] {
+      gap: 12px;
+    }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1180px) {
+    .ua-app .ua-search-results-layout {
+      grid-template-columns: minmax(0, 1fr) 224px;
+    }
+
+    .ua-app .ua-search-scope {
+      grid-template-columns: minmax(160px, .75fr) minmax(180px, .9fr) minmax(220px, 1fr);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .ua-app .ua-notification-signal {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ua-app .ua-notification-signal__intro {
+      border-right: 0;
+      border-bottom: 1px solid var(--ua-rule-default);
+    }
+
+    .ua-app .ua-notification-signal__composition {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ua-app .ua-notification-signal__composition > div:nth-child(odd) {
+      border-left: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ua-app [data-notification-state],
+    .ua-app [data-notification-state] > button,
+    .ua-app .ua-help-ledger > a {
+      transition: border-color 150ms var(--ua-ease-standard), background-color 150ms var(--ua-ease-standard), box-shadow 150ms var(--ua-ease-standard), color 150ms var(--ua-ease-standard);
+    }
+  }
+
+  .ua-app :where(input, select, textarea):disabled,
+  .ua-app :where(button, a)[aria-disabled="true"],
+  .ua-app button:disabled {
+    border-color: var(--ua-rule-hairline);
+    background: var(--ua-paper-muted);
+    color: var(--ua-text-disabled);
+    cursor: not-allowed;
+    opacity: 1;
+  }
+
+  /* The final authenticated colour bridge owns mode values; this layer keeps
+   * component-specific dark selectors below without redeclaring the palette. */
+
+  :root[data-theme="dark"] .ua-app :where(input, select, textarea) {
+    border-color: var(--ua-border-control);
+    background: var(--ua-paper-primary);
+    color: var(--ua-text-primary);
+  }
+
+  :root[data-theme="dark"] .ua-app :where(input, textarea)::placeholder {
+    color: var(--ua-text-tertiary);
+  }
+
+  :root[data-theme="dark"] .ua-app :where(.ua-status-badge, .ua-badge) {
+    border-color: var(--ua-status-border, var(--ua-rule-default));
+  }
+
+  :root[data-theme="dark"] .ua-app :where(.recharts-cartesian-axis-tick text, .recharts-label) {
+    fill: var(--ua-text-tertiary);
+  }
+
+  :root[data-theme="dark"] .ua-app .recharts-cartesian-grid line {
+    stroke: var(--ua-chart-grid);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ua-app [data-notification-state],
+    .ua-app [data-theme-option],
+    .ua-app .ua-settings-nav__link,
+    .ua-app .ua-modal,
+    .ua-app .ua-drawer,
+    .ua-app .ua-command-palette,
+    .ua-app .ua-command-palette__results button,
+    .ua-app .ua-search-result,
+    .ua-app [data-notification-state] > button,
+    .ua-app .ua-help-ledger > a {
+      transition: none;
+    }
+  }
+}

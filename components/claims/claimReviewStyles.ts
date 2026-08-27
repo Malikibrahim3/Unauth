@@ -4,7 +4,7 @@ import { formatCurrency } from '@/lib/utils/format';
 
 export const CLAIM_REVIEW_PANEL_ROOT_STYLE: CSSProperties = {
   minHeight: '100vh',
-  background: 'var(--ua-canvas)',
+  background: 'var(--uo-route-canvas)',
 };
 
 export function formatClaimMoney(value: number | null | undefined, currency?: string | null) {
@@ -14,22 +14,22 @@ export function formatClaimMoney(value: number | null | undefined, currency?: st
 }
 
 export function inputStyle(): CSSProperties {
-  return { border: '1px solid var(--ua-border-default)', background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-primary)' };
+  return { border: '1px solid var(--uo-route-border-default)', background: 'var(--uo-route-surface-secondary)', color: 'var(--uo-route-text-primary)' };
 }
 
 export function btnStyle(variant: 'primary' | 'secondary' | 'muted' | 'disabled'): CSSProperties {
-  if (variant === 'primary') return { background: 'var(--ua-action-primary)', color: 'var(--ua-action-primary-fg)' };
+  if (variant === 'primary') return { background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-action-primary-fg)' };
   if (variant === 'muted') {
-    return { border: '1px solid var(--ua-border-subtle)', background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' };
+    return { border: '1px solid var(--uo-route-border-subtle)', background: 'var(--uo-route-surface-secondary)', color: 'var(--uo-route-text-secondary)' };
   }
   if (variant === 'disabled') {
-    return { border: '1px solid var(--ua-border-default)', background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' };
+    return { border: '1px solid var(--uo-route-border-default)', background: 'var(--uo-route-surface-secondary)', color: 'var(--uo-route-text-secondary)' };
   }
-  return { border: '1px solid var(--ua-border-default)', background: 'var(--ua-surface-primary)', color: 'var(--ua-text-primary)' };
+  return { border: '1px solid var(--uo-route-border-default)', background: 'var(--uo-route-surface-primary)', color: 'var(--uo-route-text-primary)' };
 }
 
 export function slaToneStyle(tone: 'red' | 'amber' | 'gray'): { bg: string; text: string } {
-  if (tone === 'red') return { bg: 'var(--ua-risk-critical-bg)', text: 'var(--ua-risk-critical)' };
-  if (tone === 'amber') return { bg: 'var(--ua-warning-bg)', text: 'var(--ua-warning)' };
-  return { bg: 'var(--ua-surface-secondary)', text: 'var(--ua-text-secondary)' };
+  if (tone === 'red') return { bg: 'var(--uo-route-risk-critical-bg)', text: 'var(--uo-route-risk-critical)' };
+  if (tone === 'amber') return { bg: 'var(--uo-route-warning-bg)', text: 'var(--uo-route-warning)' };
+  return { bg: 'var(--uo-route-surface-secondary)', text: 'var(--uo-route-text-secondary)' };
 }

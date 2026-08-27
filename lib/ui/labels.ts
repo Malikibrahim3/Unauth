@@ -337,6 +337,7 @@ const workflowStatus: Record<string, string> = {
   rejected: 'Rejected',
   appealed: 'Appealed',
   paid: 'Paid',
+  refunded: 'Refunded',
   closed: 'Closed',
   view_only: 'View only',
   supported: 'Supported',
@@ -356,6 +357,7 @@ const workflowStatus: Record<string, string> = {
   source_verified: 'Source verified',
   evidence_due: 'Evidence due',
   inspected: 'Inspected',
+  ready: 'Ready',
   ready_for_decision: 'Ready for decision',
   // Provider lifecycle-capability evidence levels (lib/integrations/types.ts),
   // rendered on the integration detail page.

@@ -245,7 +245,7 @@ async function findOrderByExternalId(
 ) {
   const { data, error } = await supabase
     .from('source_orders')
-    .select('id, shipping_address_id, billing_address_id')
+    .select('id, external_id, shipping_address_id, billing_address_id')
     .eq('merchant_id', merchantId)
     .eq('source', 'shopify')
     .eq('connection_id', connectionId)
@@ -476,11 +476,13 @@ async function processRefundTopic(
     idempotencyKey: `shopify:refund:${connectionId}:${String(payload.id)}`,
     payload: {
       source_order_id: order.id,
+      source_order_external_id: order.external_id,
       amount_minor: Number.isFinite(refundedAmount) ? Math.round(refundedAmount * 100) : null,
       currency: payload.currency ?? payload.order?.currency ?? null,
       reason: payload.note ?? payload.reason ?? null,
       transaction_state: transactionState,
       transaction_count: transactionStatuses.length,
+      source_external_id: String(payload.id),
       case_origin: 'connector',
     },
     occurredAt: payload.created_at ?? new Date().toISOString(),

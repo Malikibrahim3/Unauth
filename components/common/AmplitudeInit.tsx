@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { initAmplitude, identify } from "@/lib/analytics/amplitude";
 
 interface Props {
   merchantId: string | null;
@@ -11,20 +10,19 @@ interface Props {
   primaryConcern?: string | null;
 }
 
-let amplitudeInitialized = false;
-
-function ensureAmplitudeInitialized() {
-  if (!amplitudeInitialized) {
-    initAmplitude();
-    amplitudeInitialized = true;
-  }
-}
-
 export default function AmplitudeInit({ merchantId, accountTier }: Props) {
   useEffect(() => {
-    ensureAmplitudeInitialized();
-    if (!merchantId) return;
-    identify(merchantId, { accountTier: accountTier ?? undefined });
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const { initAmplitude, identify } = await import("@/lib/analytics/amplitude");
+      if (cancelled) return;
+      initAmplitude();
+      if (merchantId) identify(merchantId, { accountTier: accountTier ?? undefined });
+    }, 1_000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [accountTier, merchantId]);
 
   return null;

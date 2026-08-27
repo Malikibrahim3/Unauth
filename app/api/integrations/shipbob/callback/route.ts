@@ -25,7 +25,7 @@ import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 export const maxDuration = 60;
 
 function redirect(params: Record<string, string>): NextResponse {
-  const url = new URL('/integrations', getAppUrl());
+  const url = new URL('/sources/connected', getAppUrl());
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   // The provider returns a form_post. A 307 would preserve that POST across
   // the application redirect (and eventually hit /login with POST); 303 is the
@@ -162,7 +162,7 @@ async function handleCallback(request: NextRequest) {
         })),
         credentialPayload: token,
       });
-      const selectionUrl = new URL('/integrations/shipbob/select', getAppUrl());
+  const selectionUrl = new URL('/sources/setup/shipbob/select', getAppUrl());
       selectionUrl.searchParams.set('selection', selectionId);
       const response = NextResponse.redirect(selectionUrl, 303);
       response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());

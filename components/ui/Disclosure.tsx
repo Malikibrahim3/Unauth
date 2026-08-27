@@ -30,8 +30,8 @@ export function Disclosure({
         <ChevronDown
           size={14}
           aria-hidden="true"
-          className="shrink-0 transition-transform duration-[var(--ua-duration-fast)]"
-          style={{ transform: open ? 'rotate(180deg)' : undefined, color: 'var(--ua-icon-secondary)' }}
+          className="shrink-0 transition-transform duration-[var(--uo-route-duration-fast)]"
+          style={{ transform: open ? 'rotate(180deg)' : undefined, color: 'var(--uo-route-icon-secondary)' }}
         />
       </button>
       {open ? children : null}

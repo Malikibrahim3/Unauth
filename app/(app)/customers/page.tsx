@@ -29,10 +29,11 @@ import { ACTIVE_CLAIM_STATUSES } from "@/lib/claims/sla";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
-const DEFAULT_PAGE_SIZE = 25;
+const PAGE_SIZE_OPTIONS = [9, 25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 9;
 
 const CHARGEBACK_CLAIM_TYPE = "chargeback";
+type CoverageState = "complete" | "partial" | "unavailable";
 
 type SourceCustomerRow = {
   id: string;
@@ -136,14 +137,35 @@ export default async function CustomersOverviewPage({
   const offset = (page - 1) * PAGE_SIZE;
 
   // Basic
-  const q = sp.q?.trim() || sp.email?.trim() || "";
-  const hasRefunds = sp.hasRefunds === "1";
-  const hasChargebacks = sp.hasChargebacks === "1";
-  /** Legacy query params — ignored (watchlist / review-status workflow retired). */
+  const q = sp.search?.trim() || sp.q?.trim() || sp.email?.trim() || "";
+  const legacyRefunds = sp.hasRefunds === "1";
+  const legacyChargebacks = sp.hasChargebacks === "1";
+  const requestedRisk = ["case_history", "refund", "chargeback"].includes(sp.risk ?? "")
+    ? sp.risk!
+    : legacyRefunds && legacyChargebacks
+      ? "case_history"
+      : legacyRefunds
+        ? "refund"
+        : legacyChargebacks
+          ? "chargeback"
+          : "";
+  const statusFilter = sp.status === "open_cases" ? "open_cases" : "";
+  const hasAnyCaseRisk = requestedRisk === "case_history";
+  const hasRefunds = requestedRisk === "refund";
+  const hasChargebacks = requestedRisk === "chargeback";
+  /** Legacy watchlist workflow is retired. */
   void (sp.watchlisted === "1");
-  void sp.risk;
-  void sp.status;
-  const openClaimsOnly = sp.openClaims === "1";
+  const openClaimsOnly = statusFilter === "open_cases" || sp.openClaims === "1";
+  const canonicalSp = { ...sp };
+  for (const legacyKey of ["q", "email", "hasRefunds", "hasChargebacks", "openClaims", "watchlisted"]) {
+    delete canonicalSp[legacyKey];
+  }
+  if (q) canonicalSp.search = q;
+  else delete canonicalSp.search;
+  if (requestedRisk) canonicalSp.risk = requestedRisk;
+  else delete canonicalSp.risk;
+  if (openClaimsOnly) canonicalSp.status = "open_cases";
+  else delete canonicalSp.status;
   const requestedSort = sp.sort ?? "recent";
   const sort = ["recent", "orders", "cases", "name"].includes(requestedSort)
     ? requestedSort
@@ -185,24 +207,40 @@ export default async function CustomersOverviewPage({
     );
   }
 
-  const claimFiltersActive = hasRefunds || hasChargebacks || openClaimsOnly;
+  const claimFiltersActive = hasAnyCaseRisk || hasRefunds || hasChargebacks || openClaimsOnly;
+  let caseFilterCoverage: CoverageState = "complete";
   if (claimFiltersActive) {
     let claimQuery = svc
       .from(TABLES.MERCHANT_CLAIMS)
       .select(
         "source_order_id, merchant_customer_id, claim_type, status, source_orders(source_customer_id)",
+        { count: "exact" },
       )
       .eq("merchant_id", ctx.merchantId);
-    if (hasChargebacks && !hasRefunds)
+    if (hasChargebacks)
       claimQuery = claimQuery.eq("claim_type", CHARGEBACK_CLAIM_TYPE);
+    if (hasRefunds)
+      claimQuery = claimQuery.eq("claim_type", "refund_request");
     if (openClaimsOnly)
       claimQuery = claimQuery.in("status", [...ACTIVE_CLAIM_STATUSES]);
-    const { data: claimRows } = (await claimQuery.limit(2000)) as unknown as {
+    const { data: claimRows, error: claimFilterError, count: claimFilterCount } = (await claimQuery.limit(2000)) as unknown as {
       data: Array<{
         merchant_customer_id: string | null;
         source_orders: { source_customer_id: string | null } | null;
       }> | null;
+      error: { message: string } | null;
+      count: number | null;
     };
+    caseFilterCoverage = !claimFilterError
+      && claimFilterCount != null
+      && (claimRows ?? []).length === claimFilterCount
+      ? "complete"
+      : (claimRows ?? []).length > 0
+        ? "partial"
+        : "unavailable";
+    if (!connectionState.helpdesk && caseFilterCoverage === "complete") {
+      caseFilterCoverage = (claimRows ?? []).length > 0 ? "partial" : "unavailable";
+    }
     const claimCustomerIds = Array.from(
       new Set(
         (claimRows ?? []).flatMap((r) =>
@@ -249,6 +287,7 @@ export default async function CustomersOverviewPage({
     .from("source_customers")
     .select(
       "id, merchant_customer_id, email, phone, first_name, last_name, orders_count, total_spent, account_created_at, created_at, updated_at",
+      { count: "exact" },
     )
     .eq("merchant_id", ctx.merchantId);
 
@@ -283,13 +322,24 @@ export default async function CustomersOverviewPage({
   // Server-level timeout is provided by the `maxDuration` export at the top of this file.
   // Note: Supabase query builders are thenable but do not implement .catch() — use try/catch.
   let scanned: SourceCustomerRow[] = [];
+  let customerListCoverage: CoverageState = "unavailable";
   try {
     const result = (await scanQuery) as unknown as {
       data: SourceCustomerRow[] | null;
+      error: { message: string } | null;
+      count: number | null;
     };
     scanned = result.data ?? [];
+    customerListCoverage = !result.error
+      && result.count != null
+      && scanned.length === result.count
+      ? "complete"
+      : scanned.length > 0
+        ? "partial"
+        : "unavailable";
   } catch {
     scanned = [];
+    customerListCoverage = "unavailable";
   }
   if (scanned.length >= IDENTITY_GROUP_SCAN_CAP) {
     console.warn(
@@ -309,7 +359,7 @@ export default async function CustomersOverviewPage({
   try {
     let canonicalQuery = svc
       .from(TABLES.MERCHANT_CUSTOMERS)
-      .select("id, display_name, email, created_at, updated_at")
+      .select("id, display_name, email, created_at, updated_at", { count: "exact" })
       .eq("merchant_id", ctx.merchantId)
       .order("updated_at", { ascending: false })
       .limit(IDENTITY_GROUP_SCAN_CAP);
@@ -317,7 +367,7 @@ export default async function CustomersOverviewPage({
       const safeLike = `%${escapePostgrestFilterValue(q)}%`;
       canonicalQuery = canonicalQuery.or(`email.ilike.${safeLike},display_name.ilike.${safeLike}`);
     }
-    const { data: canonicalRows } = (await canonicalQuery) as unknown as {
+    const { data: canonicalRows, error: canonicalError, count: canonicalCount } = (await canonicalQuery) as unknown as {
       data: Array<{
         id: string;
         display_name: string | null;
@@ -325,7 +375,12 @@ export default async function CustomersOverviewPage({
         created_at: string;
         updated_at: string;
       }> | null;
+      error: { message: string } | null;
+      count: number | null;
     };
+    if (canonicalError || canonicalCount == null || (canonicalRows ?? []).length !== canonicalCount) {
+      customerListCoverage = scanned.length > 0 || (canonicalRows ?? []).length > 0 ? "partial" : "unavailable";
+    }
     const linkedCanonicalIds = new Set(
       scanned.flatMap((customer) => customer.merchant_customer_id ? [customer.merchant_customer_id] : []),
     );
@@ -348,6 +403,10 @@ export default async function CustomersOverviewPage({
     }
   } catch {
     // Older deployments can render the source-customer directory normally.
+    customerListCoverage = scanned.length > 0 ? "partial" : "unavailable";
+  }
+  if (baseSourceCustomerCount.error || baseCanonicalCustomerCount.error) {
+    customerListCoverage = scanned.length > 0 ? "partial" : "unavailable";
   }
 
   // Resolve each scanned customer to its network identity (own-signal + k-anon
@@ -400,27 +459,39 @@ export default async function CustomersOverviewPage({
   // Merchant-wide case aggregate (single bounded query). Feeds the KPI strip,
   // the "Most cases" sort, and the per-row case counts.
   // -------------------------------------------------------------------------
-  const caseAggByCustomer = new Map<string, { total: number; open: number }>();
-  const caseAggByMerchantCustomer = new Map<string, { total: number; open: number }>();
+  type CaseAggregate = { total: number; open: number; refunds: number; chargebacks: number };
+  const caseAggByCustomer = new Map<string, CaseAggregate>();
+  const caseAggByMerchantCustomer = new Map<string, CaseAggregate>();
+  let caseCoverage: CoverageState = "unavailable";
   try {
-    const { data: caseRows } = (await svc
+    const { data: caseRows, error: caseError, count: caseCount } = (await svc
       .from(TABLES.MERCHANT_CLAIMS)
-      .select("status, merchant_customer_id, source_orders(source_customer_id)")
+      .select("status, claim_type, merchant_customer_id, source_orders(source_customer_id)", { count: "exact" })
       .eq("merchant_id", ctx.merchantId)
       .limit(CASE_AGG_LIMIT)) as unknown as {
       data: Array<{
         status: string;
+        claim_type: string;
         merchant_customer_id: string | null;
         source_orders: { source_customer_id: string | null } | null;
       }> | null;
+      error: { message: string } | null;
+      count: number | null;
     };
+    caseCoverage = !caseError && caseCount != null && (caseRows ?? []).length === caseCount
+      ? "complete"
+      : (caseRows ?? []).length > 0
+        ? "partial"
+        : "unavailable";
     for (const r of caseRows ?? []) {
       const customerId = r.source_orders?.source_customer_id;
       const merchantCustomerId = r.merchant_customer_id;
-      const add = (map: Map<string, { total: number; open: number }>, key: string) => {
-        const agg = map.get(key) ?? { total: 0, open: 0 };
+      const add = (map: Map<string, CaseAggregate>, key: string) => {
+        const agg = map.get(key) ?? { total: 0, open: 0, refunds: 0, chargebacks: 0 };
         agg.total += 1;
         if ((ACTIVE_CLAIM_STATUSES as readonly string[]).includes(r.status)) agg.open += 1;
+        if (r.claim_type === "refund_request") agg.refunds += 1;
+        if (r.claim_type === CHARGEBACK_CLAIM_TYPE) agg.chargebacks += 1;
         map.set(key, agg);
       };
       // A canonical claim is authoritative; legacy source-customer claims are
@@ -429,7 +500,10 @@ export default async function CustomersOverviewPage({
       else if (customerId) add(caseAggByCustomer, customerId);
     }
   } catch {
-    // Case counts degrade to zero — the directory still renders.
+    caseCoverage = "unavailable";
+  }
+  if (!connectionState.helpdesk && caseCoverage === "complete") {
+    caseCoverage = caseAggByCustomer.size > 0 || caseAggByMerchantCustomer.size > 0 ? "partial" : "unavailable";
   }
 
   // One bounded order projection for the scanned customer slice supplies both
@@ -448,6 +522,7 @@ export default async function CustomersOverviewPage({
     string,
     { count: number; last: string | null; totals: Map<string, number> }
   >();
+  let orderCoverage: CoverageState = "unavailable";
   try {
     // The directory is already bounded to the scanned customer slice. Fetch
     // only orders that can belong to those rows instead of downloading every
@@ -456,25 +531,33 @@ export default async function CustomersOverviewPage({
       scannedMerchantCustomerIds.size > 0
         ? svc
             .from(TABLES.SOURCE_ORDERS)
-            .select("id, source_customer_id, merchant_customer_id, placed_at, total_price, currency")
+            .select("id, source_customer_id, merchant_customer_id, placed_at, total_price, currency", { count: "exact" })
             .eq("merchant_id", ctx.merchantId)
             .in("merchant_customer_id", [...scannedMerchantCustomerIds])
             .limit(10000)
-        : Promise.resolve({ data: [] as OrderAggRow[] }),
+        : Promise.resolve({ data: [] as OrderAggRow[], error: null, count: 0 }),
       scannedCustomerIds.size > 0
         ? svc
             .from(TABLES.SOURCE_ORDERS)
-            .select("id, source_customer_id, merchant_customer_id, placed_at, total_price, currency")
+            .select("id, source_customer_id, merchant_customer_id, placed_at, total_price, currency", { count: "exact" })
             .eq("merchant_id", ctx.merchantId)
             .in("source_customer_id", [...scannedCustomerIds])
             .limit(10000)
-        : Promise.resolve({ data: [] as OrderAggRow[] }),
+        : Promise.resolve({ data: [] as OrderAggRow[], error: null, count: 0 }),
     ]) as unknown as [
-      { data: OrderAggRow[] | null },
-      { data: OrderAggRow[] | null },
+      { data: OrderAggRow[] | null; error: { message: string } | null; count: number | null },
+      { data: OrderAggRow[] | null; error: { message: string } | null; count: number | null },
     ];
     const orderRows = [...(canonicalOrders.data ?? []), ...(sourceOrders.data ?? [])];
     const uniqueOrderRows = [...new Map(orderRows.map((row) => [row.id, row])).values()];
+    const orderReadsComplete = [canonicalOrders, sourceOrders].every((result) =>
+      !result.error && result.count != null && (result.data ?? []).length === result.count,
+    );
+    orderCoverage = orderReadsComplete
+      ? "complete"
+      : uniqueOrderRows.length > 0
+        ? "partial"
+        : "unavailable";
 
     for (const order of uniqueOrderRows) {
       const add = (
@@ -505,7 +588,10 @@ export default async function CustomersOverviewPage({
       }
     }
   } catch {
-    // Directory still renders with explicit unavailable values.
+    orderCoverage = "unavailable";
+  }
+  if (!connectionState.orderSourceConnected && orderCoverage === "complete") {
+    orderCoverage = ordersByCustomer.size > 0 || ordersByMerchantCustomer.size > 0 ? "partial" : "unavailable";
   }
 
   // Group-level meta for sorting + KPI aggregation.
@@ -514,6 +600,8 @@ export default async function CustomersOverviewPage({
     ordersCountSum: number;
     caseTotal: number;
     caseOpen: number;
+    refundCases: number;
+    chargebackCases: number;
     name: string;
     lastSeen: string;
   };
@@ -525,17 +613,23 @@ export default async function CustomersOverviewPage({
         .slice(-1)[0] ?? g.members[0].updated_at;
     let caseTotal = 0;
     let caseOpen = 0;
+    let refundCases = 0;
+    let chargebackCases = 0;
     const merchantCustomerId = g.members.find((m) => m.merchant_customer_id)?.merchant_customer_id ?? null;
     const canonicalCases = merchantCustomerId ? caseAggByMerchantCustomer.get(merchantCustomerId) : null;
     if (canonicalCases) {
       caseTotal += canonicalCases.total;
       caseOpen += canonicalCases.open;
+      refundCases += canonicalCases.refunds;
+      chargebackCases += canonicalCases.chargebacks;
     }
     for (const m of g.members) {
       const agg = caseAggByCustomer.get(m.id);
       if (agg) {
         caseTotal += agg.total;
         caseOpen += agg.open;
+        refundCases += agg.refunds;
+        chargebackCases += agg.chargebacks;
       }
     }
     const name =
@@ -552,10 +646,12 @@ export default async function CustomersOverviewPage({
       }, ordersByMerchantCustomer.get(merchantCustomerId ?? "")?.count ?? 0),
       caseTotal,
       caseOpen,
+      refundCases,
+      chargebackCases,
       name,
       lastSeen,
     };
-    if (meta.ordersCountSum > 0 || meta.caseTotal > 0) metas.push(meta);
+    metas.push(meta);
   }
 
   switch (sort) {
@@ -630,17 +726,21 @@ export default async function CustomersOverviewPage({
       primary_email: representative.email,
       names:
         linkedNames.length > 0 ? linkedNames : displayNames(representative),
-      total_orders: totalOrders,
-      total_spent: singleCurrencyTotal?.[1] ?? 0,
+      total_orders: totalOrders > 0 || orderCoverage === "complete" ? totalOrders : null,
+      order_coverage: orderCoverage,
+      total_spent: singleCurrencyTotal?.[1] ?? null,
       total_spent_currency: singleCurrencyTotal?.[0] ?? null,
       has_mixed_currency: totalsByCurrency.size > 1,
-      payout_cases_total: m.caseTotal,
-      payout_cases_open: m.caseOpen,
+      payout_cases_total: m.caseTotal > 0 || caseCoverage === "complete" ? m.caseTotal : null,
+      payout_cases_open: m.caseOpen > 0 || caseCoverage === "complete" ? m.caseOpen : null,
+      case_coverage: caseCoverage,
+      has_refund_case: m.refundCases > 0 ? true : caseCoverage === "complete" ? false : null,
+      has_chargeback_case: m.chargebackCases > 0 ? true : caseCoverage === "complete" ? false : null,
       last_order_at: lastOrderAt,
     };
   });
 
-  const noFilters = !q && !hasRefunds && !hasChargebacks && !openClaimsOnly;
+  const noFilters = !q && !requestedRisk && !openClaimsOnly;
   // This deliberately remains independent of the filtered identity scan. The
   // directory can contain source-only and canonical customer records; use the
   // larger unfiltered population so a filtered result never erases its base
@@ -660,23 +760,25 @@ export default async function CustomersOverviewPage({
     <CustomersOverviewPageView
       connectionState={connectionState}
       setupState={setupState}
-      hasData={dataPresence.hasCustomerProfiles}
+      hasData={rows.length > 0 || dataPresence.hasCustomerProfiles}
       pageActions={{
         primary: primaryAction,
         subtitle: "Order and case history for every customer.",
       }}
-      sp={sp}
+      sp={canonicalSp}
       rows={rows}
       baseCustomerCount={baseCustomerCount}
+      withOpenCasesCount={metas.filter((meta) => meta.caseOpen > 0).length}
       totalCount={total}
       page={page}
       PAGE_SIZE={PAGE_SIZE}
       totalPages={totalPages}
       noFilters={noFilters}
-      q={q}
-      hasRefunds={hasRefunds}
-      hasChargebacks={hasChargebacks}
-      openClaimsOnly={openClaimsOnly}
+      searchTerm={q}
+      riskFilter={requestedRisk}
+      statusFilter={openClaimsOnly ? "open_cases" : ""}
+      listCoverage={customerListCoverage}
+      caseFilterCoverage={caseFilterCoverage}
     />
   );
 }

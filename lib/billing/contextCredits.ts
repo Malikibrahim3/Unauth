@@ -6,6 +6,7 @@ import { maybeSendUsageWarningEmail } from '@/lib/billing/lifecycle';
 import type { Tier } from '@/lib/billing/tiers';
 import { TIER_CONFIG } from '@/lib/billing/tiers';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { BILLABLE_EVENTS, type BillableEventId } from '@/lib/billing/plans';
 
 export type ContextUnlockType =
   | 'basic_context'
@@ -41,6 +42,8 @@ export type ConsumeContextCreditsParams = {
   merchantId: string;
   userId?: string | null;
   contextType: ContextUnlockType;
+  logicalOperationId: string;
+  sourceObject: { type: string; id: string };
   claimId?: string | null;
   ticketRef?: string | null;
   orderRef?: string | null;
@@ -62,11 +65,18 @@ export const PLAN_CONTEXT_CREDITS: Record<Tier, number | null> = {
   enterprise: planCreditsFromTierConfig('enterprise'),
 };
 
+export const CONTEXT_BILLABLE_EVENT: Record<ContextUnlockType, BillableEventId> = {
+  basic_context: 'context.basic',
+  full_context: 'context.full',
+  evidence_summary: 'evidence.summary',
+  api_enrichment: 'api.enrichment',
+};
+
 export const CONTEXT_CREDIT_COSTS: Record<ContextUnlockType, number> = {
-  basic_context: 1,
-  full_context: 2,
-  evidence_summary: 3,
-  api_enrichment: 2,
+  basic_context: BILLABLE_EVENTS['context.basic'].credits,
+  full_context: BILLABLE_EVENTS['context.full'].credits,
+  evidence_summary: BILLABLE_EVENTS['evidence.summary'].credits,
+  api_enrichment: BILLABLE_EVENTS['api.enrichment'].credits,
 };
 
 export const CONTEXT_UNLOCK_LABELS: Record<ContextUnlockType, string> = {
@@ -166,13 +176,15 @@ type ConsumeRpcRow = {
   credits_spent?: number;
   error_code?: string;
   soft_cap?: boolean;
+  duplicate?: boolean;
+  receipt_id?: string;
 };
 
 export async function consumeContextCredits(
   supabase: SupabaseClient,
   params: ConsumeContextCreditsParams,
 ): Promise<
-  | { ok: true; snapshot: ContextCreditSnapshot; creditsSpent: number }
+  | { ok: true; snapshot: ContextCreditSnapshot; creditsSpent: number; duplicate: boolean; receiptId: string }
   | { ok: false; snapshot: ContextCreditSnapshot; creditsRequired: number }
 > {
   const snapshot = await getContextCreditSnapshot(supabase, params.merchantId);
@@ -210,6 +222,10 @@ export async function consumeContextCredits(
             : 'app',
       },
       p_allow_soft_cap: params.allowSoftCap === true,
+      p_billable_event: CONTEXT_BILLABLE_EVENT[params.contextType],
+      p_logical_operation_id: params.logicalOperationId,
+      p_source_object_type: params.sourceObject.type,
+      p_source_object_id: params.sourceObject.id,
     },
   );
 
@@ -250,5 +266,7 @@ export async function consumeContextCredits(
     ok: true,
     snapshot: updatedSnapshot,
     creditsSpent: row.credits_spent ?? creditsSpent,
+    duplicate: row.duplicate === true,
+    receiptId: row.receipt_id ?? '',
   };
 }

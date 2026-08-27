@@ -17,6 +17,7 @@ import {
 import { arrow, blank, heading, info, pass, rule, statusLine, warn } from './helpers/log';
 
 export type PreflightResult = { ok: boolean; merchantIdB: string | null };
+export type PreflightOptions = { readOnly?: boolean };
 
 function envPresent(name: string): boolean {
   if (name === 'SUPABASE_URL') {
@@ -42,6 +43,18 @@ function checkEnvVars(): { ok: boolean; missingRequired: string[] } {
       statusLine(false, spec.name, 'MISSING');
       missingRequired.push(spec.name);
     }
+  }
+  const hasClientCredentials = envPresent('SHOPIFY_API_KEY') && envPresent('SHOPIFY_API_SECRET');
+  const hasLegacyToken = envPresent('SHOPIFY_ADMIN_API_TOKEN');
+  if (hasClientCredentials || hasLegacyToken) {
+    statusLine(
+      true,
+      'Shopify authentication',
+      hasClientCredentials ? 'client credentials present' : 'legacy token present',
+    );
+  } else {
+    statusLine(false, 'Shopify authentication', 'MISSING');
+    missingRequired.push('SHOPIFY_API_KEY + SHOPIFY_API_SECRET or SHOPIFY_ADMIN_API_TOKEN');
   }
   blank();
   if (missingRequired.length > 0) {
@@ -172,7 +185,7 @@ async function checkPrimaryMerchantConnection(): Promise<void> {
 // ---------------------------------------------------------------------------
 // 1d — second merchant auto-create
 // ---------------------------------------------------------------------------
-async function ensureSecondMerchant(): Promise<string | null> {
+async function ensureSecondMerchant(options: { allowCreate: boolean }): Promise<string | null> {
   blank();
   heading('Checking second merchant (E2E_MERCHANT_ID_B)...');
   blank();
@@ -186,6 +199,12 @@ async function ensureSecondMerchant(): Promise<string | null> {
       return configured;
     }
     warn(`E2E_MERCHANT_ID_B=${configured} does not exist in the merchants table — auto-creating a replacement`);
+  }
+
+  if (!options.allowCreate) {
+    warn('Read-only preflight will not create or replace E2E_MERCHANT_ID_B');
+    arrow('Configure an existing controlled second merchant before running tenancy scenarios.');
+    return null;
   }
 
   // Auto-create: an auth user (FK target) + a merchant row.
@@ -259,7 +278,7 @@ function tunnelAndParityWarnings(): void {
 // ---------------------------------------------------------------------------
 // Orchestration
 // ---------------------------------------------------------------------------
-export async function runPreflight(): Promise<PreflightResult> {
+export async function runPreflight(options: PreflightOptions = {}): Promise<PreflightResult> {
   const env = checkEnvVars();
   if (!env.ok) return { ok: false, merchantIdB: null };
 
@@ -267,13 +286,21 @@ export async function runPreflight(): Promise<PreflightResult> {
   if (!connectivityOk) return { ok: false, merchantIdB: getVar('E2E_MERCHANT_ID_B') ?? null };
 
   await checkPrimaryMerchantConnection();
-  const merchantIdB = await ensureSecondMerchant();
+  const merchantIdB = await ensureSecondMerchant({ allowCreate: !options.readOnly });
   tunnelAndParityWarnings();
+
+  if (options.readOnly && !merchantIdB) {
+    blank();
+    rule();
+    console.log('Read-only preflight blocked — controlled second merchant is unavailable');
+    rule();
+    return { ok: false, merchantIdB: null };
+  }
 
   blank();
   rule();
-  console.log('Preflight complete — all checks passed');
-  console.log('Ready to run: npx tsx scripts/e2e/runE2E.ts');
+  console.log(`Preflight complete — all ${options.readOnly ? 'read-only ' : ''}checks passed`);
+  if (!options.readOnly) console.log('Ready to run: npx tsx scripts/e2e/runE2E.ts');
   rule();
   return { ok: true, merchantIdB };
 }
@@ -281,7 +308,7 @@ export async function runPreflight(): Promise<PreflightResult> {
 // Direct invocation: `npx tsx scripts/e2e/preflight.ts`
 const invokedDirectly = process.argv[1] && /preflight\.ts$/.test(process.argv[1]);
 if (invokedDirectly) {
-  runPreflight()
+  runPreflight({ readOnly: process.argv.includes('--read-only') })
     .then((r) => process.exit(r.ok ? 0 : 1))
     .catch((err) => {
       console.error(err);

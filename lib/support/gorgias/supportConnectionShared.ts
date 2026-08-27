@@ -26,7 +26,7 @@ export const GORGIAS_SIDEBAR_AUTO_NOTE =
   'Once connected, Unauth will automatically appear in your Gorgias ticket sidebar.';
 
 /** In-app path for Gorgias connect / reconnect (widget CTA, sidebar registration). */
-export const GORGIAS_SETTINGS_INTEGRATIONS_PATH = '/settings/integrations/gorgias';
+export const GORGIAS_SETTINGS_INTEGRATIONS_PATH = '/sources/setup/gorgias';
 
 // Connection result copy, shared so the route and the client agree on the exact text.
 export const GORGIAS_CONNECT_SUCCESS_MESSAGE =

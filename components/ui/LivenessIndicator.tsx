@@ -13,9 +13,9 @@ import {
 } from '@/lib/design/liveness';
 
 const FRESHNESS_STYLE: Record<FreshnessState, { color: string; label: string }> = {
-  current: { color: 'var(--ua-success)', label: 'Current' },
-  stale: { color: 'var(--ua-warning)', label: 'Stale' },
-  unknown: { color: 'var(--ua-neutral)', label: 'Unknown' },
+  current: { color: 'var(--uo-route-success)', label: 'Current' },
+  stale: { color: 'var(--uo-route-warning)', label: 'Stale' },
+  unknown: { color: 'var(--uo-route-neutral)', label: 'Unknown' },
 };
 
 const TRANSPORT_LABEL: Record<TransportState, string> = {
@@ -69,8 +69,8 @@ export function LivenessIndicator({
 
   return (
     <span
-      className={cn('inline-flex items-center gap-1.5 text-[length:var(--ua-text-metadata-size)]', className)}
-      style={{ color: 'var(--ua-text-tertiary)' }}
+      className={cn('inline-flex items-center gap-1.5 text-[length:var(--uo-route-text-metadata-size)]', className)}
+      style={{ color: 'var(--uo-route-text-tertiary)' }}
     >
       {showSpinner ? (
         <Spinner size="sm" delayMs={0} label={activity === 'syncing' ? 'Syncing' : 'Updating'} />

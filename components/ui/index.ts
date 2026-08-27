@@ -34,15 +34,18 @@ export { PrivacyBadge } from './PrivacyBadge';
 export { SIGNAL_META } from '@/lib/ui/signalBadgeMeta';
 export type { SignalType, SignalStrength } from '@/lib/ui/signalBadgeMeta';
 export { Surface } from './Surface';
-export type { SurfaceStructure, SurfacePad } from './Surface';
+export type { SurfaceStructure, SurfacePad, SurfaceRadius } from './Surface';
 export { PageFrame } from './PageFrame';
 export type { PageFrameProps } from './PageFrame';
 export { RegistrySurface } from './RegistrySurface';
 export type { RegistrySurfaceProps } from './RegistrySurface';
+export { HandoffKpiGrid } from './HandoffKpiGrid';
+export type { HandoffKpi } from './HandoffKpiGrid';
+export { RegistryToolbar } from './RegistryToolbar';
 export { Pagination } from './Pagination';
 export type { PaginationProps } from './Pagination';
 export { BoardSurface, BoardColumn } from './BoardSurface';
-export { EvidenceThread } from './EvidenceThread';
+export { AuthorityStamp, DecisionBracket, EvidenceSpine, EvidenceThread } from './EvidenceThread';
 export type {
   EvidenceAuthority,
   EvidenceThreadItem,
@@ -66,11 +69,12 @@ export type {
   BuilderSequenceProps,
   BuilderStepProps,
 } from './BuilderShell';
-export { Card } from './Card';
-export type { CardVariant, CardDensity } from './Card';
+export { Card, CardHeader } from './Card';
+export type { CardVariant, CardDensity, CardHeaderProps } from './Card';
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
 export { MetricCard } from './MetricCard';
+export type { MetricCardProps, MetricKind, MetricOutcome, MetricAvailability, MetricDelta } from './MetricCard';
 export { MetricGroup } from './MetricGroup';
 export type { MetricGroupItem, MetricGroupProps } from './MetricGroup';
 export { LeadSummary } from './LeadSummary';
@@ -101,9 +105,10 @@ export type { DataTableColumn } from './DataTable';
 export { DataTableServer } from './DataTableServer';
 export type { DataTableServerProps, ServerDataTableColumn } from './DataTableServer';
 export { Drawer } from './Drawer';
+export type { DrawerProps } from './Drawer';
 export { EmptyState } from './EmptyState';
 export { OperationalState } from './OperationalState';
-export type { OperationalStateKind, OperationalStateProps } from './OperationalState';
+export type { OperationalStateKind, OperationalStateProps, StatePlacement } from './OperationalState';
 export { EvidenceChecklist } from './EvidenceChecklist';
 export { RecommendationBlock } from './RecommendationBlock';
 export { ErrorBoundaryUI } from './LoadingState';
@@ -112,6 +117,14 @@ export type { LoadingSkeletonVariant } from './LoadingSkeleton';
 export { Spinner } from './Spinner';
 export type { SpinnerSize } from './Spinner';
 export { Recency } from './Recency';
+export { MoneyValue, UnavailableValue, formatMoneyMinorUnits } from './ProductValue';
+export type { MoneyValueProps, ValueAvailability, UnavailablePlacement } from './ProductValue';
+export { Provenance } from './Provenance';
+export type { ProvenanceProps } from './Provenance';
+export { AuditTimeline } from './AuditTimeline';
+export type { AuditTimelineItem } from './AuditTimeline';
+export { Inspector } from './Inspector';
+export type { InspectorProps } from './Inspector';
 export { LivenessIndicator } from './LivenessIndicator';
 export { Tooltip } from './Tooltip';
 export { ToastProvider, useToast } from './Toast';
@@ -129,11 +142,25 @@ export { SettingsNav, isSettingsNavItemActive } from '@/components/settings/Sett
 export type { SettingsNavItem, SettingsNavGroup, SettingsNavProps } from '@/components/settings/SettingsNav';
 export { DetailPageShell } from '@/components/workbench/DetailPageShell';
 export type { DetailMetaItem, DetailRecordNav } from '@/components/workbench/DetailPageShell';
-export { StatusBadge, PriorityChip, STATUS_TONES, statusTone } from './StatusBadge';
-export type { StatusTone } from './StatusBadge';
+export { StatusBadge, PriorityChip, STATUS_TONES, statusTone, STATUS_AXES } from './StatusBadge';
+export type {
+  StatusTone,
+  SystemTone,
+  StatusFamily,
+  OutcomeTone,
+  WorkflowTone,
+  UrgencyTone,
+  TrustTone,
+  SourceTone,
+  AnyStatusTone,
+} from './StatusBadge';
 export { StatusWithReason } from './StatusWithReason';
 export { uiTokens } from './tokens';
 export type { StepBadgeVariant } from './tokens';
+export { Figure } from './Figure';
+export type { FigureProps, FigureState } from './Figure';
+export { BeforeYouConfirm } from './BeforeYouConfirm';
+export type { BeforeYouConfirmProps } from './BeforeYouConfirm';
 
 /*
  * `components/ui/LandingPrimitives.tsx` is public/marketing only and is

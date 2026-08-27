@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowUpRight, CalendarDays, ShieldCheck, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, CalendarDays, ReceiptText, ShieldCheck, TriangleAlert } from "lucide-react";
-import { Drawer } from "@/components/ui/Drawer";
-import { Bone } from "@/components/ui/LoadingSkeleton";
-import { Badge } from "@/components/ui/Badge";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrencyNullable, formatDate, formatDateAbsolute } from "@/lib/utils/format";
 import { providerLabel } from "@/lib/ui/merchantCopy";
+import { UnavailableValue } from "@/components/ui";
+import styles from "./CustomerPreviewDrawer.module.css";
 
 type Preview = {
   customer: {
@@ -23,16 +21,10 @@ type Preview = {
       payoutCases: number;
       caseRate: number;
       chargebacks: number;
+      refundRequests365d?: number;
+      completedRefunds365d?: number;
       possibleMatchCount?: number;
     };
-    identitySignalCounts?: Array<{ type: string; distinctCount: number }>;
-    possibleMatches?: Array<{
-      candidateId: string;
-      displayName?: string | null;
-      email?: string | null;
-      confidence: number | null;
-      matchedTypes: string[];
-    }>;
     sources: Array<{
       provider: string;
       externalId: string;
@@ -47,8 +39,6 @@ type Preview = {
       value: number;
     }>;
     openExposureByCurrency: Array<{ currency: string; value: number }>;
-    unavailableCurrencyOrders: number;
-    attention: Array<{ text: string; href: string }>;
     openCases: Array<{
       id: string;
       reference: string;
@@ -79,48 +69,45 @@ type Preview = {
 };
 
 function amount(value: number | null, currency: string | null) {
-  return value == null || !currency
-    ? "Amount unavailable"
-    : formatCurrencyNullable(value, currency);
+  return value == null || !currency ? "Amount unavailable" : formatCurrencyNullable(value, currency);
 }
 
-/** Mirrors the preview's identity, facts, and connected-record regions. */
+function countLabel(value: number | undefined, noun: string) {
+  return value == null ? <UnavailableValue placement="metric" /> : `${value} ${noun}${value === 1 ? "" : "s"}`;
+}
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "C";
+}
+
+function StateChip({ label, tone = "neutral" }: { label: string; tone?: "good" | "warn" | "bad" | "neutral" }) {
+  return <span className={styles.chip} data-tone={tone}>{label}</span>;
+}
+
 function CustomerPreviewPending() {
   return (
-    <div role="status" className="space-y-5" aria-label="Loading customer preview">
-      <div className="rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
-        <div className="flex items-center gap-3"><Bone className="h-12 w-12 rounded-full" /><div className="flex-1 space-y-2"><Bone className="h-4 w-32" /><Bone className="h-3 w-52" /></div></div>
-        <Bone className="mt-3 h-6 w-24" />
-      </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <div key={index} className="rounded-md border border-[var(--ua-border-subtle)] p-3"><Bone className="h-3 w-16" /><Bone className="mt-2 h-5 w-20" /></div>)}</div>
-      <div className="rounded-lg border border-[var(--ua-border-default)] p-4"><Bone className="h-4 w-40" /><div className="mt-3 space-y-3"><Bone className="h-10 w-full" /><Bone className="h-10 w-full" /></div></div>
+    <div className={styles.pending} role="status" aria-label="Loading customer preview">
+      <span className={styles.skeleton} />
+      <span className={styles.skeletonLine} />
+      <span className={styles.skeletonLineShort} />
+      <span className={styles.skeletonBlock} />
     </div>
   );
 }
 
 function CustomerPreviewUnavailable({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div role="alert" className="rounded-lg border border-[var(--ua-critical-border,var(--ua-border-default))] bg-[var(--ua-critical-bg,var(--ua-surface-muted))] p-4">
-      <p className="ua-text-working-title text-[var(--ua-text-primary)]">Customer preview unavailable</p>
-      <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">{message}</p>
-      <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">The customer may have been merged, deleted, or may no longer be available to your workspace.</p>
-      <button type="button" className="ua-text-working-title mt-3 text-[var(--ua-action-primary)]" onClick={onRetry}>Retry preview</button>
+    <div className={styles.unavailable} role="alert">
+      <strong>Customer preview unavailable</strong>
+      <p>{message}</p>
+      <p>The customer may have been merged, deleted, or may no longer be available to your workspace.</p>
+      <button type="button" onClick={onRetry}>Retry preview</button>
     </div>
   );
 }
 
-export function CustomerPreviewDrawer({
-  id,
-  onClose,
-}: {
-  id: string | null;
-  onClose: () => void;
-}) {
-  const [state, setState] = useState<{
-    loading: boolean;
-    data?: Preview;
-    error?: string;
-  }>({ loading: false });
+export function CustomerPreviewDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
+  const [state, setState] = useState<{ loading: boolean; data?: Preview; error?: string }>({ loading: false });
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
@@ -139,218 +126,131 @@ export function CustomerPreviewDrawer({
       })
       .then((data) => setState({ loading: false, data }))
       .catch((error: Error & { name?: string }) => {
-        if (error.name !== "AbortError") {
-          setState({ loading: false, error: error.message });
-        }
+        if (error.name !== "AbortError") setState({ loading: false, error: error.message });
       });
 
     return () => controller.abort();
   }, [id, retryKey]);
 
+  useEffect(() => {
+    if (!id) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [id, onClose]);
+
   const customer = state.data?.customer;
-  const returnUrl = useMemo(() => {
-    if (typeof window === "undefined") return "/customers";
-    return `${window.location.pathname}${window.location.search}`;
-  }, []);
   const primaryTotal = useMemo(() => {
     if (!customer?.totalsByCurrency?.length) return null;
     return [...customer.totalsByCurrency].sort((a, b) => b.orders - a.orders)[0];
   }, [customer]);
 
+  const secondaryHref = customer?.openCases.length === 1
+    ? customer.openCases[0].href
+    : customer
+      ? `/customers/${customer.id}?tab=cases`
+      : "/customers";
+  const secondaryLabel = customer?.openCases.length === 1 ? "Open case" : "Open cases";
+  const refundRequests = customer?.stats.refundRequests365d;
+  const refundRate = customer && refundRequests != null && customer.stats.orders > 0
+    ? `${Math.round((refundRequests / customer.stats.orders) * 100)}%`
+    : "—";
+
   return (
-    <Drawer
-      open={Boolean(id)}
-      onClose={onClose}
-      title={
-        customer?.name ??
-        (state.loading ? "Loading customer…" : "Customer preview")
-      }
-      aria-label="Customer preview"
-      footer={
-        customer ? (
-          <div className="flex w-full gap-2 p-4">
-            <Link
-              className="ua-text-working-title flex-1 rounded-md bg-[var(--ua-action-primary)] px-3 py-2 text-center text-[var(--ua-action-primary-fg)]"
-              href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}`}
-            >
-              Open full profile
-            </Link>
-            {customer.openCases.length === 1 ? <Link className="ua-text-working-title rounded-md border border-[var(--ua-border-default)] px-3 py-2" href={customer.openCases[0].href}>Open case</Link> : null}
-          </div>
-        ) : undefined
-      }
-    >
-      <div className="space-y-5 p-5" aria-live="polite">
-        {state.loading ? <CustomerPreviewPending /> : null}
-
-        {state.error ? <CustomerPreviewUnavailable message={state.error} onRetry={() => setRetryKey((value) => value + 1)} /> : null}
-
-        {customer ? (
-          <>
-            <div className="rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
-              <div className="flex items-center gap-3">
-                <span className="ua-text-working-title flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] ring-1 ring-[var(--ua-border-default)]">
-                  {customer.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="ua-text-dense truncate font-medium">{customer.email ?? "Contact unavailable"}</p>
-                  <p className="ua-text-caption-role mt-1 flex items-center gap-1.5">
-                    <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                    Since {customer.firstSeen ? formatDateAbsolute(customer.firstSeen) : 'unavailable'}
-                    {customer.lastOrderAt ? ` · Last order ${formatDate(customer.lastOrderAt)}` : ''}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[var(--ua-border-subtle)] pt-3">
-                {customer.openCases.length
-                  ? <Badge tone="warning" size="sm" dot>{customer.openCases.length} open case{customer.openCases.length === 1 ? '' : 's'}</Badge>
-                  : <Badge tone="success" size="sm" dot>No open cases</Badge>}
-                {customer.stats.possibleMatchCount ? <Badge tone="info" size="sm">{customer.stats.possibleMatchCount} possible match{customer.stats.possibleMatchCount === 1 ? '' : 'es'}</Badge> : null}
+    <div className={styles.host} data-customer-preview={id ? "open" : "closed"}>
+      {id ? <button type="button" className={styles.scrim} aria-label="Close customer preview" onClick={onClose} /> : null}
+      {id ? (
+        <aside role="dialog" aria-label="Customer preview" className={styles.drawer} data-preview-drawer="true">
+          <header className={styles.header}>
+            <div className={styles.identity}>
+              <span className={styles.avatar}>{customer ? initials(customer.name) : "C"}</span>
+              <div>
+                <strong>{customer?.name ?? (state.loading ? "Loading customer…" : "Customer preview")}</strong>
+                <span>{customer?.email ?? "Contact unavailable"}</span>
               </div>
             </div>
+            <button type="button" className={styles.close} aria-label="Close customer preview" onClick={onClose}><X size={14} aria-hidden="true" /></button>
+          </header>
 
-            <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {[
-                ['Orders', customer.stats.orders],
-                ['Lifetime value', primaryTotal ? amount(primaryTotal.value, primaryTotal.currency) : '—'],
-                ['Avg order', primaryTotal ? amount(primaryTotal.value / Math.max(primaryTotal.orders, 1), primaryTotal.currency) : '—'],
-                ['Case rate', `${customer.stats.caseRate}%`],
-              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] p-3"><dt className="truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{name}</dt><dd className="ua-text-kpi mt-1 truncate">{value}</dd></div>)}
-            </dl>
+          <div className={styles.body} aria-live="polite">
+            {state.loading ? <CustomerPreviewPending /> : null}
+            {state.error ? <CustomerPreviewUnavailable message={state.error} onRetry={() => setRetryKey((value) => value + 1)} /> : null}
+            {customer ? (
+              <>
+                <div className={styles.chips} aria-label="Customer state">
+                  <StateChip label={customer.openCases.length ? `${customer.openCases.length} open case${customer.openCases.length === 1 ? "" : "s"}` : "No open cases"} tone="neutral" />
+                  <StateChip label={customer.stats.chargebacks ? "Chargeback history" : "No chargebacks observed"} tone={customer.stats.chargebacks ? "bad" : "neutral"} />
+                  <StateChip label={customer.sources.length ? `${customer.sources.length} source${customer.sources.length === 1 ? "" : "s"}` : "Source coverage unavailable"} />
+                </div>
 
-            {customer.openExposureByCurrency.length ? (
-              <div className="ua-text-dense flex items-center justify-between gap-3 rounded-md border border-[var(--ua-warning-border,var(--ua-border-default))] bg-[var(--ua-warning-bg,var(--ua-surface-muted))] px-3 py-2">
-                <span className="inline-flex items-center gap-1.5 text-[var(--ua-warning)]"><TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Open case exposure</span>
-                <strong className="tabular-nums">{customer.openExposureByCurrency.map((item) => amount(item.value, item.currency)).join(' · ')}</strong>
-              </div>
-            ) : null}
+                <dl className={styles.stats} aria-label="Customer summary">
+                  <div><dt>Lifetime</dt><dd>{primaryTotal ? amount(primaryTotal.value, primaryTotal.currency) : <UnavailableValue placement="metric" />}</dd><small>{primaryTotal ? `${primaryTotal.orders} orders` : "No verified order total"}</small></div>
+                  <div><dt>Refunded</dt><dd>{countLabel(customer.stats.completedRefunds365d, "refund")}</dd><small>Completed · last 365d</small></div>
+                  <div><dt>Refund rate</dt><dd>{refundRequests == null ? <UnavailableValue placement="metric" /> : refundRate}</dd><small>{refundRequests == null ? "Basis unavailable" : `${refundRequests} requests / ${customer.stats.orders} orders`}</small></div>
+                </dl>
 
-            {customer.openCases.length ? (
-              <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
-                <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="ua-text-section-title">Cases requiring attention</h3></div><Badge tone="warning" size="sm">Action needed</Badge></div>
-                <ul className="mt-2 divide-y divide-[var(--ua-border-subtle)]">
-                  {customer.openCases.map((item) => (
-                    <li key={item.id}>
-                      <Link
-                        href={item.href}
-                        className="flex items-center justify-between gap-3 py-3 hover:text-[var(--ua-action-primary)]"
-                      >
-                        <span>
-                          {item.reference}
-                          <small className="mt-1 block"><StatusBadge family="caseStatus" value={item.state} size="sm" /></small>
-                        </span>
-                        <span className="inline-flex items-center gap-2 font-medium">{amount(item.amount, item.currency)}<ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /></span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
+                <section className={styles.cohort} aria-labelledby="customer-preview-cohort-title">
+                  <div className={styles.sectionHeading}><h3 id="customer-preview-cohort-title">Refund rate against cohort</h3><span><UnavailableValue placement="inline" /></span></div>
+                  <div className={styles.meter} aria-label="Refund rate against cohort unavailable"><i /><b /></div>
+                  <p>Cohort median unavailable · refunded value is not in the current customer read model.</p>
+                </section>
 
-            <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
-              <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="ua-text-section-title">Recent store activity</h3></div>
-              {customer.recent.length ? (
-                <ul className="mt-2 divide-y divide-[var(--ua-border-subtle)]">
-                  {customer.recent.map((item) => {
-                    const items = item.lineItems ?? [];
-                    const shown = items.slice(0, 2);
-                    const extra = items.length - shown.length;
-                    return (
-                    <li key={item.href}>
-                      <div className="flex items-center gap-3 py-3">
-                        <Link
-                          href={item.href}
-                          className="flex min-w-0 flex-1 items-center justify-between gap-3"
-                        >
-                        <span className="min-w-0">
-                          <span className="font-medium">Order {item.reference}</span>
-                          <small className="mt-0.5 block text-[var(--ua-text-secondary)]">
-                            {formatDate(item.at)}
-                          </small>
-                          {shown.length > 0 ? (
-                            <small className="mt-1 block truncate text-[var(--ua-text-tertiary)]">
-                              {shown.map((line) => `${line.quantity ? `${line.quantity}× ` : ""}${line.title}`).join(", ")}
-                              {extra > 0 ? ` +${extra} more` : ""}
-                            </small>
-                          ) : null}
-                          {item.shipmentStatus ? (
-                            <small className="mt-1 block text-[var(--ua-text-tertiary)]">
-                              {item.shipmentStatus}{item.shipmentCarrier ? ` · ${item.shipmentCarrier}` : ""}
-                            </small>
-                          ) : null}
-                          {item.caseState ? <small className="mt-1 block"><StatusBadge family="caseStatus" value={item.caseState} size="sm" /></small> : null}
-                        </span>
-                          <span className="text-right"><strong className="block tabular-nums">{amount(item.amount, item.currency)}</strong>{item.caseType ? <small className="mt-1 block text-[var(--ua-text-secondary)]">{item.caseType}</small> : null}</span>
+                <section className={styles.section} aria-labelledby="customer-preview-cases-title">
+                  <div className={styles.sectionHeading}><h3 id="customer-preview-cases-title">Open cases</h3><span>{customer.openCases.length ? `${customer.openCases.length} requiring attention` : "None"}</span></div>
+                  {customer.openCases.length ? (
+                    <div className={styles.list}>
+                      {customer.openCases.slice(0, 3).map((item) => (
+                        <Link href={item.href} key={item.id} className={styles.listRow}>
+                          <span><b>{item.reference}</b><small>{item.state}</small></span>
+                          <strong>{amount(item.amount, item.currency)} <ArrowUpRight size={12} aria-hidden="true" /></strong>
                         </Link>
-                        {item.externalHref ? (
-                          <a
-                            href={item.externalHref}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`Open order in ${item.externalSource ?? "source"}`}
-                            title={`Open in ${item.externalSource ?? "source"}`}
-                            className="shrink-0 rounded p-1 text-[var(--ua-action-primary)] hover:bg-[var(--ua-surface-muted)]"
-                          >
-                            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                          </a>
-                        ) : null}
-                        {item.shipmentHref ? (
-                          <a
-                            href={item.shipmentHref}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`Open fulfilment in ${item.shipmentSource ?? "source"}`}
-                            title={`Open fulfilment in ${item.shipmentSource ?? "source"}`}
-                            className="shrink-0 rounded p-1 text-[var(--ua-action-primary)] hover:bg-[var(--ua-surface-muted)]"
-                          >
-                            <ReceiptText className="h-3.5 w-3.5" aria-hidden="true" />
-                          </a>
-                        ) : null}
-                      </div>
-                    </li>
-                  );})}
-                </ul>
-              ) : (
-                <p className="ua-text-body mt-2 text-[var(--ua-text-secondary)]">
-                  No recent activity was found.
-                </p>
-              )}
-            </section>
+                      ))}
+                    </div>
+                  ) : <p className={styles.noCases}>No open cases are recorded for this customer in the current workspace.</p>}
+                </section>
 
-            {customer.identitySignalCounts?.length || customer.sources.length ? (
-              <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
-                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="ua-text-section-title">Identity</h3></div>
-                {customer.identitySignalCounts?.length ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {customer.identitySignalCounts.map((row) => (
-                      <Badge key={row.type} tone="neutral" size="sm">{row.distinctCount} {row.type.replace(/_/g, " ")}{row.distinctCount === 1 ? '' : 's'}</Badge>
-                    ))}
-                  </div>
-                ) : null}
-                {customer.sources.length ? (
-                  <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-t border-[var(--ua-border-subtle)] pt-1">
-                    {customer.sources.map((source, index) => (
-                      <li key={`${source.provider}-${source.externalId}-${index}`} className="ua-text-dense flex items-center justify-between gap-3 py-2">
-                        <span className="min-w-0 truncate"><span>{providerLabel(source.provider)}</span>{source.email ? ` · ${source.email}` : ""}</span>
-                        {source.verified != null ? <Badge tone={source.verified ? "success" : "neutral"} size="sm">{source.verified ? "Verified" : "Unverified"}</Badge> : null}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {customer.stats.possibleMatchCount ? (
-                  <Link
-                    href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}#identity`}
-                    className="ua-text-working-title mt-3 flex items-center justify-between gap-2 border-t border-[var(--ua-border-subtle)] pt-3 text-[var(--ua-action-primary)] hover:underline"
-                  >
-                    {customer.stats.possibleMatchCount} possible match{customer.stats.possibleMatchCount === 1 ? '' : 'es'} held separately
-                    <ArrowUpRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  </Link>
-                ) : null}
-              </section>
+                <section className={styles.section} aria-labelledby="customer-preview-orders-title">
+                  <div className={styles.sectionHeading}><h3 id="customer-preview-orders-title">Recent orders</h3><span>{customer.recent.length ? "Last 3 recorded" : <UnavailableValue placement="inline" />}</span></div>
+                  {customer.recent.length ? (
+                    <div className={styles.list}>
+                      {customer.recent.slice(0, 3).map((item) => (
+                        <div className={styles.listRow} key={item.href}>
+                          <Link href={item.href} className={styles.orderLink}>
+                            <span><b>{item.reference}</b><small>{formatDate(item.at)}{item.shipmentStatus ? ` · ${item.shipmentStatus}` : ""}</small></span>
+                            <strong>{amount(item.amount, item.currency)}</strong>
+                          </Link>
+                          {item.externalHref ? <a href={item.externalHref} target="_blank" rel="noreferrer" className={styles.external} aria-label={`Open order in ${item.externalSource ?? "source"}`}><ArrowUpRight size={12} aria-hidden="true" /></a> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className={styles.noCases}>Recent order records are unavailable for this customer.</p>}
+                </section>
+
+                <section className={styles.provenance} aria-labelledby="customer-preview-provenance-title">
+                  <div className={styles.provenanceTitle}><ShieldCheck size={13} aria-hidden="true" /><h3 id="customer-preview-provenance-title">Evidence behind this view</h3></div>
+                  {customer.sources.length ? customer.sources.map((source, index) => (
+                    <div className={styles.provenanceRow} key={`${source.provider}-${source.externalId}-${index}`}>
+                      <i data-state={source.verified === false ? "warn" : source.verified === true ? "good" : "neutral"} />
+                      <span>{providerLabel(source.provider)}</span>
+                      <small>{source.asOf ? `Fresh ${formatDateAbsolute(source.asOf)}` : "Freshness unavailable"}</small>
+                    </div>
+                  )) : <p className={styles.noCases}>No source provenance is available for this preview.</p>}
+                  {customer.firstSeen ? <p className={styles.freshness}><CalendarDays size={12} aria-hidden="true" /> First seen {formatDateAbsolute(customer.firstSeen)}{customer.lastOrderAt ? ` · last order ${formatDate(customer.lastOrderAt)}` : ""}</p> : null}
+                </section>
+              </>
             ) : null}
-          </>
-        ) : null}
-      </div>
-    </Drawer>
+          </div>
+
+          {customer ? (
+            <footer className={styles.footer}>
+              <Link href={`/customers/${customer.id}`} className={styles.primaryAction}>Open full profile</Link>
+              <Link href={secondaryHref} className={styles.secondaryAction}>{secondaryLabel}</Link>
+            </footer>
+          ) : null}
+        </aside>
+      ) : null}
+    </div>
   );
 }

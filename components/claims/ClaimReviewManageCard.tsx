@@ -10,13 +10,14 @@ import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbe
 import { Modal } from '@/components/ui/Modal';
 import { ActionDock } from '@/components/authenticated/ActionDock';
 import { Button } from '@/components/ui/Button';
+import { BeforeYouConfirm } from '@/components/ui/BeforeYouConfirm';
 import { Disclosure, Select, Textarea } from '@/components/ui';
 import { decisionRequiresRationale, merchantDecisionSchema, type MerchantDecision } from '@/lib/claims/decision/merchantDecision';
 import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 import { parseMajorUnitInput } from '@/lib/ui/merchantCopy';
 
 // Merchant-selectable decisions/outcomes are an explicit neutral allowlist —
-// accusation vocabulary is deliberately excluded (see docs/PRODUCT.md).
+// Accusation vocabulary is deliberately excluded from merchant decisions.
 const DECISION_OPTIONS: Decision[] = [
   'approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'internal_watch', 'no_action',
 ];
@@ -26,19 +27,21 @@ const EVIDENCE_SOURCE_OPTIONS = Object.keys(EVIDENCE_SOURCE_LABELS) as EvidenceS
 // Readable decision/outcome verbs for the operator (the neutral audit copy in
 // claimReviewLabels is intentionally uniform, so it can't label a picker).
 const DECISION_VERB: Record<string, string> = {
-  approved: 'Approve payout', denied: 'Deny under policy', escalated: 'Escalate for review',
-  partial_refund: 'Partial refund', full_refund: 'Full refund', chargeback_disputed: 'Record chargeback dispute',
-  internal_watch: 'Internal watch', no_action: 'No action',
+  approved: 'Record payout authorisation', denied: 'Record denial under policy', escalated: 'Record escalation',
+  partial_refund: 'Record partial refund authorisation', full_refund: 'Record full refund authorisation', chargeback_disputed: 'Record chargeback dispute',
+  internal_watch: 'Record internal watch', no_action: 'Record no-action decision',
 };
 
 export function ClaimReviewManageCard({
   wb,
   canManage,
   contextStatus = 'ready',
+  onDecisionRecorded,
 }: {
   wb: ClaimReviewWorkbench;
   canManage: boolean;
   contextStatus?: 'loading' | 'unavailable' | 'ready';
+  onDecisionRecorded?: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [confirmingReversal, setConfirmingReversal] = useState(false);
@@ -66,8 +69,8 @@ export function ClaimReviewManageCard({
       <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
         <p role="status" className="ua-text-caption-role">
           {contextStatus === 'loading'
-            ? 'Decision controls will be available after the required evidence context loads.'
-            : 'Decision controls are unavailable while the required evidence context cannot be loaded. Retry from Evidence & recommendations. This load failure did not change the recorded decision or recovery state.'}
+            ? 'Required evidence context is loading. Decision controls remain unavailable; no merchant decision or recovery state has changed.'
+            : 'Decision controls are unavailable while the required evidence context cannot be loaded. Use Retry evidence context in Evidence & recommendations. This load failure did not change the recorded decision or recovery state.'}
         </p>
       </RailSection>
     );
@@ -84,6 +87,9 @@ export function ClaimReviewManageCard({
   const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
   const amountValid = !monetaryDecision || (amountMinor != null && amountMinor >= 0 && Boolean(currency));
   const decisionReady = !disabled && hasDecision && validation.success && amountValid;
+  const authorizedValue = monetaryDecision && amountValid
+    ? formatMinorCurrencyNullable(amountMinor, currency)
+    : 'No financial value changes';
 
   return (
     <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
@@ -133,11 +139,11 @@ export function ClaimReviewManageCard({
                   aria-label="Decision amount"
                   placeholder="Amount"
                 />
-                <span className="ua-text-label flex min-w-12 items-center justify-center rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-2">
+                <span className="ua-text-label flex min-w-12 items-center justify-center rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-muted)] px-2">
                   {currency ?? '—'}
                 </span>
               </div>
-              <p className="text-[length:var(--ua-text-metadata-size)] font-normal text-[var(--ua-text-tertiary)]">
+              <p className="text-[length:var(--uo-route-text-metadata-size)] font-normal text-[var(--uo-route-text-tertiary)]">
                 Enter {currency ?? 'the case currency'} in major units.
               </p>
             </>
@@ -156,8 +162,8 @@ export function ClaimReviewManageCard({
                     ? validationMessage ?? 'Add a rationale before recording it.'
                   : 'This records the merchant decision; it does not send an external refund or replacement.'}
           </span>
-          {decisionTouched && validationMessage && hasDecision ? <p role="alert" className="ua-text-dense text-[var(--ua-critical)]">{validationMessage}</p> : null}
-          {decisionTouched && !amountValid ? <p role="alert" className="ua-text-dense text-[var(--ua-critical)]">Enter a non-negative amount and known ISO currency.</p> : null}
+          {decisionTouched && validationMessage && hasDecision ? <p role="alert" className="ua-text-dense text-[var(--uo-route-critical)]">{validationMessage}</p> : null}
+          {decisionTouched && !amountValid ? <p role="alert" className="ua-text-dense text-[var(--uo-route-critical)]">Enter a non-negative amount and known ISO currency.</p> : null}
           <ActionDock
             copy={decisionReady
               ? 'Records an internal authorization only. No external payout is sent.'
@@ -178,7 +184,7 @@ export function ClaimReviewManageCard({
         </div>
 
         <Disclosure
-          className="order-3 rounded-md border border-[var(--ua-border-subtle)] p-3"
+          className="order-3 rounded-md border border-[var(--uo-route-border-subtle)] p-3"
           summaryClassName="ua-text-label"
           summary="Manage evidence and lifecycle"
         >
@@ -259,44 +265,55 @@ export function ClaimReviewManageCard({
 
         {/* Recovery */}
         {recoveryCase?.id ? (
-          <Link href={`/recoveries/${recoveryCase.id}`} className="ua-text-label block w-full text-center px-3 py-1.5 rounded-md no-underline" style={btnStyle('secondary')}>
+          <Link href={`/financials/recovery/${recoveryCase.id}`} className="ua-text-label block w-full text-center px-3 py-1.5 rounded-md no-underline" style={btnStyle('secondary')}>
             Open recovery case
           </Link>
         ) : null}
           </div>
         </Disclosure>
-        <a href="#source-case-details" className="ua-text-working-title order-4 text-[var(--ua-action-primary)]">View source data</a>
       </div>
       <Modal
         open={confirming}
         onClose={() => setConfirming(false)}
         title="Record merchant decision"
         description="This records your authorization and its value. It does not send a refund, replacement, credit, or external claim."
+        overlayId="record-merchant-decision-modal"
         actions={[{
           label: busy ? 'Recording…' : 'Confirm & record',
           // §3.2 — authorizing a monetary decision into the append-only ledger is
           // the canonical commit action, not an ordinary accent forward action.
           variant: 'commit',
           onClick: () => {
-            setConfirming(false);
-            void onOutcome();
+            void (async () => {
+              const result = await onOutcome();
+              if (result?.ok) {
+                setConfirming(false);
+                onDecisionRecorded?.();
+              }
+            })();
           },
         }]}
       >
-        <dl className="ua-text-body space-y-3">
-          <div className="flex justify-between gap-4"><dt>Decision</dt><dd className="font-medium">{DECISION_VERB[state.decision] ?? state.decision}</dd></div>
-          <div className="flex justify-between gap-4"><dt>Authorized value</dt><dd className="font-sans tabular-nums font-medium">{monetaryDecision && amountValid ? formatMinorCurrencyNullable(amountMinor, currency) : 'Not applicable'}</dd></div>
-          <div className="flex justify-between gap-4"><dt>External action</dt><dd className="font-medium">None</dd></div>
-        </dl>
-        <div className="ua-text-caption-role mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
-          The approval stage is recorded in the append-only ledger. Paid value, realised loss, prevented value, and recovery are recorded only after their separate source or observation evidence arrives.
+        <div className="space-y-4">
+          <dl className="ua-text-body space-y-3">
+            <div className="flex justify-between gap-4"><dt>Decision</dt><dd className="font-medium">{DECISION_VERB[state.decision] ?? state.decision}</dd></div>
+            <div className="flex justify-between gap-4"><dt>Authorized value</dt><dd className="font-sans tabular-nums font-medium">{authorizedValue}</dd></div>
+          </dl>
+          <BeforeYouConfirm
+            objectSummary={`${claimId} · merchant decision`}
+            valueSummary={`${authorizedValue}${currency && authorizedValue !== 'No financial value changes' ? ` ${currency}` : ''}`}
+            externalAction="For a refund authorisation, Unauth prepares an exact manual Shopify handoff after recording. It does not call Shopify, move money, or notify the customer."
+            reversible="No. A reversal appends a new record; it never edits this one."
+            appendOnly="A merchant-decision event and its authorized stage. Paid value, confirmed loss and recovery remain unavailable until their own evidence arrives."
+          />
         </div>
       </Modal>
       <Modal
         open={confirmingReversal}
         onClose={() => setConfirmingReversal(false)}
-        title="Reverse recorded decision"
-        description="The original decision remains in the immutable activity history."
+        title="Reverse merchant decision"
+        description={`${claimId} · the original decision remains in the immutable activity history`}
+        overlayId="reverse-merchant-decision-modal"
         actions={[{
           label: 'Record reversal',
           variant: 'danger',
@@ -306,12 +323,21 @@ export function ClaimReviewManageCard({
           },
         }]}
       >
-        <p className="ua-text-body text-[var(--ua-text-secondary)]">
-          New decision: <strong className="text-[var(--ua-text-primary)]">{DECISION_VERB[state.reverseDecision] ?? state.reverseDecision}</strong>
-        </p>
-        <p className="ua-text-body mt-2 text-[var(--ua-text-secondary)]">
-          Rationale: {state.reverseNote.trim() || 'A rationale is required before recording a reversal.'}
-        </p>
+        <div className="space-y-4">
+          <p className="ua-text-body text-[var(--uo-route-text-secondary)]">
+            New decision: <strong className="text-[var(--uo-route-text-primary)]">{DECISION_VERB[state.reverseDecision] ?? state.reverseDecision}</strong>
+          </p>
+          <p className="ua-text-body text-[var(--uo-route-text-secondary)]">
+            Rationale: {state.reverseNote.trim() || 'A rationale is required before recording a reversal.'}
+          </p>
+          <BeforeYouConfirm
+            objectSummary={`${claimId} · reversal of the latest merchant decision`}
+            valueSummary={currency ? `${authorizedValue} · ${currency}` : '— Unavailable · case currency is missing'}
+            externalAction="No external action is performed. Any refund, credit or replacement that already occurred is not recalled by this reversal."
+            reversible="Append-only. The original decision remains visible in case history."
+            appendOnly="A reversal event referencing the original decision. Any correcting financial stage is recorded separately from source-backed evidence."
+          />
+        </div>
       </Modal>
     </RailSection>
   );

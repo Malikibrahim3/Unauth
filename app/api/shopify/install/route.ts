@@ -20,7 +20,7 @@ import { SHOPIFY_SCOPES } from "@/lib/shopify/scopes";
 import { htmlSafeJson } from "@/lib/utils/htmlSafeJson";
 import { safeConnectionErrorCode } from "@/lib/integrations/publicErrors";
 
-const INTEGRATIONS_URL = "/integrations";
+const INTEGRATIONS_URL = "/sources/connected";
 
 function oauthCompleteResponse(
   params: Record<string, string>,

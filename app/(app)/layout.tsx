@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
+import "@/styles/operations/index.css";
 import { cookies } from "next/headers";
 import { TABLES } from "@/lib/supabase/tables";
-import Sidebar from "@/components/nav/Sidebar";
-import AppHeader from "@/components/layout/AppHeader";
+import AuthenticatedDesignShell from "@/components/layout/AuthenticatedDesignShell";
 import { BreadcrumbOverrideProvider } from "@/components/layout/BreadcrumbOverrideContext";
-import DemoBanner from "@/components/common/DemoBanner";
 import BillingStatusBanner from "@/components/billing/BillingStatusBanner";
 import AmplitudeInit from "@/components/common/AmplitudeInit";
 import { shouldRequireOnboarding } from "@/lib/account/onboardingGate";
 import {
   getRequestCallerContext,
+  getRequestPermissions,
   getRequestServiceClient,
   getRequestUser,
 } from "@/lib/auth/requestContext";
@@ -27,8 +27,15 @@ import {
   DEV_TIER_COOKIE,
   getDevPreviewFromCookieValue,
 } from "@/lib/product/devPreview";
-import { resolvePermissions } from "@/lib/permissions";
 import { DesktopRequiredBoundary } from "@/components/system/DesktopRequiredBoundary";
+import { AUTH_RETURN_COOKIE, loginHrefForReturnPath } from "@/lib/auth/routeContinuity";
+import { AuthenticatedThemeProvider } from "@/components/theme/AuthenticatedThemeProvider";
+import { AUTHENTICATED_THEME_COOKIE, readAuthenticatedTheme } from "@/lib/theme/authenticatedTheme";
+import { loadMerchantCapabilitySummary } from "@/lib/integrations/merchantCapabilitySummary";
+import { loadWorkNavigationCount } from "@/lib/work/store";
+import { listUserWorkspaces } from "@/lib/workspaces/listUserWorkspaces";
+import { WorkspaceSelectionBoundary } from "@/components/layout/WorkspaceSelectionBoundary";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,22 +46,16 @@ export default async function AppLayout({
 }) {
   const serviceClient = getRequestServiceClient();
   const user = await getRequestUser();
+  const cookieStore = await cookies();
 
   if (!user) {
-    redirect("/login");
+    redirect(loginHrefForReturnPath(cookieStore.get(AUTH_RETURN_COOKIE)?.value));
   }
 
-  const cookieStore = await cookies();
   const ctx = await getRequestCallerContext();
 
-  const membershipsPromise = serviceClient
-    .from(TABLES.MERCHANT_MEMBERS)
-    .select("merchant_id, role, merchants(name)")
-    .eq("user_id", user.id)
-    .eq("invite_status", "active");
-
   const permissionsPromise = ctx
-    ? resolvePermissions(serviceClient, ctx)
+    ? getRequestPermissions()
     : Promise.resolve([]);
 
   const merchantPromise = ctx
@@ -86,41 +87,60 @@ export default async function AppLayout({
         linkState: "not_connected" as const,
         trackingConnected: false,
       });
+  const capabilitySummaryPromise = ctx
+    ? loadMerchantCapabilitySummary(serviceClient, ctx.merchantId)
+    : Promise.resolve({
+        providerId: "none",
+        label: "Selected sources · unavailable",
+        tone: "neutral" as const,
+      });
+  const workCountPromise = ctx
+    ? loadWorkNavigationCount(serviceClient, ctx.merchantId, user.id)
+    : Promise.resolve(null);
+  const workspacesPromise = listUserWorkspaces(serviceClient, user.id);
 
   const [
     merchantProfile,
     { data: jobs },
     connectionState,
-    { data: memberships },
     permissions,
+    capabilitySummary,
+    workCount,
+    workspaces,
   ] = await Promise.all([
     merchantPromise,
     jobsPromise,
     connectionPromise,
-    membershipsPromise,
     permissionsPromise,
+    capabilitySummaryPromise,
+    workCountPromise,
+    workspacesPromise,
   ]);
-
-  const typedMemberships = (memberships ?? []) as Array<{
-    merchant_id: string;
-    role: string;
-    merchants: { name: string | null } | null;
-  }>;
-  const workspaces = typedMemberships.map((membership) => ({
-    id: membership.merchant_id,
-    name: membership.merchants?.name ?? "Unnamed workspace",
-    role: membership.role,
-  }));
   const merchantComplete =
     merchantProfile?.setup_complete === true ||
     user.user_metadata?.setup_complete === true;
   const profileComplete =
     merchantProfile?.onboarding_profile_complete === true || merchantComplete;
+  const metadataDeferredAt = user.user_metadata?.onboarding_deferred_at;
+  const onboardingDeferred =
+    typeof merchantProfile?.onboarding_deferred_at === "string"
+    || (typeof metadataDeferredAt === "string" && metadataDeferredAt.trim().length > 0);
+
+  if (!ctx && workspaces.length > 1) {
+    return (
+      <AuthenticatedThemeProvider initialTheme={readAuthenticatedTheme(cookieStore.get(AUTHENTICATED_THEME_COOKIE)?.value)}>
+        <DesktopRequiredBoundary>
+          <WorkspaceSelectionBoundary workspaces={workspaces} />
+        </DesktopRequiredBoundary>
+      </AuthenticatedThemeProvider>
+    );
+  }
 
   if (
     shouldRequireOnboarding({
       hasMerchantContext: !!ctx,
       profileComplete,
+      onboardingDeferred,
       setupComplete: merchantComplete,
       auditRunCount: (jobs ?? []).length,
       shopifyConnected: connectionState.shopify,
@@ -148,70 +168,67 @@ export default async function AppLayout({
     : getDevPreviewFromCookieValue(cookieStore.get(DEV_TIER_COOKIE)?.value);
 
   return (
-    <DesktopRequiredBoundary>
-      <NavigationProvider>
-        <DevPreviewProvider value={devPreview}>
-          <div
-            className="ua-app flex h-screen overflow-hidden"
-            data-ui-version="decision-ledger-instrument-grade"
-          >
-            <span
-              hidden
-              aria-hidden="true"
-              data-design-contract="Decision Ledger — Instrument Grade: one dominant operating object; visible source, fact, inference, decision, and outcome authority; exact financial scope; browser-native composition; no visual cohorts, iOS imitation, card soup, glass, or decorative elevation."
-            />
-            <ToastProvider>
-              <AuthenticatedSurfaceTelemetry />
-              <Sidebar
-                merchantName={displayMerchantName ?? null}
-                userName={userName}
-                userEmail={user.email ?? ""}
-                connectionState={connectionState}
-                workspaces={workspaces}
-                activeMerchantId={ctx?.merchantId ?? null}
-                permissions={permissions}
+    <AuthenticatedThemeProvider initialTheme={readAuthenticatedTheme(cookieStore.get(AUTHENTICATED_THEME_COOKIE)?.value)}>
+      <DesktopRequiredBoundary>
+        <NavigationProvider>
+          <DevPreviewProvider value={devPreview}>
+            <div
+              className="ua-app ua-app-shell"
+              data-unauth-ui="evidence-operations-v1"
+              data-ui-version="evidence-operations-v1"
+              data-readiness="shell-ready auth-resolved"
+              data-shell-ready="true"
+              data-auth-resolved="true"
+            >
+              <span
+                hidden
+                aria-hidden="true"
+                data-design-contract="THESIS: a light-first evidence workspace for source-backed operational decisions. STORY: source evidence, recommendation, merchant decision, external action, recovery and ledger outcome remain distinct. FORM: 220px rail, 44px utility bar, compact work planes, bounded inspectors, light default with authenticated dark option in Settings → Appearance."
               />
+              <ToastProvider>
+                <AuthenticatedSurfaceTelemetry />
 
-              <AmplitudeInit
-                merchantId={merchantProfile?.id ?? null}
-                storeName={merchantProfile?.name ?? null}
-                monthlyOrderVolume={merchantProfile?.monthly_order_volume ?? null}
-                primaryConcern={merchantProfile?.primary_fraud_concern ?? null}
-              />
+                <AmplitudeInit
+                  merchantId={merchantProfile?.id ?? null}
+                  storeName={merchantProfile?.name ?? null}
+                  monthlyOrderVolume={merchantProfile?.monthly_order_volume ?? null}
+                  primaryConcern={merchantProfile?.primary_fraud_concern ?? null}
+                />
 
-              <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                <BreadcrumbOverrideProvider>
-                  <AppHeader
-                    userName={userName}
-                    userEmail={user.email ?? null}
-                    unreadCount={0}
-                    permissions={permissions}
-                  />
+                <div className="ua-app-shell__main">
+                  <BreadcrumbOverrideProvider>
+                    <AuthenticatedDesignShell
+                      workspaceName={displayMerchantName}
+                      workspaces={workspaces}
+                      activeMerchantId={ctx?.merchantId ?? null}
+                      userName={userName}
+                      userEmail={user.email ?? ""}
+                      userRole={ctx?.role ?? "Workspace member"}
+                      permissions={permissions}
+                      sourceTone={capabilitySummary.tone}
+                      sourceLabel={capabilitySummary.label}
+                      workCount={workCount ?? undefined}
+                    >
+                      {permissions.includes(PERMISSIONS.MANAGE_SETTINGS) ? <BillingStatusBanner /> : null}
 
-                  {allDemo && (
-                    <div className="flex-shrink-0">
-                      <DemoBanner />
-                    </div>
-                  )}
-
-                  <BillingStatusBanner />
-
-                  <main
-                    id="app-scroll-container"
-                    className="ua-operational-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
-                  >
-                    <ConnectionStateProvider value={connectionState}>
-                      <DemoModeProvider value={allDemo}>
-                        {children}
-                      </DemoModeProvider>
-                    </ConnectionStateProvider>
-                  </main>
-                </BreadcrumbOverrideProvider>
-              </div>
-            </ToastProvider>
-          </div>
-        </DevPreviewProvider>
-      </NavigationProvider>
-    </DesktopRequiredBoundary>
+                      <main
+                        id="app-scroll-container"
+                        className="ua-app-shell__scroll"
+                      >
+                        <ConnectionStateProvider value={connectionState}>
+                          <DemoModeProvider value={allDemo}>
+                            {children}
+                          </DemoModeProvider>
+                        </ConnectionStateProvider>
+                      </main>
+                    </AuthenticatedDesignShell>
+                  </BreadcrumbOverrideProvider>
+                </div>
+              </ToastProvider>
+            </div>
+          </DevPreviewProvider>
+        </NavigationProvider>
+      </DesktopRequiredBoundary>
+    </AuthenticatedThemeProvider>
   );
 }

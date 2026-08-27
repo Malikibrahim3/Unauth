@@ -26,7 +26,7 @@ describe('Engine regression — realistic_fraud_dataset.csv', () => {
     if (!exists) {
       throw new Error(
         `Labelled dataset not found at test-data/realistic_fraud_dataset.csv — ` +
-        `regenerate it per FRAUD_RINGS_BREAKDOWN.md`
+        `run the dataset generator first`
       );
     }
     expect(exists).toBe(true);
@@ -38,7 +38,7 @@ describe('Engine regression — realistic_fraud_dataset.csv', () => {
     if (!fs.existsSync(DATASET_PATH)) {
       throw new Error(
         `Labelled dataset not found at test-data/realistic_fraud_dataset.csv — ` +
-        `regenerate it per FRAUD_RINGS_BREAKDOWN.md`
+        `run the dataset generator first`
       );
     }
 

@@ -6,193 +6,124 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 jest.mock('@/lib/permissions', () => ({
-  PERMISSIONS: { VIEW_CUSTOMERS: 'view_customers' },
-  requirePermission: jest.fn(),
+  ACTIVE_MERCHANT_COOKIE: 'unauth.active_merchant',
+  PERMISSIONS: { VIEW_CUSTOMERS: 'view_customers', VIEW_INBOX: 'view_inbox' },
+  requirePermissionForMerchant: jest.fn().mockResolvedValue({ denied: null }),
+  resolveCallerContext: jest.fn(),
+  resolvePermissions: jest.fn(),
 }));
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { requirePermission } from '@/lib/permissions';
+import { resolveCallerContext, resolvePermissions } from '@/lib/permissions';
 import { GET } from '@/app/api/search/route';
 
-const MERCHANT = 'm-1';
+const MERCHANT_ID = '550e8400-e29b-41d4-a716-446655440000';
+const RESULT_ID = '550e8400-e29b-41d4-a716-446655440001';
+const rpc = jest.fn();
 
-/** Build a thenable query builder that resolves to the table's seeded rows. */
-function makeService(byTable: Record<string, unknown[]>) {
-  return {
-    from(table: string) {
-      const builder: Record<string, unknown> = {};
-      const chain = () => builder;
-      for (const m of ['select', 'eq', 'or', 'ilike', 'in', 'limit']) builder[m] = chain;
-      builder.range = () => Promise.resolve({ data: byTable[table] ?? [], error: null });
-      builder.then = (resolve: (v: unknown) => unknown) =>
-        resolve({ data: byTable[table] ?? [], error: null });
-      return builder;
+function request(query = 'maya', extra = '') {
+  return new NextRequest(`http://localhost/api/search?q=${encodeURIComponent(query)}${extra}`);
+}
+
+function setup(options: {
+  authed?: boolean;
+  context?: boolean;
+  permissions?: string[];
+  payload?: Record<string, unknown>;
+  rpcError?: { code: string; message: string } | null;
+} = {}) {
+  const {
+    authed = true,
+    context = true,
+    permissions = ['view_customers', 'view_inbox'],
+    payload = {
+      items: [{
+        type: 'customer',
+        id: RESULT_ID,
+        label: 'Maya Chen',
+        sublabel: 'maya@merchant.test',
+        href: `/customers/${RESULT_ID}`,
+        source: 'shopify',
+        sortAt: '2026-08-23T10:00:00.000Z',
+      }],
+      counts: { all: 1, customer: 1 },
+      total: 1,
+      hasMore: false,
     },
-  };
-}
-
-function setup(byTable: Record<string, unknown[]>, opts: { authed?: boolean; denied?: boolean } = {}) {
-  const { authed = true, denied = false } = opts;
+    rpcError = null,
+  } = options;
   (createClient as jest.Mock).mockReturnValue({
-    auth: { getUser: async () => ({ data: { user: authed ? { id: 'u-1' } : null } }) },
+    auth: { getUser: async () => ({ data: { user: authed ? { id: 'user-1' } : null } }) },
   });
-  (createServiceClient as jest.Mock).mockReturnValue(makeService(byTable));
-  (requirePermission as jest.Mock).mockResolvedValue({
-    denied,
-    ctx: denied ? null : { merchantId: MERCHANT },
-  });
+  (resolveCallerContext as jest.Mock).mockResolvedValue(context
+    ? { userId: 'user-1', merchantId: MERCHANT_ID, role: 'owner', memberId: null }
+    : null);
+  (resolvePermissions as jest.Mock).mockResolvedValue(permissions);
+  rpc.mockResolvedValue({ data: rpcError ? null : payload, error: rpcError });
+  (createServiceClient as jest.Mock).mockReturnValue({ rpc });
 }
 
-function req(q: string, extra = '') {
-  return new NextRequest(`http://localhost/api/search?q=${encodeURIComponent(q)}${extra}`);
-}
-
-describe('GET /api/search (v2 unified search)', () => {
-  afterEach(() => jest.clearAllMocks());
-
-  it('rejects unauthenticated requests', async () => {
-    setup({}, { authed: false });
-    const res = await GET(req('maya'));
-    expect(res.status).toBe(401);
+describe('GET /api/search server projection', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('rejects callers without permission', async () => {
-    setup({}, { denied: true });
-    const res = await GET(req('maya'));
-    expect(res.status).toBe(403);
+  it('rejects unauthenticated and context-free callers', async () => {
+    setup({ authed: false });
+    expect((await GET(request())).status).toBe(401);
+    setup({ context: false });
+    expect((await GET(request())).status).toBe(403);
   });
 
-  it('returns a customer result for a known email/name', async () => {
-    setup({
-      source_customers: [{ id: 'sc-1', email: 'maya.chen@elara-demo.test', first_name: 'Maya', last_name: 'Chen' }],
+  it('returns exact counts and the canonical destination from the RPC projection', async () => {
+    setup();
+    const response = await GET(request('maya', '&types=customers&source=shopify'));
+    const body = await response.json();
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      total: 1,
+      counts: { all: 1, customer: 1 },
+      source: 'shopify',
+      results: [{ type: 'customer', id: RESULT_ID, href: `/customers/${RESULT_ID}`, source: 'shopify' }],
     });
-    const res = await GET(req('maya'));
-    const body = await res.json();
-    expect(res.status).toBe(200);
-    expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'customer', id: 'sc-1', href: '/customers/sc-1' }),
-    ]));
+    expect(rpc).toHaveBeenCalledWith('workspace_search_page_v1', expect.objectContaining({
+      p_merchant_id: MERCHANT_ID,
+      p_types: ['customers'],
+      p_source: 'shopify',
+      p_limit: 20,
+    }));
   });
 
-  it('returns an order result and links to the first-class order detail', async () => {
-    setup({
-      source_orders: [{ id: 'so-1', order_number: '1042', email: 'x@y.z', total_price: 120, currency: 'GBP', source_customer_id: 'sc-9' }],
-    });
-    const res = await GET(req('1042', '&types=orders'));
-    const body = await res.json();
-    expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'order', id: 'so-1', href: '/orders/so-1' }),
-    ]));
+  it('returns a resumable cursor only when the projection reports another row', async () => {
+    setup({ payload: {
+      items: [{ type: 'order', id: RESULT_ID, label: 'Order 1042', href: `/orders/${RESULT_ID}`, source: 'shopify', sortAt: '2026-08-23T10:00:00.000Z' }],
+      counts: { all: 2, order: 2 }, total: 2, hasMore: true,
+    } });
+    const first = await GET(request('1042', '&types=orders'));
+    const firstBody = await first.json();
+    expect(firstBody.nextCursor).toEqual(expect.any(String));
+
+    rpc.mockClear();
+    await GET(request('1042', `&types=orders&cursor=${encodeURIComponent(firstBody.nextCursor)}`));
+    expect(rpc).toHaveBeenCalledWith('workspace_search_page_v1', expect.objectContaining({
+      p_cursor_id: RESULT_ID,
+      p_cursor_result_type: 'order',
+      p_cursor_sort_at: '2026-08-23T10:00:00.000Z',
+    }));
   });
 
-  it('returns a payout case result linking to the claim detail', async () => {
-    setup({
-      support_payout_cases: [{ id: 'case-1', claim_type: 'item_not_received', status: 'open', amount_at_risk: 99, currency: 'GBP' }],
-    });
-    const res = await GET(req('case-1', '&types=cases'));
-    const body = await res.json();
-    expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'case', id: 'case-1', href: '/claims/case-1' }),
-    ]));
+  it('rejects unsupported types, sources, and malformed cursors', async () => {
+    setup();
+    expect((await GET(request('value', '&types=transactions'))).status).toBe(400);
+    expect((await GET(request('value', '&source=unknown'))).status).toBe(400);
+    expect((await GET(request('value', '&cursor=not-a-cursor'))).status).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
   });
 
-  it('returns a ticket result', async () => {
-    setup({
-      source_tickets: [{ id: 't-1', external_id: '5567', subject: 'Where is my order', status: 'open' }],
-    });
-    const res = await GET(req('5567', '&types=tickets'));
-    const body = await res.json();
-    expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'ticket', id: 't-1' }),
-    ]));
-  });
-
-  it('returns a shipment result by tracking number', async () => {
-    setup({
-      source_shipments: [{ id: 'sh-1', tracking_number: '1Z999', carrier: 'UPS', status: 'in_transit', source_order_id: 'so-1' }],
-    });
-    const res = await GET(req('1Z999', '&types=shipments'));
-    const body = await res.json();
-    expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'shipment', id: 'sh-1' }),
-    ]));
-  });
-
-  it('returns a transaction result by provider reference', async () => {
-    setup({
-      source_transactions: [{ id: 'tx-1', external_id: 'ch_123', provider_reference: 'ref_9', transaction_type: 'charge', amount_minor: 5000, currency: 'GBP', source_order_id: 'so-1' }],
-    });
-    const res = await GET(req('ch_123', '&types=transactions'));
-    const body = await res.json();
-    expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'transaction', id: 'tx-1' }),
-    ]));
-  });
-
-  it('returns a recovery result linking to its detail page', async () => {
-    const uuid = '11111111-1111-1111-1111-111111111111';
-    setup({
-      recovery_cases: [{ id: uuid, recovery_type: 'carrier_claim', owner_type: 'carrier', status: 'submitted', merchant_loss_amount: 80, currency: 'GBP' }],
-    });
-    const res = await GET(req(uuid, '&types=recoveries'));
-    const body = await res.json();
-    expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'recovery', id: uuid, href: `/recoveries/${uuid}` }),
-    ]));
-  });
-
-  it('matches orders by SKU via order lines', async () => {
-    setup({
-      source_order_lines: [{ source_order_id: 'so-7' }],
-      source_orders: [{ id: 'so-7', order_number: '7', email: null, total_price: 10, currency: 'GBP', source_customer_id: 'sc-7' }],
-    });
-    const res = await GET(req('SKU-ABC', '&types=orders'));
-    const body = await res.json();
-    expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'order', id: 'so-7' }),
-    ]));
-  });
-
-  it('strips internal join hints from results', async () => {
-    setup({
-      source_shipments: [{ id: 'sh-2', tracking_number: '1Z1', carrier: 'UPS', status: 'x', source_order_id: 'so-2' }],
-    });
-    const res = await GET(req('1Z1', '&types=shipments'));
-    const body = await res.json();
-    const shipment = body.results.find((r: { type: string }) => r.type === 'shipment');
-    expect(shipment).toBeDefined();
-    expect(shipment._orderId).toBeUndefined();
-  });
-
-  it('returns empty results when nothing matches', async () => {
-    setup({});
-    const res = await GET(req('zzz-no-match'));
-    const body = await res.json();
-    expect(res.status).toBe(200);
-    expect(body.results).toEqual([]);
-  });
-
-  it('never queries dropped v1 tables', async () => {
-    const seen: string[] = [];
-    (createClient as jest.Mock).mockReturnValue({
-      auth: { getUser: async () => ({ data: { user: { id: 'u-1' } } }) },
-    });
-    (requirePermission as jest.Mock).mockResolvedValue({ denied: false, ctx: { merchantId: MERCHANT } });
-    (createServiceClient as jest.Mock).mockReturnValue({
-      from(table: string) {
-        seen.push(table);
-        const builder: Record<string, unknown> = {};
-        const chain = () => builder;
-        for (const m of ['select', 'eq', 'or', 'ilike', 'in', 'limit']) builder[m] = chain;
-        builder.range = () => Promise.resolve({ data: [], error: null });
-        builder.then = (resolve: (v: unknown) => unknown) => resolve({ data: [], error: null });
-        return builder;
-      },
-    });
-    await GET(req('anything'));
-    expect(seen).not.toContain('customer_profiles');
-    expect(seen).not.toContain('audit_transactions');
-    expect(seen).not.toContain('customer_profile_audit_appearances');
-    expect(seen).toEqual(expect.arrayContaining(['source_customers', 'source_orders', 'support_payout_cases']));
+  it('fails the complete page closed when the exact projection is unavailable', async () => {
+    setup({ rpcError: { code: '42P01', message: 'projection unavailable' } });
+    const response = await GET(request());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: 'Workspace search is unavailable' });
   });
 });

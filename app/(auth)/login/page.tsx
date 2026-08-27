@@ -1,231 +1,143 @@
-"use client";
+'use client';
 
-import { Suspense, useMemo, useReducer } from "react";
-import { Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { LoadingSkeleton, Panel } from "@/components/ui";
-import { createClient } from "@/lib/supabase/client";
-import { AuthError, authButtonStyle, authInputClassName } from "../AuthShell";
-import { safeRedirectPath } from "@/lib/auth/safeRedirect";
+import { Suspense, useMemo, useReducer, useRef } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { FormField } from '@/components/ui/FormField';
+import { Input } from '@/components/ui/Input';
+import { AuthError } from '../AuthShell';
+import { createClient } from '@/lib/supabase/client';
+import { safeRedirectPath } from '@/lib/auth/safeRedirect';
+import { parseRequestedPlanId } from '@/lib/billing/plans';
 
-type LoginState = {
+type State = {
   email: string;
   password: string;
   showPassword: boolean;
-  fieldErrors: Partial<Record<"email" | "password", string>>;
+  errors: Partial<Record<'email' | 'password', string>>;
   loading: boolean;
+  magicLoading: boolean;
+  status: string;
 };
-
-type LoginAction = { type: "patch"; patch: Partial<LoginState> };
-
-function validateLogin(email: string, password: string) {
-  const fieldErrors: LoginState['fieldErrors'] = {};
-  if (!email.trim()) fieldErrors.email = 'Enter your email address.';
-  else if (!/^\S+@\S+\.\S+$/.test(email.trim())) fieldErrors.email = 'Enter a valid email address.';
-  if (!password) fieldErrors.password = 'Enter your password.';
-  return fieldErrors;
-}
-
-function mapAuthError(
-  message: string,
-): Partial<Record<"email" | "password", string>> {
-  const lower = message.toLowerCase();
-  if (lower.includes("invalid login credentials"))
-    return { password: "Incorrect email or password" };
-  if (lower.includes("email not confirmed"))
-    return { email: "Please verify your email before signing in" };
-  return { password: "We could not sign you in. Please try again." };
-}
-
-function reducer(state: LoginState, action: LoginAction): LoginState {
-  return { ...state, ...action.patch };
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense
-      fallback={(
-        <Panel as="section" variant="panel" className="p-6">
-          <LoadingSkeleton
-            variant="form"
-            rows={2}
-            title="Loading sign-in form"
-            delayMs={0}
-          />
-        </Panel>
-      )}
-    >
-      <LoginPageInner />
-    </Suspense>
-  );
-}
-
-function LoginPageInner() {
+function LoginForm() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedNextPath = searchParams.get("next");
-  const [state, dispatch] = useReducer(reducer, {
-    email: "",
-    password: "",
+  const requestedNext = searchParams.get('next');
+  const nextPath = safeRedirectPath(requestedNext);
+  const plan = parseRequestedPlanId(searchParams.get('plan'));
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const [state, patch] = useReducer((current: State, next: Partial<State>) => ({ ...current, ...next }), {
+    email: '',
+    password: '',
     showPassword: false,
-    fieldErrors: {},
+    errors: {},
     loading: false,
+    magicLoading: false,
+    status: '',
   });
 
-  const nextPath = safeRedirectPath(requestedNextPath);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const fieldErrors = validateLogin(state.email, state.password);
-    if (Object.keys(fieldErrors).length > 0) {
-      dispatch({ type: "patch", patch: { fieldErrors } });
+    const errors: State['errors'] = {};
+    if (!/^\S+@\S+\.\S+$/.test(state.email.trim())) errors.email = 'Enter a valid email address.';
+    if (!state.password) errors.password = 'Enter your password.';
+    if (Object.keys(errors).length) {
+      patch({ errors });
+      requestAnimationFrame(() => (errors.email ? emailRef.current : passwordRef.current)?.focus());
       return;
     }
-    dispatch({ type: "patch", patch: { loading: true, fieldErrors: {} } });
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: state.email.trim(),
-      password: state.password,
-    });
-
-    if (error) {
-      dispatch({
-        type: "patch",
-        patch: { loading: false, fieldErrors: mapAuthError(error.message) },
+    patch({ loading: true, errors: {}, status: '' });
+    const result = await supabase.auth.signInWithPassword({ email: state.email.trim(), password: state.password });
+    if (result.error) {
+      const message = result.error.message.toLowerCase();
+      patch({ loading: false, password: '', errors: { password: message.includes('rate') || message.includes('locked') ? 'Sign in is temporarily limited. Wait a moment and try again.' : 'Incorrect email or password.' } });
+      requestAnimationFrame(() => passwordRef.current?.focus());
+      return;
+    }
+    if (plan) {
+      const intent = await fetch('/api/billing/subscription-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': `login-${result.data.user.id}-${plan}-v1`,
+        },
+        body: JSON.stringify({ planId: plan, source: 'signup' }),
       });
-      return;
+      if (!intent.ok) {
+        patch({ loading: false, status: 'You are signed in, but the plan request was not saved. Choose it again in Billing.' });
+        return;
+      }
     }
-
     router.push(nextPath);
     router.refresh();
   }
 
+  async function sendMagicLink() {
+    const email = state.email.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      patch({ errors: { email: 'Enter a valid email address.' }, status: '' });
+      requestAnimationFrame(() => emailRef.current?.focus());
+      return;
+    }
+
+    patch({ magicLoading: true, errors: {}, status: '' });
+    const callbackParams = new URLSearchParams();
+    if (requestedNext) callbackParams.set('next', nextPath);
+    if (plan) callbackParams.set('plan', plan);
+    const result = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/callback${callbackParams.size ? `?${callbackParams.toString()}` : ''}`,
+      },
+    });
+    patch({
+      magicLoading: false,
+      status: result.error
+        ? 'The sign-in link could not be sent. Wait a moment and try again.'
+        : 'If an account matches, a sign-in link is on its way.',
+    });
+  }
+
+  const resetParams = new URLSearchParams();
+  const signupParams = new URLSearchParams();
+  if (requestedNext) {
+    resetParams.set('next', nextPath);
+    signupParams.set('next', nextPath);
+  }
+  if (plan) signupParams.set('plan', plan);
+
   return (
-    <Panel as="section" variant="panel" className="p-6">
-      <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">
-        Sign in
-      </h1>
-
-      <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
-        <div>
-          <label
-            htmlFor="login-email"
-            className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]"
-          >
-            Email
-          </label>
-          <Input
-            id="login-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={state.email}
-            onChange={(event) =>
-              dispatch({
-                type: "patch",
-                patch: { email: event.target.value, fieldErrors: { ...state.fieldErrors, email: undefined } },
-              })
-            }
-            required
-            aria-invalid={Boolean(state.fieldErrors.email)}
-            aria-describedby={
-              state.fieldErrors.email ? "login-email-error" : undefined
-            }
-            className={authInputClassName}
-            placeholder="you@company.com"
-          />
-          <AuthError id="login-email-error">
-            {state.fieldErrors.email}
-          </AuthError>
+    <section className="ua-auth-card" data-surface-id="sign-in" data-archetype="P2">
+      <header><div><h1>Sign in to Unauth</h1><p>Use the email your workspace was invited with.</p></div></header>
+      {searchParams.get('password') === 'updated' ? <p role="status" className="mb-5 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-success-bg)] px-3 py-2 text-xs text-[var(--uo-route-success)]">Password updated. Sign in with your new password.</p> : null}
+      <form noValidate onSubmit={submit}>
+        <FormField label="Work email" error={state.errors.email}><Input ref={emailRef} id="login-email" name="email" type="email" autoComplete="email" value={state.email} onChange={(event) => patch({ email: event.target.value, errors: { ...state.errors, email: undefined }, status: '' })} aria-invalid={Boolean(state.errors.email)} /></FormField>
+        <div className="ua-auth-password-field">
+          <FormField label="Password" error={state.errors.password}>
+            <div className="ua-password-control"><Input ref={passwordRef} id="login-password" name="password" type={state.showPassword ? 'text' : 'password'} autoComplete="current-password" value={state.password} onChange={(event) => patch({ password: event.target.value, errors: { ...state.errors, password: undefined }, status: '' })} aria-invalid={Boolean(state.errors.password)} /><button type="button" aria-label={state.showPassword ? 'Hide password' : 'Show password'} onClick={() => patch({ showPassword: !state.showPassword })}>{state.showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
+          </FormField>
+          <Link className="ua-auth-forgot" href={`/reset${resetParams.size ? `?${resetParams.toString()}` : ''}`}>Forgot password</Link>
         </div>
-
-        <div>
-          <label
-            htmlFor="login-password"
-            className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]"
-          >
-            Password
-          </label>
-          <div className="relative">
-            <Input
-              id="login-password"
-              name="password"
-              type={state.showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              value={state.password}
-              onChange={(event) =>
-                dispatch({
-                  type: "patch",
-                  patch: { password: event.target.value, fieldErrors: { ...state.fieldErrors, password: undefined } },
-                })
-              }
-              required
-              minLength={8}
-              aria-invalid={Boolean(state.fieldErrors.password)}
-              aria-describedby={
-                state.fieldErrors.password ? "login-password-error" : undefined
-              }
-              className={`${authInputClassName} pr-10`}
-              placeholder="Password"
-            />
-            <button
-              type="button"
-              onClick={() =>
-                dispatch({ type: "patch", patch: { showPassword: !state.showPassword } })
-              }
-              className="absolute right-1 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--ua-text-tertiary)] transition-colors hover:bg-[var(--ua-surface-secondary)] hover:text-[var(--ua-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ua-shadow-focus)]"
-              aria-label={state.showPassword ? "Hide password" : "Show password"}
-              aria-pressed={state.showPassword}
-              aria-controls="login-password"
-              title={state.showPassword ? "Hide password" : "Show password"}
-            >
-              {state.showPassword ? (
-                <EyeOff className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Eye className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
-          </div>
-          <AuthError id="login-password-error">
-            {state.fieldErrors.password}
-          </AuthError>
-        </div>
-
-        <Button
-          type="submit"
-          size="lg"
-          loading={state.loading}
-          disabled={state.loading}
-          className="w-full justify-center"
-          style={authButtonStyle}
-        >
-          {state.loading ? "Signing in" : "Sign in"}
-        </Button>
+        <AuthError>{state.errors.email ?? state.errors.password}</AuthError>
+        <Button type="submit" size="lg" loading={state.loading}>Continue</Button>
       </form>
-
-      <p className="mt-4 text-xs leading-4 text-[var(--ua-text-tertiary)]">
-        Secure account access for your workspace.
-      </p>
-
-      <p className="mt-5 text-sm text-[var(--ua-text-secondary)]">
-        Forgot password?{" "}
-        <Link
-          href="/reset"
-          className="font-medium text-[var(--ua-action-primary)] underline-offset-4 hover:underline"
-        >
-          Reset it
-        </Link>{" "}· Don&apos;t have an account?{" "}
-        <Link
-          href="/signup"
-          className="font-medium text-[var(--ua-action-primary)] underline-offset-4 hover:underline"
-        >
-          Create one
-        </Link>
-      </p>
-    </Panel>
+      <div className="ua-auth-divider"><i /><span>or</span><i /></div>
+      <div className="ua-auth-alternatives">
+        <button type="button" onClick={() => patch({ status: 'Shopify sign-in is unavailable in this deployment.' })}><span>S</span>Continue with Shopify</button>
+        <button type="button" disabled={state.magicLoading} aria-busy={state.magicLoading || undefined} onClick={() => void sendMagicLink()}><span>@</span>{state.magicLoading ? 'Sending sign-in link…' : 'Send a sign-in link instead'}</button>
+      </div>
+      {state.status ? <p className="ua-auth-status" role="status">{state.status}</p> : null}
+      <div className="ua-auth-enumeration-note"><i /><p>A wrong password is never stored, and we never say whether an email exists. If an account matches, the reset link arrives within a minute.</p></div>
+      <footer><span>Need an account? <Link href={`/signup${signupParams.size ? `?${signupParams.toString()}` : ''}`}>Create one</Link></span><Link href="/landing">Product overview</Link></footer>
+    </section>
   );
+}
+
+export default function LoginPage() {
+  return <Suspense fallback={<div className="ua-auth-card" aria-busy="true">Loading secure sign in…</div>}><LoginForm /></Suspense>;
 }

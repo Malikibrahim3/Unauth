@@ -14,8 +14,8 @@ const HELPDESK_OPTIONS: (HelpdeskOption & { recommended?: boolean })[] = [
     name: 'Gorgias',
     description: 'Add case context to every support ticket. Agents see order history, prior cases, and trust indicators without leaving Gorgias.',
     statusKey: 'gorgias',
-    href: '/settings/integrations/gorgias',
-    logo: '/integrations/gorgias.png',
+    href: '/sources/setup/gorgias',
+    logo: '/providers/gorgias.png',
     recommended: true,
   },
   {
@@ -23,16 +23,16 @@ const HELPDESK_OPTIONS: (HelpdeskOption & { recommended?: boolean })[] = [
     name: 'Zendesk',
     description: 'Case context in the Zendesk sidebar. For teams on Zendesk instead of Gorgias.',
     statusKey: 'zendesk',
-    href: '/settings/integrations/zendesk',
-    logo: '/integrations/zendesk.svg',
+    href: '/sources/setup/zendesk',
+    logo: '/providers/zendesk.svg',
   },
   {
     id: 'freshdesk',
     name: 'Freshdesk',
     description: 'Sync support tickets for case detection. For teams on Freshdesk.',
     statusKey: 'freshdesk',
-    href: '/settings/integrations/freshdesk',
-    logo: '/integrations/freshdesk.svg',
+    href: '/sources/setup/freshdesk',
+    logo: '/providers/freshdesk.png',
   },
 ];
 
@@ -48,20 +48,20 @@ export default function ApiIntegrationsHelpdeskSection() {
   const guideToHelpdesk = statusKnown && shopifyConnected && !helpdeskConnected;
 
   const cardBorder = guideToHelpdesk
-    ? 'color-mix(in srgb, var(--ua-warning) 35%, var(--ua-border-default))'
-    : 'var(--ua-border-default)';
+    ? 'color-mix(in srgb, var(--uo-route-warning) 35%, var(--uo-route-border-default))'
+    : 'var(--uo-route-border-default)';
   const cardBg = guideToHelpdesk
-    ? 'color-mix(in srgb, var(--ua-warning) 6%, var(--ua-surface-primary))'
-    : 'var(--ua-surface-primary)';
+    ? 'color-mix(in srgb, var(--uo-route-warning) 6%, var(--uo-route-surface-primary))'
+    : 'var(--uo-route-surface-primary)';
 
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <Headphones className="h-4 w-4" style={{ color: 'var(--ua-icon-secondary)' }} />
+        <Headphones className="h-4 w-4" style={{ color: 'var(--uo-route-icon-secondary)' }} />
         <div className="flex flex-wrap items-center gap-2">
           <div>
-            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>Helpdesk</p>
-            <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>Gorgias recommended · Zendesk and Freshdesk also supported</p>
+            <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>Helpdesk</p>
+            <p className="ua-text-caption-role" style={{ color: 'var(--uo-route-text-secondary)' }}>Gorgias recommended · Zendesk and Freshdesk also supported</p>
           </div>
           <FeatureTierBadge entitlement="HELPDESK_WIDGET" />
         </div>
@@ -76,21 +76,21 @@ export default function ApiIntegrationsHelpdeskSection() {
             className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
             style={{
               background: helpdeskConnected
-                ? 'var(--ua-success)'
+                ? 'var(--uo-route-success)'
                 : guideToHelpdesk
-                  ? 'var(--ua-warning)'
-                  : 'var(--ua-text-secondary)',
+                  ? 'var(--uo-route-warning)'
+                  : 'var(--uo-route-text-secondary)',
             }}
           />
           <div className="min-w-0 flex-1">
-            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
               {helpdeskConnected
                 ? 'Helpdesk connected'
                 : guideToHelpdesk
                   ? 'Connect your helpdesk to finish setup'
                   : 'No helpdesk connected'}
             </p>
-            <p className="ua-text-caption-role mt-0.5" style={{ color: guideToHelpdesk ? 'var(--ua-warning)' : 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: guideToHelpdesk ? 'var(--uo-route-warning)' : 'var(--uo-route-text-secondary)' }}>
               {helpdeskConnected
                 ? 'Cases and chargeback context are syncing. Tie each case back to its Shopify order.'
                 : guideToHelpdesk
@@ -122,11 +122,11 @@ export default function ApiIntegrationsHelpdeskSection() {
                 {/* Separator before secondary helpdesks */}
                 {idx === 1 && (
                   <div className="flex items-center gap-2 pb-2 pt-1">
-                    <div className="h-px flex-1" style={{ background: 'var(--ua-border-default)' }} />
-                    <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>
+                    <div className="h-px flex-1" style={{ background: 'var(--uo-route-border-default)' }} />
+                    <p className="ua-text-caption-role" style={{ color: 'var(--uo-route-text-secondary)' }}>
                       Using Zendesk or Freshdesk instead?
                     </p>
-                    <div className="h-px flex-1" style={{ background: 'var(--ua-border-default)' }} />
+                    <div className="h-px flex-1" style={{ background: 'var(--uo-route-border-default)' }} />
                   </div>
                 )}
                 <div
@@ -134,16 +134,16 @@ export default function ApiIntegrationsHelpdeskSection() {
                   style={{
                     borderColor:
                       degraded || zendeskSidebarOnly
-                        ? 'color-mix(in srgb, var(--ua-warning) 35%, var(--ua-border-default))'
+                        ? 'color-mix(in srgb, var(--uo-route-warning) 35%, var(--uo-route-border-default))'
                         : connected
-                          ? 'var(--ua-success)'
-                          : 'var(--ua-border-default)',
+                          ? 'var(--uo-route-success)'
+                          : 'var(--uo-route-border-default)',
                     background:
                       degraded || zendeskSidebarOnly
-                        ? 'color-mix(in srgb, var(--ua-warning) 6%, var(--ua-surface-primary))'
+                        ? 'color-mix(in srgb, var(--uo-route-warning) 6%, var(--uo-route-surface-primary))'
                         : connected
-                          ? 'color-mix(in srgb, var(--ua-success) 4%, var(--ua-surface-primary))'
-                          : 'var(--ua-surface-primary)',
+                          ? 'color-mix(in srgb, var(--uo-route-success) 4%, var(--uo-route-surface-primary))'
+                          : 'var(--uo-route-surface-primary)',
                     opacity: !isPrimary && !connected && !zendeskSidebarOnly ? 0.75 : 1,
                   }}
                 >
@@ -158,11 +158,11 @@ export default function ApiIntegrationsHelpdeskSection() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{item.name}</p>
+                        <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>{item.name}</p>
                         {item.recommended && (
                           <span
                             className="ua-text-label inline-flex items-center rounded-full px-1.5 py-0.5"
-                            style={{ background: 'color-mix(in srgb, var(--ua-action-primary) 12%, transparent)', color: 'var(--ua-action-primary)' }}
+                            style={{ background: 'color-mix(in srgb, var(--uo-route-action-primary) 12%, transparent)', color: 'var(--uo-route-action-primary)' }}
                           >
                             Recommended
                           </span>
@@ -172,7 +172,7 @@ export default function ApiIntegrationsHelpdeskSection() {
                         <Link
                           href={item.href}
                           className="ua-text-label inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1"
-                          style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
+                          style={{ borderColor: 'var(--uo-route-border-default)', color: 'var(--uo-route-text-secondary)' }}
                         >
                           Manage
                         </Link>
@@ -180,7 +180,7 @@ export default function ApiIntegrationsHelpdeskSection() {
                         <Link
                           href={item.href}
                           className="ua-text-working-title inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1"
-                          style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+                          style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
                         >
                           Connect
                           {showArrow ? <ArrowRight className="h-3 w-3" /> : null}
@@ -196,21 +196,21 @@ export default function ApiIntegrationsHelpdeskSection() {
                             background:
                               connected || zendeskSidebarOnly
                                 ? zendeskSidebarOnly
-                                  ? 'var(--ua-warning)'
-                                  : 'var(--ua-success)'
+                                  ? 'var(--uo-route-warning)'
+                                  : 'var(--uo-route-success)'
                                 : 'transparent',
                             border:
-                              connected || zendeskSidebarOnly ? 'none' : '1px solid var(--ua-text-secondary)',
+                              connected || zendeskSidebarOnly ? 'none' : '1px solid var(--uo-route-text-secondary)',
                           }}
                         />
                         <span
                           style={{
                             color:
                               zendeskSidebarOnly || degraded
-                                ? 'var(--ua-warning)'
+                                ? 'var(--uo-route-warning)'
                                 : connected
-                                  ? 'var(--ua-success)'
-                                  : 'var(--ua-text-secondary)',
+                                  ? 'var(--uo-route-success)'
+                                  : 'var(--uo-route-text-secondary)',
                           }}
                         >
                           {zendeskSidebarOnly
@@ -222,11 +222,11 @@ export default function ApiIntegrationsHelpdeskSection() {
                                 : 'Not connected'}
                         </span>
                         {connected && providerState?.detail ? (
-                          <span className="truncate" style={{ color: 'var(--ua-text-secondary)' }}>· {providerState.detail}</span>
+                          <span className="truncate" style={{ color: 'var(--uo-route-text-secondary)' }}>· {providerState.detail}</span>
                         ) : null}
                       </p>
                     ) : null}
-                    <p className="ua-text-caption-role mt-1 leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
+                    <p className="ua-text-caption-role mt-1 leading-relaxed" style={{ color: 'var(--uo-route-text-secondary)' }}>
                       {item.description}
                     </p>
                   </div>
@@ -237,7 +237,7 @@ export default function ApiIntegrationsHelpdeskSection() {
         </div>
 
         {helpdeskConnected ? (
-          <p className="ua-text-dense flex items-center gap-1.5 font-medium" style={{ color: 'var(--ua-success)' }}>
+          <p className="ua-text-dense flex items-center gap-1.5 font-medium" style={{ color: 'var(--uo-route-success)' }}>
             <CheckCircle2 className="h-3.5 w-3.5" />
             Required helpdesk source satisfied
           </p>

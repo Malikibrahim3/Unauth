@@ -9,7 +9,7 @@
  *   4. a `case.*` domain event is appended (the source of truth for projections);
  *   5. a compatibility `claim_events` row is preserved during migration.
  *
- * See ARCHITECTURE.md §6.
+ * See ARCHITECTURE.md for the canonical case-state owner.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

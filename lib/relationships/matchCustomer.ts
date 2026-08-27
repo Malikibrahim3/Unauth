@@ -6,7 +6,7 @@
  * This does not touch identity scoring / cluster building (§0 frozen rules); it
  * only produces reviewable product-graph candidates.
  *
- * See ARCHITECTURE.md §8.
+ * See ARCHITECTURE.md for the canonical relationship and product-truth owners.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

@@ -205,7 +205,7 @@ describe('dashboard model', () => {
     const freshness = calculateSourceFreshness([
       { objectType: 'Orders', scope: 'connected-source', records: 80, freshRecords: 70, staleRecords: 10, latestAt: null, href: '/orders' },
       { objectType: 'Tickets', scope: 'connected-source', records: 20, freshRecords: 20, staleRecords: 0, latestAt: null, href: '/tickets' },
-      { objectType: 'Cases', scope: 'internal', records: 900, freshRecords: 0, staleRecords: 900, latestAt: null, href: '/claims' },
+      { objectType: 'Cases', scope: 'internal', records: 900, freshRecords: 0, staleRecords: 900, latestAt: null, href: '/cases' },
     ]);
     expect(freshness).toMatchObject({
       totalRecords: 100,

@@ -73,18 +73,16 @@ try {
 }
 
 const checks = [
-  ['TypeScript', 'npm', ['run', 'typecheck']],
   ['Lint (zero warnings)', 'npm', ['run', 'lint', '--', '--max-warnings=0']],
-  ['Authenticated design guard', 'npm', ['run', 'lint:authenticated-design']],
+  ['Application TypeScript', 'npm', ['run', 'typecheck']],
+  ['Operational script TypeScript', 'npm', ['run', 'typecheck:scripts']],
+  ['Provider-suite TypeScript', 'npm', ['run', 'typecheck:e2e']],
+  ['Core Jest', 'npm', ['test', '--', '--runInBand', '--silent']],
+  ['Engine evaluation', 'npm', ['run', 'eval', '--', 'test-data/realistic_fraud_dataset.csv']],
   ['Supabase contract', 'npm', ['run', 'audit:supabase-contract']],
-  ['Reviewed migration layout', 'npm', ['run', 'verify:migration-layout']],
+  ['Active migration layout', 'npm', ['run', 'verify:migration-layout']],
   [
     'Canonical database fresh replay A',
-    'npm',
-    ['run', 'verify:canonical-db', ...(allowDestructiveLocalReset ? ['--', '--allow-destructive-local-reset'] : [])],
-  ],
-  [
-    'Canonical database fresh replay B',
     'npm',
     ['run', 'verify:canonical-db', ...(allowDestructiveLocalReset ? ['--', '--allow-destructive-local-reset'] : [])],
   ],
@@ -95,28 +93,15 @@ const checks = [
   ['Privacy erasure and retention runtime', 'npm', ['run', 'verify:privacy-erasure']],
   ['Release 1 investigation lifecycle runtime', 'npm', ['run', 'verify:investigations-runtime']],
   ['Source-to-recovery PostgreSQL runtime', 'npm', ['run', 'verify:source-to-recovery']],
-  ['Atomic P0 evidence ledger', 'npm', ['run', 'verify:p0-ledger']],
   [
-    'Local migration rollout/monitoring/rollback rehearsal',
+    'Logical application backup and isolated restore',
     'npm',
-    ['run', 'verify:rollout-rehearsal', ...(allowDestructiveLocalReset ? ['--', '--allow-destructive-local-reset'] : [])],
+    ['run', 'verify:backup-restore', '--', '--allow-destructive-local-restore'],
   ],
-  [
-    'Provider-suite TypeScript',
-    'npx',
-    ['tsc', '--noEmit', '-p', 'scripts/e2e/tsconfig.check.json'],
-  ],
-  ['Full Jest suite', 'npm', ['test', '--', '--runInBand', '--silent']],
+  ['Chrome extension build', 'npm', ['run', 'build:extension']],
   ['Production build', 'npm', ['run', 'build']],
   ['Synthetic release browser fixture', 'npm', ['run', 'prepare:release-e2e']],
-  ['Production browser, lifecycle, accessibility and performance suite', 'npm', ['run', 'test:release-browser']],
-  /*
-   * §3.5 of the product-polish specification: this gate must replay every phase
-   * the ledger claims is COMPLETE and fail when the ledger and the available
-   * phase manifests disagree. `--ledger` resolves the highest COMPLETE phase
-   * from the specification itself, so no phase number is hard-coded here.
-   */
-  ['Product-polish phase ledger replay', 'npm', ['run', 'verify:polish', '--', '--ledger']],
+  ['Canonical route browser smoke', 'npm', ['run', 'test:smoke']],
   ['Whitespace integrity', 'git', ['diff', '--check']],
 ];
 

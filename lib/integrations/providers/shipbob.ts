@@ -3,10 +3,10 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const shipbobProvider: IntegrationProvider = {
   id: 'shipbob',
   name: 'ShipBob',
-  logoSrc: '/integrations/shipbob.svg',
+  logoSrc: '/providers/shipbob.svg',
   category: 'warehouse_3pl',
   authMode: 'oauth',
-  buildStatus: 'partial',
+  codeMaturity: 'partial',
   setupHref: '/api/integrations/shipbob/install',
   evidenceCapabilities: ['warehouse_pick_pack', 'warehouse_exception', 'three_pl_sla_claim_status'],
   capabilities: { readFulfilment: true, readWarehouseEvents: true, readClaimStatus: true },

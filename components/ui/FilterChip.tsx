@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/navigation/AppNavLink';
 import { type MouseEventHandler, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { filterChipContract } from '@/styles/authenticated/contracts';
 
 export interface FilterChipProps {
   children: ReactNode;
@@ -11,24 +10,20 @@ export interface FilterChipProps {
   count?: number | string;
   href?: string;
   disabled?: boolean;
+  /** Why this filter is disabled — surfaced as a title tooltip. */
+  disabledReason?: string;
   onClick?: MouseEventHandler<HTMLButtonElement>;
   className?: string;
   'aria-label'?: string;
 }
 
-const chipClass = (active: boolean, disabled: boolean, className?: string) =>
-  cn(
-    filterChipContract.base,
-    active ? filterChipContract.selected : filterChipContract.unselected,
-    !disabled && filterChipContract.hover,
-    filterChipContract.focus,
-    disabled && filterChipContract.disabled,
-    className,
-  );
+const chipClass = (active: boolean, disabled: boolean, className?: string) => cn('ua-filter-chip', active && 'ua-filter-chip--active', disabled && 'ua-filter-chip--disabled', className);
 
 /** Interactive dataset filter. Its selected state is neutral, never semantic. */
-export function FilterChip({ children, active = false, count, href, disabled = false, onClick, className, 'aria-label': ariaLabel }: FilterChipProps) {
-  const content = <>{children}{count != null ? <span className="tabular-nums text-[length:var(--ua-text-caption-size)]">{count}</span> : null}</>;
+export function FilterChip({ children, active = false, count, href, disabled = false, disabledReason, onClick, className, 'aria-label': ariaLabel }: FilterChipProps) {
+  // F-41: a disabled chip renders no value — never a "· —" filler.
+  const content = <>{children}{!disabled && count != null ? <span className="tabular-nums text-[length:var(--uo-route-text-caption-size)]">{count}</span> : null}</>;
+  const title = disabled ? disabledReason : undefined;
   if (href) {
     return (
       <Link
@@ -36,6 +31,7 @@ export function FilterChip({ children, active = false, count, href, disabled = f
         aria-disabled={disabled || undefined}
         aria-current={active ? 'page' : undefined}
         aria-label={ariaLabel}
+        title={title}
         tabIndex={disabled ? -1 : undefined}
         className={chipClass(active, disabled, className)}
         onClick={disabled ? (event) => event.preventDefault() : undefined}
@@ -45,7 +41,7 @@ export function FilterChip({ children, active = false, count, href, disabled = f
     );
   }
   return (
-    <button type="button" disabled={disabled} aria-pressed={active} aria-label={ariaLabel} onClick={onClick} className={chipClass(active, disabled, className)}>
+    <button type="button" disabled={disabled} aria-pressed={active} aria-label={ariaLabel} title={title} onClick={onClick} className={chipClass(active, disabled, className)}>
       {content}
     </button>
   );

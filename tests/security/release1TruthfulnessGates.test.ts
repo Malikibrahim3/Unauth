@@ -29,16 +29,19 @@ describe('Release 1 truthfulness gates', () => {
     );
   });
 
-  it('gates generic ingestion, flow publication, activation, and execution', () => {
+  it('gates generic ingestion and keeps flow publication and activation unavailable', () => {
     expect(read('app/api/v1/ingest/events/route.ts')).toContain(
       "env.GENERIC_EVENT_INGESTION_ENABLED !== 'true'",
     );
-    expect(read('app/api/workflows/[id]/publish/route.ts')).toContain(
-      "env.WORKFLOW_PUBLICATION_ENABLED === 'true'",
-    );
-    expect(read('app/api/workflows/[id]/state/route.ts')).toContain(
-      "env.WORKFLOW_PUBLICATION_ENABLED !== 'true'",
-    );
+    const publish = read('app/api/workflows/[id]/publish/route.ts');
+    const state = read('app/api/workflows/[id]/state/route.ts');
+    expect(publish).toContain("error: 'workflow_publication_unavailable'");
+    expect(publish).toContain('{ status: 503 }');
+    expect(publish).not.toContain('WORKFLOW_PUBLICATION_ENABLED');
+    expect(state).toContain("parsed.data.action === 'resume'");
+    expect(state).toContain("error: 'workflow_activation_unavailable'");
+    expect(state).toContain('{ status: 503 }');
+    expect(state).not.toContain('WORKFLOW_PUBLICATION_ENABLED');
     expect(read('lib/events/handlers/workflowHandler.ts')).toContain(
       'workflows:publication_gated',
     );

@@ -1,4 +1,4 @@
-import { aggregateMoneyBridges, buildReportTrend, dashboardPreviousPeriodWindow, enforceFinancialTruth, normalizeReportTimezone, parseReportRange, reportCutoff, reportDateKey, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
+import { aggregateMoneyBridges, buildReportTrend, dashboardPreviousPeriodWindow, dashboardTrendMismatches, enforceFinancialTruth, normalizeReportTimezone, parseReportRange, reportCutoff, reportDateKey, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
 
 describe('intelligence reporting contracts',()=>{
  it('never combines currencies and calculates outstanding from canonical categories',()=>{
@@ -55,6 +55,18 @@ describe('intelligence reporting contracts',()=>{
    {currency:'GBP',date:'2026-07-02',exposureMinor:500,recoveredMinor:100,preventedMinor:0,realisedLossMinor:50,knownStates:['confirmed_loss','exposed','prevented','recovered']},
    {currency:'USD',date:'2026-07-01',exposureMinor:3000,recoveredMinor:0,preventedMinor:500,realisedLossMinor:250,knownStates:['confirmed_loss','exposed','prevented','recovered']},
   ]);
+ });
+ it('reconciles every plotted financial series with the value strip',()=>{
+  const [bridge]=aggregateMoneyBridges([
+   {support_payout_case_id:'a',currency:'GBP',exposed_minor:1000,recovered_minor:200,prevented_minor:150,confirmed_loss_minor:80,known_states:['exposed','recovered','prevented','confirmed_loss']},
+  ]);
+  const trend=buildReportTrend(
+   [{id:'a',submitted_at:'2026-07-01T12:00:00Z'}],
+   [{support_payout_case_id:'a',currency:'GBP',exposed_minor:1000,recovered_minor:200,prevented_minor:150,confirmed_loss_minor:80,known_states:['exposed','recovered','prevented','confirmed_loss']}],
+  );
+  expect(dashboardTrendMismatches(bridge,trend)).toEqual([]);
+  expect(dashboardTrendMismatches({...bridge,preventedMinor:151,realisedLossMinor:81},trend))
+   .toEqual(['prevented','confirmed_loss']);
  });
  it('excludes unknown amounts from trends while retaining a proven zero',()=>{
   const result=buildReportTrend(

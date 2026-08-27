@@ -10,7 +10,7 @@ async function executeOutput(client: SupabaseClient, definition: WorkflowDefinit
   const caseId = event.aggregate_type === 'case' ? event.aggregate_id : typeof event.payload?.case_id === 'string' ? event.payload.case_id : null;
   let result: Record<string, unknown> = {};
   if (output.type === 'request_notification') {
-    const notification = await recordDomainEvent(client, { merchantId: event.merchant_id, eventType: 'notification.requested', aggregateType: 'case', aggregateId: caseId, idempotencyKey: `workflow:${runId}:step:${index}:notification`, actorType: 'workflow', payload: { recipient_user_id: output.recipientUserId, kind: output.kind, title: output.title, body: output.body ?? null, target_href: caseId ? `/claims/${caseId}` : '/work', deduplication_key: `workflow:${runId}:step:${index}` }, handlers: ['notificationProjection'] });
+    const notification = await recordDomainEvent(client, { merchantId: event.merchant_id, eventType: 'notification.requested', aggregateType: 'case', aggregateId: caseId, idempotencyKey: `workflow:${runId}:step:${index}:notification`, actorType: 'workflow', payload: { recipient_user_id: output.recipientUserId, kind: output.kind, title: output.title, body: output.body ?? null, target_href: caseId ? `/cases/${caseId}` : '/work', deduplication_key: `workflow:${runId}:step:${index}` }, handlers: ['notificationProjection'] });
     result = { domain_event_id: notification };
   } else {
     const title = output.type === 'create_task' ? output.title : output.type === 'request_evidence' ? output.title ?? `Request ${output.evidenceType.replaceAll('_', ' ')}` : 'Review approaching deadline';

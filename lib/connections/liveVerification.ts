@@ -260,6 +260,21 @@ export async function persistLiveVerification(
   result: LiveVerificationResult,
   checkedAt = new Date().toISOString(),
 ): Promise<void> {
+  // Degrading a connection is the only outcome a demo workspace must never
+  // record, and every such write goes through here, so this is the one place
+  // the exemption cannot be forgotten. The lookup is scoped to that case so a
+  // healthy or inconclusive result still costs a single write. Bulk callers
+  // should skip demo merchants before probing too — that saves the network
+  // round trip, whereas this guard protects the data.
+  if (result.status === 'failed') {
+    const { data: merchant } = await client
+      .from('merchants')
+      .select('is_demo')
+      .eq('id', merchantId)
+      .maybeSingle();
+    if ((merchant as { is_demo?: boolean } | null)?.is_demo === true) return;
+  }
+
   const patch: Record<string, unknown> = {
     last_verified_at: checkedAt,
     last_verification_status: result.status,
@@ -308,6 +323,26 @@ export type MerchantLiveHealth = {
 };
 
 /** Verify the legacy credential stores used by the live Shopify/Gorgias flows. */
+/**
+ * Merchant ids whose connections must never be probed or persisted against.
+ *
+ * Demo workspaces carry synthetic connection fixtures with placeholder
+ * credentials, so a live probe can only ever fail — first at decrypt, and then
+ * against a provider account that does not exist. Persisting that failure
+ * rewrites the fixture to `status: 'error'` and degrades the whole workspace:
+ * `getConnectionState` reports `neitherConnected`, and the app chrome shows
+ * "Unverified · source unavailable".
+ *
+ * `verifyMerchantLiveConnections` below has always skipped demo merchants for
+ * this reason. Any sweep that reaches connection rows directly needs the same
+ * guard, or its next pass silently undoes that exemption.
+ */
+export async function loadDemoMerchantIds(client: SupabaseClient): Promise<Set<string>> {
+  const { data, error } = await client.from('merchants').select('id').eq('is_demo', true);
+  if (error) throw new Error(`load_demo_merchant_ids_failed: ${error.message}`);
+  return new Set(((data ?? []) as Array<{ id: string }>).map((row) => row.id));
+}
+
 export async function verifyMerchantLiveConnections(
   client: SupabaseClient,
   merchantId: string,

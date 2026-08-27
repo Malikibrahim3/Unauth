@@ -144,6 +144,10 @@ describe('merchant integration live verification', () => {
       return query;
     });
     query.eq = jest.fn(() => query);
+    // A failed result checks whether the merchant is a demo workspace before it
+    // degrades the row, so the client has to answer that lookup too.
+    query.select = jest.fn(() => query);
+    query.maybeSingle = jest.fn(async () => ({ data: { is_demo: false } }));
     const client = { from: jest.fn(() => query) };
     const checkedAt = '2026-07-16T20:00:00.000Z';
 
@@ -159,6 +163,51 @@ describe('merchant integration live verification', () => {
 
     expect(patches[0].last_verified_at).toBe(checkedAt);
     expect(patches[0].last_verification_status).toBe(result.status);
+  });
+
+  // Demo workspaces hold synthetic connection fixtures whose credentials are
+  // placeholders, so a live probe can only ever fail. Recording that failure
+  // rewrites the fixture to status 'error', which makes getConnectionState
+  // report neitherConnected and the app chrome show "Unverified · source
+  // unavailable" across an otherwise healthy demo workspace.
+  it('never degrades a demo workspace connection', async () => {
+    const query: Record<string, unknown> = { error: null };
+    query.update = jest.fn(() => query);
+    query.eq = jest.fn(() => query);
+    query.select = jest.fn(() => query);
+    query.maybeSingle = jest.fn(async () => ({ data: { is_demo: true } }));
+    const client = { from: jest.fn(() => query) };
+
+    await persistLiveVerification(
+      client as never,
+      'store_connections',
+      'demo-merchant',
+      'connection-a',
+      'active',
+      { status: 'failed', reason: 'decrypt_failed' },
+    );
+
+    expect(query.update).not.toHaveBeenCalled();
+  });
+
+  it('still records a healthy result for a demo workspace without a lookup', async () => {
+    const query: Record<string, unknown> = { error: null };
+    query.update = jest.fn(() => query);
+    query.eq = jest.fn(() => query);
+    query.select = jest.fn(() => query);
+    const client = { from: jest.fn(() => query) };
+
+    await persistLiveVerification(
+      client as never,
+      'store_connections',
+      'demo-merchant',
+      'connection-a',
+      'active',
+      { status: 'verified' },
+    );
+
+    expect(query.update).toHaveBeenCalledTimes(1);
+    expect(query.select).not.toHaveBeenCalled();
   });
 
   it('degrades safely during the additive verification-column rollout only', async () => {

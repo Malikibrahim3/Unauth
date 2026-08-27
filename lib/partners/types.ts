@@ -61,6 +61,7 @@ export type LiabilityCapBasis = 'fixed' | 'declared_value' | 'insured_value' | '
 export type SubmissionMethod = 'portal' | 'email' | 'api' | 'unknown';
 export type RuleSourceType = 'unauth_default' | 'merchant_configured' | 'contract_extracted';
 export type PartnerRuleConfidence = 'high' | 'medium' | 'low';
+export type RuleApprovalStatus = 'unconfirmed' | 'approved' | 'revoked';
 
 export type PartnerRecoveryRule = {
   id: string;
@@ -82,6 +83,28 @@ export type PartnerRecoveryRule = {
   source_type: RuleSourceType;
   confidence: PartnerRuleConfidence;
   active: boolean;
+  version_number: number;
+  supersedes_rule_id: string | null;
+  jurisdiction: string | null;
+  service_codes: string[];
+  effective_from: string | null;
+  effective_to: string | null;
+  claimant_roles: string[];
+  minimum_wait_days: number | null;
+  deadline_basis: 'dispatch' | 'delivery' | 'due_date' | 'eligible_claim_date' | 'handoff' | 'other' | null;
+  notice_deadline_days: number | null;
+  complete_pack_deadline_days: number | null;
+  critical_requirements: Record<string, unknown>;
+  exclusions: Record<string, unknown>;
+  compensation_terms: Record<string, unknown>;
+  terms_source_url: string | null;
+  source_document_id: string | null;
+  source_published_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  rule_approval_status: RuleApprovalStatus;
   created_at: string;
   updated_at: string;
   partner?: Partner | null;

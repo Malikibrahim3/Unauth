@@ -1,4 +1,4 @@
-import { OperationalCaseDemo } from '@/components/demo/OperationalCaseDemo';
+import { Challenge6ProductDemo } from '@/components/public/Challenge6PublicPages';
 import { isDemoCaseStep } from '@/lib/demo/merchantCaseV1';
 
 export const metadata = {
@@ -12,5 +12,5 @@ export default async function DemoPage({
   searchParams: Promise<{ step?: string }>;
 }) {
   const { step } = await searchParams;
-  return <OperationalCaseDemo initialStep={isDemoCaseStep(step) ? step : 'incoming'} />;
+  return <Challenge6ProductDemo initialStep={isDemoCaseStep(step) ? step : 'incoming'} />;
 }

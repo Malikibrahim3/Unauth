@@ -152,9 +152,9 @@ export async function projectOperationalNotifications(
   for (const task of overdueTasks) {
     const recipient = task.owner_user_id ?? fallbackRecipient;
     const target = task.support_payout_case_id
-      ? `/claims/${task.support_payout_case_id}`
+      ? `/cases/${task.support_payout_case_id}`
       : task.recovery_case_id
-        ? `/recoveries/${task.recovery_case_id}`
+        ? `/financials/recovery/${task.recovery_case_id}`
         : "/work";
     jobs.push(
       requestNotification(
@@ -196,7 +196,7 @@ export async function projectOperationalNotifications(
               ? `High-value case · ${shortRef(null, claim.id)}${amount ? ` · ${amount}` : ""}`
               : `${shortRef(null, claim.id)} needs a decision`,
           body: "Evidence and merchant policy context are ready for an operator review.",
-          target_href: `/claims/${claim.id}`,
+          target_href: `/cases/${claim.id}`,
           deduplication_key: `case-decision:${claim.id}:${claim.status}:${claim.updated_at}`,
         },
         claim.updated_at,
@@ -225,7 +225,7 @@ export async function projectOperationalNotifications(
           body: outcome
             ? "The connected recovery record has a new source outcome."
             : "Open the recovery to review missing evidence and the next source action.",
-          target_href: `/recoveries/${recovery.id}`,
+          target_href: `/financials/recovery/${recovery.id}`,
           deduplication_key: `recovery:${recovery.id}:${recovery.status}:${recovery.updated_at}`,
         },
         recovery.updated_at,
@@ -252,7 +252,7 @@ export async function projectOperationalNotifications(
             integration.last_error_message,
             integration.last_error,
           ) ?? "The connection is no longer healthy. Review credentials and retry the import.",
-          target_href: `/integrations/${integration.provider_id}`,
+          target_href: `/sources/${integration.provider_id}`,
           deduplication_key: `connection-health:${integration.id}:${integration.status}:${integration.last_error_at ?? integration.updated_at}`,
         },
         integration.last_error_at ?? integration.updated_at,

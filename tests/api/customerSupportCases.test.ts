@@ -14,14 +14,23 @@ jest.mock('@/lib/supabase/merchantHelpers', () => ({
   fetchMerchantScopedSourceCustomer: jest.fn(),
 }));
 
+jest.mock('@/lib/customers/merchantCustomerHistory', () => ({
+  resolveMerchantCustomerId: jest.fn(),
+}));
+
 jest.mock('@/lib/support/intake/supportCaseReadModel', () => ({
   listSupportCasesForCustomerProfile: jest.fn(),
+  listSupportCasesForMerchantCustomer: jest.fn(),
 }));
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
 import { fetchMerchantScopedSourceCustomer } from '@/lib/supabase/merchantHelpers';
-import { listSupportCasesForCustomerProfile } from '@/lib/support/intake/supportCaseReadModel';
+import { resolveMerchantCustomerId } from '@/lib/customers/merchantCustomerHistory';
+import {
+  listSupportCasesForCustomerProfile,
+  listSupportCasesForMerchantCustomer,
+} from '@/lib/support/intake/supportCaseReadModel';
 import { GET } from '@/app/api/customers/[id]/support-cases/route';
 
 const PROFILE_ID = '6ac24686-2fd4-4a27-9eb3-cb1751a9548c';
@@ -56,6 +65,7 @@ describe('GET /api/customers/[id]/support-cases', () => {
       denied: null,
       ctx: { merchantId: MERCHANT_ID, userId: 'user-1' },
     });
+    (resolveMerchantCustomerId as jest.Mock).mockResolvedValue(null);
   });
 
   it('returns linked support cases for a scoped customer profile', async () => {
@@ -91,6 +101,24 @@ describe('GET /api/customers/[id]/support-cases', () => {
     expect(body).not.toContain('shopper@');
     expect(body).not.toContain('raw_payload');
     expect(body).not.toContain('customer_email');
+  });
+
+  it('loads support cases by canonical merchant customer id', async () => {
+    (resolveMerchantCustomerId as jest.Mock).mockResolvedValue(PROFILE_ID);
+    (listSupportCasesForMerchantCustomer as jest.Mock).mockResolvedValue([linkedCase]);
+
+    const response = await GET(
+      new NextRequest(`http://localhost/api/customers/${PROFILE_ID}/support-cases`),
+      { params: Promise.resolve({ id: PROFILE_ID }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(listSupportCasesForMerchantCustomer).toHaveBeenCalledWith(
+      expect.anything(),
+      MERCHANT_ID,
+      PROFILE_ID,
+    );
+    expect(fetchMerchantScopedSourceCustomer).not.toHaveBeenCalled();
   });
 
   it('returns 404 when profile is outside merchant scope', async () => {

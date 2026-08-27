@@ -1,4 +1,5 @@
 .plot {
+  container-type: inline-size;
   display: grid;
   gap: 14px;
   margin: 0;
@@ -12,16 +13,27 @@
   gap: 14px;
 }
 
+@container (max-width: 600px) {
+  .row {
+    grid-template-columns: minmax(108px, .85fr) minmax(96px, 1fr);
+  }
+
+  .value {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+}
+
 .label {
   min-width: 0;
-  color: var(--ua-text-secondary);
-  font-size: var(--ua-text-dense-size);
+  color: var(--uo-route-text-secondary);
+  font-size: var(--uo-route-text-dense-size);
   font-weight: 500;
 }
 
 .label a:hover,
 .label a:focus-visible {
-  color: var(--ua-text-link);
+  color: var(--uo-route-text-link);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -37,7 +49,7 @@
   right: 0;
   left: 0;
   height: 1px;
-  background: var(--ua-chart-grid);
+  background: var(--uo-route-chart-grid);
   content: "";
 }
 
@@ -46,7 +58,7 @@
   top: 50%;
   width: 8px;
   height: 8px;
-  border: 2px solid var(--ua-surface-primary);
+  border: 2px solid var(--uo-route-surface-primary);
   border-radius: 50%;
   box-shadow: 0 0 0 1px currentColor;
   transform: translate(-50%, -50%);
@@ -62,15 +74,15 @@
 }
 
 .value strong {
-  color: var(--ua-text-primary);
+  color: var(--uo-route-text-primary);
   font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .value span {
-  color: var(--ua-text-tertiary);
-  font-size: var(--ua-text-caption-size);
+  color: var(--uo-route-text-tertiary);
+  font-size: var(--uo-route-text-caption-size);
 }
 
 @media (max-width: 760px) {

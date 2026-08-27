@@ -13,7 +13,8 @@ export type IntegrationAuthMode = 'oauth' | 'api_key' | 'manual_upload';
  * `partial` is connectable for its implemented read-only paths, but must not be
  * presented as a full connector lifecycle (sync + webhook + reconciliation).
  */
-export type IntegrationBuildStatus = 'live' | 'partial' | 'slot_only';
+/** Internal implementation maturity. Merchant-facing labels are always derived. */
+export type IntegrationCodeMaturity = 'complete' | 'partial' | 'slot_only';
 
 /**
  * The ten independently-verifiable dimensions of a provider's operational
@@ -183,7 +184,7 @@ export type IntegrationProvider = {
   logoSrc?: string;
   category: IntegrationCategory;
   authMode: IntegrationAuthMode;
-  buildStatus: IntegrationBuildStatus;
+  codeMaturity: IntegrationCodeMaturity;
   evidenceCapabilities: EvidenceCapability[];
   capabilities?: ConnectorCapabilityMap;
   requiredScopes?: string[];

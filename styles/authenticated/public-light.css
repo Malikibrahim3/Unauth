@@ -1,0 +1,50 @@
+/* Public routes are always light, even when an authenticated device has a dark cookie. */
+.ua-public-route,
+html[data-mode] .ua-public-route.ua-public-route {
+  --c-FFFFFF: #FFFFFF;
+  --c-FCFCFD: #FFFFFF;
+  --c-EFF0F3: #F7F8FA;
+  --c-F7F7F9: #FAFAFB;
+  --c-F5F5F7: #F5F6F8;
+  --c-F4F4F6: #F5F6F8;
+  --c-F3F3F5: #F5F6F8;
+  --c-F1F1F4: #F0F1F4;
+  --c-EFEFF2: #F0F1F4;
+  --c-EDEDF0: #ECEEF1;
+  --c-EAEAEE: #DEE1E6;
+  --c-E7E7EA: #C9CDD4;
+  --c-DCDDE2: #C9CDD4;
+  --c-D6D8DD: #DEE1E6;
+  --c-101014: #111318;
+  --c-191C1A: #111318;
+  --c-4A4F57: #454B55;
+  --c-3C4148: #454B55;
+  --c-52565C: #454B55;
+  --c-6B6F76: #6B7280;
+  --c-5F6570: #6B7280;
+  --c-8B9099: #6B7280;
+  --c-9AA0A6: #9AA1AB;
+  --c-C6C9CE: #A6ACB5;
+  --c-2563EB: #5B57D6;
+  --c-1D4FD7: #4946BC;
+  --c-0A7A53: #247A54;
+  --c-12A672: #247A54;
+  --c-067A53: #247A54;
+  --c-B4271B: #B23A43;
+  --c-E0483D: #B23A43;
+  --c-96650E: #8A5A00;
+  --c-E0A63D: #8A5A00;
+  --c-DBE7FE: #E9E8FF;
+  --c-EAF0FE: #EEEDFF;
+  --c-C7D9FD: #D7D5FF;
+  --c-E7F7F0: #E8F5EE;
+  --c-E4F2EA: #C9E7D6;
+  --c-FDF4E3: #FFF4D9;
+  --c-F2E3C0: #EFD99C;
+  --c-FDECEA: #FDECEE;
+  --c-F6CFCB: #F1C5CB;
+  --c-10182808: rgb(17 24 39 / .06);
+  --c-1018280F: rgb(17 24 39 / .08);
+  --c-1018281F: rgb(17 24 39 / .14);
+  --c-10182838: rgb(17 24 39 / .24);
+}

@@ -3,6 +3,7 @@ export interface OrderOption {
   order_id: string;
   processed_at: string;
   order_value: number | null;
+  currency: string | null;
   refund_claimed: boolean;
 }
 
@@ -19,6 +20,8 @@ export type PriorMatchPreview = 'likely' | 'unlikely' | 'unknown';
 export interface EvidencePackageFormProps {
   profileId: string;
   preselectedOrderId?: string;
+  caseContextId?: string;
+  syncOrderToUrl?: boolean;
   showIntro?: boolean;
   onCancel?: () => void;
   onSuccess?: (packageId: string) => void;

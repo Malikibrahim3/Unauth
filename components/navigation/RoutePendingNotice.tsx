@@ -34,9 +34,9 @@ export default function RoutePendingNotice({ pendingHref }: { pendingHref: strin
     <div
       role="status"
       aria-live="polite"
-      className="ua-auth-surface fixed inset-x-0 bottom-4 z-[var(--ua-z-toast)] mx-auto flex w-fit max-w-[min(560px,calc(100%-var(--ua-space-8)))] items-center gap-[var(--ua-space-3)] rounded-[var(--ua-radius-overlay)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-[var(--ua-space-4)] py-[var(--ua-space-2-5)] shadow-[var(--ua-shadow-menu)]"
+      className="ua-auth-surface fixed inset-x-0 bottom-4 z-[var(--uo-route-z-toast)] mx-auto flex w-fit max-w-[min(560px,calc(100%-var(--uo-route-space-8)))] items-center gap-[var(--uo-route-space-3)] rounded-[var(--uo-route-radius-overlay)] border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-[var(--uo-route-space-4)] py-[var(--uo-route-space-2-5)] shadow-[var(--uo-route-shadow-menu)]"
     >
-      <p className="m-0 text-[length:var(--ua-text-dense-size)] leading-[var(--ua-text-dense-leading)] text-[var(--ua-text-secondary)]">
+      <p className="m-0 text-[length:var(--uo-route-text-dense-size)] leading-[var(--uo-route-text-dense-leading)] text-[var(--uo-route-text-secondary)]">
         This page is taking longer than expected.
       </p>
       {sameOriginPath ? (

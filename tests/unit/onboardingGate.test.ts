@@ -51,6 +51,20 @@ describe('shouldRequireOnboarding', () => {
     ).toBe(false);
   });
 
+  it('allows an authenticated merchant to defer onboarding and return later', () => {
+    expect(
+      shouldRequireOnboarding({
+        hasMerchantContext: true,
+        profileComplete: false,
+        onboardingDeferred: true,
+        setupComplete: false,
+        auditRunCount: 0,
+        shopifyConnected: false,
+        helpdeskConnected: false,
+      }),
+    ).toBe(false);
+  });
+
   it('requires onboarding only for merchants with incomplete setup and no audit history', () => {
     expect(
       shouldRequireOnboarding({
@@ -101,5 +115,15 @@ describe('canRehydrateMerchantFromAuth', () => {
       email: 'new@example.com',
       user_metadata: { setup_complete: false },
     })).toBe(false);
+  });
+
+  it('can restore a deliberately deferred onboarding workspace without marking setup complete', () => {
+    expect(canRehydrateMerchantFromAuth({
+      email: 'developer@example.com',
+      user_metadata: {
+        setup_complete: false,
+        onboarding_deferred_at: '2026-08-14T14:00:00.000Z',
+      },
+    })).toBe(true);
   });
 });

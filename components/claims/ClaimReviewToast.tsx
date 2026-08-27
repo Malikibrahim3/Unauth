@@ -13,13 +13,13 @@ export function ClaimReviewToast({ wb }: { wb: ClaimReviewWorkbench }) {
         right: 16,
         height: 40,
         padding: '0 16px',
-        borderRadius: 'var(--ua-radius-overlay)',
+        borderRadius: 'var(--uo-route-radius-overlay)',
         fontSize: 13,
         fontWeight: 500,
-        boxShadow: 'var(--ua-shadow-menu)',
-        color: messageTone === 'success' ? 'var(--ua-success)' : messageTone === 'error' ? 'var(--ua-success)' : 'var(--ua-text-secondary)',
-        border: `1px solid ${messageTone === 'success' ? 'var(--ua-success-border)' : messageTone === 'error' ? 'var(--ua-risk-critical-border)' : 'var(--ua-border-subtle)'}`,
-        background: messageTone === 'success' ? 'var(--ua-success-bg)' : messageTone === 'error' ? 'var(--ua-risk-critical-bg)' : 'var(--ua-surface-primary)',
+        boxShadow: 'var(--uo-route-shadow-menu)',
+        color: messageTone === 'success' ? 'var(--uo-route-success)' : messageTone === 'error' ? 'var(--uo-route-success)' : 'var(--uo-route-text-secondary)',
+        border: `1px solid ${messageTone === 'success' ? 'var(--uo-route-success-border)' : messageTone === 'error' ? 'var(--uo-route-risk-critical-border)' : 'var(--uo-route-border-subtle)'}`,
+        background: messageTone === 'success' ? 'var(--uo-route-success-bg)' : messageTone === 'error' ? 'var(--uo-route-risk-critical-bg)' : 'var(--uo-route-surface-primary)',
       }}
     >
       <span>{wb.state.message}</span>

@@ -63,11 +63,13 @@ export function CaseContextDrawer({
       open
       onClose={onClose}
       title={shortRef(null, caseId)}
+      overlayId="case-context-drawer"
+      signalRail
       footer={
         <div className="p-4">
           <Link
-            href={`/claims/${caseId}`}
-            className="ua-text-working-title inline-flex min-h-10 items-center rounded-md bg-[var(--ua-action-primary)] px-4 py-2 text-[var(--ua-action-primary-fg)]"
+            href={`/cases/${caseId}`}
+            className="ua-text-working-title inline-flex min-h-10 items-center rounded-md bg-[var(--uo-route-action-primary)] px-4 py-2 text-[var(--uo-route-action-primary-fg)]"
           >
             Open full case
           </Link>
@@ -76,18 +78,18 @@ export function CaseContextDrawer({
     >
       <div className="space-y-6 p-4 sm:p-5">
         {error ? (
-          <p role="alert" className="ua-text-body text-[var(--ua-critical)]">
+          <p role="alert" className="ua-text-body text-[var(--uo-route-critical)]">
             {error}
           </p>
         ) : null}
         {!data && !error ? (
-          <p role="status" className="ua-text-body text-[var(--ua-text-tertiary)]">
+          <p role="status" className="ua-text-body text-[var(--uo-route-text-tertiary)]">
             Loading case context…
           </p>
         ) : null}
         {data ? (
           <>
-            <section className="grid grid-cols-2 gap-4 rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
+            <section className="grid grid-cols-2 gap-4 rounded-lg border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-muted)] p-4">
               <div>
                 <p className="ua-text-metadata">Status</p>
                 <p className="ua-text-dense font-medium capitalize">
@@ -129,7 +131,7 @@ export function CaseContextDrawer({
                     .map((item) => (
                       <li
                         key={item.id}
-                        className="rounded-md border border-[var(--ua-border-default)] p-3 ua-text-dense"
+                        className="rounded-md border border-[var(--uo-route-border-default)] p-3 ua-text-dense"
                       >
                         <p className="font-medium">{item.title}</p>
                         <p className="ua-text-metadata">
@@ -144,7 +146,7 @@ export function CaseContextDrawer({
                     ))}
                 </ul>
               ) : (
-                <p className="ua-text-body text-[var(--ua-text-tertiary)]">
+                <p className="ua-text-body text-[var(--uo-route-text-tertiary)]">
                   No activity yet.
                 </p>
               )}

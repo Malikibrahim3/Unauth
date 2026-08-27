@@ -6,6 +6,7 @@ interface ErrorBoundaryUIProps {
   title?: string;
   description?: string;
   fallbackHref?: string;
+  stateId?: string;
 }
 
 /**
@@ -22,6 +23,7 @@ export function ErrorBoundaryUI({
   title = 'Something went wrong',
   description = 'We could not load this page. You can try again, or go back to Overview.',
   fallbackHref,
+  stateId,
 }: ErrorBoundaryUIProps) {
   return (
     <OperationalRouteError
@@ -30,6 +32,7 @@ export function ErrorBoundaryUI({
       reset={reset}
       digest={error.digest}
       fallbackHref={fallbackHref}
+      stateId={stateId}
     />
   );
 }

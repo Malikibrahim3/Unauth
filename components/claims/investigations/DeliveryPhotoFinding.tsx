@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button, Modal, Select, Textarea } from '@/components/ui';
+import { BeforeYouConfirm, Button, Modal, Select, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -73,10 +73,10 @@ export function DeliveryPhotoFinding({
 
   return (
     <>
-      <div className="mt-3 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
+      <div className="mt-3 rounded-md border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-muted)] p-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="ua-text-label text-[var(--ua-text-primary)]">
+            <p className="ua-text-label text-[var(--uo-route-text-primary)]">
               Human photo finding
             </p>
             <p className="ua-text-caption-role mt-1">
@@ -95,7 +95,7 @@ export function DeliveryPhotoFinding({
             {rationale}
           </p>
         ) : null}
-        <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
+        <p className="mt-2 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]">
           This records a human observation and refreshes the advisory recommendation. It does not decide the customer outcome.
         </p>
       </div>
@@ -104,8 +104,9 @@ export function DeliveryPhotoFinding({
         <Modal
           open
           onClose={() => setOpen(false)}
-          title="Record delivery photo finding"
+          title="Record a delivery-photo finding"
           description="Compare the carrier photo with the order’s intended delivery context. Do not infer responsibility from provider silence."
+          overlayId="delivery-photo-finding-modal"
           size="md"
           closeOnBackdrop={!busy}
           footer={(
@@ -125,7 +126,7 @@ export function DeliveryPhotoFinding({
         >
           <div className="space-y-4">
             {error ? (
-              <p role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
+              <p role="alert" className="ua-text-body rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3 text-[var(--uo-route-risk-critical)]">
                 {error}
               </p>
             ) : null}
@@ -151,6 +152,13 @@ export function DeliveryPhotoFinding({
                 placeholder="State the visible facts: doorway, house number, parcel placement, or why the image is unclear."
               />
             </label>
+            <BeforeYouConfirm
+              objectSummary={`${caseId} · delivery-photo finding`}
+              valueSummary="No financial value changes."
+              externalAction="None. Nothing is sent to the customer or carrier."
+              reversible="A later human finding supersedes this one; both remain in case history."
+              appendOnly="A timestamped human finding and rationale. Unauth does not interpret the image or decide the customer outcome."
+            />
           </div>
         </Modal>
       ) : null}

@@ -8,7 +8,7 @@ import {
 import { ConnectedObjectDetail } from '@/components/relationships/ConnectedObjectDetail';
 import { getObjectSummary, type ConnectedObjectType } from '@/lib/relationships/objectSummary';
 
-export async function connectedObjectPage(type: ConnectedObjectType, props: { params: Promise<{id:string}>; searchParams: Promise<{return?:string}> }) {
+export async function connectedObjectPage(type: ConnectedObjectType, props: { params: Promise<{id:string}>; searchParams: Promise<{return?:string; returnTo?: string}> }) {
   const user = await getRequestUser();
   if (!user) redirect('/login');
   const svc = getRequestServiceClient();
@@ -17,5 +17,5 @@ export async function connectedObjectPage(type: ConnectedObjectType, props: { pa
   const [{ id }, search] = await Promise.all([props.params, props.searchParams]);
   const object = await getObjectSummary(svc as any, ctx.merchantId, type, id);
   if (!object) notFound();
-  return <ConnectedObjectDetail object={object} returnTo={search.return} />;
+  return <ConnectedObjectDetail object={object} returnTo={search.return ?? search.returnTo} />;
 }

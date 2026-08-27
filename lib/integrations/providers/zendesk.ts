@@ -3,7 +3,7 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const zendeskProvider: IntegrationProvider = {
   id: 'zendesk',
   name: 'Zendesk',
-  logoSrc: '/integrations/zendesk.svg',
+  logoSrc: '/providers/zendesk.svg',
   category: 'helpdesk',
   authMode: 'api_key',
   // Not 'live': no executable adapter, no real health probe (verify-install
@@ -11,9 +11,9 @@ export const zendeskProvider: IntegrationProvider = {
   // reconciliation, and no controlled e2e coverage — unlike Gorgias, the
   // reference implementation for this category. See
   // docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md.
-  buildStatus: 'partial',
+  codeMaturity: 'partial',
   description: 'Ticket messages, attachments, and payout-case context from Zendesk.',
-  setupHref: '/settings/integrations/zendesk',
+  setupHref: '/sources/setup/zendesk',
   evidenceCapabilities: [
     'ticket_messages',
     'ticket_attachments',

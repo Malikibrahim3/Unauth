@@ -13,6 +13,7 @@ export function SupportObjectRouteSkeleton({
       className="mx-auto w-full max-w-[1500px] space-y-4 px-4 pb-6 pt-4 sm:px-5"
       aria-busy="true"
       aria-label={title}
+      data-state-id="support-object-loading"
     >
       <div className="space-y-2">
         <Bone className="h-3 w-24" />

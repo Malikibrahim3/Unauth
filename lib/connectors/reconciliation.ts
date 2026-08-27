@@ -8,7 +8,7 @@
  * raise DeferredReconciliation so the ingestion inbox retries the event
  * (status failed + backoff) instead of completing it.
  *
- * See ARCHITECTURE.md §3 / §6.
+ * See ARCHITECTURE.md for the product truth and surface boundaries.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

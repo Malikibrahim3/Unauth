@@ -44,6 +44,16 @@ export interface MerchantBillingState {
 
 const LIVE_STATUSES: SubscriptionStatus[] = ['active', 'grace_period', 'past_due', 'free'];
 
+export async function ensureMerchantBillingAccount(
+  supabase: SupabaseClient,
+  merchantId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('ensure_free_billing_account', {
+    p_merchant_id: merchantId,
+  });
+  if (error) throw new Error(`billing account bootstrap failed: ${error.message}`);
+}
+
 type SubDbRow = {
   id: string;
   merchant_id: string;

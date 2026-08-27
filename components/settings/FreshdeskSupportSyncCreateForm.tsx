@@ -14,9 +14,9 @@ type Props = {
 };
 
 const INPUT_STYLE: CSSProperties = {
-  background: 'var(--ua-surface-secondary)',
-  border: '1px solid var(--ua-border-default)',
-  color: 'var(--ua-text-primary)',
+  background: 'var(--uo-route-surface-secondary)',
+  border: '1px solid var(--uo-route-border-default)',
+  color: 'var(--uo-route-text-primary)',
 };
 
 export function FreshdeskSupportSyncCreateForm({
@@ -36,7 +36,7 @@ export function FreshdeskSupportSyncCreateForm({
           <label
             htmlFor="freshdesk-domain"
             className="ua-text-label block mb-1"
-            style={{ color: 'var(--ua-text-secondary)' }}
+            style={{ color: 'var(--uo-route-text-secondary)' }}
           >
             Freshdesk domain
           </label>
@@ -53,7 +53,7 @@ export function FreshdeskSupportSyncCreateForm({
           disabled={!canManage || state.busy}
         />
         {isCreate ? (
-          <p className="ua-text-caption-role mt-2" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-2" style={{ color: 'var(--uo-route-text-secondary)' }}>
             Your Freshdesk subdomain. If you log in at <code>acme.freshdesk.com</code>, enter{' '}
             <code>acme</code> or the full host.
           </p>
@@ -65,7 +65,7 @@ export function FreshdeskSupportSyncCreateForm({
           <label
             htmlFor="freshdesk-display-name"
             className="ua-text-label block mb-1"
-            style={{ color: 'var(--ua-text-secondary)' }}
+            style={{ color: 'var(--uo-route-text-secondary)' }}
           >
             Display name (optional)
           </label>
@@ -95,7 +95,7 @@ export function FreshdeskSupportSyncCreateForm({
         type="submit"
         disabled={!canManage || state.busy}
         className="ua-text-working-title rounded-md px-4 py-2 disabled:opacity-60"
-        style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+        style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
       >
         {state.busy ? 'Saving…' : submitLabel}
       </button>

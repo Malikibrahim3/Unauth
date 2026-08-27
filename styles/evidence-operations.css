@@ -1,0 +1,540 @@
+/* Unauth Evidence Operations — light-first product authority with a scoped dark override. */
+.uo-product,
+.uo-entry {
+  color-scheme: dark;
+  --uo-canvas: #121314;
+  --uo-rail: #101112;
+  --uo-surface: #121314;
+  --uo-surface-raised: #161718;
+  --uo-surface-hover: #151617;
+  --uo-surface-selected: #1b1c1d;
+  --uo-border-subtle: #1b1c1d;
+  --uo-border: #262728;
+  --uo-border-strong: #303132;
+  --uo-text: #d1d6df;
+  --uo-text-secondary: #9ca0a8;
+  --uo-text-tertiary: #80848c;
+  --uo-text-disabled: #62666d;
+  --uo-accent: #6f6bdc;
+  --uo-accent-hover: #7c78e8;
+  --uo-focus: #8b86ef;
+  --uo-button-primary: #2b2c2d;
+  --uo-button-primary-hover: #343536;
+  --uo-button-primary-pressed: #242526;
+  --uo-info: #62a0ea;
+  --uo-success: #55b989;
+  --uo-warning: #d8a657;
+  --uo-critical: #e36f78;
+  --uo-evidence: #62b7c7;
+  --uo-font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --uo-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --uo-shadow-overlay: 0 18px 56px rgb(0 0 0 / .48), 0 2px 10px rgb(0 0 0 / .28);
+
+  /* Behaviour-compatible semantic bridge while route modules are migrated. */
+  --uo-route-shell: var(--uo-rail);
+  --uo-route-canvas: var(--uo-canvas);
+  --uo-route-document-canvas: var(--uo-canvas);
+  --uo-route-surface-primary: var(--uo-surface);
+  --uo-route-surface-secondary: var(--uo-surface-raised);
+  --uo-route-surface-tertiary: var(--uo-surface-hover);
+  --uo-route-surface-hover: var(--uo-surface-hover);
+  --uo-route-surface-selected: var(--uo-surface-selected);
+  --uo-route-border-subtle: var(--uo-border-subtle);
+  --uo-route-border-default: var(--uo-border);
+  --uo-route-border-strong: var(--uo-border-strong);
+  --uo-route-text-primary: var(--uo-text);
+  --uo-route-text-secondary: var(--uo-text-secondary);
+  --uo-route-text-tertiary: var(--uo-text-tertiary);
+  --uo-route-text-disabled: var(--uo-text-disabled);
+  --uo-route-text-link: var(--uo-focus);
+  --uo-route-text-inverse: #fff;
+  --uo-route-accent: var(--uo-accent);
+  --uo-route-accent-hover: var(--uo-accent-hover);
+  --uo-route-focus: var(--uo-focus);
+  --uo-route-risk-critical: var(--uo-critical);
+  --uo-route-risk-warning: var(--uo-warning);
+  --uo-route-risk-positive: var(--uo-success);
+  --uo-route-critical: #ff9aa2;
+  --uo-route-warning: #eac078;
+  --uo-route-success: #7bd3a8;
+  --uo-route-info: #83b9f2;
+  --uo-route-info-bg: rgb(98 160 234 / .14);
+  --uo-route-info-border: rgb(98 160 234 / .32);
+  --uo-route-surface-muted: var(--uo-surface-hover);
+  --uo-route-selection-bg: var(--uo-surface-selected);
+  --uo-route-rule-default: var(--uo-border);
+  --uo-route-border-hairline: var(--uo-border-subtle);
+  --uo-route-action-primary: var(--uo-button-primary);
+  --uo-route-action-primary-hover: var(--uo-button-primary-hover);
+  --uo-route-action-primary-pressed: var(--uo-button-primary-pressed);
+  --uo-route-action-primary-fg: #fff;
+  --uo-route-evidence: var(--uo-evidence);
+  --uo-route-critical-bg: rgb(227 111 120 / .12);
+  --uo-route-critical-border: rgb(227 111 120 / .32);
+  --uo-route-warning-bg: rgb(216 166 87 / .12);
+  --uo-route-success-bg: rgb(85 185 137 / .12);
+  --uo-route-radius-control: 6px;
+  --uo-route-radius-card: 8px;
+  --uo-route-radius-surface: 8px;
+  --uo-route-radius-overlay: 10px;
+  --uo-route-shadow-raised: none;
+  --uo-route-shadow-float: var(--uo-shadow-overlay);
+  --uo-route-shadow-focus: 0 0 0 2px rgb(139 134 239 / .28);
+  --uo-route-shadow-overlay: var(--uo-shadow-overlay);
+  --uo-route-shadow-menu: var(--uo-shadow-overlay);
+  --uo-route-duration-fast: 120ms;
+  --uo-route-duration-press: 80ms;
+  --uo-route-duration-base: 120ms;
+  --uo-route-duration-slow: 160ms;
+  --uo-route-duration-data: 160ms;
+  --uo-route-ease-standard: cubic-bezier(.2, .8, .2, 1);
+  --uo-route-font-sans: var(--uo-font);
+  --uo-route-font-mono: var(--uo-mono);
+
+  /* Complete aliases for presentation modules retained for behaviour/data ownership. */
+  --uo-route-paper-primary: var(--uo-surface);
+  --uo-route-paper-raised: var(--uo-surface-raised);
+  --uo-route-paper-secondary: var(--uo-surface-raised);
+  --uo-route-paper-muted: var(--uo-surface-hover);
+  --uo-route-evidence-field: var(--uo-canvas);
+  --uo-route-rule-hairline: var(--uo-border-subtle);
+  --uo-route-border-emphasis: var(--uo-border-strong);
+  --uo-route-input-border: var(--uo-border);
+  --uo-route-focus-ring: var(--uo-focus);
+  --uo-route-selection-fill: var(--uo-surface-selected);
+  --uo-route-selection-border: var(--uo-border-strong);
+  --uo-route-action-soft: var(--uo-surface-hover);
+  --uo-route-accent-soft: var(--uo-surface-hover);
+  --uo-route-accent-50: var(--uo-surface);
+  --uo-route-accent-100: var(--uo-surface-hover);
+  --uo-route-accent-200: var(--uo-border-strong);
+  --uo-route-accent-500: var(--uo-accent);
+  --uo-route-accent-600: var(--uo-accent-hover);
+  --uo-route-accent-700: var(--uo-focus);
+  --uo-route-accent-800: var(--uo-text);
+  --uo-route-signal-copper: var(--uo-accent);
+  --uo-route-signal-copper-hover: var(--uo-text);
+  --uo-route-signal-copper-light: var(--uo-border-strong);
+  --uo-route-signal-copper-soft: var(--uo-surface-hover);
+  --uo-route-shadow-1: 0 1px 2px rgb(0 0 0 / .2);
+
+  --uo-route-nav-background: var(--uo-rail);
+  --uo-route-nav-border: var(--uo-border-subtle);
+  --uo-route-nav-hover: var(--uo-surface-hover);
+  --uo-route-nav-selected: var(--uo-surface-selected);
+  --uo-route-nav-signal: var(--uo-focus);
+  --uo-route-nav-text: var(--uo-text-secondary);
+  --uo-route-nav-text-active: var(--uo-text);
+  --uo-route-nav-text-muted: var(--uo-text-tertiary);
+  --uo-route-app-header-height: 44px;
+
+  --uo-route-ink-primary: var(--uo-text);
+  --uo-route-ink-secondary: var(--uo-text-secondary);
+  --uo-route-data-blue: var(--uo-info);
+  --uo-route-data-petrol: var(--uo-evidence);
+  --uo-route-data-slate: var(--uo-text-tertiary);
+  --uo-route-analytical-actual: var(--uo-info);
+  --uo-route-analytical-comparison: var(--uo-text-tertiary);
+  --uo-route-analytical-forecast: var(--uo-focus);
+  --uo-route-analytical-reference: var(--uo-evidence);
+  --uo-route-analytical-remainder: var(--uo-border-strong);
+  --uo-route-analytical-secondary: var(--uo-text-secondary);
+  --uo-route-analytical-selected: var(--uo-accent);
+  --uo-route-analytical-stage-1: var(--uo-info);
+  --uo-route-analytical-stage-2: var(--uo-evidence);
+  --uo-route-analytical-stage-3: var(--uo-warning);
+  --uo-route-analytical-stage-4: var(--uo-success);
+  --uo-route-cause-1: var(--uo-critical);
+  --uo-route-cause-2: var(--uo-warning);
+  --uo-route-cause-3: var(--uo-info);
+  --uo-route-cause-4: var(--uo-evidence);
+  --uo-route-cause-5: var(--uo-focus);
+  --uo-route-cause-other: var(--uo-text-tertiary);
+  --uo-route-chart-bar-thickness: 8px;
+  --uo-route-chart-composition-thickness: 10px;
+
+  --uo-route-critical-muted: rgb(227 111 120 / .14);
+  --uo-route-critical-strong: #ff9aa2;
+  --uo-route-info-muted: rgb(98 160 234 / .14);
+  --uo-route-success-muted: rgb(85 185 137 / .14);
+  --uo-route-success-strong: #7bd3a8;
+  --uo-route-success-text: #7bd3a8;
+  --uo-route-warning-muted: rgb(216 166 87 / .14);
+  --uo-route-warning-strong: #eac078;
+  --uo-route-confidence-low: var(--uo-warning);
+  --uo-route-urgency-approaching: var(--uo-warning);
+  --uo-route-urgency-breached: var(--uo-critical);
+
+  --uo-route-outcome-open: var(--uo-warning);
+  --uo-route-outcome-identified: var(--uo-info);
+  --uo-route-outcome-prevented: var(--uo-success);
+  --uo-route-outcome-realised: var(--uo-critical);
+  --uo-route-outcome-recovered: var(--uo-success);
+  --uo-route-source-connected: var(--uo-success);
+  --uo-route-source-degraded: var(--uo-warning);
+  --uo-route-source-error: var(--uo-critical);
+  --uo-route-source-not-configured: var(--uo-text-tertiary);
+  --uo-route-workflow-active: var(--uo-info);
+  --uo-route-workflow-active-bg: rgb(98 160 234 / .14);
+  --uo-route-workflow-active-border: rgb(98 160 234 / .32);
+  --uo-route-workflow-blocked: var(--uo-critical);
+  --uo-route-workflow-blocked-bg: rgb(227 111 120 / .14);
+  --uo-route-workflow-blocked-border: rgb(227 111 120 / .32);
+  --uo-route-workflow-closed: var(--uo-text-tertiary);
+  --uo-route-workflow-closed-bg: var(--uo-surface-hover);
+  --uo-route-workflow-closed-border: var(--uo-border);
+  --uo-route-workflow-escalated: var(--uo-warning);
+  --uo-route-workflow-escalated-bg: rgb(216 166 87 / .14);
+  --uo-route-workflow-escalated-border: rgb(216 166 87 / .32);
+  --uo-route-workflow-ready: var(--uo-success);
+  --uo-route-workflow-ready-bg: rgb(85 185 137 / .14);
+  --uo-route-workflow-ready-border: rgb(85 185 137 / .32);
+  --uo-route-workflow-waiting: var(--uo-evidence);
+  --uo-route-workflow-waiting-bg: rgb(98 183 199 / .14);
+  --uo-route-workflow-waiting-border: rgb(98 183 199 / .32);
+  --uo-route-privacy: var(--uo-evidence);
+  --uo-route-privacy-bg: rgb(98 183 199 / .14);
+  --uo-route-privacy-border: rgb(98 183 199 / .32);
+
+  --uo-raw-FFFFFF: var(--uo-surface);
+  --uo-raw-FCFCFD: var(--uo-surface-raised);
+  --uo-raw-FAFAFB: var(--uo-rail);
+  --uo-raw-F7F7F9: var(--uo-surface-raised);
+  --uo-raw-F5F5F7: var(--uo-surface-hover);
+  --uo-raw-F4F4F6: var(--uo-surface-hover);
+  --uo-raw-F3F3F5: var(--uo-surface-hover);
+  --uo-raw-F1F1F4: var(--uo-surface-hover);
+  --uo-raw-EFF0F3: var(--uo-canvas);
+  --uo-raw-EFEFF2: var(--uo-surface-hover);
+  --uo-raw-EDEDF0: var(--uo-border-subtle);
+  --uo-raw-EAEAEE: var(--uo-border);
+  --uo-raw-E7E7EA: var(--uo-border-strong);
+  --uo-raw-DCDDE2: var(--uo-border-strong);
+  --uo-raw-D6D8DD: var(--uo-border);
+  --uo-raw-C6C9CE: var(--uo-text-disabled);
+  --uo-raw-B4B8BE: var(--uo-text-disabled);
+  --uo-raw-A9ADB5: var(--uo-text-tertiary);
+  --uo-raw-9AA0A6: var(--uo-text-tertiary);
+  --uo-raw-8E939B: var(--uo-text-tertiary);
+  --uo-raw-8B9099: var(--uo-text-tertiary);
+  --uo-raw-6E737B: var(--uo-text-tertiary);
+  --uo-raw-6B6F76: var(--uo-text-tertiary);
+  --uo-raw-5F6570: var(--uo-text-tertiary);
+  --uo-raw-52565C: var(--uo-text-secondary);
+  --uo-raw-4A4F57: var(--uo-text-secondary);
+  --uo-raw-3C4148: var(--uo-text-secondary);
+  --uo-raw-26262C: var(--uo-border);
+  --uo-raw-1E1E24: var(--uo-surface-hover);
+  --uo-raw-101014: var(--uo-text);
+  --uo-raw-2563EB: var(--uo-accent);
+  --uo-raw-1D4FD7: var(--uo-accent-hover);
+  --uo-raw-7FA6FF: var(--uo-focus);
+  --uo-raw-8FAEFF: var(--uo-focus);
+  --uo-raw-12A672: var(--uo-success);
+  --uo-raw-0A7A53: var(--uo-success);
+  --uo-raw-E0A63D: var(--uo-warning);
+  --uo-raw-96650E: var(--uo-warning);
+  --uo-raw-B4271B: var(--uo-critical);
+  --uo-raw-E0483D: var(--uo-critical);
+  --uo-raw-DBE7FE: rgb(91 91 214 / .16);
+  --uo-raw-EAF0FE: rgb(91 91 214 / .12);
+  --uo-raw-E7F7F0: rgb(85 185 137 / .14);
+  --uo-raw-FDF4E3: rgb(216 166 87 / .14);
+  --uo-raw-FDECEA: rgb(227 111 120 / .14);
+  --uo-raw-F6CFCB: rgb(227 111 120 / .32);
+  --uo-raw-F2E3C0: rgb(216 166 87 / .32);
+  --uo-raw-10182808: rgb(0 0 0 / .08);
+  --uo-raw-1018280F: rgb(0 0 0 / .16);
+  --uo-raw-1018281F: rgb(0 0 0 / .32);
+  --uo-raw-10182838: rgb(0 0 0 / .58);
+}
+
+:where(.uo-product, .uo-entry),
+:where(.uo-product, .uo-entry) * {
+  box-sizing: border-box;
+}
+
+:where(.uo-product, .uo-entry) {
+  margin: 0;
+  background: var(--uo-canvas);
+  color: var(--uo-text);
+  font-family: var(--uo-font);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+:where(.uo-product, .uo-entry) :where(button, input, select, textarea) { font: inherit; }
+:where(.uo-product, .uo-entry) :where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--uo-focus);
+  outline-offset: 2px;
+}
+:where(.uo-product, .uo-entry) :where(button, a, input, select, textarea, [role="button"]) {
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+:where(.uo-product, .uo-entry) :where(input, select, textarea) {
+  border: 1px solid var(--uo-border);
+  border-radius: 6px;
+  background: var(--uo-surface-raised);
+  color: var(--uo-text);
+}
+.uo-product :where(.ua-working-surface, .ua-raised-surface, .ua-card:not(.ua-card--overlay)) {
+  box-shadow: none;
+}
+:where(.uo-product, .uo-entry) :where(input, textarea)::placeholder { color: var(--uo-text-tertiary); opacity: 1; }
+:where(.uo-product, .uo-entry) :where(code, kbd, samp, pre) { font-family: var(--uo-mono); }
+
+.uo-product :where(.ua-button, button[data-variant="primary"], .is-primary) {
+  border-color: var(--uo-button-primary);
+}
+.uo-product :where(.ua-button[data-tone="primary"], .ua-button--primary, button[data-variant="primary"]) {
+  background: var(--uo-button-primary);
+  color: #fff;
+}
+.uo-product :where(.ua-button[data-tone="primary"], .ua-button--primary, button[data-variant="primary"]):hover {
+  background: var(--uo-button-primary-hover);
+}
+.uo-entry :where(.ua-button[data-tone="primary"], .ua-button--primary) {
+  background: var(--uo-accent);
+  color: #fff;
+}
+.uo-entry :where(.ua-button[data-tone="primary"], .ua-button--primary):hover { background: var(--uo-accent-hover); }
+
+.uo-product :where(table) { border-collapse: collapse; color: var(--uo-text-secondary); }
+.uo-product :where(th) { color: var(--uo-text-tertiary); font-size: 11px; font-weight: 500; }
+.uo-product :where(th, td) { border-color: var(--uo-border-subtle); }
+.uo-product :where(tbody tr:hover) { background: var(--uo-surface-hover); }
+.uo-product :where([aria-selected="true"], [data-selected="true"], [data-active="true"]) { --uo-current-selection: var(--uo-surface-selected); }
+.uo-product :where(button, a)[data-active="true"] { color: var(--uo-text); }
+.uo-product :where([data-tone="critical"], [data-tone="negative"]) { color: var(--uo-route-critical) !important; }
+.uo-product :where([data-tone="red"]) { color: var(--uo-route-critical) !important; }
+.uo-product :where([data-tone="neutral"]) { color: var(--uo-text-secondary) !important; }
+.uo-product :where([data-tone="warning"], [data-tone="partial"], [data-tone="stale"]) { color: var(--uo-route-warning) !important; }
+.uo-product :where([data-tone="success"], [data-tone="positive"], [data-tone="ok"]) { color: var(--uo-route-success) !important; }
+.uo-product :where(.uo-cause-filters a) { min-height: 28px; align-items: center; padding-inline: 8px; }
+.uo-product :where(.uo-table-row) { min-height: 32px; }
+.uo-product main a[href="/sources/connected"] { color: var(--uo-focus); }
+
+.uo-product .ua-handoff-settings-nav a[data-active="true"],
+.uo-product .ua-handoff-settings-nav a[data-active="true"] span,
+.uo-product .ua-handoff-settings-nav a[data-active="true"] svg {
+  color: var(--uo-text);
+}
+.uo-product .ua-handoff-settings-nav a[data-active="true"] {
+  background: var(--uo-surface-hover);
+  box-shadow: inset 1px 0 0 var(--uo-border-strong);
+}
+
+.uo-product .ua-chart-data summary,
+.uo-product .ua-chart-provenance > summary {
+  color: var(--uo-focus);
+}
+
+.uo-product .ua-filter-chip--active {
+  border-color: var(--uo-border-strong);
+  background: var(--uo-surface-selected);
+  color: var(--uo-text);
+}
+
+.uo-product .uo-loss-chart-row > strong {
+  color: var(--uo-text);
+}
+
+.uo-product :where([role="dialog"], [role="menu"], [role="listbox"]) {
+  border-color: var(--uo-border-strong);
+  background: var(--uo-surface-raised);
+  color: var(--uo-text);
+  box-shadow: var(--uo-shadow-overlay);
+}
+
+.uo-product :where(main, [data-surface-id]) h1 {
+  color: var(--uo-text);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  line-height: 28px;
+}
+.uo-product :where(main, [data-surface-id]) h2 {
+  color: var(--uo-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+.uo-product :where(p, small) { color: var(--uo-text-secondary); }
+.uo-product :where(svg [fill="#101014"], svg [fill="#1A140E"], svg [fill="#000"], svg [fill="black"]) { fill: var(--uo-accent); }
+.uo-product :where(svg [stroke="#101014"], svg [stroke="#1A140E"], svg [stroke="#000"], svg [stroke="black"]) { stroke: var(--uo-accent); }
+.uo-product :where(svg text) { fill: var(--uo-text-tertiary); }
+.uo-product :where(.recharts-cartesian-grid line, .recharts-cartesian-axis-line, .recharts-cartesian-axis-tick-line) { stroke: var(--uo-border-subtle); }
+.uo-product :where(.recharts-tooltip-wrapper > div) { border-color: var(--uo-border-strong) !important; background: var(--uo-surface-raised) !important; color: var(--uo-text) !important; box-shadow: var(--uo-shadow-overlay) !important; }
+
+.uo-product .ua-app-shell__main,
+.uo-product .ua-app-shell__scroll { min-width: 0; min-height: 0; }
+.uo-product .ua-app-shell__scroll { flex: 1; overflow: auto; background: var(--uo-canvas); }
+
+.uo-entry.ua-onboarding-handoff {
+  min-height: 100dvh;
+  background: var(--uo-canvas);
+  color: var(--uo-text);
+}
+.uo-entry .ua-onboarding-handoff__frame { background: var(--uo-canvas); }
+.uo-entry .ua-onboarding-handoff__workspace,
+.uo-entry .ua-onboarding-handoff__topbar,
+.uo-entry .ua-onboarding-handoff__connectors,
+.uo-entry .ua-onboarding-handoff__unlock-card,
+.uo-entry .ua-onboarding-handoff__demo-card,
+.uo-entry .ua-onboarding-handoff__first-run,
+.uo-entry .ua-onboarding-handoff__pending,
+.uo-entry .ua-onboarding-handoff__card,
+.uo-entry .ua-onboarding-handoff__defer {
+  border-color: var(--uo-border);
+  background: var(--uo-surface);
+  color: var(--uo-text);
+  box-shadow: none;
+}
+.uo-entry .ua-onboarding-handoff__connector { border-color: var(--uo-border-subtle); }
+.uo-entry .ua-onboarding-handoff__connector:hover { background: var(--uo-surface-hover); }
+.uo-entry .ua-onboarding-handoff__connector p,
+.uo-entry .ua-onboarding-handoff__intro p,
+.uo-entry .ua-onboarding-handoff__topbar > span { color: var(--uo-text-tertiary); }
+.uo-entry .ua-onboarding-handoff__progress,
+.uo-entry .ua-onboarding-handoff__run-track { background: var(--uo-surface-hover); }
+.uo-entry .ua-onboarding-handoff__progress i { background: var(--uo-accent); }
+
+@media (max-width: 1023px) {
+  .uo-product .ua-desktop-product { display: none !important; }
+  .uo-product + .ua-desktop-required,
+  .uo-product .ua-desktop-required { display: grid; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.uo-product, .uo-entry) *,
+  :where(.uo-product, .uo-entry) *::before,
+  :where(.uo-product, .uo-entry) *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Light-first theme authority. The authenticated product root owns the only
+ * optional dark override; entry and public surfaces remain light. */
+.uo-product:not([data-auth-theme="dark"]),
+.uo-entry {
+  color-scheme: light;
+  --uo-canvas: #F7F8FA;
+  --uo-rail: #FFFFFF;
+  --uo-surface: #FFFFFF;
+  --uo-surface-raised: #FFFFFF;
+  --uo-surface-hover: #F5F6F8;
+  --uo-surface-selected: #F0F1F4;
+  --uo-border-subtle: #ECEEF1;
+  --uo-border: #DEE1E6;
+  --uo-border-strong: #C9CDD4;
+  --uo-text: #111318;
+  --uo-text-secondary: #454B55;
+  --uo-text-tertiary: #666E7B;
+  --uo-text-disabled: #A6ACB5;
+  --uo-accent: #5B57D6;
+  --uo-accent-hover: #4946BC;
+  --uo-focus: #5B57D6;
+  --uo-button-primary: #181A1F;
+  --uo-button-primary-hover: #262931;
+  --uo-button-primary-pressed: #0F1014;
+  --uo-info: #2563A9;
+  --uo-success: #247A54;
+  --uo-warning: #8A5A00;
+  --uo-critical: #B23A43;
+  --uo-evidence: #247388;
+  --uo-shadow-overlay: 0 18px 48px rgb(17 24 39 / .14), 0 2px 8px rgb(17 24 39 / .06);
+
+  --uo-route-text-inverse: #FFFFFF;
+  --uo-route-critical: #B23A43;
+  --uo-route-warning: #8A5A00;
+  --uo-route-success: #247A54;
+  --uo-route-info: #2563A9;
+  --uo-route-info-bg: rgb(37 99 169 / .10);
+  --uo-route-info-border: rgb(37 99 169 / .28);
+  --uo-route-critical-bg: rgb(178 58 67 / .10);
+  --uo-route-critical-border: rgb(178 58 67 / .28);
+  --uo-route-warning-bg: rgb(138 90 0 / .10);
+  --uo-route-success-bg: rgb(36 122 84 / .10);
+  --uo-route-shadow-raised: 0 1px 2px rgb(17 24 39 / .06);
+  --uo-route-shadow-focus: 0 0 0 2px rgb(91 87 214 / .24);
+  --uo-route-critical-muted: rgb(178 58 67 / .12);
+  --uo-route-critical-strong: #B23A43;
+  --uo-route-info-muted: rgb(37 99 169 / .12);
+  --uo-route-success-muted: rgb(36 122 84 / .12);
+  --uo-route-success-strong: #247A54;
+  --uo-route-success-text: #247A54;
+  --uo-route-warning-muted: rgb(138 90 0 / .12);
+  --uo-route-warning-strong: #8A5A00;
+  --uo-route-workflow-active-bg: rgb(37 99 169 / .10);
+  --uo-route-workflow-active-border: rgb(37 99 169 / .28);
+  --uo-route-workflow-blocked-bg: rgb(178 58 67 / .10);
+  --uo-route-workflow-blocked-border: rgb(178 58 67 / .28);
+  --uo-route-workflow-escalated-bg: rgb(138 90 0 / .10);
+  --uo-route-workflow-escalated-border: rgb(138 90 0 / .28);
+  --uo-route-workflow-ready-bg: rgb(36 122 84 / .10);
+  --uo-route-workflow-ready-border: rgb(36 122 84 / .28);
+  --uo-route-workflow-waiting-bg: rgb(36 115 136 / .10);
+  --uo-route-workflow-waiting-border: rgb(36 115 136 / .28);
+  --uo-route-privacy-bg: rgb(36 115 136 / .10);
+  --uo-route-privacy-border: rgb(36 115 136 / .28);
+  --uo-route-shadow-1: 0 1px 2px rgb(17 24 39 / .06);
+  --uo-raw-E7F7F0: #E8F5EE;
+  --uo-raw-FDF4E3: #FFF4D9;
+  --uo-raw-FDECEA: #FDECEE;
+  --uo-raw-F6CFCB: #F1C5CB;
+  --uo-raw-F2E3C0: #EFD99C;
+  --uo-raw-10182808: rgb(17 24 39 / .06);
+  --uo-raw-1018280F: rgb(17 24 39 / .08);
+  --uo-raw-1018281F: rgb(17 24 39 / .14);
+  --uo-raw-10182838: rgb(17 24 39 / .24);
+
+  /* Legacy raw aliases keep route modules that still use the original
+   * Challenge 6 names on the same white-heavy light palette. */
+  --uo-raw-067A53: #247A54;
+  --uo-raw-10182814: rgb(17 24 39 / .08);
+  --uo-raw-12275C: #24347A;
+  --uo-raw-153B9F: #3A3AB8;
+  --uo-raw-1D3E8F: #244B9B;
+  --uo-raw-4E86F7: #4946BC;
+  --uo-raw-5FCE9E: #247A54;
+  --uo-raw-7A5209: #8A5A00;
+  --uo-raw-7A93C7: #6272B5;
+  --uo-raw-B8BCC2: #9AA1AB;
+  --uo-raw-B9E6D5: #C9E7D6;
+  --uo-raw-C7332A: #A92F3A;
+  --uo-raw-C7D9FD: #D7D5FF;
+  --uo-raw-D9573F: #B23A43;
+  --uo-raw-D9A03C: #C18A20;
+  --uo-raw-DCE4F5: #EEF0FF;
+  --uo-raw-E4F2EA: #C9E7D6;
+  --uo-raw-E7E9EE: #D7D9E0;
+  --uo-raw-EFD7A8: #EFD99C;
+  --uo-raw-F1857A: #D46A61;
+  --uo-raw-F5F8FF: #F3F2FF;
+}
+
+.uo-product:not([data-auth-theme="dark"]) .brandMark {
+  background: var(--uo-surface-raised);
+}
+
+.uo-product[data-auth-theme="dark"] .ua-brand-logo__light { display: none; }
+.uo-product[data-auth-theme="dark"] .ua-brand-logo__dark { display: block; }
+.uo-product:not([data-auth-theme="dark"]) .ua-brand-logo__light { display: block; }
+.uo-product:not([data-auth-theme="dark"]) .ua-brand-logo__dark { display: none; }
+
+/* Public, auth, and onboarding pages are always white-heavy light mode. */
+.ua-public-route,
+html[data-mode] .ua-public-route.ua-public-route {
+  color-scheme: light;
+  background: #FFFFFF;
+  color: #111318;
+}
+
+html[data-mode] .ua-auth-surface {
+  color-scheme: light;
+}

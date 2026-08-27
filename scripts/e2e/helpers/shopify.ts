@@ -1,10 +1,13 @@
 /**
- * Shopify Admin REST API (2024-01) helpers for the E2E suite.
+ * Shopify Admin REST API helpers for the E2E suite.
  * Real API calls only. Resources are returned to the caller for cleanup.
  */
-import { requireVar, shopifyStoreDomain } from './envVars';
+import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
+import { getVar, shopifyStoreDomain } from './envVars';
 
-const API_VERSION = '2024-01';
+const API_VERSION = SHOPIFY_REST_API_VERSION;
+
+let cachedClientCredentialsToken: { accessToken: string; expiresAt: number } | null = null;
 
 function adminBaseUrl(): string {
   return `https://${shopifyStoreDomain()}/admin/api/${API_VERSION}`;
@@ -23,7 +26,7 @@ async function shopifyRequest<T>(method: string, path: string, body?: unknown): 
   const res = await fetch(url, {
     method,
     headers: {
-      'X-Shopify-Access-Token': requireVar('SHOPIFY_ADMIN_API_TOKEN'),
+      'X-Shopify-Access-Token': await accessToken(),
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
@@ -34,6 +37,54 @@ async function shopifyRequest<T>(method: string, path: string, body?: unknown): 
     throw new Error(`Shopify ${method} ${path} → ${res.status}: ${text.slice(0, 400)}`);
   }
   return (text ? JSON.parse(text) : {}) as T;
+}
+
+async function accessToken(): Promise<string> {
+  const clientId = getVar('SHOPIFY_API_KEY');
+  const clientSecret = getVar('SHOPIFY_API_SECRET');
+
+  if (clientId && clientSecret) {
+    if (cachedClientCredentialsToken && cachedClientCredentialsToken.expiresAt > Date.now() + 60_000) {
+      return cachedClientCredentialsToken.accessToken;
+    }
+
+    const response = await fetch(`https://${shopifyStoreDomain()}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+      }).toString(),
+    });
+    const raw = await response.text();
+    let payload: { access_token?: unknown; expires_in?: unknown } = {};
+    try {
+      payload = raw ? (JSON.parse(raw) as typeof payload) : {};
+    } catch {
+      // Keep the bounded response below for a non-JSON provider error.
+    }
+    if (!response.ok) {
+      throw new Error(`Shopify client-credentials request → ${response.status}: ${raw.slice(0, 400)}`);
+    }
+
+    const value = typeof payload.access_token === 'string' ? payload.access_token.trim() : '';
+    if (!value) throw new Error('Shopify client-credentials response omitted an access token');
+    const expiresIn = typeof payload.expires_in === 'number' && Number.isFinite(payload.expires_in)
+      ? payload.expires_in
+      : 86_400;
+    cachedClientCredentialsToken = {
+      accessToken: value,
+      expiresAt: Date.now() + Math.max(60, expiresIn) * 1000,
+    };
+    return value;
+  }
+
+  const legacyToken = getVar('SHOPIFY_ADMIN_API_TOKEN');
+  if (legacyToken) return legacyToken;
+  throw new Error(
+    'Shopify authentication is missing: configure SHOPIFY_API_KEY + SHOPIFY_API_SECRET or SHOPIFY_ADMIN_API_TOKEN',
+  );
 }
 
 export type ShopifyAddress = {

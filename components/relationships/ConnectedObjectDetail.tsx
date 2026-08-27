@@ -1,421 +1,294 @@
-import Link from "next/link";
-import {
-  ExternalLink,
-} from "lucide-react";
-import type {
-  ObjectConversationEntry,
-  ObjectFact,
-  ObjectItem,
-  ObjectSummary,
-} from "@/lib/relationships/objectSummary";
-import { InsetGroup, JoinedSection, Surface } from "@/components/ui";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-import { formatCurrencyNullable, formatDateTime, formatNumber } from "@/lib/utils/format";
-import { objectDisplayRef } from "@/lib/ui/displayRef";
-import { DetailPageShell } from "@/components/workbench/DetailPageShell";
+import Link from 'next/link';
+import type { CSSProperties } from 'react';
+import { ExternalLink, MoveRight } from 'lucide-react';
+import type { ObjectFact, ObjectLink, ObjectSummary } from '@/lib/relationships/objectSummary';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { Provenance } from '@/components/ui/Provenance';
+import { Surface } from '@/components/ui/Surface';
+import { UnavailableValue } from '@/components/ui/ProductValue';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { DetailPageShell } from '@/components/workbench/DetailPageShell';
+import { EvidenceSpine, type EvidenceThreadItem } from '@/components/ui/EvidenceThread';
+import { formatCurrencyNullable, formatDateTime, formatNumber } from '@/lib/utils/format';
+import { objectDisplayRef } from '@/lib/ui/displayRef';
 
-function label(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
-}
-function factValue(item: ObjectFact) {
-  if (item.kind === "money")
-    return typeof item.value === "number"
-      ? formatCurrencyNullable(item.value, item.currency)
-      : "Unavailable";
-  if (item.kind === "date")
-    return typeof item.value === "string"
-      ? formatDateTime(item.value)
-      : "Unavailable";
-  if (item.kind === "boolean")
-    return item.value === true
-      ? "Yes"
-      : item.value === false
-        ? "No"
-        : "Unavailable";
-  if (item.kind === "number" && typeof item.value === "number")
-    return formatNumber(item.value);
-  return String(item.value ?? "Unavailable").replaceAll("_", " ");
-}
+function human(value: string) { return value.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase()); }
+function titleFor(object: ObjectSummary) { return objectDisplayRef(object.type, object.reference, object.id); }
+function surfaceId(object: ObjectSummary) { return `${object.type === 'ticket' ? 'support-ticket' : object.type}-detail`; }
 
-function isCommerceObject(type: ObjectSummary["type"]) {
-  return type === "order" || type === "refund" || type === "return" || type === "shipment";
+// F-34: every node in the relationship map shares one geometry (padding +
+// minimum height) regardless of column — only the current node is visually
+// emphasised, and it is emphasised with the shared selection axis (§14.3)
+// rather than an ad hoc highlight colour.
+const RELATIONSHIP_NODE_STYLE: CSSProperties = { padding: '10px 12px', minHeight: 56 };
+const RELATIONSHIP_NODE_SOURCE_STYLE: CSSProperties = { ...RELATIONSHIP_NODE_STYLE, borderTopColor: 'var(--uo-route-border-default)' };
+const RELATIONSHIP_NODE_CURRENT_STYLE: CSSProperties = {
+  ...RELATIONSHIP_NODE_STYLE,
+  background: 'var(--uo-route-selection-fill)',
+  borderColor: 'var(--uo-route-selection-border)',
+  boxShadow: 'inset 2px 0 0 var(--uo-route-selection-border)',
+};
+
+// F-14: "paid" is a payment fact observed from the connected source, not a
+// recovery outcome. StatusBadge defaults "paid" to outcome/recovered (green)
+// because the same string also means a completed recovery elsewhere in the
+// product; a connected-object page is never resolving a recovery, so it must
+// pass the explicit source/observed override StatusBadge.tsx documents for
+// this exact ambiguity, disambiguating by family (this surface), not value.
+function connectedObjectStateBadgeProps(state: string | null | undefined) {
+  return state === 'paid' ? ({ axis: 'source', tone: 'observed' } as const) : {};
 }
 
-function titleFor(object: ObjectSummary) {
-  if (object.type === "ticket") {
-    const subject = object.facts.find((item) => item.label === "Subject")?.value;
-    return typeof subject === "string" && subject.trim() ? subject : "Support ticket";
+const INTERNAL_RETURN_BASE = 'https://unauth.internal';
+const FORBIDDEN_CONNECTED_INDEXES = new Set(['/orders', '/shipments', '/tickets', '/refunds', '/returns', '/disputes']);
+const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
+
+export function safeInternalReturn(raw?: string): string | null {
+  if (!raw || raw !== raw.trim() || !raw.startsWith('/') || raw.startsWith('//')) return null;
+  if (raw.includes('\\') || CONTROL_CHARACTER.test(raw)) return null;
+  try {
+    const parsed = new URL(raw, INTERNAL_RETURN_BASE);
+    if (parsed.origin !== INTERNAL_RETURN_BASE) return null;
+    const decodedPathname = decodeURIComponent(parsed.pathname);
+    if (decodedPathname.includes('\\') || decodedPathname.startsWith('//') || CONTROL_CHARACTER.test(decodedPathname)) return null;
+    const normalizedPathname = decodedPathname.length > 1 ? decodedPathname.replace(/\/+$/, '') : decodedPathname;
+    if (FORBIDDEN_CONNECTED_INDEXES.has(normalizedPathname)) return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
   }
-  if (object.type === "dispute") {
-    const disputeType = object.facts.find((item) => item.label === "Dispute type")?.value;
-    return typeof disputeType === "string" && disputeType.trim()
-      ? `${label(disputeType)} dispute`
-      : "Dispute";
-  }
-  return objectDisplayRef(object.type, object.reference, object.id);
 }
 
-function safeReturnPath(returnTo: string | undefined) {
-  return returnTo?.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;
+function objectLinkIdentity(link: ObjectLink): string {
+  return link.role ? `${link.type}:${link.id}:${link.role}` : `${link.type}:${link.id}`;
 }
 
-function itemTitle(type: ObjectSummary["type"]) {
-  if (type === "shipment") return "Shipment items";
-  if (type === "refund") return "Related order items";
-  if (type === "return") return "Order items";
-  return "Items";
+export function uniqueObjectLinks(links: ObjectLink[]): ObjectLink[] {
+  const seen = new Set<string>();
+  return links.filter((link) => {
+    const identity = objectLinkIdentity(link);
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
 }
 
-function itemSummary(item: ObjectItem) {
-  const parts = [
-    item.sku ? `SKU ${item.sku}` : null,
-    item.quantity === null ? null : `Quantity ${formatNumber(item.quantity)}`,
-    item.amount === null ? null : formatCurrencyNullable(item.amount, item.currency),
-  ].filter(Boolean);
-  return parts.join(" · ") || "Source item details unavailable";
+export type ConnectedObjectBackLink = { href: string; label: string };
+
+function requestedReturnLabel(href: string): string {
+  const segment = new URL(href, INTERNAL_RETURN_BASE).pathname.split('/').filter(Boolean)[0];
+  if (segment === 'work') return 'Back to work';
+  if (segment === 'cases') return 'Back to cases';
+  if (segment === 'customers') return 'Back to customers';
+  if (segment === 'financials') return 'Back to financials';
+  if (segment === 'sources') return 'Back to sources';
+  if (segment === 'search') return 'Back to search';
+  return 'Back to previous view';
 }
 
-function conversationTitle(entry: ObjectConversationEntry) {
-  if (entry.kind === "message")
-    return entry.actor ? `${label(entry.actor)} message` : "Message";
-  return label(entry.title);
+export function resolveConnectedObjectBackLink(object: ObjectSummary, requestedReturn?: string): ConnectedObjectBackLink {
+  const safeReturn = safeInternalReturn(requestedReturn);
+  if (safeReturn) return { href: safeReturn, label: requestedReturnLabel(safeReturn) };
+  if (object.customer) return { href: object.customer.href, label: 'Back to customer' };
+  return { href: `/search?q=${encodeURIComponent(object.reference)}`, label: 'Search workspace' };
 }
 
-function connectedReturnPath(object: ObjectSummary) {
-  return `/${object.type}s/${object.id}`;
+function FactValue({ fact }: { fact: ObjectFact }) {
+  if (fact.value == null) return <UnavailableValue reason={`${fact.label} was not supplied by the source`} />;
+  if (fact.kind === 'money') return typeof fact.value === 'number' ? formatCurrencyNullable(fact.value, fact.currency) : <UnavailableValue reason="Invalid source amount" />;
+  if (fact.kind === 'date') return typeof fact.value === 'string' ? formatDateTime(fact.value) : <UnavailableValue reason="Invalid source timestamp" />;
+  if (fact.kind === 'boolean') return fact.value ? 'Yes' : 'No';
+  if (fact.kind === 'number') return typeof fact.value === 'number' ? formatNumber(fact.value) : <UnavailableValue reason="Invalid numeric value" />;
+  return String(fact.value).replaceAll('_', ' ');
 }
 
-function CommerceConnectedObjectDetail({
+function ConnectedRelationshipMap({
   object,
-  returnTo,
+  source,
+  links,
 }: {
   object: ObjectSummary;
-  returnTo?: string;
+  source: string;
+  links: ObjectLink[];
 }) {
-  const sourceUpdatedAt = object.provenance?.sourceUpdatedAt ?? object.provenance?.lastSyncedAt ?? object.updatedAt;
-  const returnPath = safeReturnPath(returnTo);
-  const backHref = returnPath ?? "/customers";
-  const backLabel = returnPath ? "Previous task" : "Customers";
-  const customer = object.customer;
-  const financialFacts = object.facts.filter((item) => item.kind === "money");
-  const operationalFacts = object.facts.filter((item) => item.kind !== "money");
-  const linkedRecords = object.connected.filter((item) => item.type !== "customer");
-  const lifecycleTitle = object.type === "shipment" ? "Tracking milestones" : "Lifecycle";
+  const visibleLinks = links.slice(0, 4);
+  const hiddenCount = Math.max(0, links.length - visibleLinks.length);
+
+  return (
+    <Surface
+      structure="working"
+      as="section"
+      className="ua-connected-map"
+      aria-labelledby="connected-map-title"
+    >
+      <header className="ua-working-surface__header">
+        <div>
+          <h2 id="connected-map-title" className="ua-text-working-title">Record relationship</h2>
+          <p className="ua-text-caption-role">Source identity, this record, and canonical links remain separately addressable</p>
+        </div>
+        <span className="ua-text-metadata">{formatNumber(links.length)} linked</span>
+      </header>
+      <div className="ua-connected-map__plot" role="list" aria-label="Connected record relationships">
+        <span className="ua-connected-map__node" data-node="source" role="listitem" style={RELATIONSHIP_NODE_SOURCE_STYLE}>
+          <small>Source</small>
+          <strong>{human(source)}</strong>
+        </span>
+        <MoveRight className="ua-connected-map__connector" size={16} aria-hidden="true" />
+        <span className="ua-connected-map__node" data-node="current" role="listitem" style={RELATIONSHIP_NODE_CURRENT_STYLE}>
+          <small>{human(object.type)}</small>
+          <strong>{titleFor(object)}</strong>
+        </span>
+        {visibleLinks.length ? <span className="ua-connected-map__connector" data-kind="relationship" aria-hidden="true" /> : null}
+        <span className="ua-connected-map__links" role="listitem">
+          {visibleLinks.map((linked) => (
+            <Link href={linked.href} key={objectLinkIdentity(linked)} className="ua-connected-map__node" data-node="linked" style={RELATIONSHIP_NODE_STYLE}>
+              <small>{linked.role ? human(linked.role) : human(linked.type)}</small>
+              <strong>{objectDisplayRef(linked.type, linked.reference, linked.id)}</strong>
+            </Link>
+          ))}
+          {hiddenCount ? <small className="ua-connected-map__more">+{formatNumber(hiddenCount)} more in Connected records</small> : null}
+          {!visibleLinks.length ? <span className="ua-connected-map__open">No canonical links recorded</span> : null}
+        </span>
+      </div>
+    </Surface>
+  );
+}
+
+export function buildOrderEvidenceSpine(object: ObjectSummary): EvidenceThreadItem[] {
+  if (object.type !== 'order') return [];
+  const source = object.provenance?.sourceSystem ?? object.provider ?? 'Connected source';
+  const updated = object.provenance?.sourceUpdatedAt ?? object.provenance?.lastSyncedAt ?? object.updatedAt;
+  const freshness = object.provenance?.freshness === 'stale' ? 'stale' : 'known';
+  return [
+    {
+      key: `source-${object.id}`,
+      authority: 'source',
+      label: 'Source order',
+      value: titleFor(object),
+      meta: `${human(source)} · ${updated ? formatDateTime(updated) : 'Freshness unavailable'}`,
+      state: freshness,
+    },
+    ...object.connected
+      .filter((linked) => linked.type === 'shipment' || linked.type === 'fulfilment')
+      .map((linked) => ({
+        key: `fulfilment-${linked.type}-${linked.id}`,
+        authority: 'fact' as const,
+        label: linked.type === 'shipment' ? 'Fulfilment and delivery' : 'Fulfilment',
+        value: objectDisplayRef(linked.type, linked.reference, linked.id),
+        meta: linked.state ? human(linked.state) : 'State unavailable',
+        href: linked.href,
+        state: 'recorded' as const,
+      })),
+    ...object.evidence.map((entry) => ({
+      key: `evidence-${entry.id}`,
+      authority: 'fact' as const,
+      label: entry.title,
+      value: entry.summary,
+      meta: `${human(entry.provider)} · ${entry.occurredAt ? formatDateTime(entry.occurredAt) : 'Time unavailable'} · ${human(entry.confidence)}`,
+      state: 'recorded' as const,
+    })),
+    ...object.payoutCases.map((linked) => ({
+      key: `case-${linked.id}`,
+      authority: 'fact' as const,
+      label: 'Linked case',
+      value: objectDisplayRef(linked.type, linked.reference, linked.id),
+      meta: linked.state ? `Workflow state: ${human(linked.state)}` : 'Workflow state unavailable',
+      href: linked.href,
+      state: 'recorded' as const,
+    })),
+    ...object.connected
+      .filter((linked) => linked.type === 'recovery')
+      .map((linked) => ({
+        key: `recovery-${linked.id}`,
+        authority: 'external-action' as const,
+        label: 'Linked recovery',
+        value: objectDisplayRef(linked.type, linked.reference, linked.id),
+        meta: linked.state ? human(linked.state) : 'Recovery state unavailable',
+        href: linked.href,
+        state: 'recorded' as const,
+      })),
+  ];
+}
+
+export function ConnectedObjectDetail({ object, returnTo }: { object: ObjectSummary; returnTo?: string }) {
+  const source = object.provenance?.sourceSystem ?? object.provider ?? 'Connected source';
+  const updated = object.provenance?.sourceUpdatedAt ?? object.provenance?.lastSyncedAt ?? object.updatedAt;
+  const freshness = object.provenance?.freshness === 'current' ? 'current' : object.provenance?.freshness === 'stale' ? 'stale' : 'unknown';
+  const timeline = object.timeline.map((item, index) => ({ id: `${item.label}-${item.at ?? index}`, label: item.label, source, timestamp: item.at ? formatDateTime(item.at) : 'Time unavailable', detail: item.detail ? human(item.detail) : undefined }));
+  const primaryConnected = object.payoutCases[0] ?? object.customer ?? object.connected[0] ?? null;
+  const evidenceSpine = buildOrderEvidenceSpine(object);
+  const backLink = resolveConnectedObjectBackLink(object, returnTo);
+  const connectedLinks = uniqueObjectLinks([...(object.customer ? [object.customer] : []), ...object.connected, ...object.payoutCases]);
 
   return (
     <DetailPageShell
-      backHref={backHref}
-      backLabel={backLabel}
-      eyebrow={`${label(object.type)} record`}
+      backHref={backLink.href}
+      backLabel={backLink.label}
       title={titleFor(object)}
-      subtitle={object.type === "shipment" ? "Carrier and delivery context" : "Connected source record"}
-      statusBadge={<StatusBadge family="workflowStatus" value={object.state ?? "unknown"} />}
-      meta={[
-        { label: "Source", value: label(object.provenance?.sourceSystem ?? object.provider ?? "connected source") },
-        ...(customer
-          ? [{ label: "Customer", value: <Link href={customer.href}>{customer.reference}</Link> }]
-          : []),
-        { label: "Updated", value: sourceUpdatedAt ? formatDateTime(sourceUpdatedAt) : "Time unavailable" },
-      ]}
-      actions={
-        object.provenance?.sourceUrl ? (
-          <a
-            href={object.provenance.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="ua-text-label inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 hover:bg-[var(--ua-surface-hover)]"
-          >
-            Open in {label(object.provenance.sourceSystem)} <ExternalLink className="h-3 w-3" />
-          </a>
-        ) : undefined
-      }
+      subtitle="Source-backed identity, financial context, relationships, and history."
+      statusBadge={<StatusBadge family="workflowStatus" value={object.state ?? 'unknown'} {...connectedObjectStateBadgeProps(object.state)} />}
+      meta={[{ value: <Provenance source={human(source)} freshness={freshness} updatedAt={updated ? formatDateTime(updated) : undefined} /> }]}
+      actions={<>{primaryConnected ? <Link className="ua-button ua-button--primary ua-button--sm" href={primaryConnected.href}>Open {human(primaryConnected.type)}</Link> : null}{object.provenance?.sourceUrl ? <a className="ua-button ua-button--secondary ua-button--sm" href={object.provenance.sourceUrl} target="_blank" rel="noreferrer">Open source <ExternalLink size={14} aria-hidden="true" /></a> : null}</>}
     >
-      <Surface structure="working" data-testid="commerce-object-detail">
-        {financialFacts.length ? (
-          <JoinedSection className="ua-connected-object-lead" aria-labelledby="commerce-financial-context">
-            <h2 id="commerce-financial-context" className="ua-text-working-title text-[var(--ua-text-primary)]">Financial context</h2>
-            <dl className="mt-3 grid gap-x-5 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
-              {financialFacts.map((item) => (
-                <div key={item.label}>
-                  <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{item.label}</dt>
-                  <dd className="mt-1 ua-text-working-title text-[var(--ua-text-primary)]">{factValue(item)}</dd>
-                </div>
-              ))}
+      <div className="ua-detail-layout" data-surface-id={surfaceId(object)} data-archetype="P7">
+        <ConnectedRelationshipMap object={object} source={source} links={connectedLinks} />
+        <div className="ua-detail-main">
+          <Surface structure="working" as="section" aria-labelledby="record-facts">
+            <header className="ua-working-surface__header"><div><h2 id="record-facts" className="ua-text-working-title">Record facts</h2><p className="ua-text-caption-role">Values exactly as available from the connected record</p></div></header>
+            <dl className="ua-detail-facts">
+              {object.amount != null ? <div><dt>Amount</dt><dd>{formatCurrencyNullable(object.amount, object.currency)}</dd></div> : null}
+              {object.facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd><FactValue fact={fact} /></dd></div>)}
+              {object.facts.length === 0 && object.amount == null ? <div><dt>Source facts</dt><dd><UnavailableValue reason="No source facts were returned" /></dd></div> : null}
             </dl>
-          </JoinedSection>
-        ) : null}
-        {operationalFacts.length ? (
-          <JoinedSection aria-labelledby="commerce-object-facts">
-            <h2 id="commerce-object-facts" className="ua-text-working-title text-[var(--ua-text-primary)]">Record details</h2>
-            <dl className="mt-3 grid gap-x-5 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
-              {operationalFacts.map((item) => (
-                <div key={item.label}>
-                  <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{item.label}</dt>
-                  <dd className="mt-1 break-words text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-primary)]">{factValue(item)}</dd>
-                </div>
-              ))}
-            </dl>
-          </JoinedSection>
-        ) : null}
-        <JoinedSection aria-labelledby="commerce-items">
-          <h2 id="commerce-items" className="ua-text-working-title text-[var(--ua-text-primary)]">{itemTitle(object.type)}</h2>
-          {object.items.length ? (
-            <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
-              {object.items.map((item) => (
-                <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
-                  <span className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-primary)]">{item.title}</span>
-                  <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{itemSummary(item)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">No item-level source records are available.</p>
-          )}
-        </JoinedSection>
-        <JoinedSection aria-labelledby="commerce-lifecycle">
-          <h2 id="commerce-lifecycle" className="ua-text-working-title text-[var(--ua-text-primary)]">{lifecycleTitle}</h2>
-          {object.timeline.length ? (
-            <ol className="relative mt-3 divide-y divide-[var(--ua-border-subtle)] before:absolute before:bottom-5 before:left-[9px] before:top-5 before:w-px before:bg-[var(--ua-border-default)]">
-              {object.timeline.map((item) => (
-                <li key={`${item.label}-${item.at ?? "unknown"}-${item.detail ?? ""}`} className="relative grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2.5 py-3">
-                  <span className="z-10 mt-1 h-2 w-2 justify-self-center rounded-full bg-[var(--ua-action-primary)] ring-2 ring-[var(--ua-surface-primary)]" />
-                  <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <strong className="text-[length:var(--ua-text-metadata-size)]">{item.label}</strong>
-                      <time className="tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]" dateTime={item.at ?? undefined}>
-                        {item.at ? formatDateTime(item.at) : "Time unavailable"}
-                      </time>
-                    </div>
-                    {item.detail ? <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{label(item.detail)}</p> : null}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">No source lifecycle timestamps are available.</p>
-          )}
-        </JoinedSection>
-        <JoinedSection aria-labelledby="commerce-connected-records">
-          <h2 id="commerce-connected-records" className="ua-text-working-title text-[var(--ua-text-primary)]">Connected records</h2>
-          {linkedRecords.length ? (
-            <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
-              {linkedRecords.map((connected) => (
-                <li key={`${connected.type}:${connected.id}`}>
-                  <Link href={`${connected.href}?return=${encodeURIComponent(`/${object.type}s/${object.id}`)}`} className="flex min-h-12 items-center justify-between gap-3 px-3 py-2.5 hover:bg-[var(--ua-surface-hover)]">
-                    <span className="min-w-0">
-                      <span className="block text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{label(connected.type)}</span>
-                      <span className="ua-text-working-title block break-words text-[var(--ua-text-primary)]">{objectDisplayRef(connected.type, connected.reference, connected.id)}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2 text-[length:var(--ua-text-metadata-size)]">
-                      {connected.state ? <StatusBadge family="workflowStatus" value={connected.state} size="sm" /> : null}
-                      <span className="text-[var(--ua-action-primary)]">Open</span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">No linked customer, case, or source record is available.</p>
-          )}
-        </JoinedSection>
-        <JoinedSection aria-labelledby="commerce-provenance">
-          <h2 id="commerce-provenance" className="ua-text-working-title text-[var(--ua-text-primary)]">Source and freshness</h2>
-          <InsetGroup className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2" data-testid="connected-object-provenance">
-            <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">From {label(object.provenance?.sourceSystem ?? object.provider ?? "connected source")}</span>
-            <StatusBadge family="workflowStatus" value={object.provenance?.freshness ?? "unknown"} size="sm" />
-            <StatusBadge family="workflowStatus" value={object.provenance?.syncState ?? "unknown"} size="sm" />
-            <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{sourceUpdatedAt ? `Source updated ${formatDateTime(sourceUpdatedAt)}` : "Source update time unavailable"}</span>
-          </InsetGroup>
-        </JoinedSection>
-      </Surface>
+          </Surface>
+
+          {object.type === 'ticket' ? (
+            <Surface structure="working" as="section" aria-labelledby="record-conversation">
+              <header className="ua-working-surface__header"><div><h2 id="record-conversation" className="ua-text-working-title">Conversation</h2><p className="ua-text-caption-role">Messages and source activity in recorded order</p></div><span className="ua-text-metadata">{formatNumber(object.conversation.length)} entries</span></header>
+              {object.conversation.length ? <ol className="ua-conversation-thread">{object.conversation.map((entry) => <li key={entry.id}><div><strong>{entry.actor ?? human(entry.kind)}</strong><span>{entry.visibility ? human(entry.visibility) : 'Visibility unavailable'} · {entry.at ? formatDateTime(entry.at) : 'Time unavailable'}</span></div><p>{entry.summary ?? entry.title}</p></li>)}</ol> : <div className="ua-operational-state" data-state-id="ticket-conversation-unavailable"><p className="ua-operational-state__title">Conversation unavailable</p><p className="ua-operational-state__description">The connected helpdesk did not return message content for this ticket.</p></div>}
+            </Surface>
+          ) : null}
+
+          {['order', 'refund', 'return', 'shipment'].includes(object.type) ? <Surface structure="working" as="section" aria-labelledby="record-items">
+            <header className="ua-working-surface__header"><div><h2 id="record-items" className="ua-text-working-title">Items</h2><p className="ua-text-caption-role">Line-level source records</p></div><span className="ua-text-metadata">{formatNumber(object.items.length)} items</span></header>
+            {object.items.length ? <ul className="ua-detail-list">{object.items.map((item) => <li key={item.id}><span><strong>{item.title}</strong><small>{item.sku ? `SKU ${item.sku}` : 'SKU unavailable'} · {item.quantity == null ? 'Quantity unavailable' : `Quantity ${formatNumber(item.quantity)}`}</small></span><span>{item.amount == null ? <UnavailableValue reason="No item amount" /> : formatCurrencyNullable(item.amount, item.currency)}</span></li>)}</ul> : <div className="ua-operational-state" data-state-id={`${object.type}-items-unavailable`}><p className="ua-operational-state__title">No item records</p><p className="ua-operational-state__description">The connected source did not provide line-level records.</p></div>}
+          </Surface> : null}
+
+          {object.evidence.length ? <Surface structure="working" as="section" aria-labelledby="record-evidence"><header className="ua-working-surface__header"><div><h2 id="record-evidence" className="ua-text-working-title">Source evidence</h2><p className="ua-text-caption-role">Connected observations, not merchant decisions</p></div></header><ul className="ua-detail-list">{object.evidence.map((entry) => <li key={entry.id}><span><strong>{entry.title}</strong><small>{human(entry.type)} · {human(entry.provider)} · {entry.occurredAt ? formatDateTime(entry.occurredAt) : 'Time unavailable'}</small></span><span className="ua-text-caption-role">{human(entry.confidence)}</span></li>)}</ul></Surface> : null}
+
+          {object.type === 'order' ? (
+            <Surface structure="working" as="section" aria-labelledby="order-evidence-spine">
+              <header className="ua-working-surface__header"><div><h2 id="order-evidence-spine" className="ua-text-working-title">Evidence spine</h2><p className="ua-text-caption-role">Source order, fulfilment proof, linked case, and recovery remain distinct and traceable</p></div></header>
+              <div className="ua-working-surface__body--padded">
+                <EvidenceSpine
+                  label="Order evidence and decision sequence"
+                  items={evidenceSpine.length > 1 ? evidenceSpine : [...evidenceSpine, {
+                    key: 'order-evidence-unavailable',
+                    authority: 'fact',
+                    label: 'Connected evidence',
+                    value: 'No linked fulfilment proof, case, or recovery was returned for this record.',
+                    state: 'missing',
+                  }]}
+                />
+              </div>
+            </Surface>
+          ) : null}
+
+          <Surface structure="working" as="section" aria-labelledby="record-history">
+            <header className="ua-working-surface__header"><div><h2 id="record-history" className="ua-text-working-title">History</h2><p className="ua-text-caption-role">Source lifecycle events in recorded order</p></div></header>
+            <div className="ua-working-surface__body--padded"><AuditTimeline items={timeline} empty={<UnavailableValue reason="No lifecycle events were returned" />} /></div>
+          </Surface>
+        </div>
+
+        <aside className="ua-detail-rail" aria-label="Connected context">
+          <Surface structure="working" as="section">
+            <header className="ua-working-surface__header"><h2 className="ua-text-working-title">Connected records</h2></header>
+            {connectedLinks.length ? <ul className="ua-connected-list">
+              {connectedLinks.map((linked) => <li key={objectLinkIdentity(linked)}><Link href={linked.href}><span><small>{linked.role ? human(linked.role) : human(linked.type)}</small><strong>{objectDisplayRef(linked.type, linked.reference, linked.id)}</strong></span><MoveRight size={14} aria-hidden="true" /></Link></li>)}
+            </ul> : <div className="ua-operational-state"><p className="ua-operational-state__description">No connected records are available.</p></div>}
+          </Surface>
+        </aside>
+      </div>
     </DetailPageShell>
   );
-}
-
-/**
- * Phase 20 deliberately shares the Phase-19 detail shell while letting a
- * support ticket lead with its actual conversation and a dispute lead with its
- * financial and source lifecycle facts. Neither route creates a second case
- * timeline or treats provider identifiers as merchant-facing identity.
- */
-function SupportConnectedObjectDetail({
-  object,
-  returnTo,
-}: {
-  object: ObjectSummary;
-  returnTo?: string;
-}) {
-  const sourceUpdatedAt = object.provenance?.sourceUpdatedAt ?? object.provenance?.lastSyncedAt ?? object.updatedAt;
-  const returnPath = safeReturnPath(returnTo);
-  const backHref = returnPath ?? "/customers";
-  const backLabel = returnPath ? "Previous task" : "Customers";
-  const financialFacts = object.facts.filter((item) => item.kind === "money");
-  const operationalFacts = object.facts.filter(
-    (item) => item.kind !== "money" && !(object.type === "ticket" && item.label === "Subject"),
-  );
-  const linkedRecords = object.connected.filter((item) => item.type !== "customer");
-  const isTicket = object.type === "ticket";
-
-  return (
-    <DetailPageShell
-      backHref={backHref}
-      backLabel={backLabel}
-      eyebrow={isTicket ? "Support ticket" : "Dispute record"}
-      title={titleFor(object)}
-      subtitle={isTicket ? "Customer conversation and linked operational context" : "Payment dispute and connected operational context"}
-      statusBadge={<StatusBadge family="workflowStatus" value={object.state ?? "unknown"} />}
-      meta={[
-        { label: "Source", value: label(object.provenance?.sourceSystem ?? object.provider ?? "connected source") },
-        ...(object.customer
-          ? [{ label: "Customer", value: <Link href={object.customer.href}>{object.customer.reference}</Link> }]
-          : []),
-        { label: "Updated", value: sourceUpdatedAt ? formatDateTime(sourceUpdatedAt) : "Time unavailable" },
-      ]}
-      actions={
-        object.provenance?.sourceUrl ? (
-          <a
-            href={object.provenance.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="ua-text-label inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 hover:bg-[var(--ua-surface-hover)]"
-          >
-            Open in {label(object.provenance.sourceSystem)} <ExternalLink className="h-3 w-3" />
-          </a>
-        ) : undefined
-      }
-    >
-      <Surface structure="working" data-testid="support-object-detail">
-        {isTicket ? (
-          <JoinedSection className="ua-connected-object-lead" aria-labelledby="ticket-conversation">
-            <h2 id="ticket-conversation" className="ua-text-working-title text-[var(--ua-text-primary)]">Conversation and activity</h2>
-            {object.conversation.length ? (
-              <ol className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
-                {object.conversation.map((entry) => (
-                  <li key={`${entry.kind}:${entry.id}`} className="px-3 py-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <strong className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-primary)]">{conversationTitle(entry)}</strong>
-                      <time className="tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]" dateTime={entry.at ?? undefined}>
-                        {entry.at ? formatDateTime(entry.at) : "Time unavailable"}
-                      </time>
-                    </div>
-                    {entry.summary ? <p className="mt-1 text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">{entry.summary}</p> : null}
-                    {entry.visibility ? <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{label(entry.visibility)}</p> : null}
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">No messages or ticket activity are available from this source.</p>
-            )}
-          </JoinedSection>
-        ) : null}
-        {financialFacts.length ? (
-          <JoinedSection className={!isTicket ? "ua-connected-object-lead" : undefined} aria-labelledby="support-financial-context">
-            <h2 id="support-financial-context" className="ua-text-working-title text-[var(--ua-text-primary)]">Financial context</h2>
-            <dl className="mt-3 grid gap-x-5 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
-              {financialFacts.map((item) => (
-                <div key={item.label}>
-                  <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{item.label}</dt>
-                  <dd className="mt-1 ua-text-working-title text-[var(--ua-text-primary)]">{factValue(item)}</dd>
-                </div>
-              ))}
-            </dl>
-          </JoinedSection>
-        ) : null}
-        {operationalFacts.length ? (
-          <JoinedSection aria-labelledby="support-record-details">
-            <h2 id="support-record-details" className="ua-text-working-title text-[var(--ua-text-primary)]">{isTicket ? "Ticket details" : "Dispute details"}</h2>
-            <dl className="mt-3 grid gap-x-5 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
-              {operationalFacts.map((item) => (
-                <div key={item.label}>
-                  <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{item.label}</dt>
-                  <dd className="mt-1 break-words text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-primary)]">{factValue(item)}</dd>
-                </div>
-              ))}
-            </dl>
-          </JoinedSection>
-        ) : null}
-        {!isTicket ? (
-          <JoinedSection aria-labelledby="dispute-lifecycle">
-            <h2 id="dispute-lifecycle" className="ua-text-working-title text-[var(--ua-text-primary)]">Dispute lifecycle</h2>
-            {object.timeline.length ? (
-              <ol className="relative mt-3 divide-y divide-[var(--ua-border-subtle)] before:absolute before:bottom-5 before:left-[9px] before:top-5 before:w-px before:bg-[var(--ua-border-default)]">
-                {object.timeline.map((item) => (
-                  <li key={`${item.label}-${item.at ?? "unknown"}-${item.detail ?? ""}`} className="relative grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2.5 py-3">
-                    <span className="z-10 mt-1 h-2 w-2 justify-self-center rounded-full bg-[var(--ua-action-primary)] ring-2 ring-[var(--ua-surface-primary)]" />
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <strong className="text-[length:var(--ua-text-metadata-size)]">{item.label}</strong>
-                        <time className="tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]" dateTime={item.at ?? undefined}>{item.at ? formatDateTime(item.at) : "Time unavailable"}</time>
-                      </div>
-                      {item.detail ? <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{label(item.detail)}</p> : null}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            ) : <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">No source lifecycle timestamps are available.</p>}
-          </JoinedSection>
-        ) : null}
-        {object.evidence.length ? (
-          <JoinedSection aria-labelledby="support-case-evidence">
-            <h2 id="support-case-evidence" className="ua-text-working-title text-[var(--ua-text-primary)]">Case evidence</h2>
-            <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
-              {object.evidence.map((item) => (
-                <li key={item.id} className="px-3 py-2.5">
-                  <strong className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-primary)]">{item.title}</strong>
-                  <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{item.summary}</p>
-                </li>
-              ))}
-            </ul>
-          </JoinedSection>
-        ) : null}
-        <JoinedSection aria-labelledby="support-connected-records">
-          <h2 id="support-connected-records" className="ua-text-working-title text-[var(--ua-text-primary)]">Connected records</h2>
-          {linkedRecords.length ? (
-            <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
-              {linkedRecords.map((connected) => (
-                <li key={`${connected.type}:${connected.id}`}>
-                  <Link href={`${connected.href}?return=${encodeURIComponent(connectedReturnPath(object))}`} className="flex min-h-12 items-center justify-between gap-3 px-3 py-2.5 hover:bg-[var(--ua-surface-hover)]">
-                    <span className="min-w-0">
-                      <span className="block text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{label(connected.type)}</span>
-                      <span className="ua-text-working-title block break-words text-[var(--ua-text-primary)]">{objectDisplayRef(connected.type, connected.reference, connected.id)}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2 text-[length:var(--ua-text-metadata-size)]">
-                      {connected.state ? <StatusBadge family="workflowStatus" value={connected.state} size="sm" /> : null}
-                      <span className="text-[var(--ua-action-primary)]">Open</span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">No linked customer, case, order, or refund record is available.</p>}
-        </JoinedSection>
-        <JoinedSection aria-labelledby="support-provenance">
-          <h2 id="support-provenance" className="ua-text-working-title text-[var(--ua-text-primary)]">Source and freshness</h2>
-          <InsetGroup className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2" data-testid="support-object-provenance">
-            <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">From {label(object.provenance?.sourceSystem ?? object.provider ?? "connected source")}</span>
-            <StatusBadge family="workflowStatus" value={object.provenance?.freshness ?? "unknown"} size="sm" />
-            <StatusBadge family="workflowStatus" value={object.provenance?.syncState ?? "unknown"} size="sm" />
-            <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{sourceUpdatedAt ? `Source updated ${formatDateTime(sourceUpdatedAt)}` : "Source update time unavailable"}</span>
-          </InsetGroup>
-        </JoinedSection>
-      </Surface>
-    </DetailPageShell>
-  );
-}
-
-/**
- * Commerce records use the Phase 19 joined-detail composition. Dispute and
- * ticket content uses the same shell with its distinct Phase-20 evidence order.
- */
-export function ConnectedObjectDetail({
-  object,
-  returnTo,
-}: {
-  object: ObjectSummary;
-  returnTo?: string;
-}) {
-  if (isCommerceObject(object.type)) {
-    return <CommerceConnectedObjectDetail object={object} returnTo={returnTo} />;
-  }
-  return <SupportConnectedObjectDetail object={object} returnTo={returnTo} />;
 }

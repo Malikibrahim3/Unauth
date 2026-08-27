@@ -1,5 +1,6 @@
 import {
   computeClaimQueueCounts,
+  fetchClaimQueueCounts,
   isClaimAssignedTo,
   isClaimInActiveQueue,
   isClaimInHistory,
@@ -13,6 +14,31 @@ const now = new Date('2026-05-27T12:00:00.000Z');
 const userId = 'user-1';
 
 describe('claim queue count semantics', () => {
+  it('keeps failed and capped async metrics non-authoritative', async () => {
+    const responses = Array.from({ length: 14 }, () => ({ count: 2, data: [], error: null }));
+    responses[2] = { count: null as unknown as number, data: [], error: { message: 'unread failed' } } as never;
+    responses[13] = { count: 2, data: [{ status: 'open', submitted_at: '2026-05-01T00:00:00.000Z' }], error: null } as never;
+    let queryIndex = 0;
+    const client = {
+      from: () => {
+        const response = responses[queryIndex++];
+        const builder: Record<string, unknown> = {};
+        for (const method of ['select', 'eq', 'in', 'or', 'is', 'not', 'gt']) {
+          builder[method] = () => builder;
+        }
+        builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve(response).then(resolve);
+        return builder;
+      },
+    };
+
+    const result = await fetchClaimQueueCounts(client, 'merchant-1', 'user-1');
+    expect(result.counts.active).toBe(2);
+    expect(result.coverageByMetric.active).toBe('complete');
+    expect(result.coverageByMetric.unread).toBe('unavailable');
+    expect(result.coverageByMetric.overdue).toBe('partial');
+    expect(result.aggregateCoverage).toBe('partial');
+  });
+
   it('treats active unviewed claims as unread', () => {
     const row = {
       status: 'open',

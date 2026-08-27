@@ -1,16 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Surface } from "@/components/ui";
-import { Bone } from "@/components/ui/LoadingSkeleton";
+import { AlertTriangle, Check, CreditCard, Gauge, ReceiptText } from "lucide-react";
+import { Bone, Button, ButtonLink, JoinedSection, Modal, OperationalState, StatusBadge, Surface } from "@/components/ui";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
-import {
-  PLANS,
-  TOP_UP_CREDITS,
-  TOP_UP_PRICE_GBP,
-  type PlanId,
-} from "@/lib/billing/plans";
+import { safeRedirectPath } from "@/lib/auth/safeRedirect";
+import { PLANS, TOP_UP_CREDITS, TOP_UP_PRICE_GBP, type PlanId } from "@/lib/billing/plans";
+import { formatDateAbsolute, formatNumber } from "@/lib/utils/format";
 
 type BillingState = {
   planId: PlanId;
@@ -29,473 +26,271 @@ type BillingState = {
   downgradeToPlanName: string | null;
   gracePeriodDaysRemaining: number | null;
   canTopUp: boolean;
+  subscriptionIntentAvailability: "available" | "schema_pending";
+  subscriptionIntent: {
+    planId: PlanId;
+    planName: string;
+    status: "pending" | "checkout_created" | "confirmed" | "cancelled" | "superseded";
+    updatedAt: string;
+  } | null;
 };
 
-type Toast = { message: string; type: "success" | "error" };
+type Notice = { message: string; type: "success" | "error" };
+type PendingAction = { action: string; planId?: PlanId; title: string; description: string; confirmLabel: string; danger?: boolean };
+
+const BILLING_TRUTH = {
+  access: "Workspace members permitted to manage billing",
+  currentState: "Active plan and credit balance come from the verified billing account",
+  saveBehavior: "Requests remain pending until the payment provider confirms them",
+  impact: "Future access, allowances, top-ups, or renewal timing; recorded product history remains available",
+};
+
+function money(value: number | "custom") {
+  if (value === "custom") return "Custom agreement";
+  if (value === 0) return "Free";
+  return `£${formatNumber(value)}/month`;
+}
+
+function dateLabel(value: string | null) {
+  if (!value) return "Unavailable";
+  return formatDateAbsolute(value);
+}
+
+function isBillingState(value: unknown): value is BillingState {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<BillingState>;
+  return typeof candidate.planId === "string"
+    && typeof candidate.planName === "string"
+    && typeof candidate.status === "string"
+    && typeof candidate.totalRemaining === "number";
+}
 
 export default function BillingSettingsClient() {
   const searchParams = useSearchParams();
   const [state, setState] = useState<BillingState | null>(null);
+  const [unavailableReason, setUnavailableReason] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [toast, setToast] = useState<Toast | null>(null);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-
-  const showToast = useCallback(
-    (message: string, type: Toast["type"] = "success") => {
-      setToast({ message, type });
-      setTimeout(() => setToast(null), 5000);
-    },
-    [],
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const requestedReturn = searchParams.get("return");
+  const returnPath = useMemo(
+    () => requestedReturn ? safeRedirectPath(requestedReturn) : null,
+    [requestedReturn],
   );
 
   const loadBilling = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/billing");
-      if (!res.ok) throw new Error("Failed to load billing");
-      setState(await res.json());
-    } catch {
-      showToast("Could not load billing details.", "error");
+      const response = await fetch("/api/billing");
+      if (!response.ok) throw new Error("Billing details could not be loaded.");
+      const body = await response.json() as unknown;
+      if (!isBillingState(body)) {
+        const serviceStatus = body && typeof body === "object" && "status" in body
+          ? String((body as { status?: unknown }).status ?? "")
+          : "";
+        setState(null);
+        setUnavailableReason(serviceStatus === "not_configured"
+          ? "Billing is not configured for this environment, so no plan, balance, or payment state is shown."
+          : "The billing service did not return a complete, verified account state.");
+        return;
+      }
+      setUnavailableReason(null);
+      setState(body);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Billing details could not be loaded.";
+      setState(null);
+      setUnavailableReason(message);
+      setNotice({ type: "error", message });
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, []);
+
+  useEffect(() => { void loadBilling(); }, [loadBilling]);
+
+  const runAction = useCallback(async (action: string, planId?: PlanId) => {
+    const key = planId ? `${action}-${planId}` : action;
+    setActionLoading(key);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/billing/actions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": globalThis.crypto?.randomUUID?.() ?? `${action}-${planId ?? "none"}-${Date.now()}`,
+        },
+        body: JSON.stringify({ action, planId, returnTo: returnPath ?? undefined }),
+      });
+      const body = await response.json().catch(() => ({})) as { error?: string; message?: string; url?: string };
+      if (!response.ok) throw new Error(body.error ?? "Billing action failed.");
+      if (body.url) { window.location.href = body.url; return; }
+      setNotice({ type: "success", message: body.message ?? "Billing settings updated." });
+      await loadBilling();
+      setPending(null);
+    } catch (error) {
+      setNotice({ type: "error", message: error instanceof Error ? error.message : "Billing action failed." });
+    } finally {
+      setActionLoading(null);
+    }
+  }, [loadBilling, returnPath]);
 
   useEffect(() => {
-    void loadBilling();
-  }, [loadBilling]);
+    if (searchParams.get("checkout") === "success") setNotice({ type: "success", message: "Payment returned successfully. The requested plan remains pending until the provider confirmation is recorded." });
+    if (searchParams.get("topup") === "success") setNotice({ type: "success", message: `${TOP_UP_CREDITS} network credits were added.` });
+    if (searchParams.get("action") === "topup") {
+      setPending({ action: "topup", title: "Buy network credits?", description: `Add ${TOP_UP_CREDITS} credits for £${TOP_UP_PRICE_GBP}. Stripe will confirm payment before the balance changes.`, confirmLabel: "Continue to payment" });
+    }
+  }, [searchParams]);
 
-  const runAction = useCallback(
-    async (action: string, planId?: PlanId): Promise<void> => {
-      const actionKey = planId ? `${action}-${planId}` : action;
-      setActionLoading(actionKey);
-      try {
-        const res = await fetch("/api/billing/actions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action, planId }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          showToast(
-            typeof data.error === "string" ? data.error : "Action failed.",
-            "error",
-          );
-          return;
-        }
-        if (typeof data.url === "string") {
-          window.location.href = data.url;
-          return;
-        }
-        if (typeof data.message === "string") showToast(data.message);
-        await loadBilling();
-      } finally {
-        setActionLoading(null);
-        setShowCancelConfirm(false);
-      }
-    },
-    [loadBilling, showToast],
-  );
+  const usagePercent = useMemo(() => {
+    if (!state?.monthlyAllowance || state.monthlyAllowance <= 0) return null;
+    return Math.min(100, Math.round((state.usedThisCycle / state.monthlyAllowance) * 100));
+  }, [state]);
 
-  useEffect(() => {
-    const checkout = searchParams.get("checkout");
-    const topup = searchParams.get("topup");
-    const action = searchParams.get("action");
-    if (checkout === "success") showToast("Subscription updated successfully.");
-    if (topup === "success")
-      showToast(
-        `${TOP_UP_CREDITS} network credits added. Full access restored.`,
-      );
-    if (action === "topup") void runAction("topup");
-  }, [runAction, searchParams, showToast]);
-
-  if (loading) {
-    return <BillingSettingsSkeleton />;
-  }
+  if (loading) return <BillingSettingsSkeleton />;
 
   if (!state) {
     return (
-      <SettingsPageShell
-        title="Billing"
-        subtitle="Manage your plan, network credits, and payment method."
-      >
-        <Surface
-          structure="working"
-          pad="standard"
-          className="text-[length:var(--ua-text-caption-size)]"
-          style={{
-            borderColor: "var(--ua-border-default)",
-            color: "var(--ua-text-secondary)",
-          }}
-        >
-          <p className="font-medium text-[var(--ua-text-primary)] mb-1">
-            Billing unavailable
-          </p>
-          <p>
-            Billing details could not be loaded. Refresh to try again or contact
-            support if the issue persists.
-          </p>
-        </Surface>
+      <SettingsPageShell title="Billing" subtitle="Manage plan, credit balance, and payment configuration." surfaceId="billing" layout="wide" truth={BILLING_TRUTH} secondaryActions={returnPath ? [<ButtonLink key="return" variant="secondary" href={returnPath}>Return</ButtonLink>] : undefined}>
+        <OperationalState kind="unavailable" title="Billing unavailable" description={unavailableReason ?? "No plan or payment values are shown because the billing service did not return a verified account state."} action={<Button variant="secondary" onClick={() => void loadBilling()}>Try again</Button>} />
       </SettingsPageShell>
     );
   }
 
-  const priceLabel =
-    state.priceGbp === "custom"
-      ? "Custom"
-      : state.priceGbp === 0
-        ? "Free"
-        : `$${state.priceGbp}/mo`;
+  const plans = (Object.values(PLANS) as typeof PLANS[PlanId][]);
+  const blocked = state.status === "past_due" || state.status === "grace_period" || state.totalRemaining <= 0;
+  const currentPlanId = state.planId;
+  const currentPeriodEnd = state.currentPeriodEnd;
+
+  function requestPlan(next: PlanId) {
+    const nextPlan = PLANS[next];
+    const upgrade = plans.findIndex((item) => item.planId === next) > plans.findIndex((item) => item.planId === currentPlanId);
+    setPending({
+      action: currentPlanId === "free" ? "checkout" : upgrade ? "upgrade" : "downgrade",
+      planId: next,
+      title: `${upgrade ? "Change" : "Schedule change"} to ${nextPlan.name}?`,
+      description: upgrade
+        ? `Stripe will confirm the ${money(nextPlan.priceGbp)} charge before the plan changes.`
+        : `The current plan remains active until ${dateLabel(currentPeriodEnd)}. The workspace then moves to ${nextPlan.name}; historical records remain available under their existing audit and retention rules.`,
+      confirmLabel: upgrade ? "Continue to billing" : "Schedule plan change",
+      danger: !upgrade,
+    });
+  }
 
   return (
-    <SettingsPageShell
-      title="Billing"
-      subtitle="Manage your plan, network credits, and payment method."
-    >
-    <Surface structure="working" className="overflow-hidden">
-      {toast && (
-        <Surface
-          structure="joined"
-          className="px-4 py-3 text-[length:var(--ua-text-caption-size)]"
-          style={{
-            borderColor:
-              toast.type === "error" ? "var(--ua-risk-high)" : "var(--ua-action-primary)",
-            background: "var(--ua-surface-primary)",
-          }}
-          role="status"
-        >
-          {toast.message}
-        </Surface>
-      )}
-
-      {state.status === "grace_period" && (
-        <Surface
-          structure="joined"
-          className="px-4 py-3 text-[length:var(--ua-text-caption-size)]"
-          style={{
-            borderColor: "var(--ua-risk-high)",
-            background: "var(--ua-surface-primary)",
-          }}
-          role="alert"
-        >
-          Your payment failed. Update billing to restore full access. Basic
-          claim context remains available.{" "}
-          {state.gracePeriodDaysRemaining != null && (
-            <span>
-              Access restores in {state.gracePeriodDaysRemaining} days if
-              unpaid.
-            </span>
-          )}{" "}
-          <button
-            type="button"
-            className="underline"
-            onClick={() => void runAction("portal")}
-            disabled={actionLoading === "portal"}
-          >
-            Update billing
-          </button>
-        </Surface>
-      )}
-
-      {state.status === "past_due" && (
-        <Surface
-          structure="joined"
-          className="px-4 py-3 text-[length:var(--ua-text-caption-size)]"
-          style={{
-            borderColor: "var(--ua-risk-high)",
-            background: "var(--ua-surface-primary)",
-          }}
-          role="alert"
-        >
-          Your subscription lapsed. You&apos;re now on Free.{" "}
-          <button
-            type="button"
-            className="underline"
-            onClick={() => void runAction("checkout", "pro")}
-          >
-            Resubscribe
-          </button>{" "}
-          to restore Pro/Growth features.
-        </Surface>
-      )}
-
-      <Surface as="section" structure="joined" className="p-4">
-        <h2 className="ua-text-section-title text-[var(--ua-text-primary)]">
-          Current plan
-        </h2>
-        <p className="ua-text-page-title mt-2">{state.planName}</p>
-        <p className="text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]">{priceLabel}</p>
-        {state.currentPeriodEnd && (
-          <p className="mt-2 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-tertiary)]">
-            Next billing date: {formatDateTime(state.currentPeriodEnd)}
-          </p>
-        )}
-        {state.downgradeToPlanId && (
-          <p className="mt-2 text-[length:var(--ua-text-caption-size)]" style={{ color: "var(--ua-action-primary)" }}>
-            Your plan will change to {state.downgradeToPlanName} on{" "}
-            {formatDateTime(state.currentPeriodEnd)}. You keep your current credits
-            and features until then.
-          </p>
-        )}
-        {state.cancelAtPeriodEnd && !state.downgradeToPlanId && (
-          <p className="mt-2 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]">
-            Cancels on {formatDateTime(state.currentPeriodEnd)} — you&apos;ll move
-            to Free after that.
-          </p>
-        )}
-      </Surface>
-
-      <Surface as="section" structure="joined" className="p-4">
-        <h2 className="ua-text-section-title text-[var(--ua-text-primary)]">
-          Network credits this cycle
-        </h2>
-        <div className="mt-3 grid grid-cols-2 gap-3 text-[length:var(--ua-text-caption-size)]">
-          <div>
-            <p className="text-[var(--ua-text-tertiary)]">Monthly remaining</p>
-            <p className="ua-text-kpi">
-              {state.monthlyCreditsRemaining}
-            </p>
+    <SettingsPageShell title="Billing" subtitle="Manage plan, credit balance, and payment configuration." surfaceId="billing" layout="wide" truth={BILLING_TRUTH} secondaryActions={returnPath ? [<ButtonLink key="return" variant="secondary" href={returnPath}>Return</ButtonLink>] : undefined}>
+      <Surface structure="working" className="overflow-hidden">
+        {notice ? (
+          <div role={notice.type === "error" ? "alert" : "status"} className={`flex items-start gap-2 border-b px-5 py-3 ${notice.type === "error" ? "border-[var(--uo-route-critical-border)] bg-[var(--uo-route-critical-bg)]" : "border-[var(--uo-route-success-border)] bg-[var(--uo-route-success-bg)]"}`}>
+            {notice.type === "error" ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />}
+            <p className="ua-text-body">{notice.message}</p>
           </div>
-          <div>
-            <p className="text-[var(--ua-text-tertiary)]">Top-up balance</p>
-            <p className="ua-text-kpi">
-              {state.topupCreditsRemaining}
+        ) : null}
+
+        {state.subscriptionIntentAvailability === "schema_pending" ? (
+          <JoinedSection className="bg-[var(--uo-route-warning-bg)] p-4 sm:p-5">
+            <h2 className="ua-text-working-title">Requested plan history unavailable</h2>
+            <p className="ua-text-caption-role mt-1">
+              The active plan and credit balance are current. Saved plan requests will appear after the MR0 database update is applied to this environment.
             </p>
+          </JoinedSection>
+        ) : null}
+
+        {state.subscriptionIntent && state.subscriptionIntent.status !== "superseded" ? (
+          <JoinedSection className="flex flex-wrap items-center justify-between gap-3 bg-[var(--uo-route-surface-secondary)] p-4 sm:p-5">
+            <div>
+              <h2 className="ua-text-working-title">Requested plan · {state.subscriptionIntent.planName}</h2>
+              <p className="ua-text-caption-role mt-1">
+                {state.subscriptionIntent.status === "confirmed"
+                  ? "The provider-confirmed request is recorded. The active plan above remains the account authority."
+                  : state.subscriptionIntent.status === "checkout_created"
+                    ? "Checkout was created. The active plan will not change until the provider confirmation is recorded."
+                    : "The request is saved. It has not changed the active subscription."}
+              </p>
+            </div>
+            <StatusBadge family="workflowStatus" value={state.subscriptionIntent.status === "confirmed" ? "active" : "pending"} size="sm" />
+          </JoinedSection>
+        ) : null}
+
+        {blocked ? (
+          <JoinedSection className="flex flex-wrap items-center justify-between gap-4 bg-[var(--uo-route-warning-bg)] p-4 sm:p-5">
+            <div className="min-w-0">
+              <h2 className="ua-text-working-title">{state.status === "past_due" || state.status === "grace_period" ? "Payment action required" : "Network credits exhausted"}</h2>
+              <p className="ua-text-caption-role mt-1">{state.status === "past_due" || state.status === "grace_period" ? "Update the payment method to restore the plan’s full access. Existing records remain readable." : "Buy credits to resume credit-backed lookups; recorded cases and audit history remain available."}</p>
+            </div>
+            <Button onClick={() => state.status === "past_due" || state.status === "grace_period" ? void runAction("portal") : setPending({ action: "topup", title: "Buy network credits?", description: `Add ${TOP_UP_CREDITS} credits for £${TOP_UP_PRICE_GBP}. Stripe confirms payment before the balance changes.`, confirmLabel: "Continue to payment" })}>{state.status === "past_due" || state.status === "grace_period" ? "Update payment" : "Buy credits"}</Button>
+          </JoinedSection>
+        ) : null}
+
+        <JoinedSection className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,.8fr)]">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="ua-text-section-title">{state.planName}</h2>
+              <StatusBadge family="workflowStatus" value={state.status} size="sm" />
+            </div>
+            <p className="ua-text-kpi mt-2">{money(state.priceGbp)}</p>
+            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div><dt className="ua-text-metadata">Current period ends</dt><dd className="ua-text-body mt-1">{dateLabel(state.currentPeriodEnd)}</dd></div>
+              <div><dt className="ua-text-metadata">Payment method</dt><dd className="ua-text-body mt-1">Managed securely in Stripe</dd></div>
+            </dl>
           </div>
-        </div>
-        <p className="mt-3 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]">
-          {state.totalRemaining} total remaining
-          {state.monthlyAllowance != null &&
-            ` · ${state.usedThisCycle} used of ${state.monthlyAllowance} monthly`}
-        </p>
-        <p className="mt-1 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-tertiary)]">
-          Cycle resets: {formatDateTime(state.cycleResetAt)}
-        </p>
-        {state.canTopUp && (
-          <button
-            type="button"
-            className="ua-text-working-title mt-3 h-8 rounded-[var(--ua-radius-control)] px-3"
-            style={{
-              background: "var(--ua-action-primary)",
-              color: "var(--ua-canvas)",
-            }}
-            disabled={actionLoading === "topup"}
-            onClick={() => void runAction("topup")}
-          >
-            Top up — ${TOP_UP_PRICE_GBP} for {TOP_UP_CREDITS} credits
-          </button>
-        )}
+          <div className="rounded-[var(--uo-route-radius-surface)] bg-[var(--uo-route-surface-secondary)] p-4">
+            <div className="flex items-start gap-3"><ReceiptText className="h-4 w-4 text-[var(--uo-route-icon-secondary)]" aria-hidden="true" /><div><h3 className="ua-text-working-title">Scheduled account state</h3><p className="ua-text-caption-role mt-1">{state.downgradeToPlanName ? `Changes to ${state.downgradeToPlanName} on ${dateLabel(state.currentPeriodEnd)}.` : state.cancelAtPeriodEnd ? `Moves to Free on ${dateLabel(state.currentPeriodEnd)}.` : "No downgrade or cancellation is scheduled."}</p></div></div>
+          </div>
+        </JoinedSection>
+
+        <JoinedSection className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div>
+            <div className="flex items-center gap-2"><Gauge className="h-4 w-4 text-[var(--uo-route-icon-secondary)]" aria-hidden="true" /><h2 className="ua-text-section-title">Usage credits</h2></div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--uo-route-surface-muted)]" aria-label={usagePercent == null ? "Monthly credit use unavailable" : `${usagePercent}% of monthly credits used`} role="img"><span className="block h-full bg-[var(--uo-route-accent-600)]" style={{ width: `${usagePercent ?? 0}%` }} /></div>
+            <p className="ua-text-caption-role mt-2">{state.monthlyAllowance == null ? "Monthly allowance unavailable" : `${formatNumber(state.usedThisCycle)} of ${formatNumber(state.monthlyAllowance)} monthly credits used`} · resets {dateLabel(state.cycleResetAt)}</p>
+            <p className="mt-2 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]">Projected exhaustion is unavailable because billing returns a cycle total, not governed daily usage history. No forecast is inferred.</p>
+          </div>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-right">
+            <div><dt className="ua-text-metadata">Monthly left</dt><dd className="ua-text-kpi mt-1 tabular-nums">{formatNumber(state.monthlyCreditsRemaining)}</dd></div>
+            <div><dt className="ua-text-metadata">Top-up left</dt><dd className="ua-text-kpi mt-1 tabular-nums">{formatNumber(state.topupCreditsRemaining)}</dd></div>
+          </dl>
+          {state.canTopUp ? <div className="lg:col-span-2"><Button variant="secondary" onClick={() => setPending({ action: "topup", title: "Buy network credits?", description: `Add ${TOP_UP_CREDITS} credits for £${TOP_UP_PRICE_GBP}. Stripe confirms payment before the balance changes.`, confirmLabel: "Continue to payment" })}>Buy {TOP_UP_CREDITS} credits · £{TOP_UP_PRICE_GBP}</Button></div> : null}
+        </JoinedSection>
+
+        <JoinedSection className="p-4 sm:p-5">
+          <h2 className="ua-text-section-title">Plan options</h2>
+          <p className="ua-text-caption-role mt-1">Choose a plan for future access. Stripe is the payment processor; Unauth remains the source of plan and usage meaning.</p>
+          <div className="mt-4 grid gap-px overflow-hidden rounded-[var(--uo-route-radius-surface)] border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-border-subtle)] md:grid-cols-2 xl:grid-cols-4">
+            {plans.map((plan) => {
+              const current = plan.planId === state.planId;
+              return (
+                <section key={plan.planId} className="flex min-h-48 flex-col bg-[var(--uo-route-surface-primary)] p-4" aria-label={`${plan.name} plan`}>
+                  <div className="flex items-center justify-between gap-2"><h3 className="ua-text-working-title">{plan.name}</h3>{current ? <StatusBadge family="workflowStatus" value="active" size="sm" /> : null}</div>
+                  <p className="ua-text-section-title mt-3">{money(plan.priceGbp)}</p>
+                  <p className="ua-text-caption-role mt-1">{plan.creditsMonthly === "custom" ? "Custom credit allowance" : `${formatNumber(plan.creditsMonthly)} credits each month`}</p>
+                  <div className="mt-auto pt-5">{current ? <p className="ua-text-label text-center text-[var(--uo-route-text-secondary)]">Current plan</p> : plan.planId === "scale" ? <Button variant="secondary" className="w-full" onClick={() => void runAction("contact_scale", "scale")}>Contact account team</Button> : <Button variant={plans.findIndex((item) => item.planId === plan.planId) > plans.findIndex((item) => item.planId === state.planId) ? "primary" : "secondary"} className="w-full" onClick={() => requestPlan(plan.planId)}>Choose {plan.name}</Button>}</div>
+                </section>
+              );
+            })}
+          </div>
+        </JoinedSection>
+
+        <JoinedSection className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
+          <div className="flex items-start gap-3"><CreditCard className="mt-0.5 h-4 w-4 text-[var(--uo-route-icon-secondary)]" aria-hidden="true" /><div><h2 className="ua-text-working-title">Payment configuration</h2><p className="ua-text-caption-role mt-1">Payment details are viewed and updated in Stripe’s secure billing portal.</p></div></div>
+          <div className="flex flex-wrap gap-2"><Button variant="secondary" loading={actionLoading === "portal"} onClick={() => void runAction("portal")}>Update payment method</Button>{state.cancelAtPeriodEnd ? <Button variant="secondary" loading={actionLoading === "resume"} onClick={() => void runAction("resume")}>Keep subscription</Button> : state.planId !== "free" && state.planId !== "scale" ? <Button variant="ghost" onClick={() => setPending({ action: "cancel", title: "Cancel subscription?", description: `Access continues until ${dateLabel(state.currentPeriodEnd)}, then the workspace moves to Free. Historical records and audit history remain available.`, confirmLabel: "Schedule cancellation", danger: true })}>Cancel subscription</Button> : null}</div>
+        </JoinedSection>
       </Surface>
 
-      <Surface as="section" structure="joined" className="space-y-2.5 p-4">
-        <h2 className="ua-text-section-title text-[var(--ua-text-primary)]">
-          Change plan
-        </h2>
-        {state.planId === "free" && (
-          <PlanButton
-            label={`Upgrade to Pro — $${PLANS.pro.priceGbp}/mo`}
-            loading={actionLoading === "checkout-pro"}
-            onClick={() => void runAction("checkout", "pro")}
-          />
-        )}
-        {state.planId === "pro" && (
-          <>
-            <PlanButton
-              label={`Upgrade to Growth — $${PLANS.growth.priceGbp}/mo`}
-              loading={actionLoading === "upgrade-growth"}
-              onClick={() => void runAction("upgrade", "growth")}
-            />
-            <PlanButton
-              label="Schedule downgrade to Free"
-              variant="secondary"
-              loading={actionLoading === "downgrade-free"}
-              onClick={() => void runAction("downgrade", "free")}
-            />
-          </>
-        )}
-        {state.planId === "growth" && (
-          <>
-            <PlanButton
-              label="Schedule downgrade to Pro"
-              variant="secondary"
-              loading={actionLoading === "downgrade-pro"}
-              onClick={() => void runAction("downgrade", "pro")}
-            />
-            <PlanButton
-              label="Schedule downgrade to Free"
-              variant="secondary"
-              loading={actionLoading === "downgrade-free"}
-              onClick={() => void runAction("downgrade", "free")}
-            />
-          </>
-        )}
-        {state.planId === "scale" && (
-          <p className="text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]">
-            Scale is managed by your account team. Contact hello@unauth.co for
-            changes.
-          </p>
-        )}
-        {state.planId !== "free" && state.planId !== "scale" && (
-          <PlanButton
-            label="Contact us about Scale"
-            variant="secondary"
-            loading={actionLoading === "contact_scale"}
-            onClick={() => void runAction("contact_scale")}
-          />
-        )}
-      </Surface>
-
-      <Surface as="section" structure="joined" className="space-y-2.5 p-4">
-        <h2 className="ua-text-section-title text-[var(--ua-text-primary)]">
-          Payment method
-        </h2>
-        <button
-          type="button"
-          className="text-[length:var(--ua-text-caption-size)] underline text-[var(--ua-action-primary)]"
-          disabled={actionLoading === "portal"}
-          onClick={() => void runAction("portal")}
-        >
-          Manage payment method in Stripe
-        </button>
-        {state.planId !== "free" && !state.cancelAtPeriodEnd && (
-          <>
-            {!showCancelConfirm ? (
-              <button
-                type="button"
-                className="block text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-tertiary)] underline"
-                onClick={() => setShowCancelConfirm(true)}
-              >
-                Cancel plan
-              </button>
-            ) : (
-              <Surface structure="inset" className="p-3 text-[length:var(--ua-text-caption-size)]">
-                <p>
-                  You&apos;ll keep access until{" "}
-                  {formatDateTime(state.currentPeriodEnd)}, then move to Free.
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <button
-                    type="button"
-                    className="h-7 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)]"
-                    style={{ background: "var(--ua-risk-high)", color: "var(--ua-text-inverse)" }}
-                    disabled={actionLoading === "cancel"}
-                    onClick={() => void runAction("cancel")}
-                  >
-                    Confirm cancellation
-                  </button>
-                  <button
-                    type="button"
-                    className="text-[length:var(--ua-text-metadata-size)] underline"
-                    onClick={() => setShowCancelConfirm(false)}
-                  >
-                    Keep plan
-                  </button>
-                </div>
-              </Surface>
-            )}
-          </>
-        )}
-        {state.cancelAtPeriodEnd && (
-          <button
-            type="button"
-            className="text-[length:var(--ua-text-caption-size)] underline"
-            disabled={actionLoading === "resume"}
-            onClick={() => void runAction("resume")}
-          >
-            Resume subscription
-          </button>
-        )}
-      </Surface>
-    </Surface>
+      <Modal open={pending != null} onClose={() => !actionLoading && setPending(null)} title={pending?.title ?? "Review billing change"} description="Review the scope and timing before continuing." size="sm" overlayId="billing-change-confirmation" closeOnBackdrop={!actionLoading} closeOnEscape={!actionLoading} showCloseButton={!actionLoading}>
+        {pending ? <div className="grid gap-5"><p className="ua-text-body text-[var(--uo-route-text-secondary)]">{pending.description}</p><div className="rounded-[var(--uo-route-radius-surface)] bg-[var(--uo-route-surface-secondary)] p-3"><p className="ua-text-metadata">Audit consequence</p><p className="ua-text-body mt-1">The requested billing action and provider result are retained against this workspace.</p></div><div className="flex justify-end gap-2"><Button variant="secondary" disabled={Boolean(actionLoading)} onClick={() => setPending(null)}>Go back</Button><Button variant={pending.danger ? "danger" : "primary"} loading={Boolean(actionLoading)} onClick={() => void runAction(pending.action, pending.planId)}>{pending.confirmLabel}</Button></div></div> : null}
+      </Modal>
     </SettingsPageShell>
   );
 }
 
-function PlanButton({
-  label,
-  onClick,
-  loading,
-  variant = "primary",
-}: {
-  label: string;
-  onClick: () => void;
-  loading?: boolean;
-  variant?: "primary" | "secondary";
-}) {
-  return (
-    <button
-      type="button"
-      className="ua-text-working-title block min-h-8 w-full rounded-[var(--ua-radius-control)] px-3 py-1.5 text-left"
-      style={{
-        background: variant === "primary" ? "var(--ua-action-primary)" : "var(--ua-surface-primary)",
-        color:
-          variant === "primary" ? "var(--ua-canvas)" : "var(--ua-text-primary)",
-        border: variant === "secondary" ? "1px solid var(--ua-border-default)" : undefined,
-      }}
-      disabled={loading}
-      onClick={onClick}
-    >
-      {loading ? "Working…" : label}
-    </button>
-  );
-}
-
-function formatDateTime(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-
 function BillingSettingsSkeleton() {
   return (
-    <SettingsPageShell
-      title="Billing"
-      subtitle="Manage your plan, network credits, and payment method."
-    >
-    <Surface structure="working" role="status" aria-busy="true" aria-label="Loading billing">
-
-      {/* Current plan */}
-      <Surface as="section" structure="joined" className="space-y-3 p-4">
-        <Bone className="h-4 w-24" />
-        <Bone className="h-8 w-32" />
-        <Bone className="h-4 w-20" />
-        <Bone className="h-3 w-48" />
+    <SettingsPageShell title="Billing" subtitle="Manage plan, credit balance, and payment configuration." surfaceId="billing" layout="wide" truth={BILLING_TRUTH}>
+      <Surface structure="working" role="status" aria-busy="true" aria-label="Loading billing">
+        {["plan", "usage", "options", "payment"].map((section, index) => <JoinedSection key={section} className="space-y-3 p-5"><Bone className="h-4 w-32" />{index < 2 ? <><Bone className="h-8 w-44" /><Bone className="h-3 w-full max-w-xl" /></> : <Bone className="h-20 w-full" />}</JoinedSection>)}
       </Surface>
-
-      {/* Credits */}
-      <Surface as="section" structure="joined" className="space-y-3 p-4">
-        <Bone className="h-4 w-48" />
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Bone className="h-3 w-28" />
-            <Bone className="h-7 w-16" />
-          </div>
-          <div className="space-y-1.5">
-            <Bone className="h-3 w-24" />
-            <Bone className="h-7 w-16" />
-          </div>
-        </div>
-        <Bone className="h-3 w-56" />
-      </Surface>
-
-      {/* Change plan */}
-      <Surface as="section" structure="joined" className="space-y-3 p-4">
-        <Bone className="h-4 w-28" />
-        <Bone className="h-9 w-full" />
-        <Bone className="h-9 w-full" />
-      </Surface>
-
-      {/* Payment */}
-      <Surface as="section" structure="joined" className="space-y-3 p-4">
-        <Bone className="h-4 w-36" />
-        <Bone className="h-4 w-48" />
-      </Surface>
-    </Surface>
     </SettingsPageShell>
   );
 }

@@ -17,6 +17,10 @@ import {
 } from '@/lib/billing/merchantBilling';
 import { TABLES } from '@/lib/supabase/tables';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  markSubscriptionIntentStatusById,
+} from '@/lib/billing/subscriptionIntent';
+import { parseRequestedPlanId } from '@/lib/billing/plans';
 
 function merchantIdFromMetadata(obj: { metadata?: Stripe.Metadata | null }): string | null {
   const id = obj.metadata?.merchant_id;
@@ -87,6 +91,9 @@ export async function handleStripeWebhookEvent(
     case 'checkout.session.completed':
       await handleCheckoutCompleted(supabase, event.data.object as Stripe.Checkout.Session);
       break;
+    case 'checkout.session.expired':
+      await handleCheckoutExpired(supabase, event.data.object as Stripe.Checkout.Session);
+      break;
     case 'payment_intent.succeeded':
       await handlePaymentIntentSucceeded(supabase, event.data.object as Stripe.PaymentIntent);
       break;
@@ -115,6 +122,21 @@ export async function handleStripeWebhookEvent(
   });
 }
 
+async function handleCheckoutExpired(
+  supabase: SupabaseClient,
+  session: Stripe.Checkout.Session,
+): Promise<void> {
+  const merchantId = merchantIdFromMetadata(session);
+  const intentId = session.metadata?.subscription_intent_id;
+  if (!merchantId || !intentId) return;
+  await markSubscriptionIntentStatusById(supabase, {
+    merchantId,
+    intentId,
+    status: 'cancelled',
+    checkoutSessionId: session.id,
+  });
+}
+
 async function handleCheckoutCompleted(
   supabase: SupabaseClient,
   session: Stripe.Checkout.Session,
@@ -138,6 +160,7 @@ async function handleCheckoutCompleted(
         : session.subscription.id;
     const customerId =
       typeof session.customer === 'string' ? session.customer : session.customer?.id;
+    const requestedPlanId = parseRequestedPlanId(session.metadata?.requested_plan_id);
 
     await supabase
       .from(TABLES.MERCHANT_SUBSCRIPTIONS)
@@ -145,9 +168,19 @@ async function handleCheckoutCompleted(
         stripe_subscription_id: subId,
         stripe_customer_id: customerId ?? null,
         status: 'active',
+        ...(requestedPlanId ? { plan_id: requestedPlanId } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq('merchant_id', merchantId);
+    const intentId = session.metadata?.subscription_intent_id;
+    if (intentId) {
+      await markSubscriptionIntentStatusById(supabase, {
+        merchantId,
+        intentId,
+        status: 'confirmed',
+        checkoutSessionId: session.id,
+      });
+    }
   }
 }
 

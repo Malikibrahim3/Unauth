@@ -45,9 +45,11 @@ export async function createSubscriptionCheckoutSession(input: {
   customerEmail?: string;
   priceId: string;
   merchantId: string;
+  planId: string;
+  subscriptionIntentId: string;
   successUrl: string;
   cancelUrl: string;
-}): Promise<string> {
+}): Promise<{ id: string; url: string }> {
   const stripe = getStripeClient();
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
@@ -56,13 +58,21 @@ export async function createSubscriptionCheckoutSession(input: {
     line_items: [{ price: input.priceId, quantity: 1 }],
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
-    metadata: { merchant_id: input.merchantId },
+    metadata: {
+      merchant_id: input.merchantId,
+      requested_plan_id: input.planId,
+      subscription_intent_id: input.subscriptionIntentId,
+    },
     subscription_data: {
-      metadata: { merchant_id: input.merchantId },
+      metadata: {
+        merchant_id: input.merchantId,
+        requested_plan_id: input.planId,
+        subscription_intent_id: input.subscriptionIntentId,
+      },
     },
   });
   if (!session.url) throw new Error('Checkout session missing URL');
-  return session.url;
+  return { id: session.id, url: session.url };
 }
 
 export async function createTopUpCheckoutSession(input: {

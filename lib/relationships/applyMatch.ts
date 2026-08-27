@@ -9,7 +9,7 @@
  *   - ambiguous: record all candidates, emit `relationship.ambiguous`. No edge.
  *   - unmatched: nothing to persist.
  *
- * See ARCHITECTURE.md §8.
+ * See ARCHITECTURE.md for the canonical relationship and product-truth owners.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { recordDomainEvent } from '@/lib/events/domainEventStore';

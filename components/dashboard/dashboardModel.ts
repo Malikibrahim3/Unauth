@@ -24,7 +24,7 @@ export const DASHBOARD_METRICS: Array<{
   key: DashboardMetricKey;
   label: string;
   description: string;
-  /** Bare --ua-chart-* custom property name, resolved via useChartTheme for Recharts. */
+  /** Bare --uo-route-chart-* custom property name, resolved via useChartTheme for Recharts. */
   colourVar: string;
   tone: 'primary' | 'positive' | 'secondary' | 'negative';
 }> = [
@@ -32,28 +32,28 @@ export const DASHBOARD_METRICS: Array<{
     key: 'exposure',
     label: 'Payout exposure',
     description: 'Known current exposure in this period',
-    colourVar: '--ua-chart-primary',
+    colourVar: '--uo-route-chart-primary',
     tone: 'primary',
   },
   {
     key: 'recovered',
     label: 'Recovered',
     description: 'Received and reconciled',
-    colourVar: '--ua-success',
+    colourVar: '--uo-route-success',
     tone: 'positive',
   },
   {
     key: 'prevented',
     label: 'Prevented',
     description: 'Not paid after review',
-    colourVar: '--ua-chart-primary-soft',
+    colourVar: '--uo-route-chart-primary-soft',
     tone: 'secondary',
   },
   {
     key: 'realisedLoss',
     label: 'Realised loss',
     description: 'Ledger-confirmed merchant loss',
-    colourVar: '--ua-critical',
+    colourVar: '--uo-route-critical',
     tone: 'negative',
   },
 ];

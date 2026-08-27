@@ -12,8 +12,9 @@ import {
   ListChecks,
   TrendingDown,
   Plug,
+  Bell,
 } from 'lucide-react';
-import { PERMISSIONS, type Permission } from '@/lib/permissions';
+import { PERMISSIONS, type Permission } from '@/lib/permissions/constants';
 import type { ProductTier } from '@/lib/product/tiers';
 import { ROUTE_ALIASES } from './aliases';
 
@@ -24,9 +25,12 @@ export type AppRouteKey =
   | 'claims'
   | 'losses'
   | 'recoveries'
+  | 'reconciliation'
   | 'reports'
   | 'integrations'
+  | 'imports'
   | 'settings'
+  | 'notifications'
   | 'help'
   | 'rules'
   | 'flows';
@@ -36,6 +40,8 @@ export type AppRoute = {
   href: string;
   label: string;
   pageTitle: string;
+  /** Parent path used for active state on nested canonical surfaces. */
+  sectionPrefix?: string;
   permission?: Permission;
   aliases?: string[];
   icon?: LucideIcon;
@@ -56,10 +62,12 @@ export type AppRoute = {
 export const APP_ROUTES = {
   dashboard: {
     key: 'dashboard',
-    href: '/dashboard',
+    href: '/overview',
     label: 'Overview',
     pageTitle: 'Overview',
+    sectionPrefix: '/overview',
     permission: PERMISSIONS.VIEW_DASHBOARD,
+    aliases: ['/dashboard'],
     icon: Home,
     sidebar: true,
     commandPalette: true,
@@ -70,6 +78,7 @@ export const APP_ROUTES = {
     href: '/work',
     label: 'Work',
     pageTitle: 'Work',
+    sectionPrefix: '/work',
     permission: PERMISSIONS.VIEW_INBOX,
     icon: ListChecks,
     sidebar: true,
@@ -81,6 +90,7 @@ export const APP_ROUTES = {
     href: '/customers',
     label: 'Customers',
     pageTitle: 'Customers',
+    sectionPrefix: '/customers',
     permission: PERMISSIONS.VIEW_CUSTOMERS,
     tier: 'pro',
     tierLabel: 'Context',
@@ -91,11 +101,12 @@ export const APP_ROUTES = {
   },
   claims: {
     key: 'claims',
-    href: '/claims',
+    href: '/cases',
     label: 'Cases',
     pageTitle: 'Cases',
+    sectionPrefix: '/cases',
     permission: PERMISSIONS.VIEW_INBOX,
-    aliases: ['/inbox'],
+    aliases: ['/claims', '/inbox'],
     tier: 'pro',
     tierLabel: 'Cases',
     icon: FileWarning,
@@ -106,10 +117,12 @@ export const APP_ROUTES = {
   },
   losses: {
     key: 'losses',
-    href: '/losses',
-    label: 'Losses',
+    href: '/financials/losses',
+    label: 'Loss ledger',
     pageTitle: 'Losses',
+    sectionPrefix: '/financials/losses',
     permission: PERMISSIONS.VIEW_INBOX,
+    aliases: ['/losses'],
     tier: 'pro',
     tierLabel: 'Losses',
     icon: TrendingDown,
@@ -119,10 +132,12 @@ export const APP_ROUTES = {
   },
   recoveries: {
     key: 'recoveries',
-    href: '/recoveries',
-    label: 'Recovery',
+    href: '/financials/recovery',
+    label: 'Recovery board',
     pageTitle: 'Recovery board',
+    sectionPrefix: '/financials/recovery',
     permission: PERMISSIONS.VIEW_INBOX,
+    aliases: ['/recoveries'],
     tier: 'pro',
     tierLabel: 'Recovery',
     icon: Repeat2,
@@ -130,38 +145,78 @@ export const APP_ROUTES = {
     commandPalette: true,
     commandDescription: 'Track source-backed losses, evidence gaps, correspondence, and synced recovery outcomes',
   },
+  reconciliation: {
+    key: 'reconciliation',
+    href: '/financials/reconciliation',
+    label: 'Reconciliation',
+    pageTitle: 'Reconciliation',
+    sectionPrefix: '/financials/reconciliation',
+    permission: PERMISSIONS.VIEW_INBOX,
+    icon: SlidersHorizontal,
+    sidebar: true,
+    commandPalette: true,
+    commandDescription: 'Resolve source-to-ledger exceptions without inferring missing values',
+  },
   reports: {
     key: 'reports',
-    href: '/reports',
+    href: '/financials/reports',
     label: 'Reports',
     pageTitle: 'Reports',
+    sectionPrefix: '/financials/reports',
     permission: PERMISSIONS.VIEW_AUDIT,
+    aliases: ['/reports'],
     tier: 'pro',
     icon: BarChart3,
     sidebar: true,
   },
   integrations: {
     key: 'integrations',
-    href: '/integrations',
-    label: 'Integrations',
-    pageTitle: 'Integrations',
+    href: '/sources/connected',
+    label: 'Connected',
+    pageTitle: 'Sources',
+    sectionPrefix: '/sources/connected',
     permission: PERMISSIONS.VIEW_SETTINGS,
-    aliases: ['/settings/integrations'],
+    aliases: ['/integrations', '/settings/integrations'],
     icon: Plug,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Connect commerce, helpdesk, carrier, and payment sources',
   },
+  imports: {
+    key: 'imports',
+    href: '/sources/imports',
+    label: 'Imports',
+    pageTitle: 'Imports',
+    sectionPrefix: '/sources/imports',
+    permission: PERMISSIONS.MANAGE_SETTINGS,
+    icon: Plug,
+    sidebar: true,
+    commandPalette: true,
+    commandDescription: 'Upload and inspect source-backed import jobs',
+  },
   settings: {
     key: 'settings',
-    href: '/settings',
+    href: '/settings/workspace/account',
     label: 'Settings',
     pageTitle: 'Settings',
+    sectionPrefix: '/settings',
     permission: PERMISSIONS.VIEW_SETTINGS,
+    aliases: ['/settings'],
     icon: Settings,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Account and team settings',
+  },
+  notifications: {
+    key: 'notifications',
+    href: '/notifications',
+    label: 'Notifications',
+    pageTitle: 'Notifications',
+    sectionPrefix: '/notifications',
+    icon: Bell,
+    sidebar: true,
+    commandPalette: true,
+    commandDescription: 'Workspace notifications and source health updates',
   },
   help: {
     key: 'help',
@@ -169,13 +224,18 @@ export const APP_ROUTES = {
     label: 'Help',
     pageTitle: 'Help',
     icon: HelpCircle,
+    sidebar: true,
+    commandPalette: true,
+    commandDescription: 'Guidance for working with evidence and ledger states',
   },
   rules: {
     key: 'rules',
-    href: '/rules',
-    label: 'Rules',
+    href: '/controls/rules',
+    label: 'Payout rules',
     pageTitle: 'Rules',
+    sectionPrefix: '/controls/rules',
     permission: PERMISSIONS.VIEW_SETTINGS,
+    aliases: ['/rules'],
     tier: 'pro',
     tierLabel: 'Rules',
     icon: SlidersHorizontal,
@@ -185,10 +245,12 @@ export const APP_ROUTES = {
   },
   flows: {
     key: 'flows',
-    href: '/flows',
+    href: '/controls/flows',
     label: 'Flows',
     pageTitle: 'Flows',
+    sectionPrefix: '/controls/flows',
     permission: PERMISSIONS.VIEW_SETTINGS,
+    aliases: ['/flows'],
     tier: 'pro',
     tierLabel: 'Flows',
     icon: GitBranch,
@@ -203,20 +265,21 @@ export const COMMAND_PALETTE_FILTERS = [
   {
     label: 'Cases missing evidence',
     description: 'Open cases waiting on evidence',
-    href: '/claims?queue=evidence',
+    href: '/cases?queue=evidence',
   },
   {
     label: 'Recovery cases needing correspondence',
     description: 'Source-backed cases waiting on generated external clarification',
-    href: '/recoveries',
+    href: '/financials/recovery',
   },
 ] as const;
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
-  { label: 'Overview', routeKeys: ['dashboard'] },
-  { label: 'Work', routeKeys: ['work', 'claims', 'losses', 'recoveries', 'customers'] },
-  { label: 'Configure', routeKeys: ['rules', 'flows'] },
-  { label: 'Reports and setup', routeKeys: ['reports', 'integrations', 'settings'] },
+  { label: 'Act on work', routeKeys: ['dashboard', 'work', 'claims', 'customers'] },
+  { label: 'Trace money', routeKeys: ['losses', 'recoveries', 'reconciliation', 'reports'] },
+  { label: 'Configure decisions', routeKeys: ['rules', 'flows'] },
+  { label: 'Connect evidence', routeKeys: ['integrations', 'imports'] },
+  { label: 'Workspace', routeKeys: ['settings', 'notifications', 'help'] },
 ];
 
 export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array<{ label: string; items: AppRoute[] }> {
@@ -224,12 +287,16 @@ export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array
     label: group.label,
     items: group.routeKeys
       .map((key) => APP_ROUTES[key] as AppRoute)
+      .filter((route) => route.sidebar !== false)
       .filter((route) => !route.permission || !permissions || permissions.has(route.permission)),
   })).filter((group) => group.items.length > 0);
 }
 
 export function getCommandPaletteNavItems(permissions?: ReadonlySet<Permission>) {
-  const items: Array<{ label: string; description: string; href: string }> = [];
+  const groupByRoute = new Map(
+    SIDEBAR_NAV_GROUPS.flatMap((group) => group.routeKeys.map((key) => [key, group.label] as const)),
+  );
+  const items: Array<{ label: string; description: string; href: string; group: string }> = [];
   for (const r of Object.values(APP_ROUTES) as AppRoute[]) {
     if (!r.commandPalette) continue;
     if (r.permission && permissions && !permissions.has(r.permission)) continue;
@@ -237,9 +304,19 @@ export function getCommandPaletteNavItems(permissions?: ReadonlySet<Permission>)
       label: r.key === 'dashboard' ? 'Operations overview' : r.label,
       description: r.commandDescription ?? r.label,
       href: r.href,
+      group: groupByRoute.get(r.key) ?? 'Workspace',
     });
   }
   return items;
+}
+
+/** Match a canonical sidebar route across its detail surfaces and aliases. */
+export function isAppRouteActive(pathname: string, route: AppRoute): boolean {
+  const path = pathname.split('?')[0] || pathname;
+  const matches = (target: string) => path === target || path.startsWith(`${target}/`);
+  return matches(route.href)
+    || Boolean(route.sectionPrefix && matches(route.sectionPrefix))
+    || Boolean(route.aliases?.some(matches));
 }
 
 export function getPageTitleForPath(pathname: string): string | undefined {
@@ -253,9 +330,12 @@ export function getPageTitleForPath(pathname: string): string | undefined {
         return route.pageTitle;
       }
     }
+    if (route.sectionPrefix && (path === route.sectionPrefix || path.startsWith(`${route.sectionPrefix}/`))) {
+      return route.pageTitle;
+    }
   }
   if (path in ROUTE_ALIASES) {
-    return getPageTitleForPath(ROUTE_ALIASES[path]);
+    return getPageTitleForPath(ROUTE_ALIASES[path as keyof typeof ROUTE_ALIASES]);
   }
   return undefined;
 }

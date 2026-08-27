@@ -26,7 +26,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 import {
   ACTIVE_MERCHANT_COOKIE,
-  hasPermission,
+  resolvePermissions,
   type CallerContext,
   type Permission,
 } from '@/lib/permissions';
@@ -58,6 +58,13 @@ export const getRequestCallerContext = cache(
   },
 );
 
+/** One permission list shared by the shell and permission-aware route bodies. */
+export const getRequestPermissions = cache(async (): Promise<Permission[]> => {
+  const ctx = await getRequestCallerContext();
+  if (!ctx) return [];
+  return resolvePermissions(getRequestServiceClient(), ctx);
+});
+
 /**
  * Page-level permission guard. Returns the caller context when allowed,
  * null when unauthenticated / no merchant / denied — pages redirect on null.
@@ -66,9 +73,11 @@ export const getRequestCallerContext = cache(
  */
 export const requirePagePermission = cache(
   async (permission: Permission): Promise<CallerContext | null> => {
-    const ctx = await getRequestCallerContext();
+    const [ctx, permissions] = await Promise.all([
+      getRequestCallerContext(),
+      getRequestPermissions(),
+    ]);
     if (!ctx) return null;
-    const allowed = await hasPermission(getRequestServiceClient(), ctx, permission);
-    return allowed ? ctx : null;
+    return permissions.includes(permission) ? ctx : null;
   },
 );

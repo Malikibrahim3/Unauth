@@ -1,4 +1,14 @@
-@import "tailwindcss";
+/*
+ * Keep Tailwind's plain-text scanner inside executable UI source. The repository
+ * also contains screenshots, captures, and generated artifacts whose bytes can
+ * resemble arbitrary-value utilities and produce invalid CSS during compilation.
+ */
+@import "tailwindcss" source(none);
+@source "../app";
+@source "../components";
+@source "../extensions";
+@source "../lib";
+@source "../public";
 
 .ua-brand-logo {
   display: inline-flex;
@@ -56,7 +66,6 @@
     --data-neutral-soft:#E7E0D8;
     --brand-paper:      #F6F5F3;
 
-    --bg-canvas:        #F6F5F3;
     --bg-surface:       #FFFFFF;
     --bg-surface-alt:   #F0EEEA;
     --bg-surface-sunk:  #E8E6E2;
@@ -84,7 +93,6 @@
     --accent-50:        #F5F4FF;
     --accent-100:       #F0EFFF;
     --accent-200:       #DEDCFF;
-    --accent-500:       #5B5BD6;
     --accent-600:       #4949B8;
     --accent-700:       #3C3C96;
     --accent-fg-on-500: #FFFFFF;
@@ -142,7 +150,7 @@
     --confidence-badge-shell-full:   96px;
 
     /* Typography */
-    --font-mono: "DM Mono", "Roboto Mono", Consolas, monospace;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
     /* Radius */
     --radius-1:    4px;
@@ -177,7 +185,6 @@
 
     /* ── Backward-compat aliases (point to canonical tokens above) ── */
     /* ── Old surface layer → Direction A (backward compat, do not remove) ── */
-    --bg-canvas:       var(--surface-base);
     --bg-surface:      var(--surface-raised);
     --bg-surface-alt:  var(--surface-overlay);
     --bg-surface-sunk: var(--surface-muted);
@@ -210,7 +217,6 @@
     --accent-soft-hover: color-mix(in srgb, var(--brand-product) 12%, transparent);
 
     /* ── Risk tiers (only valid semantic use of red/amber/green) ── */
-    --risk-critical:    #9F1D1D;
     --risk-critical-bg: #FBEFEC;
     --risk-critical-bd: #E8B5AB;
 
@@ -262,8 +268,6 @@
     /* ── Radius ── */
     --radius-xs:   2px;
     --radius-sm:   4px;
-    --radius-md:   6px;
-    --radius-lg:   8px;
     --radius-xl:   12px;
     --radius-full: 9999px;
 
@@ -281,9 +285,9 @@
     --duration-slow: 240ms;
 
     /* ── Typography ── */
-    --font-sans:    var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --font-display: var(--font-inter), sans-serif;
-    --font-mono:    var(--font-dm-mono), "Roboto Mono", Consolas, monospace;
+    --font-sans:    "Instrument Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-display: "Instrument Sans", ui-sans-serif, sans-serif;
+    --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
     /* ══════════════════════════════════════════════════════════════════════
      * PHASE A — Semantic alias tokens (additive, no existing values changed)
@@ -325,7 +329,6 @@
     --radius:              var(--radius-lg);
 
     /* ── Unauth light workbench palette (default for new users) ── */
-    --surface-base:    #F4F3F1;
     --surface-raised:  #FFFFFF;
     --surface-overlay: #EEEDEA;
     --surface-border:  #E2E0DC;
@@ -337,7 +340,6 @@
     --ink-tertiary:  #A6998D;
     --ink-inverse:   #FFFFFF;
 
-    --copper-bright: #8A2828;
     --copper-mid:    #7B2D26;
     --copper-dim:    #EAD8D2;
     --copper-glow:   #8A28281F;
@@ -366,27 +368,11 @@
     --data-id:        #557267;
     --data-date:      #68798A;   /* #1A1814 */
 
-    /* Surfaces */       /* #F8F5EE — page canvas */                  /* pure white panels */                  /* tab bar bg, cream darker */
-
-    /* Lines / borders */ /* #D8D0BD */
-
     /* Accent — the product violet (LP-FND-09), not the editorial rust */
     --landing-accent:       var(--brand-product);       /* #5B5BD6 */
     --landing-accent-hover: var(--brand-product-hover); /* #4949B8 */      /* text/icon on accent bg */
 
-    /* Dark section (§1 + audit form) */ /* slightly lighter dark border */   /* very dark muted text */   /* near-white on dark inputs */   /* ticker / notification text */
-
-    /* Security section (§7 — deepest dark) */   /* near-black base */   /* gradient mid */   /* gradient highlight */   /* copper/rust highlight */   /* darker copper */   /* gradient start */   /* gradient end / highlight */
-
-    /* Form error */   /* error text on dark bg */
-
-    /* Extended dark palette (MerchantDashboard, NetworkChart) */         /* deepest near-black (NetworkChart bg) */         /* amber/orange warning */         /* orange trend indicator */         /* bright green status dot */         /* product violet, dark-section active state */
-    /* Card surface overlays — rgba so opacity is preserved */   /* glass card background */   /* card header tint */    /* card border alpha */    /* card header border alpha */
-
-    /* Semantic fills */  /* #F2EDE3 */
-
-    /* Graphite + information accents — break the cream/rust monotone */   /* dark product surface */   /* graphite border / lighter */   /* blue-grey information accent */
-    --ua-font-display:    var(--font-inter);
+    --ua-font-display:    "Instrument Sans", ui-sans-serif, sans-serif;
     --text-display-1:     clamp(40px, 5vw, 60px);
     --text-display-2:     clamp(30px, 3.4vw, 42px);
     --text-h3-landing:    22px;
@@ -402,7 +388,7 @@
 
     /* ── Section rhythm ── */
     --ua-section-y: 5rem;  /* py-20 */              /* 6px */
-    --landing-shadow-panel: 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(91,91,214,0.10);
+    --landing-shadow-panel: 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(26,24,20,0.10);
 
     /* Public-site aliases. These deliberately map to the same cool-neutral
        graphite and violet identity as the product UI. */
@@ -602,7 +588,7 @@
     --step-text: var(--ink-primary);
 
     /* Font fallback chain */
-    --font-serif: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-serif: "Instrument Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
 
   :root[data-theme="dark"] {
@@ -736,9 +722,9 @@
     --icon:       var(--ink-secondary);
     --icon-muted: var(--ink-tertiary);
 
-    --font-sans:    var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --font-display: var(--font-inter), sans-serif;
-    --font-mono:    var(--font-dm-mono), "Roboto Mono", Consolas, monospace;
+    --font-sans:    "Instrument Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-display: "Instrument Sans", ui-sans-serif, sans-serif;
+    --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
     --radius-xs:   3px;
     --radius-sm:   3px;
@@ -753,10 +739,10 @@
 
     --shadow-color: 22 35% 3%;
     --shadow-xs: 0 1px 2px rgba(0,0,0,0.40);
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.32), 0 1px 2px rgba(200,118,58,0.12);
-    --shadow-md: 0 10px 24px rgba(0,0,0,0.36), 0 2px 4px rgba(200,118,58,0.10);
-    --shadow-lg: 0 18px 44px rgba(0,0,0,0.40), 0 4px 8px rgba(200,118,58,0.08);
-    --shadow-xl: 0 26px 70px rgba(0,0,0,0.48), 0 6px 12px rgba(200,118,58,0.12);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.32), 0 1px 2px rgba(0,0,0,0.12);
+    --shadow-md: 0 10px 24px rgba(0,0,0,0.36), 0 2px 4px rgba(0,0,0,0.10);
+    --shadow-lg: 0 18px 44px rgba(0,0,0,0.40), 0 4px 8px rgba(0,0,0,0.08);
+    --shadow-xl: 0 26px 70px rgba(0,0,0,0.48), 0 6px 12px rgba(0,0,0,0.12);
     --shadow-0: 0 0 0 1px var(--surface-border);
     --shadow-1: 0 1px 0 rgba(240,235,227,0.03), 0 12px 28px rgba(0,0,0,0.28);
     --shadow-2: 0 1px 0 rgba(240,235,227,0.04), 0 20px 60px rgba(0,0,0,0.36);
@@ -783,10 +769,8 @@
   }
 
   /* A `.dark` class-selector palette lived here (legacy shadcn scaffolding).
-   * Theme switching in this app uses the `data-theme="dark"` attribute
-   * (see ThemeBootstrap and `:root[data-theme="dark"]` below), never a
-   * `.dark` class — confirmed zero call sites applying that class anywhere
-   * in app/components/lib. Removed as dead code (M3, execution ledger). */
+   * Authenticated theme switching is scoped to the product root; public and
+   * entry routes stay light and never mutate the document theme attribute. */
 
   * {
     border-color: var(--border-subtle);
@@ -816,6 +800,30 @@
     font-size: 14px;
     line-height: 21px;
     font-feature-settings: "kern" 1;
+  }
+
+  body:has([data-landing-page="true"]) {
+    --page-bg: var(--fl-bg);
+    --page-grain-opacity: 0.035;
+    --grain-texture-url: radial-gradient(
+      circle at 1px 1px,
+      rgb(24 24 27 / 18%) 0.55px,
+      transparent 0.75px
+    );
+    --grain-texture-size: 5px;
+    background-color: var(--page-bg);
+  }
+
+  body:has([data-landing-page="true"])::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background-image: var(--grain-texture-url);
+    background-size: var(--grain-texture-size) var(--grain-texture-size);
+    opacity: var(--page-grain-opacity);
+    mix-blend-mode: overlay;
+    pointer-events: none;
   }
 
   input,

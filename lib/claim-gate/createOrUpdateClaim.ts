@@ -156,7 +156,7 @@ export async function createOrUpdateClaim(input: {
     });
   }
 
-  const caseUrl = `${appBaseUrl()}/claims?focus=${encodeURIComponent(claim.id)}`;
+  const caseUrl = `${appBaseUrl()}/cases?selected=${encodeURIComponent(claim.id)}`;
   return {
     id: claim.id,
     claim_type: storedClaimType,

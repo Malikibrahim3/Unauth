@@ -2,21 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { TABLES } from "@/lib/supabase/tables";
 import { filterInAppNotificationRecipients } from "@/lib/collaboration/notificationPreferences";
+import { NOTIFICATION_KINDS } from "@/lib/notifications/kinds";
 
 export const notificationRequestSchema = z.object({
   recipient_user_id: z.string().uuid(),
-  kind: z.enum([
-    "assignment",
-    "mention",
-    "approaching_deadline",
-    "evidence_update",
-    "decision_request",
-    "recovery_outcome",
-    "sync_failure",
-    "daily_work_summary",
-    "high_value_case_alert",
-    "scheduled_report",
-  ]),
+  kind: z.enum(NOTIFICATION_KINDS),
   title: z.string().trim().min(1).max(200),
   body: z.string().trim().max(2_000).nullable().optional(),
   target_href: z.string().startsWith("/").max(500),
@@ -88,7 +78,7 @@ async function investigationNotificationRequest(
       body: dueAt
         ? `A response is due ${new Date(dueAt).toLocaleString('en-GB')}. Work will track the deadline separately from the customer decision.`
         : 'The request was accepted and is now waiting for a response.',
-      target_href: `/claims/${caseId}#investigation-${investigationId}`,
+      target_href: `/cases/${caseId}#investigation-${investigationId}`,
       deduplication_key: `investigation-sent:${investigationId}:${event.id}`,
     });
   }
@@ -98,7 +88,7 @@ async function investigationNotificationRequest(
       kind: 'sync_failure',
       title: `Investigation email failed · ${target}`,
       body: 'The request remains a draft. Retry with the same logical send key or use copy/manual send.',
-      target_href: `/claims/${caseId}#investigation-${investigationId}`,
+      target_href: `/cases/${caseId}#investigation-${investigationId}`,
       deduplication_key: `investigation-send-failed:${investigationId}:${event.id}`,
     });
   }
@@ -107,7 +97,7 @@ async function investigationNotificationRequest(
     kind: 'evidence_update',
     title: `Investigation response ready · ${target}`,
     body: 'Review the structured response, evidence provenance, and refreshed responsibility recommendation.',
-    target_href: `/claims/${caseId}#investigation-${investigationId}`,
+    target_href: `/cases/${caseId}#investigation-${investigationId}`,
     deduplication_key: `investigation-response:${investigationId}:${event.id}`,
   });
 }

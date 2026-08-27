@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
+import { merchantHasMachineApiAccess } from '@/lib/api/accessPolicy';
 
 async function DELETEHandler(
   req: NextRequest,
@@ -20,6 +21,9 @@ async function DELETEHandler(
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
+  if (!(await merchantHasMachineApiAccess(service, ctx.merchantId))) {
+    return NextResponse.json({ error: 'Machine API access is not enabled for this workspace.' }, { status: 403 });
+  }
 
   const revokedAt = new Date().toISOString();
 

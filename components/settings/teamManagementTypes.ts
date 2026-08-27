@@ -1,6 +1,7 @@
 import { formatDateTime } from '@/lib/utils/format';
+import { TEAM_INVITABLE_ROLES, TEAM_ROLES, type Role } from '@/lib/permissions/roles';
 
-export type TeamRole = 'owner' | 'admin' | 'analyst' | 'viewer';
+export type TeamRole = Role;
 export type InviteStatus = 'pending' | 'active' | 'revoked';
 
 export type TeamMember = {
@@ -37,17 +38,21 @@ export type TeamResponse = {
   auditTrail: AuditRow[];
 };
 
-export const INVITE_ROLES: Array<{ value: 'analyst'; label: string; help: string }> = [
-  { value: 'analyst', label: 'Analyst', help: 'Can investigate customers, run audits, and generate evidence packages.' },
-];
+const INVITE_ROLE_COPY: Record<(typeof TEAM_INVITABLE_ROLES)[number], { label: string; help: string }> = {
+  admin: { label: 'Administrator', help: 'Can manage workspace settings and lower-privilege members, but cannot transfer ownership.' },
+  analyst: { label: 'Analyst', help: 'Can investigate cases, manage work, and prepare evidence-backed recommendations.' },
+  viewer: { label: 'Viewer', help: 'Can review permitted workspace records without changing operational state.' },
+};
 
-export const UI_ASSIGNABLE_ROLES = ['owner', 'analyst'] as const satisfies readonly TeamRole[];
+export const INVITE_ROLES = TEAM_INVITABLE_ROLES.map((value) => ({ value, ...INVITE_ROLE_COPY[value] }));
+
+export const UI_ASSIGNABLE_ROLES = TEAM_ROLES;
 
 export const ROLE_LABELS: Record<TeamRole, string> = {
   owner: 'Owner',
-  admin: 'Analyst',
+  admin: 'Administrator',
   analyst: 'Analyst',
-  viewer: 'Analyst',
+  viewer: 'Viewer',
 };
 
 export const STATUS_LABELS: Record<InviteStatus, string> = {
@@ -61,9 +66,18 @@ export function formatTeamDate(value: string | null) {
   return formatDateTime(value);
 }
 
+export function formatTeamJoinState(member: Pick<TeamMember, 'invite_status' | 'accepted_at' | 'created_at'>) {
+  if (member.invite_status === 'pending') return 'Not accepted yet';
+  if (member.invite_status === 'revoked') return 'Membership revoked';
+  if (member.accepted_at) return formatDateTime(member.accepted_at);
+  if (member.created_at) {
+    return `Member since ${formatDateTime(member.created_at)} · acceptance date unavailable`;
+  }
+  return 'Joined date unavailable';
+}
+
 export function uiRoleForMember(role: TeamRole): (typeof UI_ASSIGNABLE_ROLES)[number] {
-  if (role === 'owner') return 'owner';
-  return 'analyst';
+  return role;
 }
 
 export function auditText(row: AuditRow) {

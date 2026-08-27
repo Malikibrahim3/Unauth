@@ -4,8 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 /**
  * Lets a page replace the label of the last (current-page) breadcrumb segment
- * in AppHeader. Used by detail routes whose URL segment is an opaque UUID —
- * e.g. /claims/[id] shows the human case reference instead of "68b5f5ad…".
+ * in the authenticated route shell. Used by detail routes whose URL segment
+ * is an opaque UUID — e.g. /cases/[id] can expose the human case reference.
  */
 type BreadcrumbOverride = {
   label: string | null;
@@ -27,7 +27,7 @@ export function BreadcrumbOverrideProvider({ children }: { children: React.React
   );
 }
 
-/** Read the current override (AppHeader). */
+/** Read the current authenticated-shell breadcrumb override. */
 export function useBreadcrumbOverride(): string | null {
   return useContext(BreadcrumbOverrideContext).label;
 }

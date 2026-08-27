@@ -1,0 +1,36 @@
+@layer components {
+  /* I2.4 keeps only the motion contract here. Semantic mode values belong to
+   * the final authenticated colour bridge in color-modes.css. */
+
+  .ua-app .ua-overlay {
+    transition: background-color var(--ua-duration-slow) var(--ua-ease-standard);
+  }
+
+  .ua-app .ua-modal,
+  .ua-app .ua-command-palette {
+    transition:
+      opacity var(--ua-duration-slow) var(--ua-ease-standard),
+      transform var(--ua-duration-slow) var(--ua-ease-enter);
+  }
+
+  .ua-app .ua-drawer-layer__backdrop {
+    transition: opacity var(--ua-duration-slow) var(--ua-ease-standard);
+  }
+
+  .ua-app .ua-drawer {
+    transition: transform var(--ua-duration-slow) var(--ua-ease-enter);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ua-app
+      :where(
+        .ua-overlay,
+        .ua-modal,
+        .ua-command-palette,
+        .ua-drawer-layer__backdrop,
+        .ua-drawer
+      ) {
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

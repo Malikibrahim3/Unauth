@@ -14,13 +14,13 @@ export function LossAttributionCard({ attribution }: { attribution: LossAttribut
   return (
     <Card unstyled as="section" variant="panel" className="p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-label" style={{ color: 'var(--uo-route-text-secondary)' }}>
           Loss attribution (advisory)
         </p>
         <StatusBadge family="confidence" value={attribution.confidence} />
       </div>
 
-      <p className="ua-text-section-title" style={{ color: 'var(--ua-text-primary)' }}>
+      <p className="ua-text-section-title" style={{ color: 'var(--uo-route-text-primary)' }}>
         {LOSS_ATTRIBUTION_DISPLAY[attribution.label]}
       </p>
 

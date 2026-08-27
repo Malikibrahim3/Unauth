@@ -7,7 +7,7 @@
  *   - multiple matches            -> ambiguous (unanchored; match candidates recorded);
  *   - none                        -> keep manual_reference (no fake order).
  *
- * See ARCHITECTURE.md §7.4.
+ * See ARCHITECTURE.md for the canonical case-state and product-truth owners.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';

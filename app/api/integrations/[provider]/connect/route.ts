@@ -39,10 +39,10 @@ export async function POST(
   if (denied) return denied;
 
   if (provider.id === 'shopify') {
-    return NextResponse.json({ ok: true, redirect: '/settings/integrations/shopify' });
+    return NextResponse.json({ ok: true, redirect: '/sources/setup/shopify' });
   }
   if (provider.id === 'gorgias') {
-    return NextResponse.json({ ok: true, redirect: '/settings/integrations/gorgias' });
+    return NextResponse.json({ ok: true, redirect: '/sources/setup/gorgias' });
   }
   if (provider.id === 'self_fulfillment_pack') {
     await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });

@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 
+const { LEGACY_UI_REDIRECTS } = require('./lib/navigation/aliases.js');
+
 // SECURITY: Resolve the project-specific Supabase storage hostname at build
 // time from NEXT_PUBLIC_SUPABASE_URL.  Wildcards (*.supabase.co) are not
 // permitted — they would allow any Supabase project to supply images and
@@ -29,10 +31,16 @@ const remotePatterns = supabaseHostname
   : [];
 
 const nextConfig = {
-  // Phase 28 runs production and development-harness proof servers together.
-  // A distinct dev dist dir prevents the development compiler from mutating
-  // the production build while both are under capture.
-  distDir: process.env.NEXT_DIST_DIR ?? '.next',
+  // A task-specific dist directory lets verification run beside a developer's
+  // existing server without sharing or corrupting its generated lock/cache.
+  distDir: process.env.UNAUTH_NEXT_DIST_DIR || '.next',
+  // Keep the authenticated working set warm in the Webpack fallback. The app
+  // has substantially more than Next's five-entry development default, which
+  // otherwise evicts a route after one minute and recompiles it on the next click.
+  onDemandEntries: {
+    maxInactiveAge: 30 * 60 * 1000,
+    pagesBufferLength: 32,
+  },
   serverExternalPackages: ['papaparse'],
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1'],
@@ -77,43 +85,24 @@ const nextConfig = {
     ];
     return [{ source: '/:path*', headers: securityHeaders }];
   },
+  async rewrites() {
+    return [
+      { source: '/records/:type/:id', destination: '/financials/reports/records?kind=:type&value=:id' },
+      { source: '/recovery/:claimId', destination: '/financials/recovery/:claimId' },
+      { source: '/controls/payout-rules/:id/versions', destination: '/controls/rules/:id' },
+      { source: '/controls/flows/:id/edit', destination: '/controls/flows/:id' },
+      { source: '/sources/:provider/setup', destination: '/sources/setup/:provider' },
+      { source: '/settings/workspace', destination: '/settings/workspace/account' },
+      { source: '/settings/roles', destination: '/settings/workspace/team' },
+      { source: '/system-states', destination: '/help' },
+    ];
+  },
   async redirects() {
     // Compatibility redirects for URLs that were previously shipped or linked
     // externally. Keep this as the only legacy-route source of truth. Remove an
     // entry after production access logs show no requests for 90 days; the web
     // platform owner owns that review.
-    return [
-      { source: '/inbox', destination: '/claims', permanent: false },
-      { source: '/catches/:path*', destination: '/claims', permanent: false },
-      { source: '/chargebacks/:path*', destination: '/claims', permanent: false },
-      { source: '/evidence', destination: '/claims', permanent: false },
-      { source: '/evidence-packages', destination: '/claims', permanent: false },
-      { source: '/store/:path*', destination: '/dashboard', permanent: false },
-      { source: '/lookup/:path*', destination: '/customers', permanent: false },
-      { source: '/global/:path*', destination: '/customers', permanent: false },
-      { source: '/graph/:path*', destination: '/customers', permanent: false },
-      { source: '/clusters/:path*', destination: '/customers', permanent: false },
-      { source: '/watchlist/:path*', destination: '/customers', permanent: false },
-      { source: '/audit/:path*', destination: '/reports', permanent: false },
-      { source: '/report/:path*', destination: '/reports', permanent: false },
-      { source: '/audits/:path*', destination: '/reports', permanent: false },
-      { source: '/audit-history', destination: '/reports', permanent: false },
-      { source: '/history/:path*', destination: '/reports', permanent: false },
-      { source: '/saved/:path*', destination: '/reports', permanent: false },
-      { source: '/new-audit', destination: '/integrations/imports', permanent: false },
-      { source: '/upload/:path*', destination: '/integrations/imports', permanent: false },
-      { source: '/settings/integrations', destination: '/integrations', permanent: false },
-      { source: '/settings/integrations/bigcommerce', destination: '/integrations/bigcommerce', permanent: false },
-      { source: '/settings/integrations/woocommerce', destination: '/integrations/woocommerce', permanent: false },
-      { source: '/network-metrics/:path*', destination: '/dashboard', permanent: false },
-      { source: '/eval/:path*', destination: '/dashboard', permanent: false },
-      { source: '/help/identity-matching', destination: '/help', permanent: false },
-      { source: '/help/confidence-grades', destination: '/help', permanent: false },
-      { source: '/help/how-it-works', destination: '/help', permanent: false },
-      { source: '/help/integrations/siena', destination: '/help', permanent: false },
-      { source: '/help/integrations/yuma', destination: '/help', permanent: false },
-      { source: '/partners', destination: '/rules/recovery', permanent: false },
-    ];
+    return [...LEGACY_UI_REDIRECTS];
   },
   // SECURITY: Explicit image optimizer allowlist — mitigates GHSA-9g9p-9gw9-jx7f.
   // Uses the exact Supabase project hostname derived from NEXT_PUBLIC_SUPABASE_URL.
@@ -121,6 +110,10 @@ const nextConfig = {
   // is empty and image optimisation is disabled (fail-closed).
   images: {
     remotePatterns,
+    // Next 16 ignores any <Image quality> value that is not allow-listed here and
+    // silently falls back to 75. The landing hero screenshot is dense product UI,
+    // so it opts into 90 to keep small type and chart strokes crisp.
+    qualities: [75, 90],
   },
 };
 

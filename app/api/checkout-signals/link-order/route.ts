@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   const key = request.headers.get('X-Unauth-Key')?.trim();
   if (!key) return NextResponse.json({ ok: false }, { status: 401 });
 
-  const auth = await validateApiKeyPlaintext(key, getClientIp(request.headers));
+  const auth = await validateApiKeyPlaintext(key, getClientIp(request.headers), 'imports:write');
   if ('status' in auth) {
     return NextResponse.json({ ok: false }, { status: auth.status });
   }

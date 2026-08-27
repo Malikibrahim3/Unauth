@@ -1,35 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  CheckCircle2,
-  FlaskConical,
-  Pause,
-  Pencil,
-  Play,
-  RotateCcw,
-  Send,
-} from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  BuilderSequence,
-  BuilderShell,
-  BuilderStep,
-  BuilderValidationSummary,
-  Button,
-  Modal,
-  Card,
-} from "@/components/ui";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { CheckCircle2 } from "lucide-react";
+import { Modal } from "@/components/ui";
 import {
   FlowEditor,
+  type FlowConditionDraft,
   type FlowDraftPayload,
   type FlowEditable,
-  type FlowConditionDraft,
   type FlowOutputDraft,
 } from "@/components/rules/FlowEditor";
-import { formatDateTime } from "@/lib/utils/format";
 import { FIELD_DEFS_BY_NAME, FIELD_LABELS } from "@/lib/rules/fields";
+import { formatDateTime } from "@/lib/utils/format";
+import styles from "./FlowBuilderOperations.module.css";
 
 export type WorkflowVersionRecord = FlowEditable & {
   id: string;
@@ -41,11 +26,19 @@ export type WorkflowVersionRecord = FlowEditable & {
   published_at: string | null;
 };
 
-function setPath(
-  target: Record<string, unknown>,
-  path: string,
-  value: unknown,
-) {
+type BuilderStep = {
+  id: string;
+  kind: "Trigger" | "Automated" | "Decision";
+  automatic: boolean;
+  icon: string;
+  label: string;
+  detail: string;
+  stat: string;
+  settings: Array<{ label: string; value: string }>;
+  warning?: { title: string; body: string };
+};
+
+function setPath(target: Record<string, unknown>, path: string, value: unknown) {
   const parts = path.split(".");
   let cursor = target;
   for (let index = 0; index < parts.length - 1; index += 1) {
@@ -58,14 +51,10 @@ function setPath(
 }
 
 function actionSummary(output: FlowOutputDraft) {
-  if (output.type === "create_task")
-    return `Create ${output.priority ?? "medium"} task “${output.title || "Untitled"}”${output.dueInHours ? ` due in ${output.dueInHours}h` : ""}`;
-  if (output.type === "request_evidence")
-    return `Request ${(output.evidenceType || "evidence").replaceAll("_", " ")}`;
-  if (output.type === "set_deadline")
-    return `Set deadline to ${output.dueInHours}h`;
-  if (output.type === "request_notification")
-    return `Request ${(output.kind || "team").replaceAll("_", " ")} notification “${output.title || "Untitled"}”`;
+  if (output.type === "create_task") return `Create ${output.priority ?? "medium"} task “${output.title || "Untitled"}”${output.dueInHours ? ` due in ${output.dueInHours}h` : ""}`;
+  if (output.type === "request_evidence") return `Request ${(output.evidenceType || "evidence").replaceAll("_", " ")}`;
+  if (output.type === "set_deadline") return `Set deadline to ${output.dueInHours}h`;
+  if (output.type === "request_notification") return `Request ${(output.kind || "team").replaceAll("_", " ")} notification “${output.title || "Untitled"}”`;
   return "Review workflow action";
 }
 
@@ -76,7 +65,7 @@ const OPERATOR_COPY: Record<FlowConditionDraft["operator"], string> = {
   exists: "is present",
 };
 
-function readableCondition(condition: FlowConditionDraft): string {
+function readableCondition(condition: FlowConditionDraft) {
   const field = FIELD_LABELS[condition.field] ?? condition.field.replaceAll("_", " ");
   const definition = FIELD_DEFS_BY_NAME[condition.field];
   const values = (Array.isArray(condition.value) ? condition.value : [condition.value])
@@ -87,87 +76,125 @@ function readableCondition(condition: FlowConditionDraft): string {
     : `${field} ${OPERATOR_COPY[condition.operator]} ${values.join(", ")}`;
 }
 
-function withOccurrenceKeys<T>(items: T[], serialize: (item: T) => string) {
-  const seen = new Map<string, number>();
-  return items.map((item) => {
-    const serialized = serialize(item);
-    const occurrence = (seen.get(serialized) ?? 0) + 1;
-    seen.set(serialized, occurrence);
-    return { item, key: `${serialized}-${occurrence}` };
+function outputSettings(output: FlowOutputDraft) {
+  if (output.type === "create_task") return [
+    { label: "Action", value: "Create a work item" },
+    { label: "Priority", value: output.priority },
+    { label: "Due", value: output.dueInHours ? `${output.dueInHours} hours` : "No deadline" },
+  ];
+  if (output.type === "request_evidence") return [
+    { label: "Action", value: "Request evidence" },
+    { label: "Evidence type", value: output.evidenceType.replaceAll("_", " ") || "Unavailable" },
+    { label: "On missing source", value: "Continue and mark unavailable" },
+  ];
+  if (output.type === "set_deadline") return [
+    { label: "Action", value: "Set deadline" },
+    { label: "Due", value: `${output.dueInHours} hours` },
+    { label: "Authority", value: "Operational routing only" },
+  ];
+  return [
+    { label: "Action", value: "Request notification" },
+    { label: "Kind", value: output.kind.replaceAll("_", " ") },
+    { label: "Recipient", value: output.recipientUserId ? "Named user recorded" : "Unavailable" },
+  ];
+}
+
+function buildSteps(flow: WorkflowVersionRecord): BuilderStep[] {
+  const conditionDetail = flow.conditions.length
+    ? flow.conditions.slice(0, 2).map(readableCondition).join(" · ")
+    : "No conditions — every event with this trigger matches";
+  const steps: BuilderStep[] = [
+    {
+      id: "trigger",
+      kind: "Trigger",
+      automatic: true,
+      icon: "⚡",
+      label: `When ${flow.trigger_event_type.replaceAll("_", " ")}`,
+      detail: flow.description || "A source-backed event starts this flow.",
+      stat: "Source event",
+      settings: [
+        { label: "Source event", value: flow.trigger_event_type.replaceAll("_", " ") },
+        { label: "Version", value: `v${flow.version} · ${flow.status}` },
+        { label: "Execution", value: flow.active ? "Live" : "Inactive" },
+      ],
+    },
+    {
+      id: "conditions",
+      kind: "Automated",
+      automatic: true,
+      icon: "⟳",
+      label: flow.conditions.length ? `Check ${flow.conditions.length} recorded condition${flow.conditions.length === 1 ? "" : "s"}` : "Continue without a condition gate",
+      detail: conditionDetail,
+      stat: `${flow.conditions.length} condition${flow.conditions.length === 1 ? "" : "s"}`,
+      settings: [
+        { label: "Logic", value: flow.conditions.length > 1 ? "Every condition must match" : "Single condition" },
+        { label: "Conditions", value: flow.conditions.length ? conditionDetail : "None recorded" },
+        { label: "On missing source", value: "Unavailable does not become zero" },
+      ],
+      warning: flow.conditions.length ? undefined : {
+        title: "No condition gate is recorded",
+        body: "Every source event with this trigger would continue to the bounded actions.",
+      },
+    },
+  ];
+
+  flow.outputs.forEach((output, index) => {
+    steps.push({
+      id: `output-${index}`,
+      kind: "Automated",
+      automatic: true,
+      icon: "⟳",
+      label: actionSummary(output),
+      detail: "A bounded operational action. It cannot approve, deny, refund or move money.",
+      stat: "Configured",
+      settings: outputSettings(output),
+    });
   });
+
+  steps.push({
+    id: "decision",
+    kind: "Decision",
+    automatic: false,
+    icon: "◆",
+    label: "Person approves, replaces or denies",
+    detail: "A merchant decision — the flow stops at the authority boundary until a named person records it.",
+    stat: "Always required",
+    settings: [
+      { label: "Queue", value: "Work · needs action" },
+      { label: "Assign to", value: "Named authorised operator" },
+      { label: "Authority", value: "Merchant decision" },
+    ],
+    warning: {
+      title: "This step can never be automated",
+      body: "Approving, replacing or denying moves money. Unauth requires a named person on every one.",
+    },
+  });
+  return steps;
 }
 
 export function FlowVersionWorkbench({
   versions,
   currentId,
   canManage,
-  publicationEnabled,
 }: {
   versions: WorkflowVersionRecord[];
   currentId: string;
   canManage: boolean;
-  publicationEnabled: boolean;
 }) {
   const router = useRouter();
-  const current =
-    versions.find((version) => version.id === currentId) ?? versions[0]!;
+  const current = versions.find((version) => version.id === currentId) ?? versions[0]!;
   const draft = versions.find((version) => version.status === "draft") ?? null;
-  const published =
-    versions.find((version) => version.status === "published") ?? null;
+  const published = versions.find((version) => version.status === "published") ?? null;
   const display = draft ?? published ?? current;
+  const steps = useMemo(() => buildSteps(display), [display]);
+  const [selectedStepId, setSelectedStepId] = useState("decision");
+  const selectedStep = steps.find((step) => step.id === selectedStepId) ?? steps[0]!;
   const [editing, setEditing] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
-  const [publishPreview, setPublishPreview] = useState<{
-    summary: { trigger: string; conditionCount: number; actions: string[] };
-    notice: string;
-    publicationEnabled: boolean;
-  } | null>(null);
-  const [sampleValues, setSampleValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      display.conditions.map((condition) => [
-        condition.field,
-        condition.operator === "exists"
-          ? "sample"
-          : String(
-              Array.isArray(condition.value)
-                ? (condition.value[0] ?? "")
-                : (condition.value ?? ""),
-            ),
-      ]),
-    ),
-  );
-  const [testResult, setTestResult] = useState<{
-    matched: boolean;
-    plannedActions: FlowOutputDraft[];
-    writesPerformed: number;
-    notice: string;
-  } | null>(null);
+  const [sampleValues, setSampleValues] = useState<Record<string, string>>(() => Object.fromEntries(display.conditions.map((condition) => [condition.field, condition.operator === "exists" ? "sample" : String(Array.isArray(condition.value) ? (condition.value[0] ?? "") : (condition.value ?? ""))])));
+  const [testResult, setTestResult] = useState<{ matched: boolean; plannedActions: FlowOutputDraft[]; writesPerformed: number; notice: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [message, setMessage] = useState<{
-    tone: "success" | "error";
-    text: string;
-  } | null>(null);
-  const changes = useMemo(() => {
-    if (!draft || !published) return [];
-    return [
-      ["Trigger", published.trigger_event_type, draft.trigger_event_type],
-      [
-        "Conditions",
-        `${published.conditions.length}`,
-        `${draft.conditions.length}`,
-      ],
-      [
-        "Actions",
-        published.outputs.map(actionSummary).join("; "),
-        draft.outputs.map(actionSummary).join("; "),
-      ],
-      [
-        "Description",
-        published.description ?? "None",
-        draft.description ?? "None",
-      ],
-    ].filter(([, before, after]) => before !== after);
-  }, [draft, published]);
+  const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   async function save(payload: FlowDraftPayload) {
     setBusy("save");
@@ -180,21 +207,14 @@ export function FlowVersionWorkbench({
         body: JSON.stringify(payload),
       });
       const body = await response.json();
-      if (!response.ok)
-        throw new Error(body.error ?? "Flow draft could not be saved");
+      if (!response.ok) throw new Error(body.error ?? "Flow draft could not be saved");
       setEditing(false);
-      router.push(`/flows/${body.workflow.id}`);
+      router.push(`/controls/flows/${body.workflow.id}`);
       router.refresh();
       setMessage({ tone: "success", text: body.notice });
       return true;
     } catch (reason) {
-      setMessage({
-        tone: "error",
-        text:
-          reason instanceof Error
-            ? reason.message
-            : "Flow draft could not be saved",
-      });
+      setMessage({ tone: "error", text: reason instanceof Error ? reason.message : "Flow draft could not be saved" });
       return false;
     } finally {
       setBusy(null);
@@ -208,15 +228,8 @@ export function FlowVersionWorkbench({
     const payload: Record<string, unknown> = {};
     for (const condition of display.conditions) {
       const raw = sampleValues[condition.field] ?? "";
-      const reference = Array.isArray(condition.value)
-        ? condition.value[0]
-        : condition.value;
-      const value =
-        typeof reference === "number"
-          ? Number(raw)
-          : typeof reference === "boolean"
-            ? raw === "true"
-            : raw;
+      const reference = Array.isArray(condition.value) ? condition.value[0] : condition.value;
+      const value = typeof reference === "number" ? Number(raw) : typeof reference === "boolean" ? raw === "true" : raw;
       setPath(payload, condition.field, value);
     }
     try {
@@ -229,383 +242,102 @@ export function FlowVersionWorkbench({
       if (!response.ok) throw new Error(body.error ?? "Test run failed");
       setTestResult(body);
     } catch (reason) {
-      setMessage({
-        tone: "error",
-        text: reason instanceof Error ? reason.message : "Test run failed",
-      });
+      setMessage({ tone: "error", text: reason instanceof Error ? reason.message : "Test run failed" });
     } finally {
       setBusy(null);
     }
   }
 
-  async function previewPublish() {
-    if (!draft) return;
-    setBusy("preview");
-    try {
-      const response = await fetch(`/api/workflows/${draft.id}/publish`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Publish preview failed");
-      setPublishPreview(body);
-    } catch (reason) {
-      setMessage({
-        tone: "error",
-        text:
-          reason instanceof Error ? reason.message : "Publish preview failed",
-      });
-    } finally {
-      setBusy(null);
-    }
-  }
-  async function publish() {
-    if (!draft) return;
-    setBusy("publish");
-    try {
-      const response = await fetch(`/api/workflows/${draft.id}/publish`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: true }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Publish failed");
-      setPublishPreview(null);
-      router.push(`/flows/${body.workflow.id}`);
-      router.refresh();
-      setMessage({
-        tone: "success",
-        text: `Version ${body.workflow.version} published atomically.`,
-      });
-    } catch (reason) {
-      setMessage({
-        tone: "error",
-        text: reason instanceof Error ? reason.message : "Publish failed",
-      });
-    } finally {
-      setBusy(null);
-    }
-  }
-  async function changeState(action: "pause" | "resume") {
-    if (!published) return;
-    setBusy(action);
-    try {
-      const response = await fetch(`/api/workflows/${published.id}/state`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "State update failed");
-      router.refresh();
-      setMessage({ tone: "success", text: body.notice });
-    } catch (reason) {
-      setMessage({
-        tone: "error",
-        text: reason instanceof Error ? reason.message : "State update failed",
-      });
-    } finally {
-      setBusy(null);
-    }
-  }
-  async function rollback(sourceId: string, version: number) {
-    setBusy(`rollback-${version}`);
-    try {
-      const response = await fetch(`/api/workflows/${sourceId}/rollback`, {
-        method: "POST",
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Rollback draft failed");
-      router.push(`/flows/${body.workflow.id}`);
-      router.refresh();
-      setMessage({ tone: "success", text: body.notice });
-    } catch (reason) {
-      setMessage({
-        tone: "error",
-        text:
-          reason instanceof Error ? reason.message : "Rollback draft failed",
-      });
-    } finally {
-      setBusy(null);
-    }
+  function openTest() {
+    setSampleValues(Object.fromEntries(display.conditions.map((condition) => [condition.field, condition.operator === "exists" ? "sample" : String(Array.isArray(condition.value) ? (condition.value[0] ?? "") : (condition.value ?? ""))])));
+    setTestResult(null);
+    setTestOpen(true);
   }
 
   return (
-    <div className="space-y-5">
-      {message ? (
-        <p
-          role="status"
-          className="ua-text-body rounded-md border px-3 py-2"
-          style={{
-            borderColor:
-              message.tone === "error" ? "var(--ua-critical)" : "var(--ua-success)",
-            color:
-              message.tone === "error"
-                ? "var(--ua-critical)"
-                : "var(--ua-text-primary)",
-          }}
-        >
-          {message.text}
-        </p>
-      ) : null}
-      <BuilderShell
-        statusBadge={<StatusBadge family="workflowStatus" value={display.status === "published" && !display.active ? "paused" : display.status} />}
-        title={<h1 className="m-0 text-inherit font-inherit">{display.name}</h1>}
-        meta={
-          <>
-            <span className="ua-text-metadata font-mono">v{display.version}</span>
-            <span> · {display.description || "No operator-facing description yet."}</span>
-          </>
-        }
-        actions={
-          <>
-            <Button variant="secondary" leadingIcon={<FlaskConical className="h-4 w-4" />} onClick={() => setTestOpen(true)}>
-              Test event
-            </Button>
-            {canManage ? (
-              <Button variant="secondary" leadingIcon={<Pencil className="h-4 w-4" />} onClick={() => setEditing(true)}>
-                {draft ? "Edit draft" : "Create draft"}
-              </Button>
-            ) : null}
-            {canManage && draft ? (
-              <Button variant="primary" leadingIcon={<Send className="h-4 w-4" />} loading={busy === "preview"} onClick={previewPublish}>
-                {publicationEnabled ? "Review publish" : "Review preview"}
-              </Button>
-            ) : null}
-            {canManage && published ? (
-              <Button
-                variant="ghost"
-                leadingIcon={published.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                loading={busy === (published.active ? "pause" : "resume")}
-                disabled={!published.active && !publicationEnabled}
-                onClick={() => changeState(published.active ? "pause" : "resume")}
-              >
-                {published.active ? "Pause" : "Resume"}
-              </Button>
-            ) : null}
-          </>
-        }
-        validation={
-          <BuilderValidationSummary
-            tone={publicationEnabled ? "ready" : "neutral"}
-            title={
-              publicationEnabled
-                ? "Test the draft, review its effect, then publish explicitly."
-                : "Drafts and tests are available; publishing and live execution are disabled."
-            }
-            items={
-              draft && published
-                ? [<>Published v{published.version} remains {published.active ? "active" : "paused"} until you explicitly publish this draft.</>]
-                : display.conditions.length === 0
-                  ? [<>This flow has no conditions, so every {display.trigger_event_type} event matches its bounded actions.</>]
-                  : undefined
-            }
-          />
-        }
-        preview={
-          draft && published && changes.length > 0 ? (
-            <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="flow-draft-changes-title">
-              <h2 id="flow-draft-changes-title" className="ua-text-working-title">Draft changes</h2>
-              <dl className="mt-3 space-y-3">
-                {changes.map(([label, before, after]) => (
-                  <div key={label}>
-                    <dt className="ua-text-metadata">{label}</dt>
-                    <dd className="ua-text-metadata mt-1">
-                      <span className="line-through text-[var(--ua-text-tertiary)]">{before}</span>
-                      <span className="mx-1 text-[var(--ua-text-tertiary)]">to</span>
-                      <strong>{after}</strong>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </Card>
-          ) : undefined
-        }
-      >
-        <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="flow-sequence-title">
-          <h2 id="flow-sequence-title" className="ua-text-working-title">Flow sequence</h2>
-          <BuilderSequence className="mt-4" aria-label="Flow execution sequence">
-            <BuilderStep label="Trigger" detail={display.trigger_event_type.replaceAll("_", " ")} />
-            <BuilderStep label="Conditions" detail="All conditions must match before the flow plans an action.">
-              {display.conditions.length ? (
-                <ul className="mt-3 space-y-2">
-                  {withOccurrenceKeys(display.conditions, (condition) => `${condition.field}:${condition.operator}:${JSON.stringify(condition.value)}`).map(({ item: condition, key }) => (
-                    <li key={key} className="ua-text-dense rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5">
-                      {readableCondition(condition)}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="ua-text-body mt-3 text-[var(--ua-warning)]">No conditions — every trigger event matches.</p>
-              )}
-            </BuilderStep>
-            <BuilderStep label="Bounded action" detail="These actions route work and never make or issue payout decisions.">
-              <ol className="mt-3 space-y-2">
-                {withOccurrenceKeys(display.outputs, (output) => JSON.stringify(output)).map(({ item: output, key }) => (
-                  <li key={key} className="ua-text-dense rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5">
-                    {actionSummary(output)}
-                  </li>
-                ))}
-              </ol>
-            </BuilderStep>
-          </BuilderSequence>
-        </Card>
-      </BuilderShell>
-      <Card unstyled as="section" variant="panel" className="overflow-hidden p-0">
-        <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
-          <h2 className="ua-text-working-title">
-            Version history and rollback
-          </h2>
+    <div className={styles.root} data-operations-surface="flow-builder">
+      <header className={styles.pageHeader}>
+        <div>
+          <p className={styles.breadcrumb}>Unauth <span>›</span> Flows › {display.name}</p>
+          <h1>Edit flow</h1>
         </div>
-        <div className="divide-y divide-[var(--ua-border-subtle)]">
-          {versions.map((version) => (
-            <div
-              key={version.id}
-              className="grid gap-2 px-4 py-3 sm:grid-cols-[7rem_8rem_1fr_auto] sm:items-center"
-            >
-              <strong className="ua-text-working-title font-mono">
-                Version {version.version}
-              </strong>
-              <StatusBadge family="workflowStatus" value={version.status === "published" && !version.active ? "paused" : version.status} size="sm" />
-              <span className="ua-text-caption-role">
-                {version.published_at
-                  ? `Published ${formatDateTime(version.published_at)}`
-                  : `Created ${formatDateTime(version.created_at)}`}
-              </span>
-              {canManage && version.status !== "draft" ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  leadingIcon={<RotateCcw className="h-3.5 w-3.5" />}
-                  disabled={Boolean(draft)}
-                  loading={busy === `rollback-${version.version}`}
-                  onClick={() => rollback(version.id, version.version)}
-                >
-                  Use as new draft
-                </Button>
-              ) : null}
-            </div>
-          ))}
+        <div className={styles.headerActions}>
+          <Link className={styles.secondaryButton} href={`/controls/flows?selected=${display.id}`}>Discard changes</Link>
+          <button type="button" className={styles.secondaryButton} disabled={!canManage} onClick={() => setEditing(true)}>Save draft</button>
         </div>
-      </Card>
-      <Modal
-        open={editing}
-        onClose={() => setEditing(false)}
-        title={draft ? "Edit flow draft" : "Create flow draft"}
-        description="Only the draft changes. The published version remains untouched."
-      >
-        <div className="max-h-[75vh] overflow-y-auto">
-          <FlowEditor
-            initial={display}
-            fixedName
-            submitLabel={draft ? "Save draft" : "Create draft version"}
-            onCancel={() => setEditing(false)}
-            onSubmit={save}
-          />
-        </div>
-      </Modal>
-      <Modal
-        open={testOpen}
-        onClose={() => setTestOpen(false)}
-        title="Test event"
-        description="Try this flow with sample values. Nothing changes until you publish."
-        actions={[
-          {
-            label: busy === "test" ? "Testing…" : "Run test",
-            onClick: testFlow,
-          },
-        ]}
-      >
-        {display.conditions.length ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {display.conditions.map((condition) => (
-              <label
-                key={condition.field}
-                className="ua-text-label"
-              >
-                <span>{FIELD_LABELS[condition.field] ?? condition.field.replaceAll("_", " ")}</span>
-                <input
-                  className="ua-text-body mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2"
-                  value={sampleValues[condition.field] ?? ""}
-                  onChange={(event) =>
-                    setSampleValues((currentValues) => ({
-                      ...currentValues,
-                      [condition.field]: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+      </header>
+
+      <main className={styles.main}>
+        {message ? <p className={styles.message} data-tone={message.tone} role={message.tone === "error" ? "alert" : "status"}>{message.text}</p> : null}
+        <section className={styles.canvas}>
+          <header>
+            <div><h2>{display.name} · {display.status}</h2><p>{steps.length} steps · 1 handoff to a person · updated {formatDateTime(display.updated_at)}</p></div>
+            {draft ? <i>Draft changes</i> : <i>Historical published version · inactive</i>}
+          </header>
+          <div className={styles.steps}>
+            {steps.map((step, index) => (
+              <div key={step.id}>
+                <button type="button" className={styles.step} data-selected={selectedStep.id === step.id} data-automatic={step.automatic} onClick={() => setSelectedStepId(step.id)}>
+                  <span className={styles.stepIcon}>{step.icon}</span>
+                  <span className={styles.stepBody}>
+                    <span className={styles.stepKind}>{step.kind}</span>
+                    <strong>{step.label}</strong>
+                    <small>{step.detail}</small>
+                  </span>
+                  <span className={styles.stepStat}>{step.stat}</span>
+                  <span className={styles.drag} aria-hidden="true" />
+                </button>
+                {index < steps.length - 1 ? (
+                  <div className={styles.connector}><span aria-hidden="true">↓</span><button type="button" disabled={!canManage} onClick={() => setEditing(true)}>+ Insert step</button></div>
+                ) : null}
+              </div>
             ))}
           </div>
-        ) : (
-          <p className="ua-text-body text-[var(--ua-warning)]">
-            This flow has no conditions, so every event with the configured
-            trigger will match.
-          </p>
-        )}
-        {testResult ? (
-          <div className="mt-4 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
-            <p className="ua-text-working-title flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-[var(--ua-success)]" />
-              {testResult.matched ? "Event matched" : "Event did not match"}
-            </p>
-            <p className="ua-text-caption-role mt-1">
-              {testResult.matched
-                ? `${testResult.plannedActions.length} actions planned`
-                : "No actions planned"}{" "}
-              · {testResult.writesPerformed} writes performed
-            </p>
-          </div>
-        ) : null}
+          <footer><i /><span>A flow may gather, draft, assign and notify. Approving, denying or writing off money always requires a named person.</span></footer>
+        </section>
+
+        <aside className={styles.rail}>
+          <section className={styles.inspector}>
+            <header><h2>{selectedStep.label}</h2><p>{selectedStep.kind} step</p></header>
+            <div className={styles.settings}>
+              {selectedStep.settings.map((setting) => <label key={setting.label}><span>{setting.label}</span><button type="button" disabled={!canManage} onClick={() => setEditing(true)}>{setting.value}<i>⌄</i></button></label>)}
+            </div>
+            {selectedStep.warning ? <div className={styles.warning}><strong><i />{selectedStep.warning.title}</strong><p>{selectedStep.warning.body}</p></div> : null}
+            <footer><button type="button" disabled={!canManage} onClick={() => setEditing(true)}>Duplicate</button><button type="button" className={styles.removeButton} disabled={!canManage || selectedStep.id === "decision"} onClick={() => setEditing(true)}>Remove step</button></footer>
+          </section>
+
+          <section className={styles.dryRun}>
+            <header><h2>Test run</h2><i>No real events</i></header>
+            <div className={styles.dryFigures}>
+              <div><span>Would run</span><b>{testResult ? (testResult.matched ? "1 event" : "0 events") : "— Unavailable"}</b></div>
+              <div><span>Would hold</span><b>{testResult ? (testResult.matched ? "0 held" : "1 held") : "— Unavailable"}</b></div>
+            </div>
+            <div className={styles.dryState}>
+              {testResult ? <><code>Sample event</code><span>{testResult.plannedActions.length} bounded action{testResult.plannedActions.length === 1 ? "" : "s"}</span><i data-tone={testResult.matched ? "ok" : "hold"}>{testResult.matched ? "Would run" : "Would hold"}</i></> : <p>Run a source-shaped sample event to inspect this version. Historical 30-day replay is unavailable.</p>}
+            </div>
+            <button type="button" onClick={openTest}>Run dry test</button>
+          </section>
+
+          <section className={styles.publishing} data-state-id="flow-pilot-boundary">
+            <h2>Pilot boundary</h2>
+            <ul>
+              <li data-ok="true"><i>✓</i><span>Draft editing and sample-event testing perform no live write.</span></li>
+              <li data-ok="true"><i>✓</i><span>Outputs are limited to tasks, evidence requests, deadlines, and in-app notification requests.</span></li>
+              <li data-ok="false"><i>!</i><span>Publication and live execution are unavailable until dispatcher idempotency, replay, audit, and failure recovery are independently proved.</span></li>
+            </ul>
+          </section>
+        </aside>
+      </main>
+
+      <Modal open={editing} onClose={() => setEditing(false)} title={draft ? "Edit flow draft" : "Create flow draft"} description="Only the draft changes. Any historical published version remains untouched and inactive." overlayId="flow-edit-and-test-modals">
+        <FlowEditor initial={display} fixedName submitLabel={draft ? "Save draft" : "Create draft version"} onCancel={() => setEditing(false)} onSubmit={save} />
       </Modal>
-      <Modal
-        open={Boolean(publishPreview)}
-        onClose={() => setPublishPreview(null)}
-        title={publicationEnabled ? "Publish flow version" : "Flow publication preview"}
-        description={
-          publicationEnabled
-            ? "Atomic publication retires the previous version only if the new version activates successfully."
-            : "Publishing is currently unavailable. This review does not change live data."
-        }
-        actions={
-          publicationEnabled
-            ? [
-                {
-                  label:
-                    busy === "publish"
-                      ? "Publishing…"
-                      : `Publish v${draft?.version ?? ""}`,
-                  onClick: publish,
-                },
-              ]
-            : []
-        }
-      >
-        {publishPreview ? (
-          <div className="ua-text-body space-y-3">
-            <p>
-              <strong>Trigger:</strong>{" "}
-              <span className="font-mono">
-                {publishPreview.summary.trigger}
-              </span>
-            </p>
-            <p>
-              <strong>Conditions:</strong>{" "}
-              {publishPreview.summary.conditionCount}
-            </p>
-            <p>
-              <strong>Actions:</strong>{" "}
-              {publishPreview.summary.actions
-                .map((action) => action.replaceAll("_", " "))
-                .join(", ")}
-            </p>
-            <p className="ua-text-caption-role">
-              {publishPreview.notice}
-            </p>
-          </div>
-        ) : null}
+
+      <Modal open={testOpen} onClose={() => setTestOpen(false)} title="Test event" description="Try this flow with sample values. No real event is created and no live write is performed." overlayId="flow-edit-and-test-modals" actions={[{ label: busy === "test" ? "Testing…" : "Run test", onClick: testFlow }]}>
+        {display.conditions.length ? <div className="grid gap-3 sm:grid-cols-2">{display.conditions.map((condition, index) => <label key={`${condition.field}-${index}`} className="ua-text-label"><span>{FIELD_LABELS[condition.field] ?? condition.field.replaceAll("_", " ")}</span><input className="ua-text-body mt-1 w-full rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-3 py-2" value={sampleValues[condition.field] ?? ""} onChange={(event) => setSampleValues((currentValues) => ({ ...currentValues, [condition.field]: event.target.value }))} /></label>)}</div> : <p className="ua-text-body text-[var(--uo-route-warning)]">This flow has no conditions, so every event with the configured trigger will match.</p>}
+        {testResult ? <div className="mt-4 rounded-md border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-muted)] p-3"><p className="ua-text-working-title flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[var(--uo-route-success)]" />{testResult.matched ? "Event matched" : "Event did not match"}</p><p className="ua-text-caption-role mt-1">{testResult.matched ? `${testResult.plannedActions.length} actions planned` : "No actions planned"} · {testResult.writesPerformed} writes performed</p></div> : null}
       </Modal>
+
     </div>
   );
 }

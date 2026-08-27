@@ -1129,10 +1129,12 @@ function buildRecoveryRows(merchantId) {
       estimated_recoverable_min: recovery.min,
       estimated_recoverable_max: recovery.max,
       amount_recovered: recovery.recovered ?? null,
-      // recovery_cases carries decimal amounts only — there are no *_minor
-      // integer columns, and approved / written-off amounts are not modelled on
-      // this table. Writing them aborts the seeder before it reaches the
-      // canonical decision/outcome rows that reporting depends on.
+      amount_sought_minor: Math.round(Math.max(recovery.max, recovery.recovered ?? 0) * 100),
+      amount_approved_minor: recovery.status === 'paid'
+        ? Math.round(Math.max(recovery.max, recovery.recovered ?? 0) * 100)
+        : 0,
+      amount_recovered_minor: Math.round((recovery.recovered ?? 0) * 100),
+      amount_written_off_minor: 0,
       currency: 'GBP',
       deadline_at: daysFromAnchorIso(recovery.status === 'chase_due' ? 1 : 14, 17),
       next_chase_at: recovery.status === 'chase_due' ? daysAgoIso(1, 9) : daysFromAnchorIso(4, 9),

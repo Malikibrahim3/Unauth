@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 concurrency:
   group: playwright-audit-${{ github.ref }}
@@ -17,6 +15,7 @@ jobs:
     name: Critical and mobile staging audit
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: staging
     env:
       PLAYWRIGHT: '1'
       STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}

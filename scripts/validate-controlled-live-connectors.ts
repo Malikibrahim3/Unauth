@@ -1,3 +1,5 @@
+import './e2e/helpers/loadEnv'; // MUST be first — app env validates at import time.
+
 import { createServiceClient } from '@/lib/supabase/server';
 import { verifyMerchantLiveConnections } from '@/lib/connections/liveVerification';
 import { runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';
@@ -52,7 +54,7 @@ if (shouldSyncShipBob) {
     .eq('source', 'shipbob')
     .eq('source_account_id', sourceAccountId);
   if (ordersError) throw new Error('controlled_shipbob_orders_check_failed');
-  const sourceOrderIds = (sourceOrders ?? []).map((row) => row.id);
+  const sourceOrderIds = (sourceOrders ?? []).map((row: { id: string }) => row.id);
 
   const [records, fulfillments, locations, shipments, returns] = await Promise.all([
     client.from('source_records').select('id', { count: 'exact', head: true })

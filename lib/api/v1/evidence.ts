@@ -253,6 +253,8 @@ export async function performV1EvidenceCreate(
     contextType: 'evidence_summary',
     customerRef: profileId,
     orderRef: disputedOrderId,
+    logicalOperationId: `evidence-package:${row.id}`,
+    sourceObject: { type: 'evidence_package', id: row.id },
     metadata: {
       request_source: 'api',
       api_key_id: auth.apiKeyId,

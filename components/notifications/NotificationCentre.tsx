@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import {
   AlertTriangle,
   Bell,
-  CheckCheck,
   Clock3,
   FileCheck2,
   RefreshCw,
@@ -13,13 +11,15 @@ import {
   UserRoundCheck,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Button, InsetGroup, Surface, Tabs } from '@/components/ui';
-import { formatDateTime } from '@/lib/utils/format';
-import { selectNotificationActivity } from '@/lib/visualisation/chartSelectors';
+import { Button, ButtonLink, PageFrame } from '@/components/ui';
+import { formatDateTime, formatNumber } from '@/lib/utils/format';
+import styles from './NotificationCentreOperations.module.css';
+import type { NotificationCounts, NotificationFilter } from '@/lib/notifications/store';
+import { NEEDS_NOTIFICATION_KINDS, type NotificationKind } from '@/lib/notifications/kinds';
 
 export type NotificationItem = {
   id: string;
-  kind: string;
+  kind: NotificationKind;
   title: string;
   body: string | null;
   target_href: string;
@@ -27,119 +27,209 @@ export type NotificationItem = {
   created_at: string;
 };
 
-const KIND_META: Record<string, { label: string; icon: typeof Bell }> = {
-  assignment: { label: 'Assignment', icon: UserRoundCheck },
-  mention: { label: 'Mention', icon: Bell },
-  approaching_deadline: { label: 'Deadline', icon: Clock3 },
-  evidence_update: { label: 'Evidence', icon: FileCheck2 },
-  decision_request: { label: 'Decision', icon: UserRoundCheck },
-  recovery_outcome: { label: 'Recovery', icon: RotateCcw },
-  sync_failure: { label: 'Connection', icon: AlertTriangle },
-  daily_work_summary: { label: 'Work summary', icon: Bell },
-  high_value_case_alert: { label: 'High value', icon: AlertTriangle },
-  scheduled_report: { label: 'Report', icon: FileCheck2 },
+type NotificationTone = 'critical' | 'warning' | 'success' | 'info' | 'neutral';
+
+const KIND_META: Record<NotificationKind, { label: string; icon: typeof Bell; tone: NotificationTone }> = {
+  assignment: { label: 'Assignment', icon: UserRoundCheck, tone: 'info' },
+  mention: { label: 'Mention', icon: Bell, tone: 'info' },
+  approaching_deadline: { label: 'Deadline', icon: Clock3, tone: 'warning' },
+  evidence_update: { label: 'Evidence', icon: FileCheck2, tone: 'info' },
+  decision_request: { label: 'Decision', icon: UserRoundCheck, tone: 'critical' },
+  recovery_outcome: { label: 'Recovery', icon: RotateCcw, tone: 'success' },
+  sync_failure: { label: 'Connection', icon: RefreshCw, tone: 'warning' },
+  high_value_case_alert: { label: 'High value', icon: AlertTriangle, tone: 'critical' },
 };
 
+const NEEDS_KINDS = new Set<NotificationKind>(NEEDS_NOTIFICATION_KINDS);
+
+function notificationMeta(item: NotificationItem) {
+  return KIND_META[item.kind];
+}
+
+function isSourceNotification(item: NotificationItem) {
+  return item.kind === 'sync_failure' || item.target_href.startsWith('/sources/') || item.target_href.startsWith('/financials/reconciliation');
+}
+
+function groupLabel(item: NotificationItem) {
+  if (!item.read_at && NEEDS_KINDS.has(item.kind)) return 'Needs you';
+  const created = Date.parse(item.created_at);
+  if (Number.isNaN(created)) return 'This week';
+  const now = Date.now();
+  const age = now - created;
+  if (age <= 24 * 60 * 60 * 1000) return 'Earlier today';
+  if (age <= 7 * 24 * 60 * 60 * 1000) return 'This week';
+  return 'Earlier';
+}
+
+function relativeTime(value: string) {
+  const time = Date.parse(value);
+  if (Number.isNaN(time)) return 'Time unavailable';
+  const elapsed = Math.max(0, Date.now() - time);
+  const minutes = Math.floor(elapsed / 60_000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return formatDateTime(value);
+}
+
 function destinationLabel(href: string) {
-  if (href.startsWith('/claims/')) return 'Open case';
-  if (href.startsWith('/recoveries/')) return 'Open recovery';
-  if (href.startsWith('/integrations/')) return 'Open connection';
+  if (href.startsWith('/cases/')) return 'Open case';
+  if (href.startsWith('/financials/recovery/')) return 'Open recovery';
+  if (href.startsWith('/financials/reconciliation')) return 'Open reconciliation';
+  if (href.startsWith('/financials/reports')) return 'Open report';
+  if (href.startsWith('/sources/')) return 'Open connection';
   if (href.startsWith('/work')) return 'Open work queue';
   return 'Open record';
 }
 
-function groupLabel(createdAt: string): string {
-  const created = new Date(createdAt);
-  if (!Number.isFinite(created.getTime())) return 'Earlier';
-  const today = new Date();
-  const startOfToday = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-  const age = startOfToday - Date.UTC(created.getUTCFullYear(), created.getUTCMonth(), created.getUTCDate());
-  if (age <= 0) return 'Today';
-  if (age <= 6 * 24 * 60 * 60 * 1000) return 'Previous 7 days';
-  return 'Earlier';
+function moveNotificationFocus(event: KeyboardEvent<HTMLButtonElement>) {
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+  const region = event.currentTarget.closest('#notification-list');
+  const triggers = region ? [...region.querySelectorAll<HTMLButtonElement>('[data-notification-trigger]')] : [];
+  if (!triggers.length) return;
+  const current = triggers.indexOf(event.currentTarget);
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? triggers.length - 1 : event.key === 'ArrowDown' ? Math.min(triggers.length - 1, current + 1) : Math.max(0, current - 1);
+  event.preventDefault();
+  triggers[next]?.focus();
 }
 
-function NotificationActivity({ notifications }: { notifications: NotificationItem[] }) {
-  const activity = useMemo(
-    () => selectNotificationActivity(
-      notifications.map((item) => ({ createdAt: item.created_at, readAt: item.read_at })),
-      14,
-    ),
-    [notifications],
-  );
-  const highest = Math.max(1, ...activity.map((day) => day.read + day.unread));
-
-  return (
-    <InsetGroup className="p-3" aria-label="Notification activity over the last 14 days">
-      <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <h2 className="ua-text-working-title text-[var(--ua-text-primary)]">Recent activity</h2>
-          <p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">Messages received over 14 days</p>
-        </div>
-        <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Unread uses the violet marker</span>
-      </div>
-      <div className="mt-3 grid h-16 grid-cols-14 items-end gap-1" role="img" aria-label="Fourteen-day notification activity; violet portions show notifications still unread.">
-        {activity.map((day) => {
-          const total = day.read + day.unread;
-          const height = `${Math.max(total ? 16 : 4, (total / highest) * 100)}%`;
-          const unreadHeight = total ? `${(day.unread / total) * 100}%` : '0%';
-          return (
-            <div key={day.dateLabel} className="flex h-full min-w-0 items-end" title={`${day.dateLabel}: ${total} received, ${day.unread} unread`}>
-              <span className="relative block w-full overflow-hidden rounded-[var(--ua-radius-xs)] bg-[var(--ua-chart-track)]" style={{ height }}>
-                {day.unread > 0 ? <span className="absolute inset-x-0 bottom-0 bg-[var(--ua-chart-primary)]" style={{ height: unreadHeight }} /> : null}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-1 grid grid-cols-14 gap-1" aria-hidden="true">
-        {activity.map((day) => <span key={day.dateLabel} className="truncate text-center text-[length:var(--ua-text-metadata-size)] leading-[var(--ua-text-metadata-leading)] text-[var(--ua-text-tertiary)]">{day.label.slice(0, 1)}</span>)}
-      </div>
-    </InsetGroup>
-  );
-}
-
-export function NotificationCentre({ initialNotifications }: { initialNotifications: NotificationItem[] }) {
+export function NotificationCentre({
+  initialNotifications,
+  initialCounts,
+  initialNextCursor = null,
+  initialFilter = 'all',
+  initialCursor = null,
+}: {
+  initialNotifications: NotificationItem[];
+  initialCounts?: NotificationCounts;
+  initialNextCursor?: string | null;
+  initialFilter?: NotificationFilter;
+  initialCursor?: string | null;
+}) {
   const router = useRouter();
   const [notifications, setNotifications] = useState(initialNotifications);
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [filter, setFilter] = useState<NotificationFilter>(initialFilter);
+  const [counts, setCounts] = useState<NotificationCounts>(() => initialCounts ?? {
+    all: initialNotifications.length,
+    unread: initialNotifications.filter((item) => !item.read_at).length,
+    needs: initialNotifications.filter((item) => !item.read_at && NEEDS_KINDS.has(item.kind)).length,
+    sources: initialNotifications.filter(isSourceNotification).length,
+  });
+  const [nextCursor, setNextCursor] = useState(initialNextCursor);
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([initialCursor]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(initialNotifications[0]?.id ?? null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [message, setMessage] = useState<string>('');
-  const unread = notifications.filter((item) => !item.read_at).length;
-  const visible = useMemo(
-    () => filter === 'unread' ? notifications.filter((item) => !item.read_at) : notifications,
-    [filter, notifications],
-  );
+  const [message, setMessage] = useState('');
+  const unread = counts.unread;
+  const selected = notifications.find((item) => item.id === selectedId) ?? notifications[0] ?? null;
   const groups = useMemo(() => {
-    const next = new Map<string, NotificationItem[]>();
-    for (const item of visible) {
-      const label = groupLabel(item.created_at);
-      next.set(label, [...(next.get(label) ?? []), item]);
-    }
-    return [...next.entries()];
-  }, [visible]);
+    const order = ['Needs you', 'Earlier today', 'This week', 'Earlier'];
+    return order.map((label) => {
+      const items = notifications.filter((item) => groupLabel(item) === label);
+      return { label, items, unread: items.filter((item) => !item.read_at).length };
+    }).filter((group) => group.items.length);
+  }, [notifications]);
 
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('unauth:notification-unread-change', {
-      detail: { unreadCount: unread },
-    }));
+    window.dispatchEvent(new CustomEvent('unauth:notification-unread-change', { detail: { unreadCount: unread } }));
   }, [unread]);
 
-  async function open(item: NotificationItem) {
+  function updateLocation(nextFilter: NotificationFilter, cursor: string | null) {
+    const params = new URLSearchParams();
+    if (nextFilter !== 'all') params.set('tab', nextFilter);
+    if (cursor) params.set('cursor', cursor);
+    window.history.replaceState(null, '', `/notifications${params.size ? `?${params.toString()}` : ''}`);
+  }
+
+  async function loadPage(nextFilter: NotificationFilter, cursor: string | null) {
+    setLoadingPage(true);
+    setMessage('');
+    try {
+      const params = new URLSearchParams({ filter: nextFilter, limit: '20' });
+      if (cursor) params.set('cursor', cursor);
+      const response = await fetch(`/api/notifications?${params.toString()}`);
+      const body = await response.json() as {
+        items?: NotificationItem[];
+        counts?: NotificationCounts;
+        pageInfo?: { nextCursor?: string | null };
+        error?: string;
+      };
+      if (!response.ok || !body.items || !body.counts || !body.pageInfo) {
+        throw new Error(body.error ?? 'Notifications could not be loaded.');
+      }
+      setNotifications(body.items);
+      setCounts(body.counts);
+      setNextCursor(body.pageInfo.nextCursor ?? null);
+      setSelectedId(body.items[0]?.id ?? null);
+      updateLocation(nextFilter, cursor);
+      return true;
+    } catch (reason) {
+      setMessage(reason instanceof Error ? reason.message : 'Notifications could not be loaded.');
+      return false;
+    } finally {
+      setLoadingPage(false);
+    }
+  }
+
+  function changeFilter(nextFilter: NotificationFilter) {
+    if (nextFilter === filter || loadingPage) return;
+    setFilter(nextFilter);
+    setCursorHistory([null]);
+    setPageIndex(0);
+    void loadPage(nextFilter, null);
+  }
+
+  async function movePage(cursor: string | null, nextIndex: number) {
+    if (loadingPage) return;
+    const loaded = await loadPage(filter, cursor);
+    if (loaded) setPageIndex(nextIndex);
+  }
+
+  function goNext() {
+    if (!nextCursor) return;
+    const history = [...cursorHistory.slice(0, pageIndex + 1), nextCursor];
+    setCursorHistory(history);
+    void movePage(nextCursor, pageIndex + 1);
+  }
+
+  function goPrevious() {
+    if (pageIndex <= 0) return;
+    void movePage(cursorHistory[pageIndex - 1] ?? null, pageIndex - 1);
+  }
+
+  async function markRead(item: NotificationItem) {
+    if (item.read_at) return true;
     setBusy(item.id);
     setMessage('');
     try {
-      if (!item.read_at) {
-        const response = await fetch(`/api/notifications/${item.id}/read`, { method: 'POST' });
-        if (!response.ok) throw new Error('Could not mark this notification as read');
-        setNotifications((rows) => rows.map((row) => row.id === item.id ? { ...row, read_at: new Date().toISOString() } : row));
-      }
-      router.push(item.target_href);
+      const response = await fetch(`/api/notifications/${item.id}/read`, { method: 'POST' });
+      if (!response.ok) throw new Error('Could not mark this notification as read');
+      const readAt = new Date().toISOString();
+      setNotifications((rows) => (filter === 'unread' || filter === 'needs')
+        ? rows.filter((row) => row.id !== item.id)
+        : rows.map((row) => row.id === item.id ? { ...row, read_at: readAt } : row));
+      setCounts((value) => ({
+        ...value,
+        unread: Math.max(0, value.unread - 1),
+        needs: NEEDS_KINDS.has(item.kind) ? Math.max(0, value.needs - 1) : value.needs,
+      }));
+      return true;
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : 'Notification action failed');
+      return false;
     } finally {
       setBusy(null);
     }
+  }
+
+  async function open(item: NotificationItem) {
+    const ready = await markRead(item);
+    if (ready) router.push(item.target_href);
   }
 
   async function markAllRead() {
@@ -153,7 +243,10 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'Could not mark notifications as read');
-      setNotifications((rows) => rows.map((row) => ({ ...row, read_at: row.read_at ?? body.readAt })));
+      setNotifications((rows) => (filter === 'unread' || filter === 'needs')
+        ? []
+        : rows.map((row) => ({ ...row, read_at: row.read_at ?? body.readAt })));
+      setCounts((value) => ({ ...value, unread: 0, needs: 0 }));
       setMessage(`${body.updated} notification${body.updated === 1 ? '' : 's'} marked as read.`);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : 'Notification action failed');
@@ -162,55 +255,115 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
     }
   }
 
+  const selectedMeta = selected ? notificationMeta(selected) : null;
+  const SelectedIcon = selectedMeta?.icon ?? Bell;
+
   return (
-    <Surface structure="working" className="overflow-hidden">
-      <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
-        <div>
-          <h2 className="ua-text-working-title text-[var(--ua-text-primary)]">{unread ? `${unread} unread` : 'Inbox clear'}</h2>
-          <p className="ua-text-caption-role mt-0.5">Newest notifications first. Opening one marks it as read.</p>
+    <PageFrame
+      title="Notifications"
+      breadcrumbs={[{ label: 'Unauth', href: '/overview' }, { label: 'Notifications' }]}
+      showCurrentBreadcrumb
+      actions={(
+        <>
+          <ButtonLink href="/settings/product/notifications" variant="secondary" size="sm">Preferences</ButtonLink>
+          <Button size="sm" loading={busy === 'all'} disabled={unread === 0} onClick={() => void markAllRead()}>Mark all read</Button>
+        </>
+      )}
+      surfaceId="notifications-inbox"
+      archetype="P5"
+    >
+      <section className={styles.root} data-operations-surface="notifications" data-surface-id="notifications-inbox">
+        <div className={styles.listPane}>
+          <div className={styles.tabs}>
+            <div className={styles.tabList} role="tablist" aria-label="Notification filters">
+              {([
+                ['all', 'All'],
+                ['unread', 'Unread'],
+                ['needs', 'Needs you'],
+                ['sources', 'Sources'],
+              ] as const).map(([key, label]) => (
+                <button key={key} type="button" role="tab" aria-selected={filter === key} data-active={filter === key} className={styles.tab} onClick={() => changeFilter(key)}>{label} · {formatNumber(counts[key])}</button>
+              ))}
+            </div>
+            <button type="button" className={styles.markCompact} disabled={unread === 0 || busy === 'all'} onClick={() => void markAllRead()}>Mark all read</button>
+          </div>
+
+          {message ? <p className={styles.message} role="status">{message}</p> : null}
+          <div id="notification-list" className={styles.list} role="tabpanel">
+            {loadingPage ? (
+              <div className={styles.empty} role="status"><RefreshCw size={22} aria-hidden="true" /><h2>Loading notifications…</h2><p>The current filter and cursor are being resolved.</p></div>
+            ) : notifications.length ? groups.map((group) => (
+              <section key={group.label} aria-labelledby={`notification-group-${group.label.replaceAll(' ', '-').toLowerCase()}`}>
+                <header className={styles.groupHeader}>
+                  <strong id={`notification-group-${group.label.replaceAll(' ', '-').toLowerCase()}`}>{group.label}</strong>
+                  <span>{formatNumber(group.items.length)} {group.items.length === 1 ? 'item' : 'items'}{group.unread ? ` · ${formatNumber(group.unread)} unread` : ''}</span>
+                </header>
+                {group.items.map((item) => {
+                  const meta = notificationMeta(item);
+                  const Icon = meta.icon;
+                  const isSelected = selected?.id === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      data-notification-trigger
+                      data-unread={!item.read_at}
+                      data-selected={isSelected || undefined}
+                      className={styles.row}
+                      onClick={() => isSelected ? void open(item) : setSelectedId(item.id)}
+                      onKeyDown={moveNotificationFocus}
+                      disabled={busy === item.id}
+                      aria-label={`${isSelected ? 'Open' : 'Select'} ${item.title}`}
+                    >
+                      <span className={styles.unread} data-unread={!item.read_at} aria-hidden="true" />
+                      <span className={styles.icon} data-tone={meta.tone}><Icon size={12} aria-hidden="true" /></span>
+                      <span className={styles.copy}><strong>{item.title}</strong><small>{meta.label} · {item.body ?? destinationLabel(item.target_href)}</small></span>
+                      <span className={styles.time}>{relativeTime(item.created_at)}</span>
+                    </button>
+                  );
+                })}
+              </section>
+            )) : (
+              <div className={styles.empty} data-state-id={filter === 'unread' ? 'notifications-caught-up' : 'notifications-first-use'}>
+                <Bell size={22} aria-hidden="true" />
+                <h2>{filter === 'unread' ? 'You are caught up' : filter === 'needs' ? 'Nothing needs you' : filter === 'sources' ? 'No source notifications' : 'No notifications yet'}</h2>
+                <p>{filter === 'unread' || filter === 'needs' ? 'New assignments, evidence, decisions, deadlines and connection issues will appear here.' : filter === 'sources' ? 'Connection and reconciliation issues will appear here when they are recorded.' : 'Nothing needs your attention yet. We will notify you when a record does.'}</p>
+              </div>
+            )}
+            <footer className={styles.footer}>
+              <span>Arrow keys move selection · Enter opens the selected record</span>
+              <span>{formatNumber(notifications.length)} shown of {formatNumber(counts[filter])} · {formatNumber(unread)} unread</span>
+            </footer>
+            {pageIndex > 0 || nextCursor ? <div className={styles.pager}><button type="button" aria-label="Previous notification page" disabled={pageIndex <= 0 || loadingPage} onClick={goPrevious}>←</button><button type="button" aria-label="Next notification page" disabled={!nextCursor || loadingPage} onClick={goNext}>→</button></div> : null}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/settings/notifications" className="ua-text-label text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">Preferences</Link>
-          {unread > 0 ? <Button variant="secondary" size="sm" leadingIcon={<CheckCheck />} loading={busy === 'all'} onClick={markAllRead}>Mark all read</Button> : null}
-        </div>
-      </div>
-      {notifications.length ? <div className="border-t border-[var(--ua-border-subtle)] px-5 py-3"><NotificationActivity notifications={notifications} /></div> : null}
-      <div className="border-t border-[var(--ua-border-subtle)] px-5 pt-3">
-        <Tabs
-          id="notification-filter"
-          panelId="notification-list"
-          aria-label="Notification filters"
-          value={filter}
-          onValueChange={(value) => setFilter(value as 'all' | 'unread')}
-          items={[{ value: 'all', label: 'All' }, { value: 'unread', label: 'Unread' }]}
-        />
-      </div>
-      {message ? <p role="status" className="ua-text-body px-5 py-3 text-[var(--ua-text-secondary)]">{message}</p> : null}
-      {visible.length ? <div id="notification-list" role="tabpanel" aria-labelledby={`notification-filter-tab-${filter}`} className="divide-y divide-[var(--ua-border-subtle)]">
-        {groups.map(([label, items]) => (
-          <section key={label} aria-labelledby={`notification-group-${label.replaceAll(' ', '-').toLowerCase()}`}>
-            <h3 id={`notification-group-${label.replaceAll(' ', '-').toLowerCase()}`} className="ua-text-label bg-[var(--ua-surface-secondary)] px-5 py-2 text-[var(--ua-text-secondary)]">{label}</h3>
-            <ul className="divide-y divide-[var(--ua-border-subtle)]">
-              {items.map((item) => {
-                const meta = KIND_META[item.kind] ?? { label: item.kind.replaceAll('_', ' '), icon: Bell };
-                const Icon = meta.icon;
-                return <li key={item.id}>
-                  <button type="button" onClick={() => open(item)} disabled={busy === item.id} className="group grid w-full gap-3 px-5 py-4 text-left transition-colors hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)] disabled:opacity-60 sm:grid-cols-[2rem_minmax(0,1fr)_auto]">
-                    <span className="relative flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)]"><Icon className="h-4 w-4 text-[var(--ua-icon-secondary)]" aria-hidden="true" />{!item.read_at ? <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[var(--ua-surface-primary)] bg-[var(--ua-action-primary)]"><span className="sr-only">Unread</span></span> : null}</span>
-                    <span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><strong className={item.read_at ? 'ua-text-body font-medium text-[var(--ua-text-primary)]' : 'ua-text-body font-semibold text-[var(--ua-text-primary)]'}>{item.title}</strong><span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{meta.label}</span></span>{item.body ? <span className="ua-text-body mt-1 block max-w-3xl text-[var(--ua-text-secondary)]">{item.body}</span> : null}<span className="mt-1 block text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatDateTime(item.created_at)}</span></span>
-                    <span className="ua-text-label self-center text-[var(--ua-text-link)]">{busy === item.id ? 'Opening…' : destinationLabel(item.target_href)}</span>
-                  </button>
-                </li>;
-              })}
-            </ul>
-          </section>
-        ))}
-      </div> : <div id="notification-list" role="tabpanel" aria-labelledby={`notification-filter-tab-${filter}`} className="p-6 text-center">
-        <Bell className="mx-auto h-6 w-6 text-[var(--ua-icon-secondary)]" aria-hidden="true" />
-        <h2 className="ua-text-working-title mt-3 text-[var(--ua-text-primary)]">{filter === 'unread' ? 'You are caught up' : 'No notifications yet'}</h2>
-        <p className="ua-text-body mx-auto mt-1 max-w-lg text-[var(--ua-text-secondary)]">{filter === 'unread' ? 'New assignments, evidence, decisions, deadlines, recovery outcomes, and connection issues will appear here.' : 'Nothing needs your attention yet. We will notify you when a case does.'}</p>
-        {filter === 'unread' ? <Button className="mt-4" variant="secondary" size="sm" onClick={() => setFilter('all')}>View all</Button> : <Link className="ua-text-label mt-4 inline-flex items-center gap-1 text-[var(--ua-text-link)] hover:underline" href="/settings/notifications"><RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />Review preferences</Link>}
-      </div>}
-    </Surface>
+
+        {selected && selectedMeta ? (
+          <aside className={styles.inspector} aria-label="Selected notification">
+            <header className={styles.inspectorHeader}>
+              <span className={styles.icon} data-tone={selectedMeta.tone}><SelectedIcon size={14} aria-hidden="true" /></span>
+              <div><h2>{selected.title}</h2><p>{selectedMeta.label} · {relativeTime(selected.created_at)}</p></div>
+            </header>
+            <div className={styles.body}><p>{selected.body ?? 'No additional notification detail was recorded.'}</p></div>
+            <dl className={styles.facts}>
+              <div><dt>Status</dt><dd>{selected.read_at ? 'Read' : 'Unread'}</dd></div>
+              <div><dt>Type</dt><dd>{selectedMeta.label}</dd></div>
+              <div><dt>Recorded</dt><dd>{formatDateTime(selected.created_at)}</dd></div>
+              <div><dt>Destination</dt><dd title={selected.target_href}>{destinationLabel(selected.target_href)}</dd></div>
+            </dl>
+            <div className={styles.actions}>
+              <button type="button" className={styles.primary} disabled={busy === selected.id} onClick={() => void open(selected)}>{destinationLabel(selected.target_href)}</button>
+              <div>
+                <button type="button" className={styles.secondary} disabled={Boolean(selected.read_at) || busy === selected.id} onClick={() => void markRead(selected)}>Mark read</button>
+              </div>
+            </div>
+          </aside>
+        ) : (
+          <aside className={styles.inspector} aria-label="No selected notification">
+            <div className={styles.empty}><Bell size={22} aria-hidden="true" /><h2>Select a notification</h2><p>Its recorded context and valid destination will appear here.</p></div>
+          </aside>
+        )}
+      </section>
+    </PageFrame>
   );
 }

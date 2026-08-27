@@ -1,51 +1,7 @@
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { BADGE_LAYOUT_STYLE, badgeToneStyle } from '@/components/ui/badgeStyles';
-
-export type BadgeTone =
-  | 'neutral'
-  | 'info'
-  | 'accent'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'critical';
-
+/** `critical` merges into `danger` (F-42) — one red tone, not two. `accent` is UI-selection state only, never a record status. */
+export type BadgeTone = 'neutral' | 'info' | 'accent' | 'success' | 'warning' | 'danger';
 export type BadgeVariant = 'solid' | 'subtle' | 'outline';
 export type BadgeSize = 'sm' | 'md';
-
-interface BadgeProps {
-  tone?: BadgeTone;
-  variant?: BadgeVariant;
-  size?: BadgeSize;
-  dot?: boolean;
-  children: ReactNode;
-  className?: string;
-}
-
-const DOT_STYLE = { background: 'currentColor', opacity: 0.6 } as const;
-
-export function Badge({
-  tone = 'neutral',
-  variant = 'subtle',
-  size = 'md',
-  dot = false,
-  children,
-  className,
-}: BadgeProps) {
-  return (
-    <span
-      className={cn('inline-flex items-center gap-1 leading-none', className)}
-      style={{ ...BADGE_LAYOUT_STYLE[size], ...badgeToneStyle(tone, variant) }}
-    >
-      {dot && (
-        <span
-          aria-hidden="true"
-          className="w-1.5 h-1.5 rounded-full shrink-0"
-          style={DOT_STYLE}
-        />
-      )}
-      {children}
-    </span>
-  );
-}
+export function Badge({ tone = 'neutral', variant = 'subtle', size = 'md', dot = false, children, className }: { tone?: BadgeTone; variant?: BadgeVariant; size?: BadgeSize; dot?: boolean; children: ReactNode; className?: string }) { return <span className={cn('ua-badge', `ua-badge--${tone}`, `ua-badge--${variant}`, `ua-badge--${size}`, className)}>{dot ? <span className="ua-badge__dot" aria-hidden="true" /> : null}{children}</span>; }

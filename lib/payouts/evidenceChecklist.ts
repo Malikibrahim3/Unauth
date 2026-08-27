@@ -24,6 +24,14 @@ type ProbeSnapshot = Record<string, EvidenceItemState>;
 /** Resolve documentary evidence probes from delivery + integration context. */
 function buildProbeSnapshot(context: ClaimDecisionContext): ProbeSnapshot {
   const { delivery, evidence, order } = context;
+  const evidenceTypes = new Set(evidence.evidenceTypes ?? []);
+  const canonicalEvidenceProbes: ProbeSnapshot = evidence.evidenceTypes ? {
+    pick_pack_record: evidenceTypes.has('pick_pack_record') ? 'present' : 'missing',
+    packing_slip: evidenceTypes.has('packing_slip') ? 'present' : 'missing',
+    packaging_condition: evidenceTypes.has('packaging_condition') ? 'present' : 'missing',
+    carrier_damage_report: evidenceTypes.has('carrier_damage_report') ? 'present' : 'missing',
+    received_item_photo: evidenceTypes.has('received_item_photo') ? 'present' : 'missing',
+  } : {};
   const delivered =
     delivery?.status === 'delivered' || delivery?.hasProofOfDelivery === true;
   const carrierDirectActive = delivery?.carrierDirectConnected === true;
@@ -68,6 +76,7 @@ function buildProbeSnapshot(context: ClaimDecisionContext): ProbeSnapshot {
     delivery_photo: deliveryPhotoState,
     signature: signatureState,
     gps: gpsState,
+    ...canonicalEvidenceProbes,
   };
 }
 

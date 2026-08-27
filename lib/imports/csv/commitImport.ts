@@ -7,7 +7,7 @@
  * Imported records carry CSV-import provenance (source_records) and freshness
  * `unknown` unless superseded by a later import.
  *
- * See ARCHITECTURE.md §7.3.
+ * See ARCHITECTURE.md for the canonical import and product-truth owners.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { upsertCanonicalEntity } from '@/lib/api/v1/ingest/upsertEntity';

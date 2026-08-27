@@ -6,7 +6,7 @@
  * `(merchant_id, idempotency_key)` and optionally registers per-handler
  * delivery rows. Handlers claim/complete/fail deliveries through their own RPCs.
  *
- * See ARCHITECTURE.md §2.4 / §4.
+ * See ARCHITECTURE.md for the canonical event, money, and ledger owners.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 

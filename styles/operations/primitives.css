@@ -1,0 +1,133 @@
+@layer components {
+  /*
+   * P07 entry surfaces use the same bright stone / paper / decision-green
+   * language as the authenticated product. A persisted legacy dark preference
+   * must never turn authentication or onboarding into a black surface.
+   */
+  .ua-auth-surface,
+  :root[data-theme="dark"] .ua-auth-surface {
+    color-scheme: light;
+    --uo-route-canvas: #f4f5f1;
+    --uo-route-shell: #f1f3ee;
+    --uo-route-toolbar: #ffffff;
+    --uo-route-surface-primary: #ffffff;
+    --uo-route-surface-raised: #ffffff;
+    --uo-route-surface-overlay: #ffffff;
+    --uo-route-surface-secondary: #f7f7f4;
+    --uo-route-surface-muted: #eceee9;
+    --uo-route-surface-hover: #f0f4ee;
+    --uo-route-surface-pressed: #e6ece5;
+    --uo-route-surface-selected: var(--uo-raw-EAF0FE, #EEF0F6);
+    --uo-route-surface-inverse: #1c1d1a;
+    --uo-route-text-secondary: #535851;
+    --uo-route-text-tertiary: #686d65;
+    --uo-route-text-disabled: #92978f;
+    --uo-route-text-inverse: #ffffff;
+    --uo-route-text-link: var(--uo-raw-2563EB, #1F52C8);
+    --uo-route-icon-primary: #1c1d1a;
+    --uo-route-icon-secondary: #535851;
+    --uo-route-border-hairline: #e4e6df;
+    --uo-route-border-subtle: #e4e6df;
+    --uo-route-border-default: #d5d8d0;
+    --uo-route-border-strong: #8a9188;
+    --uo-route-border-control: #8a9188;
+    --uo-route-border-focus: var(--uo-raw-2563EB, #1F52C8);
+    --uo-route-accent-50: var(--uo-raw-F5F8FF, #F5F5F7);
+    --uo-route-accent-100: var(--uo-raw-EAF0FE, #EEF0F6);
+    --uo-route-accent-200: var(--uo-raw-C7D9FD, #D7E0F6);
+    --uo-route-accent-500: var(--uo-raw-2563EB, #1F52C8);
+    --uo-route-accent-600: var(--uo-raw-1D4FD7, #1A46AE);
+    --uo-route-accent-700: var(--uo-raw-1D4FD7, #1A46AE);
+    --uo-route-accent-800: var(--uo-raw-12275C, #14285A);
+    --uo-route-accent-fg: #ffffff;
+    --uo-route-action-primary: var(--uo-raw-2563EB, #1F52C8);
+    --uo-route-action-primary-hover: var(--uo-raw-1D4FD7, #1A46AE);
+    --uo-route-action-primary-pressed: #0e4a27;
+    --uo-route-action-primary-fg: #ffffff;
+    --uo-route-action-commit: #1c1d1a;
+    --uo-route-action-commit-hover: #2c2e29;
+    --uo-route-action-commit-pressed: #10110f;
+    --uo-route-action-commit-fg: #ffffff;
+    --uo-route-success: #247a48;
+    --uo-route-success-bg: #eaf7ef;
+    --uo-route-success-border: #b8ddc7;
+    --uo-route-confidence-high-bg: #eaf7ef;
+    --uo-route-warning: #8b5a00;
+    --uo-route-warning-bg: #fff6df;
+    --uo-route-warning-border: #e8cf96;
+    --uo-route-critical: #a6382f;
+    --uo-route-critical-bg: #fcedeb;
+    --uo-route-critical-border: #e8bdb8;
+    --uo-route-risk-critical: #a6382f;
+    --uo-route-risk-critical-bg: #fcedeb;
+    --uo-route-risk-critical-border: #e8bdb8;
+    --uo-route-info: #315fa7;
+    --uo-route-info-bg: #edf3fc;
+    --uo-route-info-border: #bdcfea;
+    --uo-route-neutral: #65756f;
+    --uo-route-neutral-bg: #eceee9;
+    --uo-route-neutral-border: #d5d8d0;
+    --uo-route-shadow-raised: 0 1px 2px rgb(28 29 26 / 5%);
+    --uo-route-shadow-float: 0 8px 24px rgb(28 29 26 / 11%), 0 2px 6px rgb(28 29 26 / 6%);
+    --uo-route-shadow-overlay: 0 18px 48px rgb(28 29 26 / 18%);
+    background: var(--uo-route-canvas);
+    color: var(--uo-route-text-primary);
+  }
+
+  .ua-public-route {
+    color-scheme: light;
+    min-height: 100dvh;
+    --brand-product: var(--uo-raw-2563EB, #1F52C8);
+    --brand-product-hover: var(--uo-raw-1D4FD7, #1A46AE);
+    --brand-product-soft: var(--uo-raw-EAF0FE, #EEF0F6);
+    --bg-canvas: #f4f5f1;
+    --bg-surface: #ffffff;
+    --bg-surface-alt: #f7f7f4;
+    --bg-surface-sunk: #eceee9;
+    --bg-hover: #f0f4ee;
+    --bg-selected: var(--uo-raw-EAF0FE, #EEF0F6);
+    --text: #1c1d1a;
+    --text-primary: #1c1d1a;
+    --text-secondary: #535851;
+    --text-muted: #686d65;
+    --text-subtle: #686d65;
+    --text-disabled: #92978f;
+    --text-link: var(--uo-raw-2563EB, #1F52C8);
+    --border-subtle: #e4e6df;
+    --border-default: #d5d8d0;
+    --uo-route-canvas: #f4f5f1;
+    --uo-route-shell: #f1f3ee;
+    --uo-route-surface-primary: #ffffff;
+    --uo-route-surface-secondary: #f7f7f4;
+    --uo-route-surface-muted: #eceee9;
+    --uo-route-text-secondary: #535851;
+    --uo-route-text-tertiary: #686d65;
+    --uo-route-text-disabled: #92978f;
+    --uo-route-text-inverse: #ffffff;
+    --uo-route-text-link: var(--uo-raw-2563EB, #1F52C8);
+    --uo-route-border-subtle: #e4e6df;
+    --uo-route-border-default: #d5d8d0;
+    --uo-route-border-control: #8a9188;
+    --uo-route-border-focus: var(--uo-raw-2563EB, #1F52C8);
+    --uo-route-action-primary: var(--uo-raw-2563EB, #1F52C8);
+    --uo-route-action-primary-hover: var(--uo-raw-1D4FD7, #1A46AE);
+    --uo-route-action-primary-pressed: #0e4a27;
+    --uo-route-action-primary-fg: #ffffff;
+    --uo-route-radius-control: 6px;
+    --uo-route-radius-surface: 8px;
+    --uo-route-control-height-sm: 28px;
+    --uo-route-control-height-md: 36px;
+    --uo-route-control-height-lg: 40px;
+    background: var(--bg-canvas);
+    color: var(--text);
+  }
+
+  .ua-command-palette__group + .ua-command-palette__group { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--uo-route-border-subtle); }
+  .ua-command-palette__group h2 { margin: 0; padding: 5px 8px; color: var(--uo-route-text-tertiary); font-size: var(--uo-route-text-metadata-size); font-weight: 600; letter-spacing: .02em; }
+  .ua-command-palette__footer a { margin-left: auto; color: var(--uo-route-text-link); font-weight: 600; }
+  @media (max-width: 767px) {
+    .ua-command-layer { align-items: stretch; padding: 0; }
+    .ua-command-palette { width: 100%; max-height: 100dvh; border: 0; border-radius: 0; }
+    .ua-command-palette__results { max-height: calc(100dvh - 143px); }
+  }
+}

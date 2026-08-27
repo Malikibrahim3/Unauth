@@ -1,7 +1,7 @@
 'use client';
 
-import { useReducer } from 'react';
-import { Checkbox, Textarea } from '@/components/ui';
+import { useReducer, useState } from 'react';
+import { Button, Checkbox, Modal, Textarea } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import {
   customerNotesReducer,
@@ -25,6 +25,7 @@ function formatNoteDate(d: string) {
 
 export default function CustomerNotes({ customerProfileId }: CustomerNotesProps) {
   const [state, dispatch] = useReducer(customerNotesReducer, initialCustomerNotesState);
+  const [editorOpen, setEditorOpen] = useState(false);
   const { data, loading, reload } = useFetchJson<{ notes?: Note[] }>(
     `/api/customers/${customerProfileId}/notes`,
   );
@@ -47,6 +48,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
           saving: false,
         },
       });
+      setEditorOpen(false);
       reload();
       setTimeout(() => dispatch({ type: 'patch', patch: { savedMsg: '' } }), 3000);
     } else {
@@ -86,11 +88,17 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
   const { draft, saving, savedMsg, deletingId, selectedIds, bulkDeleting } = state;
 
   return (
-    <div className="rounded-md p-4 space-y-3 border" style={{ borderColor: 'var(--ua-border-subtle)' }}>
+    <div className="rounded-md p-4 space-y-3 border" style={{ borderColor: 'var(--uo-route-border-subtle)' }}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="ua-text-caption-role">{loading ? 'Loading notes…' : `${notes.length} private note${notes.length === 1 ? '' : 's'}`}</p>
+        <Button type="button" variant="secondary" size="sm" onClick={() => setEditorOpen(true)}>
+          Add note
+        </Button>
+      </div>
       {selectedIds.size > 0 && (
         <div className="flex items-center justify-end gap-3">
           <div className="flex items-center gap-2">
-            <span className="ua-text-metadata" style={{ color: 'var(--ua-text-secondary)' }}>
+            <span className="ua-text-metadata" style={{ color: 'var(--uo-route-text-secondary)' }}>
               {selectedIds.size} selected
             </span>
             <button
@@ -98,7 +106,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               onClick={bulkDeleteSelected}
               disabled={bulkDeleting}
               className="ua-text-label rounded px-2 py-1 disabled:opacity-50"
-              style={{ background: 'var(--ua-risk-critical-bg)', color: 'var(--ua-risk-critical)', border: '1px solid var(--ua-risk-critical-border)' }}
+              style={{ background: 'var(--uo-route-risk-critical-bg)', color: 'var(--uo-route-risk-critical)', border: '1px solid var(--uo-route-risk-critical-border)' }}
             >
               {bulkDeleting ? 'Deleting…' : 'Delete selected'}
             </button>
@@ -107,7 +115,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               onClick={() => dispatch({ type: 'clearSelected' })}
               disabled={bulkDeleting}
               className="ua-text-label"
-              style={{ color: 'var(--ua-text-secondary)' }}
+              style={{ color: 'var(--uo-route-text-secondary)' }}
             >
               Clear
             </button>
@@ -115,10 +123,10 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
         </div>
       )}
 
-      {loading && <p className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>Loading…</p>}
+      {loading && <p className="text-caption" style={{ color: 'var(--uo-route-text-tertiary)' }}>Loading…</p>}
 
       {!loading && notes.length === 0 && (
-        <p className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
+        <p className="text-caption" style={{ color: 'var(--uo-route-text-tertiary)' }}>
           No notes yet. Add a quick note to remind yourself &mdash; these stay private to your store.
         </p>
       )}
@@ -126,7 +134,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
       {notes.map((note) => {
         const checked = selectedIds.has(note.id);
         return (
-          <div key={note.id} className="ua-text-dense flex items-start justify-between gap-2 pb-2" style={{ borderBottom: '1px solid var(--ua-border-subtle)' }}>
+          <div key={note.id} className="ua-text-dense flex items-start justify-between gap-2 pb-2" style={{ borderBottom: '1px solid var(--uo-route-border-subtle)' }}>
             <label className="flex items-start gap-2 min-w-0">
               <Checkbox
                 checked={checked}
@@ -135,8 +143,8 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
                 }}
               />
               <div className="min-w-0">
-                <span className="ua-text-metadata mr-2" style={{ color: 'var(--ua-text-tertiary)' }}>{formatNoteDate(note.created_at)}</span>
-                <span style={{ color: 'var(--ua-text-primary)' }}>{note.body}</span>
+                <span className="ua-text-metadata mr-2" style={{ color: 'var(--uo-route-text-tertiary)' }}>{formatNoteDate(note.created_at)}</span>
+                <span style={{ color: 'var(--uo-route-text-primary)' }}>{note.body}</span>
               </div>
             </label>
             <button
@@ -144,7 +152,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               onClick={() => deleteNote(note.id)}
               disabled={deletingId === note.id || bulkDeleting}
               className="ua-text-label flex-shrink-0"
-              style={{ color: 'var(--ua-text-tertiary)' }}
+              style={{ color: 'var(--uo-route-text-tertiary)' }}
               title="Delete note"
             >
               &times;
@@ -153,28 +161,37 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
         );
       })}
 
-      <div className="space-y-2">
-        <Textarea
-          value={draft}
-          onChange={(e) => dispatch({ type: 'patch', patch: { draft: e.target.value } })}
-          aria-label="Add a note"
-          placeholder="Add a note…"
-          rows={2}
-          className="resize-none"
-        />
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={saveNote}
-            disabled={saving || !draft.trim()}
-            className="ua-text-working-title px-3 py-1.5 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
-          >
-            {saving ? 'Saving…' : 'Save note'}
-          </button>
-          {savedMsg && <span className="ua-text-caption-role" style={{ color: 'var(--ua-success)' }}>{savedMsg}</span>}
-        </div>
-      </div>
+      {savedMsg && <span className="ua-text-caption-role" style={{ color: 'var(--uo-route-success)' }}>{savedMsg}</span>}
+      <Modal
+        open={editorOpen}
+        onClose={() => {
+          if (!saving) setEditorOpen(false);
+        }}
+        title="Add customer note"
+        description="Private merchant context. Saving appends a new note; it does not alter source records."
+        overlayId="customer-note-editor"
+        size="sm"
+        closeOnBackdrop={!saving}
+        footer={(
+          <>
+            <Button variant="secondary" onClick={() => setEditorOpen(false)} disabled={saving}>Cancel</Button>
+            <Button variant="primary" onClick={() => void saveNote()} loading={saving} disabled={!draft.trim()}>Save note</Button>
+          </>
+        )}
+      >
+        <label className="ua-text-body block font-medium text-[var(--uo-route-text-primary)]">
+          Note
+          <Textarea
+            value={draft}
+            onChange={(e) => dispatch({ type: 'patch', patch: { draft: e.target.value } })}
+            className="mt-1 resize-none"
+            placeholder="Add private context for your team…"
+            rows={5}
+            maxLength={4000}
+            autoFocus
+          />
+        </label>
+      </Modal>
     </div>
   );
 }

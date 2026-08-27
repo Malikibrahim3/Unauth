@@ -3,6 +3,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { getConnector } from '@/lib/connectors/registry';
 import { resolveCapabilityAvailability } from '@/lib/connectors/runtime';
 import type { ConnectorActionPreview, ConnectorActionRequest } from '@/lib/connectors/actions/types';
+import { env } from '@/lib/utils/env';
 
 async function connection(client: SupabaseClient, merchantId: string, connectionId: string) {
   const { data, error } = await client.from(TABLES.MERCHANT_INTEGRATIONS).select('id,provider_id,provider_account_name,status,granted_scopes,writeback_enabled').eq('merchant_id', merchantId).eq('id', connectionId).maybeSingle();
@@ -11,6 +12,9 @@ async function connection(client: SupabaseClient, merchantId: string, connection
 export async function previewConnectorAction(client: SupabaseClient, merchantId: string, request: ConnectorActionRequest): Promise<ConnectorActionPreview> {
   const row = await connection(client, merchantId, request.connectionId); const adapter = getConnector(row.provider_id); const capability = adapter?.manifest.capabilities.find((item) => item.id === request.capabilityId);
   if (!adapter || !capability) return { provider: row.provider_id, account: row.provider_account_name ?? row.provider_id, capabilityId: request.capabilityId, externalRecordId: request.externalRecordId, availability: 'unsupported', reason: 'Connector action is not implemented.', risk: 'high', reversible: false };
+  if (row.provider_id === 'gorgias' && request.capabilityId.startsWith('tickets.write_') && env.GORGIAS_BOUNDED_WRITEBACK_ENABLED !== 'true') {
+    return { provider: row.provider_id, account: row.provider_account_name ?? row.provider_id, capabilityId: request.capabilityId, externalRecordId: request.externalRecordId, availability: 'disabled', reason: 'Gorgias note and tag writeback is gated off until a controlled provider run is accepted.', risk: capability.risk, reversible: false };
+  }
   const runtime = resolveCapabilityAvailability(capability, { status: row.status, grantedScopes: row.granted_scopes ?? [], writebackEnabled: row.writeback_enabled });
   return { provider: row.provider_id, account: row.provider_account_name ?? row.provider_id, capabilityId: request.capabilityId, externalRecordId: request.externalRecordId, availability: adapter.executeAction ? runtime.availability : 'unsupported', reason: adapter.executeAction ? runtime.availabilityReason : 'This connector provides a manual completion path for this action.', risk: capability.risk, reversible: request.capabilityId !== 'tickets.write_note' };
 }

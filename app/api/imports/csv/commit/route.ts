@@ -9,6 +9,7 @@ import { validateHeaderMapping } from '@/lib/imports/csv/mapping';
 import { validateCsvSize, looksBinary, MAX_CSV_ROWS } from '@/lib/imports/csv/fileValidation';
 import { commitCsvImport } from '@/lib/imports/csv/commitImport';
 import { TABLES } from '@/lib/supabase/tables';
+import { createHash } from 'node:crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,8 @@ const bodySchema = z.object({
   mapping: z.record(z.string()),
   csv: z.string().min(1),
   import_name: z.string().trim().max(200).optional(),
+  file_name: z.string().trim().max(255).optional(),
+  file_size: z.number().int().nonnegative().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
-  const { dataset, mapping, csv, import_name } = parsed.data;
+  const { dataset, mapping, csv, import_name, file_name, file_size } = parsed.data;
 
   if (!isCsvDataset(dataset)) return NextResponse.json({ error: 'unsupported_dataset' }, { status: 400 });
   const size = validateCsvSize(Buffer.byteLength(csv, 'utf8'));
@@ -53,6 +56,18 @@ export async function POST(request: NextRequest) {
       label: import_name ?? `CSV import (${dataset})`,
       total_rows: result.totalRows,
       failed_rows: result.errors.length,
+      started_at: new Date().toISOString(),
+      file_hash: createHash('sha256').update(csv, 'utf8').digest('hex'),
+      column_map: mapping,
+      error_log: result.errors,
+      cursor: {
+        dataset,
+        file_name: file_name ?? null,
+        file_size: file_size ?? Buffer.byteLength(csv, 'utf8'),
+        imported_by: ctx.userId,
+        duplicates_skipped: result.duplicatesSkipped,
+        validation_valid_rows: result.valid.length,
+      },
     })
     .select('id')
     .single();

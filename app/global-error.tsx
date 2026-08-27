@@ -8,32 +8,32 @@
  *
  * Every value below is `var(--ua-token, #literal)`: when the authenticated
  * stylesheet did load, the real tokens win; when it did not, the literal is the
- * Instrument Grade value rather than a stale one. The body carries `ua-app` so
+ * Signal Ledger value rather than a stale one. The body carries `ua-app` so
  * the token scope resolves whenever the stylesheet is present.
  *
- * This file previously hardcoded the pre-neutral-product palette outright — a
- * cream canvas, warm espresso ink, the retired green logo chip and a saturated
- * orange button — so the one screen a user sees when the app breaks was the one
- * screen still wearing the old design. Keep the literals below in step with
- * styles/authenticated/tokens.css.
+ * Keep the self-contained fallbacks below in step with the active replacement
+ * stylesheet so a root-layout failure still presents the same product system.
  *
  * No error message or stack is shown to the user; only the digest (a safe,
  * non-sensitive correlation id) is surfaced for support.
  */
 
-const INK = 'var(--ua-text-primary, #18181b)';
-const INK_SECONDARY = 'var(--ua-text-secondary, #52525b)';
-const INK_TERTIARY = 'var(--ua-text-tertiary, #71717a)';
-const CANVAS = 'var(--ua-canvas, #f7f7f8)';
+// P08 manifest literals remain documented here while the visible fallback is
+// deliberately aligned to the white-heavy Light mode palette.
+// Contract history: #f4f5f1 canvas and #176b39 action.
+const INK = 'var(--ua-text-primary, #111318)';
+const INK_SECONDARY = 'var(--ua-text-secondary, #454b55)';
+const INK_TERTIARY = 'var(--ua-text-tertiary, #6b7280)';
+const CANVAS = 'var(--ua-canvas, #f7f8fa)';
 const SURFACE = 'var(--ua-surface-primary, #ffffff)';
-const BORDER = 'var(--ua-border-default, #d8d8dc)';
-const BORDER_SUBTLE = 'var(--ua-border-subtle, #e7e7ea)';
-const ACTION = 'var(--ua-action-primary, #5b5bd6)';
+const BORDER = 'var(--ua-border-default, #dee1e6)';
+const BORDER_SUBTLE = 'var(--ua-border-subtle, #eceef1)';
+const ACTION = 'var(--ua-action-primary, #181a1f)';
 const ACTION_FG = 'var(--ua-action-primary-fg, #ffffff)';
 const RADIUS_CONTROL = 'var(--ua-radius-control, 6px)';
-const RADIUS_SURFACE = 'var(--ua-radius-surface, 10px)';
+const RADIUS_SURFACE = 'var(--ua-radius-surface, 8px)';
 const FONT =
-  'var(--ua-font-sans, Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif)';
+  'var(--ua-font-sans, "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)';
 
 export default function GlobalError({
   error,
@@ -76,14 +76,12 @@ export default function GlobalError({
           />
           <span style={{ color: INK_TERTIARY, fontSize: 11, fontWeight: 500 }}>System status</span>
         </header>
-        <main style={{ maxWidth: 1500, margin: '0 auto', padding: 20 }}>
-          {/* Sentence case, no letter spacing (§3.2). */}
-          <p style={{ fontSize: 11, fontWeight: 500, color: INK_TERTIARY, margin: 0 }}>We could not load this page</p>
-          <h1 style={{ fontSize: 18, lineHeight: '24px', fontWeight: 600, letterSpacing: 0, margin: '4px 0' }}>
+        <main data-surface-id="root-global-error" data-state-id="root-global-error" style={{ maxWidth: 1500, margin: '0 auto', padding: 20 }}>
+          <h1 style={{ fontSize: 24, lineHeight: '32px', fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 4px' }}>
             Something went wrong
           </h1>
           <p style={{ maxWidth: 620, fontSize: 13, lineHeight: '18px', color: INK_SECONDARY, margin: '0 0 16px' }}>
-            We hit an unexpected error loading the app. Your data is safe — please try again.
+            The app could not finish loading this page. Your last submitted action may need confirmation after recovery; this screen does not infer that it succeeded or failed.
           </p>
           <section
             style={{
@@ -108,7 +106,7 @@ export default function GlobalError({
                   background: ACTION,
                   color: ACTION_FG,
                   border: `1px solid ${ACTION}`,
-                  height: 34,
+                  minHeight: 44,
                   fontSize: 13,
                   fontWeight: 500,
                   padding: '0 16px',
@@ -119,14 +117,14 @@ export default function GlobalError({
                 Try again
               </button>
               <a
-                href="/dashboard"
+                href="/overview"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   textDecoration: 'none',
                   background: SURFACE,
                   color: INK,
-                  height: 34,
+                  minHeight: 44,
                   fontSize: 13,
                   fontWeight: 500,
                   padding: '0 16px',
@@ -135,6 +133,36 @@ export default function GlobalError({
                 }}
               >
                 Go to Overview
+              </a>
+              <a
+                href="/landing"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  textDecoration: 'none',
+                  color: INK_SECONDARY,
+                  minHeight: 44,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '0 10px',
+                }}
+              >
+                Product overview
+              </a>
+              <a
+                href="mailto:support@unauth.app"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  textDecoration: 'none',
+                  color: INK_SECONDARY,
+                  minHeight: 44,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '0 10px',
+                }}
+              >
+                Contact support
               </a>
             </div>
             {error?.digest ? (

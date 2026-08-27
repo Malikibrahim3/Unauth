@@ -32,7 +32,7 @@ function SyncStatusConnectedContent({
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role" style={{ color: 'var(--uo-route-text-secondary)' }}>
             {status.orderCount != null ? formatNumber(status.orderCount) : '-'} orders synced
             {typeof status.auditTransactionCount === 'number'
               ? ` · ${formatNumber(status.auditTransactionCount)} scored`
@@ -48,7 +48,7 @@ function SyncStatusConnectedContent({
           }}
           disabled={syncing}
           className="ua-text-working-title inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 disabled:opacity-60"
-          style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+          style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
           data-testid="shopify-sync-now"
         >
           {syncing ? (
@@ -63,21 +63,21 @@ function SyncStatusConnectedContent({
       </div>
 
       {syncError ? (
-        <div className="ua-text-body rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-critical-border)', background: 'var(--ua-critical-bg)', color: 'var(--ua-critical)' }} role="alert">
+        <div className="ua-text-body rounded-[var(--uo-route-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--uo-route-critical-border)', background: 'var(--uo-route-critical-bg)', color: 'var(--uo-route-critical)' }} role="alert">
           {syncError} Reconnect Shopify and retry the sync.
         </div>
       ) : null}
 
       <div className="ua-text-metadata grid grid-cols-2 gap-3">
         <div>
-          <p style={{ color: 'var(--ua-text-secondary)' }}>Last sync</p>
-          <p className="font-medium mt-0.5" style={{ color: 'var(--ua-text-primary)' }}>
+          <p style={{ color: 'var(--uo-route-text-secondary)' }}>Last sync</p>
+          <p className="font-medium mt-0.5" style={{ color: 'var(--uo-route-text-primary)' }}>
             {status.lastSyncAt ? formatRelativeTime(status.lastSyncAt) : 'Never'}
           </p>
         </div>
         <div>
-          <p style={{ color: 'var(--ua-text-secondary)' }}>Last webhook</p>
-          <p className="font-medium mt-0.5" style={{ color: 'var(--ua-text-primary)' }}>
+          <p style={{ color: 'var(--uo-route-text-secondary)' }}>Last webhook</p>
+          <p className="font-medium mt-0.5" style={{ color: 'var(--uo-route-text-primary)' }}>
             {status.lastWebhookAt ? formatRelativeTime(status.lastWebhookAt) : 'None'}
             {status.lastWebhookTopic ? (
               <span className="ml-1 font-mono opacity-60">{status.lastWebhookTopic}</span>
@@ -85,17 +85,17 @@ function SyncStatusConnectedContent({
           </p>
         </div>
         <div>
-          <p style={{ color: 'var(--ua-text-secondary)' }}>Webhook health</p>
+          <p style={{ color: 'var(--uo-route-text-secondary)' }}>Webhook health</p>
           <p
             className="font-medium mt-0.5"
-            style={{ color: webhookHealthy ? 'var(--ua-success)' : webhookObserved ? 'var(--ua-critical)' : 'var(--ua-text-secondary)' }}
+            style={{ color: webhookHealthy ? 'var(--uo-route-success)' : webhookObserved ? 'var(--uo-route-critical)' : 'var(--uo-route-text-secondary)' }}
           >
             {webhookHealthy ? 'Healthy' : webhookObserved ? `${status.webhookFailures} failed` : 'Not verified'}
           </p>
         </div>
         <div>
-          <p style={{ color: 'var(--ua-text-secondary)' }}>Data sources</p>
-          <p className="font-medium mt-0.5" style={{ color: 'var(--ua-text-primary)' }}>
+          <p style={{ color: 'var(--uo-route-text-secondary)' }}>Data sources</p>
+          <p className="font-medium mt-0.5" style={{ color: 'var(--uo-route-text-primary)' }}>
             {(status.dataSources ?? ['Shopify']).join(' · ')}
           </p>
         </div>
@@ -105,7 +105,7 @@ function SyncStatusConnectedContent({
 
       {recentWebhooks.length > 0 ? (
         <div>
-          <p className="ua-text-label mb-2" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label mb-2" style={{ color: 'var(--uo-route-text-secondary)' }}>
             Recent webhook activity
           </p>
           <ul className="space-y-1">
@@ -114,10 +114,10 @@ function SyncStatusConnectedContent({
                 key={`${event.at}-${event.topic ?? 'unknown'}`}
                 className="ua-text-dense flex items-center justify-between gap-2"
               >
-                <span className="font-mono truncate" style={{ color: 'var(--ua-text-primary)' }}>
+                <span className="font-mono truncate" style={{ color: 'var(--uo-route-text-primary)' }}>
                   {event.topic ?? 'webhook'}
                 </span>
-                <span style={{ color: event.status === 'failed' ? 'var(--ua-critical)' : 'var(--ua-text-secondary)' }}>
+                <span style={{ color: event.status === 'failed' ? 'var(--uo-route-critical)' : 'var(--uo-route-text-secondary)' }}>
                   {event.status} · {formatRelativeTime(event.at)}
                 </span>
               </li>
@@ -129,19 +129,19 @@ function SyncStatusConnectedContent({
       {hasError ? (
         <div
           className="ua-text-body px-3 py-2 rounded-md"
-          style={{ background: 'var(--ua-critical-bg)', color: 'var(--ua-critical)' }}
+          style={{ background: 'var(--uo-route-critical-bg)', color: 'var(--uo-route-critical)' }}
         >
           <p className="font-semibold mb-0.5">Sync error</p>
           <p>{status.lastError}</p>
         </div>
       ) : null}
 
-      <div className="pt-2 border-t" style={{ borderColor: 'var(--ua-border-default)' }}>
+      <div className="pt-2 border-t" style={{ borderColor: 'var(--uo-route-border-default)' }}>
         <button
           type="button"
           onClick={onOpenModal}
           className="ua-text-label"
-          style={{ color: 'var(--ua-text-secondary)' }}
+          style={{ color: 'var(--uo-route-text-secondary)' }}
           data-testid="reconnect-shopify"
         >
           {hasError ? 'Reconnect to fix sync error' : 'Re-authorize connection'}
@@ -175,15 +175,15 @@ export function SyncStatusConnectedView({
   return (
     <>
       {variant === 'inline' ? (
-        <div className="pt-3 mt-3 border-t space-y-4" style={{ borderColor: 'var(--ua-border-default)' }}>
+        <div className="pt-3 mt-3 border-t space-y-4" style={{ borderColor: 'var(--uo-route-border-default)' }}>
           {content}
         </div>
       ) : (
         <div
           className="rounded-md p-5 border space-y-4"
           style={{
-            borderColor: hasError ? 'var(--ua-critical-border)' : 'var(--ua-border-subtle)',
-            background: 'var(--ua-surface-primary)',
+            borderColor: hasError ? 'var(--uo-route-critical-border)' : 'var(--uo-route-border-subtle)',
+            background: 'var(--uo-route-surface-primary)',
           }}
         >
           {content}

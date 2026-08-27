@@ -33,17 +33,24 @@ export function selectLossContributions(
     writtenOff: boolean;
   }>,
   currency: string | null,
-): Array<{ key: string; label: string; valueMajor: number }> {
+): Array<{ key: string; label: string; valueMajor: number; count: number; share: number; cumulativeShare: number }> {
   if (!currency) return [];
-  const grouped = new Map<string, { label: string; minor: number }>();
+  const grouped = new Map<string, { label: string; minor: number; count: number }>();
   for (const row of rows) {
-    if (row.writtenOff || row.currency !== currency || row.amountMinor == null || row.amountMinor <= 0) continue;
+    if (row.currency !== currency || row.amountMinor == null || row.amountMinor <= 0) continue;
     const existing = grouped.get(row.key);
-    grouped.set(row.key, { label: row.label, minor: (existing?.minor ?? 0) + row.amountMinor });
+    grouped.set(row.key, { label: row.label, minor: (existing?.minor ?? 0) + row.amountMinor, count: (existing?.count ?? 0) + 1 });
   }
-  return [...grouped.entries()]
-    .map(([key, { label, minor }]) => ({ key, label, valueMajor: minor / 100 }))
+  const ranked = [...grouped.entries()]
+    .map(([key, { label, minor, count }]) => ({ key, label, valueMajor: minor / 100, count }))
     .sort((left, right) => right.valueMajor - left.valueMajor);
+  const total = ranked.reduce((sum, row) => sum + row.valueMajor, 0);
+  let cumulative = 0;
+  return ranked.map((row) => {
+    const share = total > 0 ? row.valueMajor / total : 0;
+    cumulative += share;
+    return { ...row, share, cumulativeShare: Math.min(1, cumulative) };
+  });
 }
 
 export type NotificationActivityDay = {

@@ -230,6 +230,7 @@ export async function buildClaimDecisionContext(
     merchantEvidenceItems,
     hasCustomerEvidence: customerEvidenceItems > 0,
     hasDeliveryEvidence: deliveryEvidenceItems > 0 || Boolean(delivery?.hasTracking),
+    evidenceTypes: [...new Set(evidenceItems.map((item) => item.evidence_type as string).filter(Boolean))],
   };
 
   const orderRow = orderRes.data;

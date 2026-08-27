@@ -6,7 +6,7 @@
  * Provider adapter modules are WRAPPERS around existing proven OAuth/API/
  * signature/normalizer code — they do not re-implement it.
  *
- * See ARCHITECTURE.md §5.
+ * See ARCHITECTURE.md for the executable adapter owner.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { IntegrationAuthMode, IntegrationCategory } from '@/lib/integrations/types';

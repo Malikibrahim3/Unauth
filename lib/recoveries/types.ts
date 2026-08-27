@@ -1,4 +1,5 @@
 import type { Partner, PartnerRecoveryRule, PartnerRecoveryType } from '@/lib/partners/types';
+import type { ClaimPosture, ClaimReadinessState } from './claimReadiness';
 
 export const RECOVERY_CASE_STATUSES = [
   'draft',
@@ -83,6 +84,12 @@ export type RecoveryCase = {
   created_at: string;
   updated_at: string;
   last_source_event_at: string | null;
+  current_claim_pack_id?: string | null;
+  latest_submission_id?: string | null;
+  latest_provider_response_id?: string | null;
+  provider_position?: ProviderLiabilityPosition;
+  provider_position_at?: string | null;
+  claim_readiness?: ClaimReadinessState;
   partner?: Partner | null;
   support_payout_case?: {
     id: string;
@@ -108,6 +115,96 @@ export const PROVIDER_CLAIM_STAGES = [
   'closed_unrecoverable',
 ] as const;
 export type ProviderClaimStage = (typeof PROVIDER_CLAIM_STAGES)[number];
+
+export const PROVIDER_LIABILITY_POSITIONS = [
+  'not_recorded',
+  'accepted',
+  'partially_accepted',
+  'denied',
+  'no_admission',
+  'unknown',
+] as const;
+export type ProviderLiabilityPosition = (typeof PROVIDER_LIABILITY_POSITIONS)[number];
+
+export const COMPENSATION_STATES = [
+  'not_decided',
+  'approved',
+  'partially_approved',
+  'denied',
+  'credited',
+  'reconciled',
+  'written_off',
+] as const;
+export type CompensationState = (typeof COMPENSATION_STATES)[number];
+
+export type { ClaimGate, ClaimGateId, ClaimGateState, ClaimPosture, ClaimReadinessState, ProviderClaimReadiness } from './claimReadiness';
+
+export type RecoveryClaimPack = {
+  id: string;
+  merchant_id: string;
+  recovery_case_id: string;
+  support_payout_case_id: string;
+  rule_version_id: string | null;
+  pack_version: number;
+  state: 'draft' | 'final' | 'superseded';
+  posture: ClaimPosture;
+  readiness: ClaimReadinessState;
+  readiness_snapshot: Record<string, unknown>;
+  manifest: Record<string, unknown>;
+  pdf_storage_path: string | null;
+  zip_storage_path: string | null;
+  pdf_hash: string | null;
+  zip_hash: string | null;
+  generated_at: string;
+  finalized_at: string | null;
+  generated_by: string | null;
+  supersedes_pack_id: string | null;
+  idempotency_key: string;
+  created_at: string;
+};
+
+export type RecoveryClaimSubmission = {
+  id: string;
+  merchant_id: string;
+  recovery_case_id: string;
+  claim_pack_id: string;
+  channel: 'manual_portal' | 'manual_email' | 'manual_other';
+  provider_account_reference: string | null;
+  external_claim_reference: string | null;
+  external_url: string | null;
+  amount_sought_minor: number | null;
+  currency: string | null;
+  submitted_at: string;
+  submitted_by: string | null;
+  receipt_evidence_item_id: string | null;
+  receipt_correspondence_id: string | null;
+  notes: string | null;
+  idempotency_key: string;
+  created_at: string;
+};
+
+export type RecoveryProviderResponse = {
+  id: string;
+  merchant_id: string;
+  recovery_case_id: string;
+  submission_id: string | null;
+  provider: string;
+  liability_position: ProviderLiabilityPosition;
+  compensation_state: CompensationState;
+  provider_amount_minor: number | null;
+  approved_amount_minor: number | null;
+  credited_amount_minor: number | null;
+  currency: string | null;
+  external_reference: string | null;
+  external_url: string | null;
+  response_evidence_item_id: string | null;
+  response_correspondence_id: string | null;
+  received_at: string;
+  recorded_by: string | null;
+  notes: string | null;
+  idempotency_key: string;
+  created_at: string;
+};
 
 export type RecoveryCaseEvent = {
   id: string;

@@ -1,6 +1,7 @@
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { gorgiasApiBaseUrl, gorgiasApiRequest } from '@/lib/support/gorgias/registerSidebarWidget';
 import { formatCurrency } from '@/lib/utils/format';
+import { env } from '@/lib/utils/env';
 
 export const UNAUTH_HOLD_TAG = 'unauth-hold';
 export const UNAUTH_RESOLVED_TAG = 'unauth-resolved';
@@ -56,6 +57,9 @@ export async function applyHoldTag(input: {
    */
   noteBody?: string;
 }): Promise<{ attempted: boolean; ok: boolean; error?: string }> {
+  if (env.GORGIAS_BOUNDED_WRITEBACK_ENABLED !== 'true') {
+    return { attempted: false, ok: false, error: 'gorgias_bounded_writeback_gated_off' };
+  }
   const access = await getActiveGorgiasMerchantApiAccess(input.client, input.merchantId);
   if (!access) return { attempted: false, ok: false, error: 'gorgias_not_connected' };
 
@@ -111,6 +115,9 @@ export async function resolveHoldTag(input: {
   caseUrl: string;
 }): Promise<{ attempted: boolean; ok: boolean; error?: string }> {
   if (!input.ticketId) return { attempted: false, ok: false, error: 'missing_ticket_id' };
+  if (env.GORGIAS_BOUNDED_WRITEBACK_ENABLED !== 'true') {
+    return { attempted: false, ok: false, error: 'gorgias_bounded_writeback_gated_off' };
+  }
   const access = await getActiveGorgiasMerchantApiAccess(input.client, input.merchantId);
   if (!access) return { attempted: false, ok: false, error: 'gorgias_not_connected' };
 

@@ -60,6 +60,7 @@ export type ObjectLink = {
   id: string;
   reference: string;
   href: string;
+  role?: string | null;
   externalId?: string | null;
   externalHref?: string | null;
   externalSource?: string | null;
@@ -612,8 +613,6 @@ export async function getObjectSummary(
       }
     }
   }
-  if (customer) connected.unshift(customer);
-
   // Tickets retain provider order references as source facts. Read those links
   // into the existing connected-record spine rather than presenting identifiers
   // or requiring a second support-specific record model.
@@ -693,10 +692,8 @@ export async function getObjectSummary(
     id: text(claim, "id")!,
     reference: `${(text(claim, "claim_type") ?? "payout").replaceAll("_", " ")} · ${text(claim, "id")!.slice(0, 8)}`,
     state: text(claim, "status"),
-    href: `/claims/${text(claim, "id")}`,
+    href: `/cases/${text(claim, "id")}`,
   }));
-  connected.push(...payoutCases);
-
   const caseIds = payoutCases.map((claim) => claim.id);
   let evidence: ObjectEvidence[] = [];
   if (caseIds.length) {

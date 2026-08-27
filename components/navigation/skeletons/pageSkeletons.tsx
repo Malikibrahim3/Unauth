@@ -6,27 +6,32 @@ import {
 } from "./primitives";
 import { WorkbenchPageSkeleton } from "./WorkbenchPageSkeleton";
 import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
-import { DataTableServer, PageFrame, RegistrySurface, Surface } from '@/components/ui';
+import { DataTableServer, LoadingSkeleton, PageFrame, RegistrySurface, Surface } from '@/components/ui';
+import { LoadingRecovery } from './LoadingRecovery';
 
 /**
  * Authenticated root transition fallback. The destination family is not known
  * at this boundary, so it reserves only the shared page-header rhythm and
- * never guesses at KPIs, a chart, a table, or a detail rail.
+ * never guesses at KPIs, a chart, a table, or a detail rail. Composed from
+ * `LoadingSkeleton`'s `header` region variant (§17.6).
  */
-export function AuthenticatedRouteLoadingSkeleton() {
+export function AuthenticatedRouteLoadingSkeleton({ title = 'workspace page' }: { title?: string }) {
   return (
-    <div
-      className={styles.pageBody}
-      aria-busy="true"
-      aria-label="Loading workspace"
-      data-skeleton-variant="route-shell"
+    <PageFrame
+      title={`Preparing ${title}`}
+      subtitle="Loading the current workspace route. Values remain unavailable until their sources respond."
+      meta={<span>Current workspace · route scope preserved</span>}
     >
-      <div className="space-y-2 py-4" aria-hidden="true">
-        <Bone className="h-5 w-40" />
-        <Bone className="h-3 w-full max-w-md" />
-      </div>
-      <span className="sr-only" role="status">Loading workspace</span>
-    </div>
+      <Surface structure="working" as="section" className="ua-route-loading-shell" aria-label={`Loading ${title}`}>
+        <LoadingSkeleton variant="header" title={`Loading ${title}`} announce={false} delayMs={0} />
+        <div className="ua-route-loading-shell__toolbar" aria-hidden="true">
+          <Bone className="h-8 w-full max-w-md" />
+          <Bone className="h-8 w-24" />
+        </div>
+        <LoadingSkeleton variant="table" rows={6} title={`Loading ${title}`} announce={false} delayMs={0} />
+        <LoadingRecovery title={title} />
+      </Surface>
+    </PageFrame>
   );
 }
 
@@ -37,6 +42,7 @@ export function DashboardLoadingSkeleton() {
       className="space-y-4"
       aria-busy="true"
       aria-label="Loading dashboard"
+      data-state-id="overview-dashboard-loading"
     >
       <header className="flex min-h-11 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
@@ -52,8 +58,8 @@ export function DashboardLoadingSkeleton() {
         <Bone className="h-8 w-20 rounded-md" />
       </div>
 
-      <section className="overflow-hidden border-y border-[var(--ua-border-default)] bg-transparent">
-        <div className="flex min-h-14 items-center justify-between gap-3 border-b border-[var(--ua-border-subtle)] px-4">
+      <section className="overflow-hidden border-y border-[var(--uo-route-border-default)] bg-transparent">
+        <div className="flex min-h-14 items-center justify-between gap-3 border-b border-[var(--uo-route-border-subtle)] px-4">
           <div className="space-y-1.5">
             <Bone className="h-4 w-32" />
             <Bone className="h-3 w-72 max-w-full" />
@@ -63,14 +69,14 @@ export function DashboardLoadingSkeleton() {
           </div>
         </div>
         <div className="grid min-h-[270px] min-[981px]:grid-cols-[minmax(250px,0.72fr)_minmax(400px,1.4fr)] min-[1101px]:grid-cols-[minmax(290px,0.78fr)_minmax(440px,1.6fr)]">
-          <div className="space-y-3 bg-[var(--ua-surface-secondary)] px-5 py-4">
+          <div className="space-y-3 bg-[var(--uo-route-surface-secondary)] px-5 py-4">
             <div className="space-y-2">
               <Bone className="h-3 w-28" />
               <Bone className="h-11 w-52 max-w-full" />
               <Bone className="h-3.5 w-44" />
               <Bone className="h-3 w-36" />
             </div>
-            <div className="flex gap-2 border-y border-[var(--ua-border-subtle)] py-2">
+            <div className="flex gap-2 border-y border-[var(--uo-route-border-subtle)] py-2">
               {[0, 1, 2].map((item) => <Bone key={item} className="h-5 w-20" />)}
             </div>
             <div className="flex gap-3">
@@ -93,15 +99,15 @@ export function DashboardLoadingSkeleton() {
             <Bone className="h-3 w-48" />
           </div>
         </div>
-        <div className="flex min-h-10 items-center gap-3 border-t border-[var(--ua-border-subtle)] bg-[var(--ua-surface-secondary)] px-4">
+        <div className="flex min-h-10 items-center gap-3 border-t border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-secondary)] px-4">
           <Bone className="h-4 w-4 rounded-full" />
           <Bone className="h-3 w-80 max-w-full" />
         </div>
       </section>
 
       <div className="grid grid-cols-1 gap-4 min-[981px]:grid-cols-[minmax(0,1fr)_300px] min-[1301px]:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="overflow-hidden border-y border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]">
-          <div className="flex min-h-14 items-center justify-between border-b border-[var(--ua-border-subtle)] px-4">
+        <section className="overflow-hidden border-y border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)]">
+          <div className="flex min-h-14 items-center justify-between border-b border-[var(--uo-route-border-subtle)] px-4">
             <div className="space-y-2">
               <Bone className="h-4 w-40" />
               <Bone className="h-3 w-56" />
@@ -109,7 +115,7 @@ export function DashboardLoadingSkeleton() {
             <Bone className="h-4 w-16" />
           </div>
           {[0, 1, 2, 3].map((row) => (
-            <div key={row} className="flex min-h-12 items-center gap-3 border-t border-[var(--ua-border-subtle)] px-4 first:border-t-0">
+            <div key={row} className="flex min-h-12 items-center gap-3 border-t border-[var(--uo-route-border-subtle)] px-4 first:border-t-0">
               <Bone className="h-6 flex-1" />
               <Bone className="h-6 w-40" />
               <Bone className="h-1 w-24" />
@@ -117,7 +123,7 @@ export function DashboardLoadingSkeleton() {
             </div>
           ))}
         </section>
-        <section className="border-y border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
+        <section className="border-y border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] p-4">
           <div className="flex justify-between">
             <div className="space-y-2">
               <Bone className="h-4 w-24" />
@@ -127,7 +133,7 @@ export function DashboardLoadingSkeleton() {
           </div>
           <div className="mt-3 space-y-3">
             {[0, 1, 2].map((row) => (
-              <div key={row} className="space-y-1.5 border-t border-[var(--ua-border-subtle)] pt-2 first:border-t-0">
+              <div key={row} className="space-y-1.5 border-t border-[var(--uo-route-border-subtle)] pt-2 first:border-t-0">
                 <div className="flex justify-between gap-3">
                   <Bone className="h-3 w-24" />
                   <Bone className="h-3 w-20" />
@@ -153,8 +159,8 @@ export function StoreLoadingSkeleton() {
       <header
         className="rounded-md"
         style={{
-          background: "var(--ua-canvas)",
-          borderBottom: "1px solid var(--ua-border-default)",
+          background: "var(--uo-route-canvas)",
+          borderBottom: "1px solid var(--uo-route-border-default)",
           padding: "16px 24px",
         }}
       >
@@ -178,8 +184,8 @@ export function StoreLoadingSkeleton() {
           <section
             className="rounded-md border p-4"
             style={{
-              borderColor: "var(--ua-border-default)",
-              background: "var(--ua-surface-primary)",
+              borderColor: "var(--uo-route-border-default)",
+              background: "var(--uo-route-surface-primary)",
             }}
           >
             <Bone className="h-4 w-28 mb-1" />
@@ -192,7 +198,7 @@ export function StoreLoadingSkeleton() {
                 <div
                   key={i}
                   className="flex items-center gap-3 rounded-md border px-3 py-2.5"
-                  style={{ borderColor: "var(--ua-border-subtle)" }}
+                  style={{ borderColor: "var(--uo-route-border-subtle)" }}
                 >
                   <Bone className="h-8 w-8 shrink-0 rounded-md" />
                   <div className="flex-1 space-y-1.5">
@@ -210,8 +216,8 @@ export function StoreLoadingSkeleton() {
               key={i}
               className="rounded-md border p-4 space-y-3"
               style={{
-                borderColor: "var(--ua-border-default)",
-                background: "var(--ua-surface-primary)",
+                borderColor: "var(--uo-route-border-default)",
+                background: "var(--uo-route-surface-primary)",
               }}
             >
               <Bone className="h-4 w-32" />
@@ -235,8 +241,8 @@ export function WatchlistLoadingSkeleton() {
     >
       <header
         style={{
-          background: "var(--ua-canvas)",
-          borderBottom: "1px solid var(--ua-border-default)",
+          background: "var(--uo-route-canvas)",
+          borderBottom: "1px solid var(--uo-route-border-default)",
           padding: "16px 24px",
         }}
       >
@@ -313,7 +319,7 @@ export function ClaimsLoadingSkeleton() {
         </div>
         <div
           className="flex flex-wrap gap-2 border-b pb-3"
-          style={{ borderColor: "var(--ua-border-subtle)" }}
+          style={{ borderColor: "var(--uo-route-border-subtle)" }}
         >
           {[...Array(8)].map((_, i) => (
             <Bone key={i} className="h-7 w-24 rounded-full" />
@@ -390,7 +396,7 @@ export function ReportsLoadingSkeleton() {
             flush
             aria-label="Loading matching report records"
             rows={[]}
-            emptyState={<p className="p-4 text-sm text-[var(--ua-text-secondary)]">No report records.</p>}
+            emptyState={<p className="p-4 text-sm text-[var(--uo-route-text-secondary)]">No report records.</p>}
             getRowKey={() => "loading"}
             columns={[
               { key: "record", header: "Record", render: () => null },
@@ -417,7 +423,7 @@ export function ReportRecordsLoadingSkeleton() {
       <RegistrySurface
         aria-label="Loading matching report records"
         toolbar={<div className="flex w-full flex-wrap items-center gap-2"><Bone className="h-8 w-36" /><Bone className="h-8 w-28" /><Bone className="ml-auto h-8 w-20" /></div>}
-        resultCount={<span className="skeleton inline-block h-3 w-32 rounded-[var(--ua-radius-control)]" aria-hidden="true" />}
+        resultCount={<span className="skeleton inline-block h-3 w-32 rounded-[var(--uo-route-radius-control)]" aria-hidden="true" />}
       >
         <TableSkeleton
           columns={[
@@ -440,7 +446,7 @@ export function ChargebacksLoadingSkeleton() {
       <div>
         <div
           className="border-b p-4 space-y-3"
-          style={{ borderColor: "var(--ua-border-default)" }}
+          style={{ borderColor: "var(--uo-route-border-default)" }}
         >
           <Bone className="h-4 w-36" />
           <Bone className="h-16 w-full max-w-lg" />
@@ -468,18 +474,18 @@ export function UploadLoadingSkeleton() {
     <WorkbenchPageSkeleton showActions kpiCount={0}>
       <div className="mx-auto w-full max-w-[1500px] space-y-3 p-4">
         <div
-          className="rounded-[var(--ua-radius-control)] px-5 py-4 space-y-2"
+          className="rounded-[var(--uo-route-radius-control)] px-5 py-4 space-y-2"
           style={{
-            background: "var(--ua-surface-secondary)",
-            border: "1px solid var(--ua-border-subtle)",
+            background: "var(--uo-route-surface-secondary)",
+            border: "1px solid var(--uo-route-border-subtle)",
           }}
         >
           <Bone className="h-5 w-64" />
           <Bone className="h-3 w-full" />
         </div>
         <div
-          className="flex flex-col items-center gap-3 rounded-[var(--ua-radius-surface)] border border-dashed p-6"
-          style={{ borderColor: "var(--ua-border-default)", background: "var(--ua-surface-primary)" }}
+          className="flex flex-col items-center gap-3 rounded-[var(--uo-route-radius-surface)] border border-dashed p-6"
+          style={{ borderColor: "var(--uo-route-border-default)", background: "var(--uo-route-surface-primary)" }}
         >
           <Bone className="h-12 w-12 rounded-full" />
           <Bone className="h-4 w-48" />
@@ -492,7 +498,7 @@ export function UploadLoadingSkeleton() {
             <div
               key={i}
               className="flex items-center justify-between rounded-md border px-4 py-3"
-              style={{ borderColor: "var(--ua-border-subtle)" }}
+              style={{ borderColor: "var(--uo-route-border-subtle)" }}
             >
               <div className="space-y-1.5">
                 <Bone className="h-4 w-40" />
@@ -555,8 +561,8 @@ export function NetworkIntelligenceLoadingSkeleton() {
             key={i}
             className="rounded-md border p-4 space-y-2"
             style={{
-              borderColor: "var(--ua-border-default)",
-              background: "var(--ua-surface-primary)",
+              borderColor: "var(--uo-route-border-default)",
+              background: "var(--uo-route-surface-primary)",
             }}
           >
             <Bone className="h-3 w-28" />
@@ -679,7 +685,7 @@ function SettingsGeometrySkeleton({ mode, label = 'Loading settings' }: { mode: 
               {mode === 'form' ? Array.from({ length: 3 }, (_, index) => (
                 <div key={index} className="space-y-1.5"><Bone className="h-2.5 w-24" /><Bone className="h-8 w-full" /></div>
               )) : Array.from({ length: 5 }, (_, index) => (
-                <div key={index} className="flex min-h-14 items-center justify-between gap-4 border-b border-[var(--ua-border-subtle)] py-2 last:border-0">
+                <div key={index} className="flex min-h-14 items-center justify-between gap-4 border-b border-[var(--uo-route-border-subtle)] py-2 last:border-0">
                   <div className="space-y-1.5"><Bone className="h-3 w-36" /><Bone className="h-2.5 w-52 max-w-full" /></div><Bone className="h-8 w-24" />
                 </div>
               ))}
@@ -706,8 +712,8 @@ export function GraphLoadingSkeleton() {
             key={i}
             className="rounded-md border p-4 space-y-2"
             style={{
-              borderColor: "var(--ua-border-default)",
-              background: "var(--ua-surface-primary)",
+              borderColor: "var(--uo-route-border-default)",
+              background: "var(--uo-route-surface-primary)",
             }}
           >
             <Bone className="h-3 w-24" />

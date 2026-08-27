@@ -13,7 +13,7 @@
  *
  * Usage:
  *   node scripts/seed-simeon-big-merchant.mjs
- *   node scripts/seed-simeon-big-merchant.mjs --reset
+ *   node scripts/seed-simeon-big-merchant.mjs --verify-only
  */
 
 import { createHash } from 'node:crypto';
@@ -51,12 +51,25 @@ const SEED_TAG = process.env.SEED_TAG ?? 'simeon-big-merchant';
 const SEED_NOTE = `[seed:${SEED_TAG}]`;
 const SEED_PREFIX = process.env.SEED_PREFIX ?? 'seed-simeon-big';
 const RESET_ONLY = process.argv.includes('--reset');
+const VERIFY_ONLY = process.argv.includes('--verify-only');
 const CUSTOMER_EMAIL_DOMAIN = process.env.SEED_CUSTOMER_EMAIL_DOMAIN ?? 'simeon-demo.test';
 const ORDER_NUMBER_PREFIX = process.env.SEED_ORDER_NUMBER_PREFIX ?? 'SMS';
 const SOURCE_SYSTEM = process.env.SEED_SOURCE_SYSTEM ?? 'manual';
 const SOURCE_NAME = process.env.SEED_SOURCE_NAME ?? 'sample_demo';
 const SOURCE_LABEL = process.env.SEED_SOURCE_LABEL ?? 'seed-simeon-big-merchant';
 const RECIPIENT_USER_ID = process.env.SEED_RECIPIENT_USER_ID ?? '31635553-bf6f-410d-8202-4bfd5019caeb';
+const configuredBackgroundOrderCount = Number(process.env.SEED_BACKGROUND_ORDER_COUNT ?? '0');
+if (!Number.isInteger(configuredBackgroundOrderCount) || configuredBackgroundOrderCount < 0 || configuredBackgroundOrderCount > 100_000) {
+  throw new Error('SEED_BACKGROUND_ORDER_COUNT must be an integer between 0 and 100000.');
+}
+const BACKGROUND_ORDER_COUNT = configuredBackgroundOrderCount;
+const configuredCaseAmountScale = Number(process.env.SEED_CASE_AMOUNT_SCALE ?? '1');
+if (!Number.isInteger(configuredCaseAmountScale) || configuredCaseAmountScale < 1 || configuredCaseAmountScale > 10_000) {
+  throw new Error('SEED_CASE_AMOUNT_SCALE must be an integer between 1 and 10000.');
+}
+const CASE_AMOUNT_SCALE = configuredCaseAmountScale;
+const FEATURED_CASE_KEY = 'landing-hero-evidence-hold-0';
+const FEATURED_CASE_TAG = 'landing-hero-evidence-hold';
 
 const ANCHOR = new Date();
 ANCHOR.setUTCMinutes(0, 0, 0);
@@ -112,7 +125,23 @@ async function upsertRows(table, rows) {
   const onConflict = CONFLICT_KEYS[table] ?? 'id';
   for (let i = 0; i < rows.length; i += 500) {
     const batch = rows.slice(i, i + 500);
-    await checked(table, 'upsert', supabase.from(table).upsert(batch, { onConflict }));
+    let lastError;
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      try {
+        await checked(table, 'upsert', supabase.from(table).upsert(batch, { onConflict }));
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+        const message = String(error?.message ?? error);
+        const transient = /fetch failed|network|timeout|econnreset|enotfound/i.test(message);
+        if (!transient || attempt === 4) throw error;
+        const delayMs = attempt * 750;
+        console.warn(`${table} batch ${i + 1}-${i + batch.length} transient failure; retrying in ${delayMs}ms.`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+    if (lastError) throw lastError;
   }
   console.log(`Upserted ${rows.length} ${table} rows.`);
 }
@@ -120,7 +149,20 @@ async function insertImmutableRows(table, rows) {
   if (rows.length === 0) return;
   for (let i = 0; i < rows.length; i += 500) {
     const batch = rows.slice(i, i + 500);
-    await checked(table, 'insert immutable', supabase.from(table).upsert(batch, { onConflict: 'id', ignoreDuplicates: true }));
+    let lastError;
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      try {
+        await checked(table, 'insert immutable', supabase.from(table).upsert(batch, { onConflict: 'id', ignoreDuplicates: true }));
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+        const transient = /fetch failed|network|timeout|econnreset|enotfound/i.test(String(error?.message ?? error));
+        if (!transient || attempt === 4) throw error;
+        await new Promise((resolve) => setTimeout(resolve, attempt * 750));
+      }
+    }
+    if (lastError) throw lastError;
   }
   console.log(`Ensured ${rows.length} immutable ${table} rows.`);
 }
@@ -172,6 +214,7 @@ const PARTNERS = [
   { key: 'novia-textiles', name: 'Novia Textiles', type: 'supplier', contactUrl: null, contactEmail: 'accounts@noviatextiles.test', notes: 'Apparel supplier. Defect credits against batch codes.' },
   { key: 'harborline-goods', name: 'Harborline Goods Co.', type: 'supplier', contactUrl: null, contactEmail: 'claims@harborlinegoods.test', notes: 'Homeware and accessories supplier.' },
   { key: 'crestpay-disputes', name: 'CrestPay Dispute Resolution', type: 'payment_dispute_provider', contactUrl: 'https://crestpay.test/merchant-disputes', contactEmail: null, notes: 'Payment processor chargeback/dispute desk.' },
+  { key: 'northline-parcel', name: 'Northline Parcel', type: 'carrier', contactUrl: 'https://northline-parcel.test/claims', contactEmail: 'claims@northline-parcel.test', notes: 'Fictional carrier used by the landing hero evidence-hold fixture.' },
 ];
 
 const PARTNER_RULES = [
@@ -185,6 +228,7 @@ const PARTNER_RULES = [
   { key: 'novia-defect-credit', partner: 'novia-textiles', ruleName: 'Novia Textiles defect credit', recoveryType: 'supplier_defect', claimType: 'damaged_item', requiredEvidence: ['customer_photo', 'supplier_batch_code'], deadlineDays: 60, confidence: 'medium', submissionMethod: 'email', submissionEmail: 'accounts@noviatextiles.test', claimableCosts: ['item_cost'], excludedCosts: ['support_time', 'outbound_postage'] },
   { key: 'harborline-listing-mismatch', partner: 'harborline-goods', ruleName: 'Harborline listing mismatch credit', recoveryType: 'supplier_defect', claimType: 'other', requiredEvidence: ['customer_photo', 'supplier_listing_snapshot'], deadlineDays: 45, confidence: 'medium', submissionMethod: 'email', submissionEmail: 'claims@harborlinegoods.test', claimableCosts: ['item_cost'], excludedCosts: ['support_time'] },
   { key: 'crestpay-chargeback-pack', partner: 'crestpay-disputes', ruleName: 'CrestPay chargeback evidence pack', recoveryType: 'chargeback_evidence', claimType: 'chargeback_related', requiredEvidence: ['order_confirmation', 'delivery_scan', 'support_thread'], deadlineDays: 10, confidence: 'low', submissionMethod: 'portal', submissionUrl: 'https://crestpay.test/merchant-disputes', claimableCosts: ['item_cost'], excludedCosts: ['support_time'] },
+  { key: 'northline-delivery-clarification', partner: 'northline-parcel', ruleName: 'Northline Parcel delivery clarification', recoveryType: 'carrier_claim', claimType: 'item_not_received', requiredEvidence: ['tracking_status', 'proof_of_delivery', 'customer_statement'], deadlineDays: 14, confidence: 'medium', submissionMethod: 'email', submissionEmail: 'claims@northline-parcel.test', claimableCosts: ['item_cost', 'outbound_postage'], excludedCosts: ['support_time'] },
 ];
 
 // Existing (kept, non-seeded) merchant_rules for this merchant — used to tie
@@ -257,15 +301,18 @@ function ruleFor(archetype) {
   return { id: null, name: archetype.ruleName ?? 'Merchant review' };
 }
 
-// Build the full case plan list (deterministic, spread over the last ~150 days).
+// Build the full operational case list. These long-tail cases sit outside the
+// two dashboard comparison windows; a dedicated, fully reconciled cohort below
+// owns the 30-day Overview silhouette.
 const CASE_PLANS = [];
 let globalIndex = 0;
 for (const archetype of ARCHETYPES) {
   for (let i = 0; i < archetype.repeat; i += 1) {
     const variance = 0.8 + rand() * 0.5;
-    const amount = money(archetype.baseAmount * variance);
-    const orderDaysAgo = 4 + Math.floor(rand() * 165);
-    const ticketDaysAgo = Math.max(1, orderDaysAgo - (2 + Math.floor(rand() * 20)));
+    const unscaledAmount = money(archetype.baseAmount * variance);
+    const amount = money(unscaledAmount * CASE_AMOUNT_SCALE);
+    const ticketDaysAgo = 65 + (globalIndex % 100);
+    const orderDaysAgo = ticketDaysAgo + 2 + Math.floor(rand() * 20);
     const resolved = archetype.status.startsWith('resolved_');
     const rule = ruleFor(archetype);
     const key = `${archetype.key}-${i}`;
@@ -278,6 +325,7 @@ for (const archetype of ARCHETYPES) {
       status: archetype.status,
       requestedAction: archetype.requestedAction,
       amount,
+      unscaledAmount,
       orderDaysAgo,
       ticketDaysAgo,
       fulfillmentState: archetype.claimType === 'item_not_received' && !resolved && archetype.status !== 'open' ? 'delivered' : 'delivered',
@@ -303,6 +351,9 @@ for (const archetype of ARCHETYPES) {
             min: money(amount * 0.35),
             max: amount,
             recovered: archetype.recovery.recoveredRatio ? money(amount * archetype.recovery.recoveredRatio) : null,
+            unscaledMin: money(unscaledAmount * 0.35),
+            unscaledMax: unscaledAmount,
+            unscaledRecovered: archetype.recovery.recoveredRatio ? money(unscaledAmount * archetype.recovery.recoveredRatio) : null,
           }
         : null,
       outcome: archetype.outcome
@@ -310,6 +361,7 @@ for (const archetype of ARCHETYPES) {
             decision: archetype.outcome.decision,
             outcome: archetype.outcome.outcome,
             amountRefunded: money(amount * (archetype.outcome.amountRefundedRatio ?? 0)),
+            unscaledAmountRefunded: money(unscaledAmount * (archetype.outcome.amountRefundedRatio ?? 0)),
             followed: archetype.outcome.followed,
           }
         : null,
@@ -317,7 +369,236 @@ for (const archetype of ARCHETYPES) {
     globalIndex += 1;
   }
 }
+
+const OVERVIEW_CURRENT_TOTALS_MINOR = {
+  identified: 266_945_000,
+  open: 90_352_000,
+  prevented: 63_489_000,
+  recovered: 42_471_000,
+  realised: 70_633_000,
+};
+const OVERVIEW_PREVIOUS_TOTALS_MINOR = {
+  identified: 219_347_000,
+  open: 77_128_200,
+  prevented: 53_895_600,
+  recovered: 30_379_800,
+  realised: 57_943_400,
+};
+const OVERVIEW_CURRENT_SHAPE = [
+  8.2, 10.4, 8.8, 6.6, 5.5, 10.8, 8.4, 9.1, 8.8, 6.2,
+  7.8, 8.2, 10.3, 9.0, 8.5, 6.5, 7.0, 9.8, 8.7, 10.2,
+  8.9, 9.2, 6.0, 7.6, 7.2, 9.0, 10.1, 9.8, 9.2, 8.6,
+];
+const OVERVIEW_PREVIOUS_SHAPE = [
+  8.0, 9.9, 9.4, 7.6, 5.4, 7.5, 7.2, 7.6, 5.0, 8.6,
+  7.3, 7.0, 9.1, 7.0, 5.0, 7.4, 7.2, 6.8, 7.0, 7.7,
+  7.4, 7.6, 6.0, 8.5, 6.4, 5.7, 8.7, 9.3, 7.4, 6.8,
+];
+
+function allocateOverviewTotal(totalMinor, weights) {
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  const values = weights.map((weight) => Math.floor(totalMinor * weight / weightTotal));
+  values[values.length - 1] += totalMinor - values.reduce((sum, value) => sum + value, 0);
+  return values;
+}
+
+function appendOverviewCohort(period, totals, shape, ageOffset) {
+  const openByDay = allocateOverviewTotal(totals.open, shape);
+  const preventedByDay = allocateOverviewTotal(totals.prevented, shape);
+  const recoveredByDay = allocateOverviewTotal(totals.recovered, shape);
+  const realisedByDay = allocateOverviewTotal(totals.realised, shape);
+
+  for (let dayIndex = 0; dayIndex < 30; dayIndex += 1) {
+    const age = ageOffset + (29 - dayIndex);
+    const recovered = recoveredByDay[dayIndex];
+    const profiles = [
+      { kind: 'open', exposed: openByDay[dayIndex], prevented: 0, recovered: 0, realised: 0 },
+      { kind: 'prevented', exposed: preventedByDay[dayIndex], prevented: preventedByDay[dayIndex], recovered: 0, realised: 0 },
+      // Recovered cash retains its confirmed-loss bound. The Overview bridge
+      // intentionally presents recovered and realised as separate resolution
+      // stages, so this cohort contributes to both recorded stages.
+      { kind: 'recovered', exposed: recovered * 2, prevented: 0, recovered, realised: recovered },
+      { kind: 'realised', exposed: realisedByDay[dayIndex] - recovered, prevented: 0, recovered: 0, realised: realisedByDay[dayIndex] - recovered },
+    ];
+
+    profiles.forEach((profile, slot) => {
+      const template = CASE_PLANS[(dayIndex * 4 + slot) % CASE_PLANS.length];
+      const amount = money(profile.exposed / 100);
+      const recoveredAmount = money(profile.recovered / 100);
+      const realisedAmount = money(profile.realised / 100);
+      const isOpen = profile.kind === 'open';
+      const isPrevented = profile.kind === 'prevented';
+      const isRecovered = profile.kind === 'recovered';
+      CASE_PLANS.push({
+        ...template,
+        key: `overview-${period}-${String(dayIndex + 1).padStart(2, '0')}-${profile.kind}`,
+        archetypeKey: `overview-${profile.kind}`,
+        customer: customerForIndex(dayIndex * 4 + slot + (period === 'previous' ? 120 : 0)).key,
+        status: isOpen ? 'open' : isPrevented ? 'resolved_denied' : 'resolved_refunded',
+        amount,
+        unscaledAmount: money(amount / CASE_AMOUNT_SCALE),
+        orderDaysAgo: age + 6,
+        ticketDaysAgo: age,
+        subject: `${template.subject.replace(/\s\(#\d+\)$/, '')} · ${period} cohort ${dayIndex + 1}`,
+        recoverability: isPrevented ? 'not_recoverable' : isRecovered ? 'recoverable' : isOpen ? 'unknown' : 'not_recoverable',
+        recoveryOwner: isRecovered ? 'carrier' : isOpen ? 'unknown' : 'merchant',
+        recovery: isRecovered ? {
+          type: 'carrier_claim',
+          owner: 'carrier',
+          status: 'paid',
+          min: recoveredAmount,
+          max: recoveredAmount,
+          recovered: recoveredAmount,
+          unscaledMin: money(recoveredAmount / CASE_AMOUNT_SCALE),
+          unscaledMax: money(recoveredAmount / CASE_AMOUNT_SCALE),
+          unscaledRecovered: money(recoveredAmount / CASE_AMOUNT_SCALE),
+        } : null,
+        outcome: isOpen ? null : {
+          decision: isPrevented ? 'denied' : 'approved',
+          outcome: isPrevented ? 'legitimate' : isRecovered ? 'recovered' : 'loss',
+          amountRefunded: isPrevented ? 0 : realisedAmount,
+          unscaledAmountRefunded: isPrevented ? 0 : money(realisedAmount / CASE_AMOUNT_SCALE),
+          followed: true,
+        },
+        financialProfile: {
+          requestedMinor: profile.exposed,
+          exposedMinor: profile.exposed,
+          estimatedLossMinor: isOpen ? profile.exposed : 0,
+          preventedMinor: profile.prevented,
+          confirmedLossMinor: profile.realised,
+          recoverableMinor: profile.recovered,
+          recoveredMinor: profile.recovered,
+        },
+      });
+    });
+  }
+
+  const profileTotal = CASE_PLANS
+    .filter((plan) => plan.key.startsWith(`overview-${period}-`))
+    .reduce((sum, plan) => sum + plan.financialProfile.exposedMinor, 0);
+  if (profileTotal !== totals.identified) {
+    throw new Error(`${period} Overview profile mismatch: expected ${totals.identified}, built ${profileTotal}.`);
+  }
+}
+
+appendOverviewCohort('current', OVERVIEW_CURRENT_TOTALS_MINOR, OVERVIEW_CURRENT_SHAPE, 0);
+appendOverviewCohort('previous', OVERVIEW_PREVIOUS_TOTALS_MINOR, OVERVIEW_PREVIOUS_SHAPE, 30);
+
+// Append the landing proof after every generated cohort. This preserves every
+// existing fixture id, random choice and case assignment while giving the
+// public hero one coherent, deterministic decision moment.
+if (SEED_TAG === 'asterlane-enterprise-demo') CASE_PLANS.push({
+  key: FEATURED_CASE_KEY,
+  archetypeKey: FEATURED_CASE_TAG,
+  fixtureTags: ['sample_data', SEED_TAG, FEATURED_CASE_TAG],
+  customer: 'cust-0',
+  claimType: 'item_not_received',
+  status: 'evidence_needed',
+  requestedAction: 'refund',
+  amount: 128,
+  unscaledAmount: 128,
+  caseAmountScale: 1,
+  orderNumber: 'ALG-10482',
+  ticketExternalId: 'TKT-4821',
+  orderDaysAgo: 4,
+  ticketDaysAgo: 2,
+  fulfillmentState: 'delivered',
+  subject: 'Refund requested for delivered parcel without proof',
+  reason: 'The customer reports the parcel was not received. Northline Parcel reports delivery, but proof of delivery is not on file.',
+  reasonNormalized: 'item_not_received',
+  lossAttribution: 'delivery_confirmed_evidence',
+  confidence: 'needs_more_evidence',
+  recoverability: 'needs_more_evidence',
+  recoveryOwner: 'carrier',
+  requiredEvidence: ['proof_of_delivery'],
+  recoveryNextAction: 'Ask Northline Parcel for proof of delivery before the claim deadline.',
+  nextAction: 'Ask carrier for clarification',
+  nextActionReason: 'Tracking is present, but proof of delivery is not complete enough to make a payout decision.',
+  recommendedAction: 'ask_for_evidence',
+  recommendedRuleId: EXISTING_RULES.missingDeliveryEvidence.id,
+  recommendedRuleName: EXISTING_RULES.missingDeliveryEvidence.name,
+  partnerId: uuid('partner:northline-parcel'),
+  recovery: {
+    type: 'carrier_claim',
+    owner: 'carrier',
+    status: 'evidence_needed',
+    min: 0,
+    max: 128,
+    recovered: null,
+    unscaledMin: 0,
+    unscaledMax: 128,
+    unscaledRecovered: null,
+  },
+  outcome: null,
+  financialProfile: {
+    requestedMinor: 12_800,
+    exposedMinor: 12_800,
+    estimatedLossMinor: 12_800,
+    preventedMinor: 0,
+    confirmedLossMinor: 0,
+    recoverableMinor: 12_800,
+    recoveredMinor: 0,
+  },
+  explicitZeroStates: ['prevented', 'recovered'],
+});
 console.log(`Built ${CASE_PLANS.length} case plans across ${CUSTOMERS.length} customers.`);
+
+// Background orders make the tenant feel like a real high-volume merchant
+// without turning every order into a payout case. Their amounts are generated
+// in integer pence so customer totals can be reconciled exactly against the
+// source_orders rows below.
+const BACKGROUND_ORDER_PLANS = Array.from({ length: BACKGROUND_ORDER_COUNT }, (_, index) => {
+  const customer = CUSTOMERS[(index * 17) % CUSTOMERS.length];
+  const amountMinor = 3500 + ((index * 7919) % 42000);
+  return {
+    key: `background-${index}`,
+    customer: customer.key,
+    amount: amountMinor / 100,
+    orderDaysAgo: 1 + ((index * 29) % 365),
+    fulfillmentState: index % 47 === 0 ? 'in_transit' : index % 71 === 0 ? 'partial' : 'delivered',
+    financialStatus: index % 13 === 0 ? 'refunded' : 'paid',
+  };
+});
+
+const REFUND_PLANS = [
+  ...CASE_PLANS
+    .filter((item) => (item.outcome?.amountRefunded ?? 0) > 0)
+    .map((item) => ({
+      key: item.key,
+      kind: 'case',
+      sourceOrderId: uuid(`order:${item.key}`),
+      supportPayoutCaseId: uuid(`case:${item.key}`),
+      amount: item.outcome.amountRefunded,
+      refundedDaysAgo: Math.max(0, item.ticketDaysAgo - 1),
+    })),
+  ...BACKGROUND_ORDER_PLANS
+    .filter((item) => item.financialStatus === 'refunded')
+    .map((item) => ({
+      key: item.key,
+      kind: 'background',
+      sourceOrderId: uuid(`background-order:${item.key}`),
+      supportPayoutCaseId: null,
+      amount: item.amount,
+      refundedDaysAgo: Math.max(0, item.orderDaysAgo - 7),
+    })),
+];
+const RETURN_PLANS = REFUND_PLANS.filter((_, index) => index % 5 !== 0);
+console.log(`Built ${REFUND_PLANS.length} refunds and ${RETURN_PLANS.length} returns with linked source orders.`);
+
+const ORDER_AGGREGATES = new Map(
+  CUSTOMERS.map((customer) => [customer.key, { count: 0, totalSpentMinor: 0 }]),
+);
+function recordOrderAggregate(customerKey, amount) {
+  const aggregate = ORDER_AGGREGATES.get(customerKey);
+  if (!aggregate) throw new Error(`Missing order aggregate customer ${customerKey}`);
+  aggregate.count += 1;
+  aggregate.totalSpentMinor += Math.round(amount * 100);
+}
+CASE_PLANS.forEach((order) => recordOrderAggregate(order.customer, order.amount));
+BACKGROUND_ORDER_PLANS.forEach((order) => recordOrderAggregate(order.customer, order.amount));
+const TOTAL_ORDER_COUNT = CASE_PLANS.length + BACKGROUND_ORDER_PLANS.length;
+const TOTAL_GMV_MINOR = [...ORDER_AGGREGATES.values()].reduce((total, aggregate) => total + aggregate.totalSpentMinor, 0);
+console.log(`Built ${BACKGROUND_ORDER_PLANS.length} background orders; ${TOTAL_ORDER_COUNT} total orders and GBP ${(TOTAL_GMV_MINOR / 100).toFixed(2)} merchandise value will reconcile to customer aggregates.`);
 
 function ticketExternalId(index) {
   return String(TICKET_ID_BASE + index);
@@ -376,8 +657,8 @@ function buildPartnerRuleRows() {
 
 function buildCustomerRows() {
   return CUSTOMERS.map((customer) => {
-    const cases = CASE_PLANS.filter((c) => c.customer === customer.key);
-    const totalSpent = cases.reduce((sum, c) => sum + c.amount, 0) + 120 + rand() * 400;
+    const aggregate = ORDER_AGGREGATES.get(customer.key);
+    if (!aggregate) throw new Error(`Missing customer aggregate ${customer.key}`);
     return {
       id: uuid(`customer:${customer.key}`),
       merchant_id: MERCHANT_ID,
@@ -389,8 +670,8 @@ function buildCustomerRows() {
       last_name: customer.last,
       verified_email: true,
       account_created_at: daysAgoIso(customer.accountAgeDays, 9),
-      orders_count: cases.length + 2 + Math.floor(rand() * 6),
-      total_spent: money(totalSpent),
+      orders_count: aggregate.count,
+      total_spent: money(aggregate.totalSpentMinor / 100),
       tags: ['sample_data', SEED_TAG],
       note: SEED_NOTE,
       raw_metadata: { seed: SEED_TAG, sample_data: true },
@@ -401,15 +682,15 @@ function buildCustomerRows() {
 }
 
 function buildOrderRows() {
-  return CASE_PLANS.map((c, index) => {
+  const caseRows = CASE_PLANS.map((c, index) => {
     const customer = customerByKey(c.customer);
     return {
       id: uuid(`order:${c.key}`),
       merchant_id: MERCHANT_ID,
       source: SOURCE_SYSTEM,
-      connection_id: null,
+      connection_id: uuid('legacy:shopify'),
       external_id: `${SEED_PREFIX}-order-${c.key}`,
-      order_number: `${ORDER_NUMBER_PREFIX}-${String(48000 + index).padStart(6, '0')}`,
+      order_number: c.orderNumber ?? `${ORDER_NUMBER_PREFIX}-${String(48000 + index).padStart(6, '0')}`,
       source_customer_id: uuid(`customer:${customer.key}`),
       email: customer.email,
       phone: customer.phone,
@@ -432,7 +713,7 @@ function buildOrderRows() {
       billing_address_id: null,
       line_items_count: 1 + (index % 4),
       note: SEED_NOTE,
-      tags: ['sample_data', SEED_TAG, c.claimType],
+      tags: c.fixtureTags ?? ['sample_data', SEED_TAG, c.claimType],
       placed_at: daysAgoIso(c.orderDaysAgo, 8 + ((index + 3) % 9)),
       cancelled_at: null,
       cancel_reason: null,
@@ -441,25 +722,107 @@ function buildOrderRows() {
       updated_at: daysAgoIso(1, 8),
     };
   });
+  const backgroundRows = BACKGROUND_ORDER_PLANS.map((order, index) => {
+    const customer = customerByKey(order.customer);
+    return {
+      id: uuid(`background-order:${order.key}`),
+      merchant_id: MERCHANT_ID,
+      source: SOURCE_SYSTEM,
+      connection_id: uuid('legacy:shopify'),
+      external_id: `${SEED_PREFIX}-order-${order.key}`,
+      order_number: `${ORDER_NUMBER_PREFIX}-${String(500000 + index).padStart(6, '0')}`,
+      source_customer_id: uuid(`customer:${customer.key}`),
+      email: customer.email,
+      phone: customer.phone,
+      financial_status: order.financialStatus,
+      fulfillment_state: order.fulfillmentState,
+      total_price: order.amount,
+      subtotal_price: order.amount,
+      total_discounts: 0,
+      currency: 'GBP',
+      discount_codes: [],
+      payment_gateway: index % 4 === 0 ? 'visa' : index % 4 === 1 ? 'mastercard' : index % 4 === 2 ? 'paypal' : 'amex',
+      card_last4: index % 2 === 0 ? String(5200 + (index % 4700)).slice(-4) : null,
+      browser_ip: null,
+      user_agent: null,
+      accept_language: 'en-GB',
+      landing_site: null,
+      referring_site: null,
+      source_name: SOURCE_NAME,
+      shipping_address_id: null,
+      billing_address_id: null,
+      line_items_count: 1 + (index % 5),
+      note: SEED_NOTE,
+      tags: ['sample_data', SEED_TAG, 'background_order'],
+      placed_at: daysAgoIso(order.orderDaysAgo, 8 + (index % 9)),
+      cancelled_at: null,
+      cancel_reason: null,
+      raw_payload_hash: sha(`background-order:${order.key}`),
+      ingested_at: daysAgoIso(0, 8),
+      updated_at: daysAgoIso(1, 8),
+    };
+  });
+  return [...caseRows, ...backgroundRows];
+}
+
+function refundExternalId(refund) {
+  return `${SEED_PREFIX}-refund-${refund.kind}-${refund.key}`;
+}
+
+function buildRefundRows() {
+  return REFUND_PLANS.map((refund, index) => ({
+    id: uuid(`refund:${refund.kind}:${refund.key}`),
+    merchant_id: MERCHANT_ID,
+    source_order_id: refund.sourceOrderId,
+    external_id: refundExternalId(refund),
+    amount: refund.amount,
+    currency: 'GBP',
+    reason: refund.kind === 'case' ? 'Customer resolution completed' : 'Returned merchandise received',
+    is_full_refund: true,
+    refunded_at: daysAgoIso(refund.refundedDaysAgo, 11 + (index % 6)),
+    raw_payload_hash: sha(`refund:${refund.kind}:${refund.key}`),
+    ingested_at: daysAgoIso(0, 8),
+  }));
+}
+
+function buildReturnRows() {
+  return RETURN_PLANS.map((item, index) => ({
+    id: uuid(`return:${item.kind}:${item.key}`),
+    merchant_id: MERCHANT_ID,
+    source_order_id: item.sourceOrderId,
+    support_payout_case_id: item.supportPayoutCaseId,
+    external_id: `${SEED_PREFIX}-return-${item.kind}-${item.key}`,
+    status: 'received',
+    source_status: 'inspection_complete',
+    disposition: index % 7 === 0 ? 'refurbish' : 'restock',
+    requested_at: daysAgoIso(item.refundedDaysAgo + 7, 9),
+    received_at: daysAgoIso(item.refundedDaysAgo + 2, 12),
+    inspected_at: daysAgoIso(item.refundedDaysAgo + 1, 14),
+    refund_reference: refundExternalId(item),
+    replacement_reference: null,
+    raw_metadata: { seed: SEED_TAG, sample_data: true, synthetic: true },
+    created_at: daysAgoIso(item.refundedDaysAgo + 7, 9),
+    updated_at: daysAgoIso(1, 9),
+  }));
 }
 
 function buildTicketRows() {
   return CASE_PLANS.map((c, index) => {
     const customer = customerByKey(c.customer);
-    const orderNumber = `${ORDER_NUMBER_PREFIX}-${String(48000 + index).padStart(6, '0')}`;
+    const orderNumber = c.orderNumber ?? `${ORDER_NUMBER_PREFIX}-${String(48000 + index).padStart(6, '0')}`;
     const resolved = c.status.startsWith('resolved_');
     return {
       id: uuid(`ticket:${c.key}`),
       merchant_id: MERCHANT_ID,
       provider: 'gorgias',
-      connection_id: null,
-      external_id: ticketExternalId(index),
+      connection_id: uuid('legacy:gorgias'),
+      external_id: c.ticketExternalId ?? ticketExternalId(index),
       external_url: null,
       source_customer_id: uuid(`customer:${customer.key}`),
       subject: c.subject,
       status: resolved ? 'closed' : 'open',
       channel: index % 5 === 0 ? 'chat' : 'email',
-      tags: ['sample_data', 'payout_control', c.claimType],
+      tags: c.fixtureTags ?? ['sample_data', 'payout_control', c.claimType],
       is_spam: false,
       satisfaction_score: null,
       message_count: 2 + (index % 6),
@@ -507,9 +870,16 @@ function buildCaseRows() {
       claim_type: c.claimType,
       status: c.status,
       detection_method: index % 3 === 0 ? 'tag' : 'manual',
-      detection_detail: { seed: SEED_TAG, sample_data: true, source: SOURCE_LABEL, archetype: c.archetypeKey },
+      detection_detail: {
+        seed: SEED_TAG,
+        sample_data: true,
+        synthetic: true,
+        source: SOURCE_LABEL,
+        archetype: c.archetypeKey,
+        ...(c.archetypeKey === FEATURED_CASE_TAG ? { fixture_tag: FEATURED_CASE_TAG } : {}),
+      },
       reason_raw: c.reason,
-      reason_normalized: c.reason,
+      reason_normalized: c.reasonNormalized ?? c.reason,
       amount_at_risk: c.amount,
       currency: 'GBP',
       requires_review: c.status === 'manual_review' || c.status === 'escalated',
@@ -534,8 +904,8 @@ function buildCaseRows() {
       recovery_state: c.recovery ? (c.recovery.status === 'paid' ? 'recovered' : 'open') : 'no_recovery_needed',
       next_action: c.nextAction,
       next_action_reason: c.nextActionReason,
-      assigned_to: null,
-      assigned_at: null,
+      assigned_to: RECIPIENT_USER_ID,
+      assigned_at: daysAgoIso(Math.max(0, openWaitingDays), 10),
       snoozed_until: index % 23 === 0 ? daysFromAnchorIso(2, 9) : null,
       first_viewed_at: index % 4 === 0 ? null : daysAgoIso(Math.max(0, c.ticketDaysAgo - 1), 11),
       submitted_at: daysAgoIso(c.ticketDaysAgo, submittedHour),
@@ -560,6 +930,60 @@ function buildOutcomeRows() {
     decided_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 15),
     updated_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 15),
   }));
+}
+
+function buildClaimEventRows() {
+  return CASE_PLANS.flatMap((c) => {
+    const claimId = uuid(`case:${c.key}`);
+    const base = {
+      merchant_id: MERCHANT_ID,
+      claim_id: claimId,
+      from_status: null,
+      to_status: null,
+      note: null,
+      actor_user_id: null,
+      metadata: { seed: SEED_TAG, sample_data: true, synthetic: true },
+    };
+    const rows = [
+      {
+        ...base,
+        id: uuid(`claim-event:created:${c.key}`),
+        event_type: 'claim_created',
+        to_status: 'new',
+        note: 'Case opened from the linked support conversation and order.',
+        created_at: daysAgoIso(c.ticketDaysAgo, 9),
+      },
+      {
+        ...base,
+        id: uuid(`claim-event:assigned:${c.key}`),
+        event_type: 'claim_assigned',
+        actor_user_id: RECIPIENT_USER_ID,
+        note: 'Avery Mercer assigned as the case owner.',
+        created_at: daysAgoIso(Math.max(0, c.ticketDaysAgo - 1), 10),
+      },
+      {
+        ...base,
+        id: uuid(`claim-event:evidence:${c.key}`),
+        event_type: 'evidence_added',
+        actor_user_id: RECIPIENT_USER_ID,
+        note: 'Connected source evidence reconciled to the case.',
+        created_at: daysAgoIso(Math.max(0, c.ticketDaysAgo - 2), 12),
+      },
+    ];
+    if (c.outcome) {
+      rows.push({
+        ...base,
+        id: uuid(`claim-event:resolved:${c.key}`),
+        event_type: 'claim_resolved',
+        from_status: 'ready_for_decision',
+        to_status: c.status,
+        actor_user_id: RECIPIENT_USER_ID,
+        note: 'Merchant outcome recorded with its evidence and financial context.',
+        created_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 15),
+      });
+    }
+    return rows;
+  });
 }
 
 function buildRecoveryRows() {
@@ -639,19 +1063,71 @@ function buildWorkTaskRows() {
 }
 
 function buildCanonicalDecisionRows() {
-  return CASE_PLANS.filter((c) => c.outcome).map((c) => ({ id: uuid(`canonical-decision:${c.key}`), merchant_id: MERCHANT_ID,
-    support_payout_case_id: uuid(`case:${c.key}`), decision: c.outcome.decision, action: c.requestedAction,
-    amount_minor: Math.round((c.outcome.amountRefunded ?? 0) * 100), currency: 'GBP', actor_type: 'demo_seed',
-    reason: `Sample merchant decision for ${c.subject}.`, recommendation_snapshot: { action: c.recommendedAction },
-    rule_snapshot: { name: c.recommendedRuleName, version: 1 }, followed_recommendation: c.outcome.followed,
-    idempotency_key: `${SEED_PREFIX}:decision:${c.key}`, effective_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 15), recorded_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 15) }));
+  return CASE_PLANS.filter((c) => c.outcome).flatMap((c) => {
+    const caseAmountScale = c.caseAmountScale ?? CASE_AMOUNT_SCALE;
+    const baseId = uuid(`canonical-decision:${c.key}`);
+    const effectiveAt = daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 15);
+    const base = {
+      id: baseId,
+      merchant_id: MERCHANT_ID,
+      support_payout_case_id: uuid(`case:${c.key}`),
+      decision: c.outcome.decision,
+      action: c.requestedAction,
+      amount_minor: Math.round((c.outcome.unscaledAmountRefunded ?? 0) * 100),
+      currency: 'GBP',
+      actor_type: 'demo_seed',
+      reason: `Sample merchant decision for ${c.subject}.`,
+      recommendation_snapshot: { action: c.recommendedAction },
+      rule_snapshot: { name: c.recommendedRuleName, version: 1 },
+      followed_recommendation: c.outcome.followed,
+      idempotency_key: `${SEED_PREFIX}:decision:${c.key}`,
+      effective_at: effectiveAt,
+      recorded_at: effectiveAt,
+    };
+    if (caseAmountScale === 1) return [base];
+    return [base, {
+      ...base,
+      id: uuid(`canonical-decision-scale:${caseAmountScale}:${c.key}`),
+      amount_minor: Math.round((c.outcome.amountRefunded ?? 0) * 100),
+      reason: `Superseding synthetic enterprise-scale decision for ${c.subject}.`,
+      supersedes_decision_id: baseId,
+      idempotency_key: `${SEED_PREFIX}:decision-scale-${caseAmountScale}:${c.key}`,
+      effective_at: daysAgoIso(0, 10),
+      recorded_at: daysAgoIso(0, 10),
+    }];
+  });
 }
 function buildCanonicalOutcomeRows() {
-  return CASE_PLANS.filter((c) => c.outcome).map((c) => ({ id: uuid(`canonical-outcome:${c.key}`), merchant_id: MERCHANT_ID,
-    support_payout_case_id: uuid(`case:${c.key}`), outcome_type: c.outcome.outcome,
-    amount_minor: Math.round((c.outcome.amountRefunded ?? c.recovery?.recovered ?? 0) * 100), currency: 'GBP', actor_type: 'demo_seed',
-    reason: `Sample operational outcome for ${c.subject}.`, metadata: { seed: SEED_TAG, sample_data: true },
-    idempotency_key: `${SEED_PREFIX}:outcome:${c.key}`, effective_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16), recorded_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16) }));
+  return CASE_PLANS.filter((c) => c.outcome).flatMap((c) => {
+    const caseAmountScale = c.caseAmountScale ?? CASE_AMOUNT_SCALE;
+    const baseId = uuid(`canonical-outcome:${c.key}`);
+    const effectiveAt = daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16);
+    const base = {
+      id: baseId,
+      merchant_id: MERCHANT_ID,
+      support_payout_case_id: uuid(`case:${c.key}`),
+      outcome_type: c.outcome.outcome,
+      amount_minor: Math.round((c.outcome.unscaledAmountRefunded ?? c.recovery?.unscaledRecovered ?? 0) * 100),
+      currency: 'GBP',
+      actor_type: 'demo_seed',
+      reason: `Sample operational outcome for ${c.subject}.`,
+      metadata: { seed: SEED_TAG, sample_data: true },
+      idempotency_key: `${SEED_PREFIX}:outcome:${c.key}`,
+      effective_at: effectiveAt,
+      recorded_at: effectiveAt,
+    };
+    if (caseAmountScale === 1) return [base];
+    return [base, {
+      ...base,
+      id: uuid(`canonical-outcome-scale:${caseAmountScale}:${c.key}`),
+      amount_minor: Math.round((c.outcome.amountRefunded ?? c.recovery?.recovered ?? 0) * 100),
+      reason: `Superseding synthetic enterprise-scale outcome for ${c.subject}.`,
+      metadata: { seed: SEED_TAG, sample_data: true, supersedes_outcome_id: baseId, scale: caseAmountScale },
+      idempotency_key: `${SEED_PREFIX}:outcome-scale-${caseAmountScale}:${c.key}`,
+      effective_at: daysAgoIso(0, 11),
+      recorded_at: daysAgoIso(0, 11),
+    }];
+  });
 }
 
 function buildFinancialEntryRows() {
@@ -660,20 +1136,31 @@ function buildFinancialEntryRows() {
   for (const c of CASE_PLANS) {
     const caseId = uuid(`case:${c.key}`);
     const resolved = c.status.startsWith('resolved_');
-    const requested = Math.round(c.amount * 100);
+    const profile = c.financialProfile ?? null;
+    const requested = profile?.requestedMinor ?? Math.round(c.amount * 100);
     const approved = c.outcome && c.outcome.decision === 'approved' ? requested : 0;
     const paid = c.outcome?.amountRefunded ? Math.round(c.outcome.amountRefunded * 100) : 0;
-    const recovered = c.recovery?.recovered ? Math.round(c.recovery.recovered * 100) : 0;
-    const recoverable = c.recovery ? Math.round(c.recovery.max * 100) : 0;
-    const prevented = c.recoverability === 'not_recoverable' && !c.outcome ? requested : 0;
+    const recovered = profile?.recoveredMinor ?? (c.recovery?.recovered ? Math.round(c.recovery.recovered * 100) : 0);
+    const recoverable = profile?.recoverableMinor ?? (c.recovery ? Math.round(c.recovery.max * 100) : 0);
+    const prevented = profile?.preventedMinor ?? (c.recoverability === 'not_recoverable' && !c.outcome ? requested : 0);
+    const exposed = profile?.exposedMinor ?? (!resolved ? requested : 0);
+    const estimatedLoss = profile?.estimatedLossMinor ?? (!resolved ? requested : 0);
+    const confirmedLoss = profile?.confirmedLossMinor ?? (resolved ? paid : 0);
+    const baseRequested = Math.round(c.unscaledAmount * 100);
+    const baseApproved = c.outcome && c.outcome.decision === 'approved' ? baseRequested : 0;
+    const basePaid = c.outcome?.unscaledAmountRefunded ? Math.round(c.outcome.unscaledAmountRefunded * 100) : 0;
+    const baseRecovered = c.recovery?.unscaledRecovered ? Math.round(c.recovery.unscaledRecovered * 100) : 0;
+    const baseRecoverable = c.recovery ? Math.round(c.recovery.unscaledMax * 100) : 0;
+    const basePrevented = c.recoverability === 'not_recoverable' && !c.outcome ? baseRequested : 0;
     const effectiveAt = daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 16);
     const lossCaseId = c.outcome || c.recovery ? uuid(`loss:${c.key}`) : null;
     const recoveryCaseId = c.recovery ? uuid(`recovery:${c.key}`) : null;
 
+    const caseAmountScale = c.caseAmountScale ?? CASE_AMOUNT_SCALE;
     const addEntry = (state, amountMinor, options = {}) => {
-      if (!amountMinor) return;
+      if (!amountMinor && !options.recordZero) return;
       rows.push({
-        id: uuid(`financial-entry:${state}:${c.key}`),
+        id: uuid(options.idSuffix ? `financial-entry:${state}:${options.idSuffix}:${c.key}` : `financial-entry:${state}:${c.key}`),
         merchant_id: MERCHANT_ID,
         support_payout_case_id: caseId,
         loss_case_id: lossCaseId,
@@ -693,58 +1180,76 @@ function buildFinancialEntryRows() {
           component_type: c.requestedAction,
           ledger_kind: options.ledgerKind ?? 'legacy',
           valuation_basis: options.valuationBasis ?? null,
+          ...(c.archetypeKey === FEATURED_CASE_TAG ? { fixture_tag: FEATURED_CASE_TAG, synthetic: true } : {}),
         },
       });
     };
 
-    addEntry('requested', requested);
-    if (!resolved) {
-      addEntry('exposed', requested);
-      addEntry('estimated_loss', requested);
-    }
-    addEntry('approved', approved);
-    addEntry('paid', paid, {
+    const addScaledEntries = (state, scaledAmountMinor, baseAmountMinor, options = {}) => {
+      // The enterprise demo is a verified presentation account. Record an
+      // explicit zero for every canonical state so downstream surfaces can
+      // distinguish a proven zero from an unavailable value.
+      const recordZero = SEED_TAG === 'asterlane-enterprise-demo'
+        || c.explicitZeroStates?.includes(state) === true;
+      addEntry(state, baseAmountMinor, { ...options, recordZero });
+      const adjustment = scaledAmountMinor - baseAmountMinor;
+      if (caseAmountScale > 1 && adjustment > 0) {
+        addEntry(state, adjustment, {
+          ...options,
+          idSuffix: `scale-${caseAmountScale}`,
+          ledgerKind: 'demo_scale_adjustment',
+          valuationBasis: 'synthetic_enterprise_scale',
+        });
+      }
+    };
+
+    addScaledEntries('requested', requested, baseRequested);
+    addScaledEntries('exposed', exposed, Math.round(exposed / caseAmountScale));
+    addScaledEntries('estimated_loss', estimatedLoss, Math.round(estimatedLoss / caseAmountScale));
+    addScaledEntries('approved', approved, baseApproved);
+    addScaledEntries('paid', paid, basePaid, {
       direction: 'debit',
       ledgerKind: 'customer_concession',
       valuationBasis: 'payout_value',
     });
-    addEntry('confirmed_loss', resolved ? paid : 0, {
+    addScaledEntries('confirmed_loss', confirmedLoss, profile ? Math.round(confirmedLoss / caseAmountScale) : resolved ? basePaid : 0, {
       direction: 'debit',
       ledgerKind: 'merchant_economic_loss',
       valuationBasis: 'payout_value',
     });
-    addEntry('recoverable', recoverable);
-    addEntry('recovered', recovered, {
+    addScaledEntries('recoverable', recoverable, baseRecoverable);
+    addScaledEntries('recovered', recovered, baseRecovered, {
       direction: 'credit',
       ledgerKind: 'provider_recovery',
     });
-    addEntry('prevented', prevented);
+    addScaledEntries('prevented', prevented, basePrevented);
   }
 
   return rows;
 }
 
 function buildFinancialSummaryRows() {
-  return CASE_PLANS.map((c) => {
-    const requested = Math.round(c.amount * 100);
+  return CASE_PLANS.filter((c) => c.archetypeKey !== FEATURED_CASE_TAG).map((c) => {
+    const profile = c.financialProfile ?? null;
+    const requested = profile?.requestedMinor ?? Math.round(c.amount * 100);
     const resolved = c.status.startsWith('resolved_');
     const approved = c.outcome && c.outcome.decision === 'approved' ? requested : 0;
     const paid = c.outcome?.amountRefunded ? Math.round(c.outcome.amountRefunded * 100) : 0;
-    const recoveredMinor = c.recovery?.recovered ? Math.round(c.recovery.recovered * 100) : 0;
-    const recoverableMinor = c.recovery ? Math.round(c.recovery.max * 100) : 0;
+    const recoveredMinor = profile?.recoveredMinor ?? (c.recovery?.recovered ? Math.round(c.recovery.recovered * 100) : 0);
+    const recoverableMinor = profile?.recoverableMinor ?? (c.recovery ? Math.round(c.recovery.max * 100) : 0);
     return {
       merchant_id: MERCHANT_ID,
       support_payout_case_id: uuid(`case:${c.key}`),
       currency: 'GBP',
       requested_minor: requested,
-      exposed_minor: resolved ? 0 : requested,
+      exposed_minor: profile?.exposedMinor ?? (resolved ? 0 : requested),
       approved_minor: approved,
       paid_minor: paid,
-      estimated_loss_minor: resolved ? 0 : requested,
-      confirmed_loss_minor: resolved ? paid : 0,
+      estimated_loss_minor: profile?.estimatedLossMinor ?? (resolved ? 0 : requested),
+      confirmed_loss_minor: profile?.confirmedLossMinor ?? (resolved ? paid : 0),
       recoverable_minor: recoverableMinor,
       recovered_minor: recoveredMinor,
-      prevented_minor: c.recoverability === 'not_recoverable' && !c.outcome ? requested : 0,
+      prevented_minor: profile?.preventedMinor ?? (c.recoverability === 'not_recoverable' && !c.outcome ? requested : 0),
       written_off_minor: 0,
       last_event_id: null,
       updated_at: daysAgoIso(1, 16),
@@ -752,8 +1257,45 @@ function buildFinancialSummaryRows() {
   });
 }
 
+async function recomputeFeaturedCaseFinancialSummary() {
+  const featured = CASE_PLANS.find((c) => c.archetypeKey === FEATURED_CASE_TAG);
+  if (!featured) return;
+  const caseId = uuid(`case:${featured.key}`);
+  const { data, error } = await supabase
+    .from('case_financial_entries')
+    .select('id,state,amount_minor,currency,effective_at,recorded_at')
+    .eq('merchant_id', MERCHANT_ID)
+    .eq('support_payout_case_id', caseId)
+    .order('effective_at', { ascending: false })
+    .order('recorded_at', { ascending: false })
+    .order('id', { ascending: false });
+  if (error) throw new Error(`featured case ledger read failed: ${error.message}`);
+  const entries = data ?? [];
+  if (entries.length === 0) throw new Error('Featured case has no canonical financial entries to summarise.');
+  const states = new Map();
+  for (const entry of entries) states.set(entry.state, (states.get(entry.state) ?? 0) + Number(entry.amount_minor));
+  await upsertRows('case_financial_summaries', [{
+    merchant_id: MERCHANT_ID,
+    support_payout_case_id: caseId,
+    currency: 'GBP',
+    requested_minor: states.get('requested') ?? 0,
+    exposed_minor: states.get('exposed') ?? 0,
+    approved_minor: states.get('approved') ?? 0,
+    paid_minor: states.get('paid') ?? 0,
+    estimated_loss_minor: states.get('estimated_loss') ?? 0,
+    confirmed_loss_minor: states.get('confirmed_loss') ?? 0,
+    recoverable_minor: states.get('recoverable') ?? 0,
+    recovered_minor: states.get('recovered') ?? 0,
+    prevented_minor: states.get('prevented') ?? 0,
+    written_off_minor: states.get('written_off') ?? 0,
+    last_event_id: entries[0].id,
+    updated_at: new Date().toISOString(),
+  }]);
+  console.log('Recomputed the featured case financial summary from canonical ledger entries.');
+}
+
 function buildShipmentRows() {
-  const carriers = { 'royal-mail': 'Royal Mail', evri: 'Evri', 'dpd-uk': 'DPD UK' };
+  const carriers = { 'royal-mail': 'Royal Mail', evri: 'Evri', 'dpd-uk': 'DPD UK', 'northline-parcel': 'Northline Parcel' };
   return CASE_PLANS.filter((c) => c.fulfillmentState === 'delivered').map((c) => {
     const carrierKey = c.partnerId ? Object.keys(carriers).find((k) => uuid(`partner:${k}`) === c.partnerId) : null;
     const carrierName = carrierKey ? carriers[carrierKey] : pick(['Royal Mail', 'Evri', 'DPD UK']);
@@ -762,7 +1304,7 @@ function buildShipmentRows() {
       merchant_id: MERCHANT_ID,
       source_account_id: null,
       source_order_id: uuid(`order:${c.key}`),
-      source_fulfillment_id: null,
+      source_fulfillment_id: c.archetypeKey === FEATURED_CASE_TAG ? uuid(`fulfillment:${c.key}`) : null,
       source_record_id: null,
       external_id: `${SEED_PREFIX}-shipment-${c.key}`,
       tracking_number: `TRK${sha(`shipment:${c.key}`).slice(0, 10).toUpperCase()}`,
@@ -777,6 +1319,257 @@ function buildShipmentRows() {
       updated_at: daysAgoIso(Math.max(0, c.orderDaysAgo - 3), 12),
     };
   });
+}
+
+function trackingNumberFor(c) {
+  if (c.archetypeKey === FEATURED_CASE_TAG) return 'NLP10482GB';
+  return `1Z${sha(`tracking:${c.key}`).slice(0, 16).toUpperCase()}`;
+}
+
+function needsOpenEvidenceGap(c) {
+  return ['evidence_needed', 'awaiting_customer_evidence', 'awaiting_carrier_response'].includes(c.status);
+}
+
+function buildFulfillmentRows() {
+  return CASE_PLANS.map((c) => {
+    const featured = c.archetypeKey === FEATURED_CASE_TAG;
+    const evidenceGap = needsOpenEvidenceGap(c);
+    return {
+      id: uuid(`fulfillment:${c.key}`),
+      merchant_id: MERCHANT_ID,
+      source_order_id: uuid(`order:${c.key}`),
+      external_id: `${SEED_PREFIX}-fulfillment-${c.key}`,
+      status: 'delivered',
+      shipment_status: 'delivered',
+      // Evidence-gap cases retain an explicit missing state from their
+      // non-direct carrier. Every other case is backed by the connected UPS
+      // evidence source and a complete synthetic proof bundle.
+      tracking_company: featured ? 'Northline Parcel' : evidenceGap ? 'Royal Mail' : 'UPS',
+      tracking_number: trackingNumberFor(c),
+      occurred_at: featured ? daysAgoIso(1, 13) : daysAgoIso(Math.max(1, c.orderDaysAgo - 3), 12),
+      updated_at_source: daysAgoIso(0, 8),
+      ingested_at: daysAgoIso(0, 8),
+    };
+  });
+}
+
+function buildFeaturedEvidenceRows() {
+  return CASE_PLANS.filter((c) => c.archetypeKey === FEATURED_CASE_TAG).map((c) => ({
+    id: uuid(`evidence:customer-statement:${c.key}`),
+    claim_id: uuid(`case:${c.key}`),
+    merchant_id: MERCHANT_ID,
+    source_system: 'gorgias',
+    evidence_type: 'support_ticket',
+    title: 'Customer statement',
+    summary: 'Maya Chen reports that the parcel was not received and requests a £128 refund.',
+    occurred_at: daysAgoIso(c.ticketDaysAgo, 9),
+    raw_payload: { synthetic: true, fixture_tag: FEATURED_CASE_TAG },
+    external_url: null,
+    proves: 'Customer statement is on file',
+    confidence: 1,
+    source_record_id: c.ticketExternalId,
+    connection_id: null,
+    source_account_id: null,
+    source_url: null,
+    source_created_at: daysAgoIso(c.ticketDaysAgo, 9),
+    source_updated_at: daysAgoIso(1, 15),
+    ingested_at: daysAgoIso(0, 8),
+    last_synced_at: daysAgoIso(0, 8),
+    freshness_state: 'current',
+    sync_state: 'current',
+    storage_path: null,
+    content_hash: sha(`evidence:customer-statement:${c.key}`),
+    structured_value: { value: 'Parcel not received', requested_action: 'refund', amount_minor: 12_800, currency: 'GBP' },
+    source_metadata: {
+      origin_store: 'claim_evidence',
+      seed: SEED_TAG,
+      sample_data: true,
+      synthetic: true,
+      fixture_tag: FEATURED_CASE_TAG,
+    },
+    created_by: null,
+    created_at: daysAgoIso(c.ticketDaysAgo, 9),
+    updated_at: daysAgoIso(1, 15),
+  }));
+}
+
+function baseEvidenceRow(c, key, input) {
+  const claimId = uuid(`case:${c.key}`);
+  return {
+    id: uuid(`evidence:${key}:${c.key}`),
+    claim_id: claimId,
+    merchant_id: MERCHANT_ID,
+    evidence_type: input.evidenceType,
+    title: input.title,
+    summary: input.summary,
+    occurred_at: input.occurredAt ?? daysAgoIso(Math.max(1, c.ticketDaysAgo - 1), 13),
+    raw_payload: { synthetic: true, seed: SEED_TAG },
+    external_url: null,
+    proves: input.proves,
+    confidence: input.confidence ?? 1,
+    source_record_id: input.sourceRecordId ?? `${SEED_PREFIX}-${key}-${c.key}`,
+    connection_id: input.connectionId ?? null,
+    source_account_id: null,
+    source_url: null,
+    source_system: input.sourceSystem,
+    source_created_at: input.occurredAt ?? daysAgoIso(Math.max(1, c.ticketDaysAgo - 1), 13),
+    source_updated_at: daysAgoIso(0, 8),
+    ingested_at: daysAgoIso(0, 8),
+    last_synced_at: daysAgoIso(0, 8),
+    freshness_state: 'current',
+    sync_state: 'current',
+    storage_path: null,
+    content_hash: sha(`evidence:${key}:${c.key}`),
+    structured_value: { value: input.value ?? true },
+    source_metadata: {
+      seed: SEED_TAG,
+      sample_data: true,
+      synthetic: true,
+      source_category: input.sourceCategory,
+      confidence_label: 'high',
+      ...(input.claimEvidence ? { origin_store: 'claim_evidence' } : {}),
+    },
+    created_by: null,
+    created_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 1), 13),
+    updated_at: daysAgoIso(0, 8),
+  };
+}
+
+function buildOperationalEvidenceRows() {
+  return CASE_PLANS
+    .filter((c) => c.archetypeKey !== FEATURED_CASE_TAG)
+    .flatMap((c) => {
+      const rows = [
+        baseEvidenceRow(c, 'customer-statement', {
+          evidenceType: 'support_ticket',
+          title: 'Customer statement',
+          summary: `${customerByKey(c.customer).first} ${customerByKey(c.customer).last}'s request and reason are recorded in Gorgias.`,
+          proves: 'Customer statement and requested resolution are on file',
+          sourceSystem: 'gorgias',
+          sourceCategory: 'helpdesk',
+          sourceRecordId: uuid(`ticket:${c.key}`),
+          connectionId: uuid('integration:gorgias'),
+          claimEvidence: true,
+        }),
+        baseEvidenceRow(c, 'merchant-inspection', {
+          evidenceType: 'merchant_inspection',
+          title: 'Operational review record',
+          summary: 'Asterlane operations recorded the item, packaging, and resolution context for this case.',
+          proves: 'Merchant inspection context is on file',
+          sourceSystem: 'shipbob',
+          sourceCategory: 'warehouse_3pl',
+          connectionId: uuid('integration:shipbob'),
+          claimEvidence: true,
+        }),
+        baseEvidenceRow(c, 'pick-pack-record', {
+          evidenceType: 'pick_pack_record',
+          title: 'Warehouse pick and pack record',
+          summary: 'ShipBob pick, pack, SKU, and parcel-weight checks are linked to the source order.',
+          proves: 'Warehouse pick and pack evidence is on file',
+          sourceSystem: 'shipbob',
+          sourceCategory: 'warehouse_3pl',
+          connectionId: uuid('integration:shipbob'),
+          claimEvidence: true,
+        }),
+        baseEvidenceRow(c, 'packing-slip', {
+          evidenceType: 'packing_slip',
+          title: 'Packing slip',
+          summary: 'The expected order contents and packed SKU list are recorded.',
+          proves: 'Packing slip contents are on file',
+          sourceSystem: 'shipbob',
+          sourceCategory: 'warehouse_3pl',
+          connectionId: uuid('integration:shipbob'),
+          claimEvidence: true,
+        }),
+        baseEvidenceRow(c, 'packaging-condition', {
+          evidenceType: 'packaging_condition',
+          title: 'Packaging condition',
+          summary: 'Packaging condition was recorded during the operational review.',
+          proves: 'Packaging condition is documented',
+          sourceSystem: 'shipbob',
+          sourceCategory: 'warehouse_3pl',
+          connectionId: uuid('integration:shipbob'),
+          claimEvidence: true,
+        }),
+        baseEvidenceRow(c, 'carrier-damage-report', {
+          evidenceType: 'carrier_damage_report',
+          title: 'Carrier damage report',
+          summary: 'Carrier handling and damage observations are linked to the shipment.',
+          proves: 'Carrier damage context is on file',
+          sourceSystem: 'ups',
+          sourceCategory: 'carrier',
+          connectionId: uuid('integration:ups'),
+          claimEvidence: true,
+        }),
+        baseEvidenceRow(c, 'received-item-photo', {
+          evidenceType: 'received_item_photo',
+          title: 'Received item photo',
+          summary: 'The received item image is linked to the case review.',
+          proves: 'A received-item image is on file',
+          sourceSystem: 'gorgias',
+          sourceCategory: 'helpdesk',
+          connectionId: uuid('integration:gorgias'),
+          claimEvidence: true,
+        }),
+      ];
+
+      if (!needsOpenEvidenceGap(c)) {
+        const trackingNumber = trackingNumberFor(c);
+        const occurredAt = daysAgoIso(Math.max(1, c.orderDaysAgo - 3), 12);
+        const carrierRows = [
+          ['tracking-number', 'tracking_number', 'UPS tracking number', `UPS ${trackingNumber}`, trackingNumber],
+          ['tracking-events', 'tracking_events', 'UPS scan timeline', 'Six carrier scan events recorded with no unresolved exception.', 6],
+          ['delivery-status', 'delivery_status', 'UPS delivery status', 'Delivered', 'delivered'],
+          ['proof-of-delivery', 'proof_of_delivery', 'Proof of delivery', 'UPS proof of delivery is on file.', { delivered: true }],
+          ['delivery-photo', 'delivery_photo', 'Delivery photo', 'UPS delivery photo is on file.', { available: true }],
+          ['signature', 'signature', 'Delivery signature', 'UPS delivery signature is on file.', { available: true }],
+          ['gps', 'gps', 'Delivery GPS coordinates', 'UPS delivery coordinates are on file.', { latitude: 51.5074, longitude: -0.1278 }],
+        ];
+        rows.push(...carrierRows.map(([key, evidenceType, title, summary, value]) => baseEvidenceRow(c, key, {
+          evidenceType,
+          title,
+          summary,
+          proves: `${title} is on file`,
+          sourceSystem: 'ups',
+          sourceCategory: 'carrier',
+          sourceRecordId: trackingNumber,
+          connectionId: uuid('integration:ups'),
+          occurredAt,
+          value,
+          claimEvidence: false,
+        })));
+      }
+
+      return rows;
+    });
+}
+
+function buildFeaturedEvidenceLinkRows() {
+  return CASE_PLANS.filter((c) => c.archetypeKey === FEATURED_CASE_TAG).map((c) => ({
+    id: uuid(`evidence-link:customer-statement:${c.key}`),
+    merchant_id: MERCHANT_ID,
+    evidence_item_id: uuid(`evidence:customer-statement:${c.key}`),
+    support_payout_case_id: uuid(`case:${c.key}`),
+    source_order_id: null,
+    source_ticket_id: null,
+    loss_case_id: null,
+    recovery_case_id: null,
+    created_at: daysAgoIso(1, 15),
+  }));
+}
+
+function buildOperationalEvidenceLinkRows() {
+  return buildOperationalEvidenceRows().map((row) => ({
+    id: uuid(`evidence-link:${row.id}`),
+    merchant_id: MERCHANT_ID,
+    evidence_item_id: row.id,
+    support_payout_case_id: row.claim_id,
+    source_order_id: null,
+    source_ticket_id: null,
+    loss_case_id: null,
+    recovery_case_id: null,
+    created_at: daysAgoIso(0, 8),
+  }));
 }
 
 function buildNotificationRows() {
@@ -830,19 +1623,6 @@ function buildNotificationRows() {
     });
   });
   rows.push({
-    id: uuid('notif:sync-failure'),
-    merchant_id: MERCHANT_ID,
-    recipient_user_id: RECIPIENT_USER_ID,
-    kind: 'sync_failure',
-    title: 'shopify connection needs attention',
-    body: 'The Shopify connection has not synced recently. Reconnect to keep orders up to date.',
-    target_href: '/integrations/shopify',
-    domain_event_id: null,
-    deduplication_key: `${SEED_PREFIX}:sync-failure`,
-    read_at: null,
-    created_at: daysAgoIso(3, 8),
-  });
-  rows.push({
     id: uuid('notif:daily-summary'),
     merchant_id: MERCHANT_ID,
     recipient_user_id: RECIPIENT_USER_ID,
@@ -859,28 +1639,7 @@ function buildNotificationRows() {
 }
 
 async function reset() {
-  console.log('Reset requested: deleting previously-seeded rows for this seed tag.');
-  const seededCases = await checked(
-    'support_payout_cases', 'lookup',
-    supabase.from('support_payout_cases').select('id').eq('merchant_id', MERCHANT_ID).eq('detection_detail->>seed', SEED_TAG),
-  );
-  const caseIds = (seededCases ?? []).map((r) => r.id);
-  if (caseIds.length > 0) {
-    await checked('work_tasks', 'delete', supabase.from('work_tasks').delete().in('support_payout_case_id', caseIds));
-    await checked('recovery_cases', 'delete', supabase.from('recovery_cases').delete().in('support_payout_case_id', caseIds));
-    await checked('loss_cases', 'delete', supabase.from('loss_cases').delete().in('support_payout_case_id', caseIds));
-    await checked('claim_outcomes', 'delete', supabase.from('claim_outcomes').delete().in('claim_id', caseIds));
-    await checked('case_financial_summaries', 'delete', supabase.from('case_financial_summaries').delete().in('support_payout_case_id', caseIds));
-  }
-  await checked('notifications', 'delete', supabase.from('notifications').delete().eq('merchant_id', MERCHANT_ID).like('deduplication_key', `${SEED_PREFIX}:%`));
-  await checked('support_payout_cases', 'delete', supabase.from('support_payout_cases').delete().eq('merchant_id', MERCHANT_ID).eq('detection_detail->>seed', SEED_TAG));
-  await checked('source_tickets', 'delete', supabase.from('source_tickets').delete().eq('merchant_id', MERCHANT_ID).eq('provider', 'gorgias').gte('external_id', String(TICKET_ID_BASE)));
-  await checked('source_orders', 'delete', supabase.from('source_orders').delete().eq('merchant_id', MERCHANT_ID).eq('note', SEED_NOTE));
-  await checked('source_shipments', 'delete', supabase.from('source_shipments').delete().eq('merchant_id', MERCHANT_ID).like('external_id', `${SEED_PREFIX}-shipment-%`));
-  await checked('source_customers', 'delete', supabase.from('source_customers').delete().eq('merchant_id', MERCHANT_ID).eq('note', SEED_NOTE));
-  await checked('partner_recovery_rules', 'delete', supabase.from('partner_recovery_rules').delete().eq('merchant_id', MERCHANT_ID).in('id', PARTNER_RULES.map((r) => uuid(`partner-rule:${r.key}`))));
-  await checked('partners', 'delete', supabase.from('partners').delete().eq('merchant_id', MERCHANT_ID).in('id', PARTNERS.map((p) => uuid(`partner:${p.key}`))));
-  console.log('Reset complete.');
+  throw new Error('Reset is disabled because the case financial ledger is append-only. Re-run the idempotent seed or use --verify-only.');
 }
 
 async function upgradeBilling() {
@@ -912,9 +1671,15 @@ async function seed() {
   await upsertRows('partner_recovery_rules', buildPartnerRuleRows());
   await upsertRows('source_customers', buildCustomerRows());
   await upsertRows('source_orders', buildOrderRows());
+  await upsertRows('source_fulfillments', buildFulfillmentRows());
+  await upsertRows('source_refunds', buildRefundRows());
   await upsertRows('source_tickets', buildTicketRows());
   await upsertRows('support_payout_cases', buildCaseRows());
+  await upsertRows('evidence_items', buildFeaturedEvidenceRows());
+  await upsertRows('evidence_items', buildOperationalEvidenceRows());
+  await upsertRows('source_returns', buildReturnRows());
   await upsertRows('claim_outcomes', buildOutcomeRows());
+  await insertImmutableRows('claim_events', buildClaimEventRows());
   await upsertRows('loss_cases', buildLossRows());
   await upsertRows('recovery_cases', buildRecoveryRows());
   await upsertRows('work_tasks', buildWorkTaskRows());
@@ -922,9 +1687,256 @@ async function seed() {
   await insertImmutableRows('case_outcomes', buildCanonicalOutcomeRows());
   await insertImmutableRows('case_financial_entries', buildFinancialEntryRows());
   await upsertRows('case_financial_summaries', buildFinancialSummaryRows());
+  await recomputeFeaturedCaseFinancialSummary();
+  await upsertRows('evidence_links', buildFeaturedEvidenceLinkRows());
+  await upsertRows('evidence_links', buildOperationalEvidenceLinkRows());
   await upsertRows('source_shipments', buildShipmentRows());
   await upsertRows('notifications', buildNotificationRows());
   await upgradeBilling();
+}
+
+async function readAll(table, columns, orderColumn = 'id') {
+  const rows = [];
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    let data;
+    let error;
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      ({ data, error } = await supabase
+        .from(table)
+        .select(columns)
+        .eq('merchant_id', MERCHANT_ID)
+        .order(orderColumn)
+        .range(offset, offset + pageSize - 1));
+      if (!error) break;
+      if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, attempt * 750));
+    }
+    if (error) throw new Error(`${table} verification read failed: ${error.message || 'remote read failed'}`);
+    rows.push(...(data ?? []));
+    if (!data || data.length < pageSize) return rows;
+  }
+}
+
+async function verifySeed() {
+  const countFor = async (table) => {
+    let count;
+    let error;
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      ({ count, error } = await supabase
+        .from(table)
+        .select('id', { count: 'exact', head: true })
+        .eq('merchant_id', MERCHANT_ID));
+      if (!error) break;
+      if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, attempt * 750));
+    }
+    if (error) throw new Error(`${table} count verification failed: ${error.message || 'remote count failed'}`);
+    return count ?? 0;
+  };
+
+  const [customerCount, orderCount, refundCount, returnCount, ticketCount, caseCount, recoveryCount, shipmentCount, fulfillmentCount, evidenceCount, customers, cases, evidenceRows, claimEvents, financialEntries, financialSummaries, connections] = await Promise.all([
+    countFor('source_customers'),
+    countFor('source_orders'),
+    countFor('source_refunds'),
+    countFor('source_returns'),
+    countFor('source_tickets'),
+    countFor('support_payout_cases'),
+    countFor('recovery_cases'),
+    countFor('source_shipments'),
+    countFor('source_fulfillments'),
+    countFor('evidence_items'),
+    readAll('source_customers', 'id,orders_count,total_spent'),
+    readAll('support_payout_cases', 'id,source_order_id,source_ticket_id,assigned_to'),
+    readAll('evidence_items', 'id,claim_id'),
+    readAll('claim_events', 'id,claim_id,event_type'),
+    readAll('case_financial_entries', 'id,support_payout_case_id,currency,state'),
+    readAll('case_financial_summaries', 'support_payout_case_id,requested_minor,exposed_minor,prevented_minor,recovered_minor,confirmed_loss_minor', 'support_payout_case_id'),
+    supabase.from('merchant_integrations').select('provider_id,status,imported_record_count,last_error_code,last_error_message,last_error').eq('merchant_id', MERCHANT_ID),
+  ]);
+  if (connections.error) throw new Error(`merchant_integrations verification failed: ${connections.error.message}`);
+
+  const expectedCounts = {
+    source_customers: CUSTOMERS.length,
+    source_orders: TOTAL_ORDER_COUNT,
+    source_refunds: REFUND_PLANS.length,
+    source_returns: RETURN_PLANS.length,
+    source_tickets: CASE_PLANS.length,
+    support_payout_cases: CASE_PLANS.length,
+    recovery_cases: CASE_PLANS.filter((c) => c.recovery).length,
+    source_shipments: buildShipmentRows().length,
+    source_fulfillments: buildFulfillmentRows().length,
+    evidence_items: buildFeaturedEvidenceRows().length + buildOperationalEvidenceRows().length,
+  };
+  const actualCounts = { source_customers: customerCount, source_orders: orderCount, source_refunds: refundCount, source_returns: returnCount, source_tickets: ticketCount, support_payout_cases: caseCount, recovery_cases: recoveryCount, source_shipments: shipmentCount, source_fulfillments: fulfillmentCount, evidence_items: evidenceCount };
+  for (const [table, expected] of Object.entries(expectedCounts)) {
+    if (actualCounts[table] !== expected) {
+      throw new Error(`${table} count mismatch: expected ${expected}, got ${actualCounts[table]}`);
+    }
+  }
+
+  const expectedCustomersById = new Map(
+    CUSTOMERS.map((customer) => [uuid(`customer:${customer.key}`), ORDER_AGGREGATES.get(customer.key)]),
+  );
+  if (customers.length !== expectedCustomersById.size) {
+    throw new Error(`Customer aggregate verification read ${customers.length} rows, expected ${expectedCustomersById.size}.`);
+  }
+  for (const customer of customers) {
+    const aggregate = expectedCustomersById.get(customer.id);
+    if (!aggregate) {
+      throw new Error(`Unexpected seeded customer ${customer.id}.`);
+    }
+    if (Number(customer.orders_count) !== aggregate.count || Math.round(Number(customer.total_spent) * 100) !== aggregate.totalSpentMinor) {
+      throw new Error(`Customer aggregate mismatch for ${customer.id}.`);
+    }
+  }
+
+  const evidenceCaseIds = new Set(evidenceRows.map((row) => row.claim_id).filter(Boolean));
+  const eventTypesByCase = new Map();
+  for (const event of claimEvents) {
+    const types = eventTypesByCase.get(event.claim_id) ?? new Set();
+    types.add(event.event_type);
+    eventTypesByCase.set(event.claim_id, types);
+  }
+  const stateKeysByCase = new Map();
+  for (const entry of financialEntries) {
+    const keys = stateKeysByCase.get(entry.support_payout_case_id) ?? new Set();
+    keys.add(entry.state);
+    stateKeysByCase.set(entry.support_payout_case_id, keys);
+  }
+  const summaryCaseIds = new Set(financialSummaries.map((row) => row.support_payout_case_id));
+  for (const payoutCase of cases) {
+    if (!payoutCase.source_order_id || !payoutCase.source_ticket_id) {
+      throw new Error(`Case ${payoutCase.id} is missing a connected order or support ticket.`);
+    }
+    if (payoutCase.assigned_to !== RECIPIENT_USER_ID) {
+      throw new Error(`Case ${payoutCase.id} is not assigned to the demo owner.`);
+    }
+    if (!evidenceCaseIds.has(payoutCase.id)) {
+      throw new Error(`Case ${payoutCase.id} has no canonical evidence.`);
+    }
+    const eventTypes = eventTypesByCase.get(payoutCase.id) ?? new Set();
+    for (const eventType of ['claim_created', 'claim_assigned', 'evidence_added']) {
+      if (!eventTypes.has(eventType)) throw new Error(`Case ${payoutCase.id} has no ${eventType} timeline event.`);
+    }
+    if (!summaryCaseIds.has(payoutCase.id)) {
+      throw new Error(`Case ${payoutCase.id} has no financial summary.`);
+    }
+    const stateKeys = stateKeysByCase.get(payoutCase.id) ?? new Set();
+    for (const state of ['exposed', 'prevented', 'recovered']) {
+      if (!stateKeys.has(state)) {
+        throw new Error(`Case ${payoutCase.id} has no explicit ${state} ledger state.`);
+      }
+    }
+  }
+
+  const expectedConnections = new Map([
+    ['shopify', { status: 'connected', imported_record_count: TOTAL_ORDER_COUNT }],
+    ['gorgias', { status: 'connected', imported_record_count: CASE_PLANS.length }],
+    ['shipbob', { status: 'connected', imported_record_count: buildShipmentRows().length }],
+    ['ups', { status: 'connected', imported_record_count: CASE_PLANS.length }],
+  ]);
+  const connectionMap = new Map((connections.data ?? []).map((connection) => [connection.provider_id, connection]));
+  for (const [provider, expected] of expectedConnections) {
+    const actual = connectionMap.get(provider);
+    if (!actual || actual.status !== expected.status || actual.imported_record_count !== expected.imported_record_count) {
+      throw new Error(`Connection mismatch for ${provider}: expected ${JSON.stringify(expected)}.`);
+    }
+    if (actual.last_error_code || actual.last_error_message || actual.last_error) {
+      throw new Error(`Connection ${provider} retained a stale error after the demo reseed.`);
+    }
+  }
+
+  for (const [period, expected] of [
+    ['current', OVERVIEW_CURRENT_TOTALS_MINOR],
+    ['previous', OVERVIEW_PREVIOUS_TOTALS_MINOR],
+  ]) {
+    const caseIds = new Set(
+      CASE_PLANS
+        .filter((plan) => plan.key.startsWith(`overview-${period}-`))
+        .map((plan) => uuid(`case:${plan.key}`)),
+    );
+    const totals = financialSummaries
+      .filter((row) => caseIds.has(row.support_payout_case_id))
+      .reduce((sum, row) => ({
+        identified: sum.identified + Number(row.exposed_minor ?? 0),
+        prevented: sum.prevented + Number(row.prevented_minor ?? 0),
+        recovered: sum.recovered + Number(row.recovered_minor ?? 0),
+        realised: sum.realised + Number(row.confirmed_loss_minor ?? 0),
+      }), { identified: 0, prevented: 0, recovered: 0, realised: 0 });
+    const open = totals.identified - totals.prevented - totals.recovered - totals.realised;
+    if (
+      totals.identified !== expected.identified
+      || totals.prevented !== expected.prevented
+      || totals.recovered !== expected.recovered
+      || totals.realised !== expected.realised
+      || open !== expected.open
+    ) {
+      throw new Error(`${period} Overview financial profile does not reconcile: ${JSON.stringify({ ...totals, open })}.`);
+    }
+  }
+
+  const featuredPlan = CASE_PLANS.find((plan) => plan.archetypeKey === FEATURED_CASE_TAG);
+  if (featuredPlan) {
+    const featuredCaseId = uuid(`case:${featuredPlan.key}`);
+    const { data: featuredCases, error: featuredCaseError } = await supabase
+      .from('support_payout_cases')
+      .select('id,status,claim_type,amount_at_risk,currency,requested_action,recommended_rule_name,payout_decision_state,source_order_id,source_ticket_id')
+      .eq('merchant_id', MERCHANT_ID)
+      .contains('detection_detail', { fixture_tag: FEATURED_CASE_TAG });
+    if (featuredCaseError) throw new Error(`featured case lookup failed: ${featuredCaseError.message}`);
+    if ((featuredCases ?? []).length !== 1 || featuredCases?.[0]?.id !== featuredCaseId) {
+      throw new Error(`Expected exactly one ${FEATURED_CASE_TAG} case.`);
+    }
+    const featuredCase = featuredCases[0];
+    const [order, ticket, fulfillment, evidence, recovery, entries, summary, decisions, outcomes, legacyOutcomes, refunds] = await Promise.all([
+      supabase.from('source_orders').select('order_number,total_price,currency,source_customer:source_customers(first_name,last_name)').eq('merchant_id', MERCHANT_ID).eq('id', featuredCase.source_order_id).single(),
+      supabase.from('source_tickets').select('external_id,status').eq('merchant_id', MERCHANT_ID).eq('id', featuredCase.source_ticket_id).single(),
+      supabase.from('source_fulfillments').select('status,shipment_status,tracking_company,tracking_number').eq('merchant_id', MERCHANT_ID).eq('source_order_id', featuredCase.source_order_id).single(),
+      supabase.from('evidence_items').select('id,evidence_type,source_metadata').eq('merchant_id', MERCHANT_ID).eq('claim_id', featuredCaseId).contains('source_metadata', { fixture_tag: FEATURED_CASE_TAG }),
+      supabase.from('recovery_cases').select('status,deadline_at,amount_recovered,partner:partners(name)').eq('merchant_id', MERCHANT_ID).eq('support_payout_case_id', featuredCaseId).single(),
+      supabase.from('case_financial_entries').select('state,amount_minor').eq('merchant_id', MERCHANT_ID).eq('support_payout_case_id', featuredCaseId),
+      supabase.from('case_financial_summaries').select('requested_minor,exposed_minor,prevented_minor,recovered_minor,confirmed_loss_minor').eq('merchant_id', MERCHANT_ID).eq('support_payout_case_id', featuredCaseId).single(),
+      supabase.from('case_decisions').select('id', { count: 'exact' }).eq('merchant_id', MERCHANT_ID).eq('support_payout_case_id', featuredCaseId),
+      supabase.from('case_outcomes').select('id', { count: 'exact' }).eq('merchant_id', MERCHANT_ID).eq('support_payout_case_id', featuredCaseId),
+      supabase.from('claim_outcomes').select('id', { count: 'exact' }).eq('claim_id', featuredCaseId),
+      supabase.from('source_refunds').select('id', { count: 'exact' }).eq('merchant_id', MERCHANT_ID).eq('source_order_id', featuredCase.source_order_id),
+    ]);
+    for (const [label, result] of Object.entries({ order, ticket, fulfillment, evidence, recovery, entries, summary, decisions, outcomes, legacyOutcomes, refunds })) {
+      if (result.error) throw new Error(`featured ${label} verification failed: ${result.error.message}`);
+    }
+    const customer = Array.isArray(order.data.source_customer) ? order.data.source_customer[0] : order.data.source_customer;
+    if (featuredCase.status !== 'evidence_needed' || featuredCase.claim_type !== 'item_not_received' || Number(featuredCase.amount_at_risk) !== 128 || featuredCase.currency !== 'GBP' || featuredCase.requested_action !== 'refund') {
+      throw new Error('Featured case operational facts drifted.');
+    }
+    if (featuredCase.recommended_rule_name !== 'Missing delivery evidence' || featuredCase.payout_decision_state !== 'undecided') {
+      throw new Error('Featured case rule or merchant-decision state drifted.');
+    }
+    if (order.data.order_number !== 'ALG-10482' || Number(order.data.total_price) !== 128 || customer?.first_name !== 'Maya' || customer?.last_name !== 'Chen') {
+      throw new Error('Featured order or customer identity drifted.');
+    }
+    if (ticket.data.external_id !== 'TKT-4821' || fulfillment.data.tracking_company !== 'Northline Parcel' || fulfillment.data.status !== 'delivered') {
+      throw new Error('Featured ticket or delivery facts drifted.');
+    }
+    if ((evidence.data ?? []).length !== 1 || evidence.data?.[0]?.evidence_type !== 'support_ticket') {
+      throw new Error('Featured case must have exactly one customer-statement evidence row and no proof of delivery.');
+    }
+    const recoveryPartner = Array.isArray(recovery.data.partner) ? recovery.data.partner[0] : recovery.data.partner;
+    if (recovery.data.status !== 'evidence_needed' || recovery.data.amount_recovered !== null || recoveryPartner?.name !== 'Northline Parcel' || Date.parse(recovery.data.deadline_at) <= Date.now()) {
+      throw new Error('Featured recovery route or deadline drifted.');
+    }
+    const ledger = new Map((entries.data ?? []).map((entry) => [entry.state, Number(entry.amount_minor)]));
+    if (ledger.get('requested') !== 12_800 || ledger.get('exposed') !== 12_800 || ledger.get('prevented') !== 0 || ledger.get('recovered') !== 0) {
+      throw new Error('Featured canonical ledger states do not reconcile to £128 open exposure.');
+    }
+    if (Number(summary.data.requested_minor) !== 12_800 || Number(summary.data.exposed_minor) !== 12_800 || Number(summary.data.prevented_minor) !== 0 || Number(summary.data.recovered_minor) !== 0 || Number(summary.data.confirmed_loss_minor) !== 0) {
+      throw new Error('Featured financial summary was not recomputed from explicit canonical ledger states.');
+    }
+    if ((decisions.count ?? 0) !== 0 || (outcomes.count ?? 0) !== 0 || (legacyOutcomes.count ?? 0) !== 0 || (refunds.count ?? 0) !== 0) {
+      throw new Error('Featured case must not contain a merchant decision, outcome, refund or reship action.');
+    }
+    console.log(`Verified featured landing case ${featuredCaseId}: £128 open, evidence input intentionally incomplete, no merchant decision or external payout action.`);
+  }
+
+  console.log(`Verified reconciliation: ${customerCount} customers, ${orderCount} orders, GBP ${(TOTAL_GMV_MINOR / 100).toFixed(2)} merchandise value, ${refundCount} refunds, ${returnCount} returns, ${caseCount} owner-assigned cases with linked order, ticket, fulfilment, evidence, timeline and explicit financial states, both 30-day Overview profiles, ${connections.data?.length ?? 0} connected source rows.`);
 }
 
 (async () => {
@@ -934,6 +1946,12 @@ async function seed() {
     if (!merchant) throw new Error(`Merchant ${MERCHANT_ID} not found`);
     console.log(`Target merchant: ${merchant.name} (${merchant.id})`);
 
+    if (VERIFY_ONLY) {
+      await verifySeed();
+      console.log('Verification-only run complete.');
+      return;
+    }
+
     if (RESET_ONLY) {
       await reset();
       console.log('Reset-only run complete (no new rows inserted).');
@@ -941,17 +1959,20 @@ async function seed() {
     }
 
     await seed();
+    await verifySeed();
 
-    const [{ count: customerCount }, { count: orderCount }, { count: ticketCount }, { count: caseCount }, { count: recoveryCount }, { count: notifCount }] = await Promise.all([
+    const [{ count: customerCount }, { count: orderCount }, { count: refundCount }, { count: returnCount }, { count: ticketCount }, { count: caseCount }, { count: recoveryCount }, { count: notifCount }] = await Promise.all([
       supabase.from('source_customers').select('id', { count: 'exact', head: true }).eq('merchant_id', MERCHANT_ID),
       supabase.from('source_orders').select('id', { count: 'exact', head: true }).eq('merchant_id', MERCHANT_ID),
+      supabase.from('source_refunds').select('id', { count: 'exact', head: true }).eq('merchant_id', MERCHANT_ID),
+      supabase.from('source_returns').select('id', { count: 'exact', head: true }).eq('merchant_id', MERCHANT_ID),
       supabase.from('source_tickets').select('id', { count: 'exact', head: true }).eq('merchant_id', MERCHANT_ID),
       supabase.from('support_payout_cases').select('id', { count: 'exact', head: true }).eq('merchant_id', MERCHANT_ID),
       supabase.from('recovery_cases').select('id', { count: 'exact', head: true }).eq('merchant_id', MERCHANT_ID),
       supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('merchant_id', MERCHANT_ID),
     ]);
     console.log(
-      `Done. ${customerCount ?? 0} customers, ${orderCount ?? 0} orders, ${ticketCount ?? 0} tickets, ${caseCount ?? 0} payout cases, ${recoveryCount ?? 0} recovery cases, ${notifCount ?? 0} notifications.`,
+      `Done. ${customerCount ?? 0} customers, ${orderCount ?? 0} orders, ${refundCount ?? 0} refunds, ${returnCount ?? 0} returns, ${ticketCount ?? 0} tickets, ${caseCount ?? 0} payout cases, ${recoveryCount ?? 0} recovery cases, ${notifCount ?? 0} notifications.`,
     );
   } catch (err) {
     console.error('Seed failed:', err?.message ?? err);

@@ -3,10 +3,10 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const bigcommerceProvider: IntegrationProvider = {
   id: 'bigcommerce',
   name: 'BigCommerce',
-  logoSrc: '/integrations/bigcommerce.svg',
+  logoSrc: '/providers/bigcommerce.svg',
   category: 'commerce',
   authMode: 'oauth',
-  buildStatus: 'partial',
+  codeMaturity: 'partial',
   description: 'Orders, refunds, fulfillments, and customer context from BigCommerce.',
   setupHref: '/api/bigcommerce/install',
   evidenceCapabilities: [

@@ -760,8 +760,8 @@ function baseCta(
 ): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
   const claimId = link?.claimId?.trim();
   const base = claimId
-    ? appUrl(`/claims/${encodeURIComponent(claimId)}`)
-    : appUrl('/claims');
+      ? appUrl(`/cases/${encodeURIComponent(claimId)}`)
+      : appUrl('/cases');
   if (!link) {
     return { cta_label: 'Open case →', cta_url: base };
   }
@@ -770,7 +770,7 @@ function baseCta(
     extras.push(`ticket_id=${encodeURIComponent(link.ticketRef.trim())}`);
   }
   if (claimId) {
-    extras.push(`focus=${encodeURIComponent(claimId)}`);
+    extras.push(`selected=${encodeURIComponent(claimId)}`);
   }
   const sep = base.includes('?') ? '&' : '?';
   const fragment = claimId ? '#case-investigations' : '';

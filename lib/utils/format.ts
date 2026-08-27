@@ -142,6 +142,31 @@ const dateShortFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
   timeZone: 'UTC',
 });
 
+const dayMonthInTimeZoneFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+/** Compact chart/date label in the workspace timezone, with an optional weekday. */
+export function formatDayMonthInTimeZone(
+  value: Date | string,
+  timeZone: string,
+  weekday = false,
+): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  const cacheKey = `${timeZone}:${weekday ? 'weekday' : 'date'}`;
+  let formatter = dayMonthInTimeZoneFormatterCache.get(cacheKey);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+      ...(weekday ? { weekday: 'short' as const } : {}),
+      day: 'numeric',
+      month: 'short',
+      timeZone,
+    });
+    dayMonthInTimeZoneFormatterCache.set(cacheKey, formatter);
+  }
+  return formatter.format(date);
+}
+
 // ── Canonical money renderers (WS0.1) ────────────────────────────────────────
 // These are the ONLY money formatters new code should reach for. They take
 // integer minor units and a currency code; they never guess a currency.
@@ -245,6 +270,31 @@ export function formatCurrencyCompact(amount: number, currency = 'USD'): string 
   if (abs >= 1_000) return `${sign}${symbol}${Math.round(abs / 1_000)}k`;
   if (abs >= 100) return `${sign}${symbol}${Math.round(abs)}`;
   return `${sign}${symbol}${abs.toFixed(abs >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}`;
+}
+
+/**
+ * §18.5 — donut/segment centre-total abbreviation rule. Below 240px wide, a
+ * centre total abbreviates to 3 significant figures with a unit suffix
+ * (`£244k`); above it, full precision. Applied identically wherever a chart
+ * shows a big centred total (currently C2 and C7) so the same value at the
+ * same width never renders two different ways.
+ */
+export function formatCentreTotal(minorUnits: number, currency: string | null | undefined, widthPx: number): string {
+  if (!Number.isFinite(minorUnits)) return UNAVAILABLE;
+  if (widthPx > 240) return formatMoney(minorUnits, currency ?? DEFAULT_CURRENCY);
+  const code = normaliseCurrencyOrNull(currency);
+  if (!code) return UNAVAILABLE;
+  const symbol = currencySymbolFor(code);
+  const major = fromMinorUnits(minorUnits, code);
+  const sign = major < 0 ? '-' : '';
+  const abs = Math.abs(major);
+  const [scaled, suffix]: [number, string] =
+    abs >= 1_000_000_000 ? [abs / 1_000_000_000, 'B']
+    : abs >= 1_000_000 ? [abs / 1_000_000, 'M']
+    : abs >= 1_000 ? [abs / 1_000, 'k']
+    : [abs, ''];
+  const threeSigFigs = scaled === 0 ? 0 : Number(scaled.toPrecision(3));
+  return `${sign}${symbol}${threeSigFigs}${suffix}`;
 }
 
 /** Null-safe currency formatter — returns '—' for null/undefined values. */

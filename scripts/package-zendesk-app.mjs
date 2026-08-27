@@ -3,7 +3,7 @@
  * Package extensions/zendesk into public/downloads/unauth-zendesk-app.zip
  * with the layout Zendesk requires (manifest + translations + assets at zip root).
  */
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +11,9 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const zendeskRoot = path.join(repoRoot, 'extensions', 'zendesk');
-const outZip = path.join(repoRoot, 'public', 'downloads', 'unauth-zendesk-app.zip');
+const outZip = process.env.ZENDESK_OUTPUT_PATH
+  ? path.resolve(process.env.ZENDESK_OUTPUT_PATH)
+  : path.join(repoRoot, 'public', 'downloads', 'unauth-zendesk-app.zip');
 
 const REQUIRED = [
   'manifest.json',
@@ -48,12 +50,12 @@ if (fs.existsSync(outZip)) {
   fs.unlinkSync(outZip);
 }
 
-execSync(
-  'zip -r ../../public/downloads/unauth-zendesk-app.zip manifest.json translations assets',
-  { cwd: zendeskRoot, stdio: 'inherit' },
-);
+execFileSync('zip', ['-r', outZip, 'manifest.json', 'translations', 'assets'], {
+  cwd: zendeskRoot,
+  stdio: 'inherit',
+});
 
-const listing = execSync(`unzip -l "${outZip}"`, { encoding: 'utf8' });
+const listing = execFileSync('unzip', ['-l', outZip], { encoding: 'utf8' });
 for (const rel of REQUIRED) {
   if (!listing.includes(rel)) {
     fail(`zip missing ${rel}`);

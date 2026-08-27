@@ -1,103 +1,47 @@
-/**
- * Definitive public tier chart — marketing copy and feature lists for the landing page.
- * Entitlements in {@link ./tiers} must stay aligned; feature bullets here are the merchant-facing source of truth.
- */
+/** Public projection of the canonical commercial catalogue in `plans.ts`. */
+import {
+  PLANS,
+  PUBLIC_PLAN_IDS,
+  TOP_UP_CREDITS,
+  TOP_UP_PRICE_GBP,
+  type PlanId,
+} from '@/lib/billing/plans';
 
 export const LANDING_BILLING_TRANSPARENCY =
-  'Every plan includes the Unauth widget, store context, evidence checklists, merchant rules, and recovery workflow. Usage is controlled by monthly context credits, and raw customer data stays merchant-scoped.';
+  `Every plan has an explicit monthly allowance. One optional top-up adds ${TOP_UP_CREDITS} credits for £${TOP_UP_PRICE_GBP}. Credits are recorded only after successful catalogue operations; they never permit Unauth to make a merchant decision or submit a provider claim.`;
 
-export type LandingTierKey = 'unauth' | 'pro' | 'growth' | 'scale' | 'enterprise';
+export type LandingTierKey = PlanId;
 
 export interface LandingTierChartEntry {
   key: LandingTierKey;
-  /** Public name — reflects the live plan structure. */
   name: string;
   tagline: string;
   price: string;
   priceNote?: string;
-  foundingNote?: string;
   features: readonly string[];
-  /** Shown on the public pricing grid (Enterprise withheld until design partners). */
   showOnPublicPricing: boolean;
 }
 
-export const LANDING_TIER_CHART: readonly LandingTierChartEntry[] = [
-  {
-    key: 'unauth',
-    name: 'Free',
-    tagline: 'Baseline payout-control access for occasional case review',
-    price: '$0/month',
-    priceNote: '100 context credits / month',
-    features: [
-      '100 context credits / month',
-      'Widget and helpdesk presence',
-      'Store context, evidence checklist, and case history via credits',
-      'Thirty days of case history',
-      'Evidence workflow without raw export',
-      'No API / bulk workflows',
-    ],
+export const LANDING_TIER_CHART: readonly LandingTierChartEntry[] = PUBLIC_PLAN_IDS.map((key) => {
+  const plan = PLANS[key];
+  return {
+    key,
+    name: plan.name,
+    tagline: plan.description,
+    price: plan.priceGbp === 'custom'
+      ? 'Custom'
+      : `£${plan.priceGbp.toLocaleString('en-GB')}/month`,
+    priceNote: plan.creditsMonthly === 'custom'
+      ? 'Allowance agreed before activation'
+      : `${plan.creditsMonthly.toLocaleString('en-GB')} context credits / month`,
+    features: plan.publicFeatures,
     showOnPublicPricing: true,
-  },
-  {
-    key: 'pro',
-    name: 'Pro',
-    tagline: 'Single-store payout review with six months of case history',
-    price: '$249/month',
-    priceNote: '1,000 context credits / month',
-    features: [
-      '1,000 context credits / month',
-      'Deeper store context, payout rules, and evidence review',
-      'Case Reports and evidence exports',
-      'Six months of case history',
-      'Top-up: $15 for 200 credits (self-serve)',
-    ],
-    showOnPublicPricing: true,
-  },
-  {
-    key: 'growth',
-    name: 'Growth',
-    tagline: 'Multi-store payout operations with two years of case history and aggregate reporting',
-    price: '$599/month',
-    priceNote: '5,000 context credits / month',
-    features: [
-      '5,000 context credits / month',
-      'Up to five connected stores and fifteen seats',
-      'Twenty-four months of case history',
-      'Advanced aggregate reporting',
-      'Case Reports and evidence exports',
-    ],
-    showOnPublicPricing: true,
-  },
-  {
-    key: 'scale',
-    name: 'Enterprise',
-    tagline: 'Embedded context infrastructure for high-volume teams',
-    price: 'Custom',
-    features: [
-      'Dedicated monthly volume agreed at onboarding',
-      'Lookup API access',
-      'Advanced reports and custom limits',
-      'Security review and service agreement',
-    ],
-    showOnPublicPricing: true,
-  },
-  {
-    key: 'enterprise',
-    name: 'Enterprise / API',
-    tagline: 'PSPs, BNPLs, 3PLs, carriers, and dispute partners',
-    price: 'Custom',
-    features: [
-      'Case-scoped payout and recovery API',
-      'Aggregate payout and recovery analytics',
-      'Per-query pricing',
-    ],
-    showOnPublicPricing: false,
-  },
-] as const;
+  };
+});
 
-export const LANDING_PRICING_TIERS = LANDING_TIER_CHART.filter((t) => t.showOnPublicPricing);
+export const LANDING_PRICING_TIERS = LANDING_TIER_CHART;
 
 export const LANDING_FAQ_ALWAYS_FREE = {
   q: 'Will it always be free?',
-  a: 'Free remains a real entry point for occasional payout-case review, but higher-volume teams will need more monthly context credits, history, controls, and support.',
+  a: 'Free is the supervised entry plan. Higher-volume teams need a plan with the required credits, history limits, controls, and support.',
 } as const;

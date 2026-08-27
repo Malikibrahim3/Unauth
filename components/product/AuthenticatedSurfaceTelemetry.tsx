@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { getAuthenticatedSurfaceFamily } from '@/lib/product/authenticatedSurfaceFamily';
-import { track } from '@/lib/analytics/amplitude';
 
 /** Records the rendered route family without changing which visual system ships. */
 export function AuthenticatedSurfaceTelemetry() {
@@ -17,7 +16,9 @@ export function AuthenticatedSurfaceTelemetry() {
 
     const family = getAuthenticatedSurfaceFamily(pathname);
     root.dataset.uiSurfaceFamily = family;
-    track('Authenticated UI Viewed', { ui_surface_family: family });
+    void import('@/lib/analytics/amplitude').then(({ track }) => {
+      track('Authenticated UI Viewed', { ui_surface_family: family });
+    });
   }, [pathname]);
 
   return null;

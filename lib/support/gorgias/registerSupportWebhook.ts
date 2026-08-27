@@ -20,7 +20,7 @@ export async function registerGorgiasSupportWebhook(input: {
 
   const integration = await gorgiasApiRequest<{ id: number }>(
     apiBaseUrl,
-    '/integrations',
+    '/sources/connected',
     input.credentials,
     {
       method: 'POST',

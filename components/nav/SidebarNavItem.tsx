@@ -41,16 +41,16 @@ export function SidebarNavItem({
       active={active}
       onNavigate={onNavigate}
       className={cn(
-        'group relative flex h-8 items-center gap-2.5 rounded-[var(--ua-radius-control)] px-2.5',
-        'text-[length:var(--ua-text-dense-size)] leading-none',
-        'transition-colors duration-[var(--ua-duration-base)] ease-[var(--ua-ease-standard)]',
-        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
+        'group relative flex h-8 items-center gap-2.5 rounded-[var(--uo-route-radius-control)] px-2.5',
+        'text-[length:var(--uo-route-text-dense-size)] leading-none',
+        'transition-colors duration-[var(--uo-route-duration-base)] ease-[var(--uo-route-ease-standard)]',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)] focus-visible:outline-offset-2',
         active
-          ? 'font-semibold text-[var(--ua-text-primary)]'
-          // `--ua-surface-hover` is tuned for rows on white and is invisible
+          ? 'font-semibold text-[var(--uo-route-text-primary)]'
+          // `--uo-route-surface-hover` is tuned for rows on white and is invisible
           // against the white shell, so the hover step uses the neutral
           // selected fill; the accent is reserved for the active row.
-          : 'font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
+          : 'font-medium text-[var(--uo-route-text-secondary)] hover:bg-[var(--uo-route-surface-hover)] hover:text-[var(--uo-route-text-primary)]',
         collapsed && 'justify-center',
       )}
     >
@@ -62,15 +62,15 @@ export function SidebarNavItem({
       {active ? (
         <span
           aria-hidden="true"
-          className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[var(--ua-accent-500)]"
+          className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[var(--uo-route-accent-500)]"
         />
       ) : null}
       <Icon
         className={cn(
           'h-4 w-4 flex-shrink-0',
           active
-            ? 'text-[var(--ua-text-primary)]'
-            : 'text-[var(--ua-icon-secondary)] group-hover:text-[var(--ua-icon-primary)]',
+            ? 'text-[var(--uo-route-text-primary)]'
+            : 'text-[var(--uo-route-icon-secondary)] group-hover:text-[var(--uo-route-icon-primary)]',
         )}
         aria-hidden="true"
       />
@@ -84,9 +84,9 @@ export function SidebarNavItem({
               aria-label={item.badgeTitle ? `${item.badgeTitle}: ${item.badge}` : `${item.badge} items`}
               className={cn(
                 'inline-flex h-[18px] min-w-[18px] items-center justify-center',
-                'rounded-full border border-[var(--ua-border-default)] px-1.5',
-                'bg-[var(--ua-surface-muted)] text-[var(--ua-text-secondary)]',
-                'text-[length:var(--ua-text-metadata-size)] font-medium tabular-nums',
+                'rounded-full border border-[var(--uo-route-border-default)] px-1.5',
+                'bg-[var(--uo-route-surface-muted)] text-[var(--uo-route-text-secondary)]',
+                'text-[length:var(--uo-route-text-metadata-size)] font-medium tabular-nums',
               )}
             >
               {item.badge > 99 ? '99+' : item.badge}
@@ -97,7 +97,7 @@ export function SidebarNavItem({
 
       {collapsed && !!item.badge && item.badge > 0 && (
         <span
-          className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full border border-[var(--ua-shell)] bg-[var(--ua-text-tertiary)]"
+          className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full border border-[var(--uo-route-shell)] bg-[var(--uo-route-text-tertiary)]"
           title={item.badgeTitle ?? `${item.badge} items`}
           aria-label={item.badgeTitle ? `${item.badgeTitle}: ${item.badge}` : `${item.badge} items`}
         />
@@ -107,11 +107,11 @@ export function SidebarNavItem({
 }
 
 export function SidebarGroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="my-2 mx-2 h-px bg-[var(--ua-border-subtle)]" />;
+  if (collapsed) return <div className="my-2 mx-2 h-px bg-[var(--uo-route-border-subtle)]" />;
   return (
     <div className="mb-1 mt-5 px-2.5">
       <span
-        className="block text-[length:var(--ua-text-metadata-size)] font-medium leading-[var(--ua-text-metadata-leading)] text-[var(--ua-text-tertiary)]"
+        className="block text-[length:var(--uo-route-text-metadata-size)] font-medium leading-[var(--uo-route-text-metadata-leading)] text-[var(--uo-route-text-tertiary)]"
       >
         {label}
       </span>

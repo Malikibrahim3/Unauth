@@ -17,7 +17,9 @@ export type E2EVarSpec = {
  * E2E_MERCHANT_ID_B is the only "missing is OK" var — preflight auto-creates it.
  */
 export const E2E_REQUIRED_VARS: E2EVarSpec[] = [
-  { name: 'SHOPIFY_ADMIN_API_TOKEN' },
+  { name: 'SHOPIFY_API_KEY', optional: true, note: 'preferred with SHOPIFY_API_SECRET' },
+  { name: 'SHOPIFY_API_SECRET', optional: true, note: 'preferred with SHOPIFY_API_KEY' },
+  { name: 'SHOPIFY_ADMIN_API_TOKEN', optional: true, note: 'legacy fallback' },
   { name: 'SHOPIFY_STORE_DOMAIN' },
   { name: 'GORGIAS_API_TOKEN' },
   { name: 'GORGIAS_API_EMAIL' },

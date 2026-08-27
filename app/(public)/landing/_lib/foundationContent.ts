@@ -14,6 +14,12 @@ export const FL_ROUTES = {
   audit: '/signup',
   login: '/login',
   landing: '/landing',
+  gate: '/landing#gate',
+  gateInAction: '/demo?step=recommendation',
+  evidence: '/landing#evidence',
+  howItWorks: '/landing#decision',
+  recovery: '/landing#recovery',
+  outcome: '/landing#outcome',
   demo: '/demo',
   pricing: '/pricing',
   privacyPolicy: '/legal/privacy',
@@ -24,29 +30,25 @@ export const FL_ROUTES = {
 
 export const FL_NAV = {
   links: [
-    { label: 'Product demo', href: '/demo' },
-    { label: 'Product proof', href: '/landing#what-you-recover' },
-    { label: 'How it works', href: '/landing#how-it-works' },
-    { label: 'Integrations', href: '/landing#integrations' },
+    { label: 'The gate', href: FL_ROUTES.gate },
+    { label: 'What it sees', href: FL_ROUTES.evidence },
+    { label: 'What it protects', href: FL_ROUTES.recovery },
+    { label: 'What it proves', href: FL_ROUTES.outcome },
   ],
-  signIn: 'Sign in',
-  cta: 'Create workspace',
+  signIn: 'Log in',
+  cta: 'View the demo',
 } as const;
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 
 export const FL_HERO = {
   eyebrow: '',
-  headlineLines: [
-    'Decide every payout with the full evidence in view.',
-  ],
+  headlineLines: ['The evidence gate before', 'every refund or reship.'],
   subtitle:
-    'Unauth brings order, delivery, support, and financial context into one merchant-controlled case, applies your rules, and keeps loss ownership and recovery work in the same auditable timeline.',
+    'Unauth checks each request against source evidence and your rules, then holds uncertain cases for your team to decide.',
   body: '',
-  primaryCta: 'Create workspace',
-  secondaryCta: 'Walk through a case',
-  assurance:
-    'Recommendations stay explainable. Final customer and recovery actions stay with your team.',
+  primaryCta: 'See the gate in action',
+  assurance: '',
   pinnedCta: 'Create workspace',
   contactCta: 'Create workspace',
   orderHistoryCard: {
@@ -69,6 +71,171 @@ export const FL_HERO = {
     title: '04 Decision audit trail',
     status: 'Rule match, signals snapshot, and outcome recorded.',
     meta: 'Works before chargeback',
+  },
+} as const;
+
+/* ── Landing story: one fictional case from evidence to ledger ────────── */
+
+export const FL_LANDING_STORY = {
+  caseId: 'CASE-1ECF9',
+  gate: {
+    eyebrow: 'Inside the gate',
+    headline: 'Every decision starts with evidence. Uncertain cases stop for judgment.',
+    body:
+      'Unauth connects the order, support conversation, fulfilment record, carrier events and customer history, keeping every source and timestamp visible. It then applies your policy, shows the exact matched rule and stops the case when evidence is missing or conflicting. Your team makes the final customer and payout decision.',
+  },
+  evidence: {
+    eyebrow: 'The complete case',
+    headline: 'Every decision starts with the evidence your systems already hold.',
+    body:
+      'Unauth connects the order, support conversation, fulfilment record, carrier events and the customer’s history with your store. Every fact keeps its source and timestamp. Missing evidence remains visible instead of becoming a guess.',
+    rows: [
+      { title: 'Support request', source: 'Support', timestamp: '09:14', detail: 'Refund requested · £128.00' },
+      { title: 'Order record', source: 'Commerce', timestamp: '09:15', detail: '#ALG-10482 · paid' },
+      { title: 'Warehouse scan', source: 'Fulfilment', timestamp: '09:16', detail: 'Packed · weight captured' },
+      { title: 'Carrier event', source: 'Carrier', timestamp: '09:16', detail: 'Delivered · recipient unavailable' },
+      { title: 'Evidence gap', source: 'Still open', timestamp: '09:17', detail: 'Proof of delivery is missing' },
+    ],
+  },
+  decision: {
+    eyebrow: 'Your rules control the gate',
+    headline: 'Clear cases move. Uncertain cases stop for judgment.',
+    body:
+      'Unauth applies your policy—not a hidden risk score. It shows the exact rule, the evidence that matched and what is still missing. Your team remains responsible for the final customer and payout decision.',
+    supporting: 'The evidence gate before every refund or reship.',
+    ready: {
+      label: 'Ready to resolve',
+      detail: 'Evidence complete',
+      rule: 'Rule R-04 · no configured hold condition',
+      conditions: ['Order, support and delivery evidence agree', 'No configured hold condition'],
+      action: 'The request is ready for your team to resolve.',
+    },
+    review: {
+      label: 'Needs review',
+      detail: 'Evidence gap identified',
+      rule: 'Missing delivery evidence',
+      conditions: ['Proof of delivery is missing', 'External action remains none'],
+      action: 'Ask carrier for clarification before the team decides.',
+    },
+  },
+  features: {
+    eyebrow: 'The workspace around the gate',
+    headline: 'Everything your teams need to move a case from request to ledger.',
+    body:
+      'Unauth gives operations, support and finance one source-backed workspace for casework, controls, recovery and reconciliation. Each record keeps its own meaning, so recommendations, merchant decisions, external actions and financial outcomes remain traceable.',
+    cta: 'Explore the workspace',
+    cards: [
+      {
+        id: 'operate',
+        layout: 'wide',
+        title: 'Operate the case',
+        body:
+          'Triage open work, keep source-backed case timelines together and give every customer interaction the order and evidence context behind it.',
+        surfaces: ['Overview', 'Work', 'Cases', 'Customers'],
+        artifactSlot: 'feature-operate',
+      },
+      {
+        id: 'control',
+        layout: 'wide',
+        title: 'Control the gate',
+        body:
+          'Encode merchant payout rules, inspect why they matched and run bounded workflows without turning recommendations into automatic merchant decisions.',
+        surfaces: ['Payout rules', 'Flows'],
+        artifactSlot: 'feature-control',
+      },
+      {
+        id: 'recover',
+        layout: 'compact',
+        title: 'Recover the loss',
+        body:
+          'Assign responsibility, assemble required evidence, track correspondence and keep claim deadlines visible after the customer is resolved.',
+        surfaces: ['Recovery board', 'Evidence packages', 'Deadlines'],
+        artifactSlot: 'feature-recover',
+      },
+      {
+        id: 'reconcile',
+        layout: 'compact',
+        title: 'Reconcile the money',
+        body:
+          'Follow confirmed, estimated, recoverable, prevented and written-off loss through source-to-ledger exceptions and governed reports.',
+        surfaces: ['Loss ledger', 'Reconciliation', 'Reports'],
+        artifactSlot: 'feature-reconcile',
+      },
+      {
+        id: 'connect',
+        layout: 'compact',
+        title: 'Connect the evidence',
+        body:
+          'Bring commerce, support, fulfilment, carrier and finance records into one source-labelled model, with imports, timestamps and freshness visible.',
+        surfaces: ['Connected sources', 'Imports'],
+        artifactSlot: 'feature-connect',
+      },
+    ],
+    index: [
+      { label: 'Operate', items: ['Overview', 'Work', 'Cases', 'Customers'] },
+      { label: 'Control', items: ['Payout rules', 'Flows'] },
+      { label: 'Recover', items: ['Recovery board'] },
+      { label: 'Reconcile', items: ['Loss ledger', 'Reconciliation', 'Reports'] },
+      { label: 'Connect', items: ['Connected sources', 'Imports'] },
+      { label: 'Workspace', items: ['Notifications', 'Settings', 'Help'] },
+    ],
+  },
+  recovery: {
+    eyebrow: 'The decision is not the end',
+    headline: 'Resolve the customer. Keep the recovery.',
+    body:
+      'A refund may settle the customer case while the carrier, 3PL or supplier still owes the merchant. Unauth keeps the responsible party, required evidence and claim deadline attached to the original decision.',
+    responsibility: 'Northline Parcel may own the loss',
+    amount: '£128 sought',
+    deadline: '14 days remaining',
+    transition: 'Carrier clarification requested · Merchant decision pending',
+    evidence: ['Order and ticket record', 'Carrier tracking event', 'Customer statement'],
+    stages: [
+      'Refund request received',
+      'Evidence 4 of 5',
+      'Northline Parcel may own the loss',
+      '14 days remaining',
+      'Merchant decision pending',
+    ],
+  },
+  outcome: {
+    eyebrow: 'From decision to financial outcome',
+    headline: 'See what the gate prevented, recovered and left exposed.',
+    body:
+      'Every recommendation, merchant decision, external action, recovery and ledger outcome remains connected. Operations and finance can see where money was protected, where it returned and what still requires action.',
+    metrics: [
+      { label: 'Open exposure', value: '£910,251.10' },
+      { label: 'Identified', value: '£2,548,859.12' },
+      { label: 'Prevented', value: '£593,712.00' },
+      { label: 'Recovered', value: '£381,638.01' },
+    ],
+    drillThrough: {
+      title: '£128 remains exposed while evidence is incomplete',
+      detail: 'The missing proof of delivery, carrier responsibility and open merchant decision remain connected to the case.',
+    },
+    trace: [
+      { label: 'Recommendation', value: 'Ask carrier for clarification' },
+      { label: 'Merchant decision', value: 'Not recorded' },
+      { label: 'External action', value: 'None' },
+      { label: 'Recovery', value: 'Evidence needed · deadline open' },
+    ],
+  },
+  integrations: {
+    headline: 'One case model across your post-purchase stack.',
+    body:
+      'Connect commerce, support, fulfilment, carrier and financial records. Every record keeps its source, timestamp and freshness instead of creating another version of the truth.',
+    sources: ['Commerce', 'Support', 'Fulfilment', 'Carrier', 'Finance'],
+  },
+  closing: {
+    headline: 'Put the gate in front of your next refund or reship.',
+    body:
+      'See how Unauth turns one request into a source-backed recommendation, a merchant-controlled decision and a traceable recovery outcome.',
+    steps: [
+      { label: 'One case', detail: 'Every source in view' },
+      { label: 'One rule', detail: 'Plain-English conditions' },
+      { label: 'One recovery route', detail: 'Evidence and deadline' },
+      { label: 'One financial outcome', detail: 'Matched to the ledger' },
+    ],
   },
 } as const;
 
@@ -609,8 +776,9 @@ export const FL_FOOTER = {
     {
       heading: 'Product',
       links: [
-        { label: 'The gate', href: '/landing#how-it-works' },
-        { label: 'What you recover', href: '/landing#what-you-recover' },
+        { label: 'Every source', href: FL_ROUTES.evidence },
+        { label: 'The decision', href: FL_ROUTES.howItWorks },
+        { label: 'The outcome', href: FL_ROUTES.outcome },
         { label: 'Create workspace', href: FL_ROUTES.audit },
       ],
     },

@@ -1,7 +1,7 @@
 import { deduplicateProviders, deriveSetupProgress } from '@/lib/onboarding/setupProgress';
 import type { ProviderConnectionView } from '@/lib/integrations/types';
 
-const provider = (id: string, category: ProviderConnectionView['category'], status: ProviderConnectionView['status'] = 'connected', syncState: ProviderConnectionView['syncState'] = 'import_complete'): ProviderConnectionView => ({ id, name: id, category, status, syncState, authMode: 'oauth', buildStatus: 'live', evidenceCapabilities: [], lastSyncAt: null, lastError: null, detail: null });
+const provider = (id: string, category: ProviderConnectionView['category'], status: ProviderConnectionView['status'] = 'connected', syncState: ProviderConnectionView['syncState'] = 'import_complete'): ProviderConnectionView => ({ id, name: id, category, status, syncState, authMode: 'oauth', codeMaturity: 'complete', evidenceCapabilities: [], lastSyncAt: null, lastError: null, detail: null });
 const progress = (providers: ProviderConnectionView[], overrides: Partial<Parameters<typeof deriveSetupProgress>[0]> = {}) => deriveSetupProgress({ providers, activeRules: 1, paymentConfirmed: true, warehouseRequired: false, ...overrides });
 
 describe('merchant setup progress', () => {

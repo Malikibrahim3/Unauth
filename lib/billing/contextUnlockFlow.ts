@@ -106,7 +106,7 @@ export async function spendContextCreditsAfterSuccess(
   supabase: SupabaseClient,
   params: ConsumeContextCreditsParams,
 ): Promise<
-  | { ok: true; snapshot: ContextCreditSnapshot; creditsSpent: number }
+  | { ok: true; snapshot: ContextCreditSnapshot; creditsSpent: number; duplicate: boolean; receiptId: string }
   | { ok: false; snapshot: ContextCreditSnapshot; creditsRequired: number }
 > {
   return consumeContextCredits(supabase, params);

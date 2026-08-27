@@ -11,6 +11,7 @@ import {
 import { publicConnectionErrorMessage } from '@/lib/integrations/publicErrors';
 import type {
   IntegrationAuthMode,
+  EvidenceCapability,
   IntegrationProvider,
   LifecycleCapability,
   LifecycleCapabilityId,
@@ -18,6 +19,7 @@ import type {
 } from '@/lib/integrations/types';
 import { deriveSyncState, type ConnectionSyncState } from '@/lib/integrations/syncState';
 import { resolveConnectorFreshness, type ConnectorFreshness } from '@/lib/connections/freshness';
+import type { LiveVerificationResult } from '@/lib/connections/liveVerification';
 import { TABLES } from '@/lib/supabase/tables';
 
 export type ConnectorCatalogueItem = {
@@ -57,8 +59,13 @@ export type ConnectorCatalogueItem = {
    * tests/unit/catalogueApplicationTenantScoping.test.ts).
    */
   lastVerifiedAt: string | null;
+  liveVerification: LiveVerificationResult | null;
   lastError: string | null;
   importedRecords: number;
+  /** False when provider bookkeeping has not recorded a count. The numeric
+   * fallback remains for read-model compatibility, but UI must not present it
+   * as a verified zero. */
+  importedRecordsKnown?: boolean;
   scopes: string[];
   capabilities: Array<{
     id: string;
@@ -66,6 +73,15 @@ export type ConnectorCatalogueItem = {
     support: string;
     scopes: string[];
     description: string;
+    availability: string;
+    availabilityReason: string;
+  }>;
+  /** Runtime availability projected onto the evidence vocabulary used by
+   * readiness. This is separate from product lifecycle maturity and generic
+   * connector capabilities. */
+  evidenceCapabilities?: Array<{
+    id: EvidenceCapability;
+    support: string;
     availability: string;
     availabilityReason: string;
   }>;
@@ -81,6 +97,8 @@ type ConnectionRow = {
   last_sync_completed_at: string | null;
   last_successful_sync_at: string | null;
   last_verified_at: string | null;
+  last_verification_status: string | null;
+  last_verification_error: string | null;
   webhook_last_received_at: string | null;
   last_error_message: string | null;
   last_error: string | null;
@@ -121,7 +139,7 @@ export function primaryConnection(rows: ConnectionRow[]): ConnectionRow | null {
 
 function fallbackCapabilities(provider: IntegrationProvider, status: string): ConnectorCatalogueItem['capabilities'] {
   const connected = ACTIVE_STATUSES.has(status);
-  const planned = provider.buildStatus === 'slot_only';
+  const planned = provider.codeMaturity === 'slot_only';
   return provider.evidenceCapabilities.map((evidenceCapability) => ({
     id: `evidence.${evidenceCapability}`,
     level: 'read',
@@ -137,6 +155,98 @@ function fallbackCapabilities(provider: IntegrationProvider, status: string): Co
   }));
 }
 
+/**
+ * Adapter capability ids are intentionally generic (orders.read,
+ * disputes.read, ...), while readiness is about the evidence a provider can
+ * actually contribute. Keep that translation explicit at the catalogue
+ * boundary so a client cannot infer payment coverage from a commerce category.
+ */
+const EVIDENCE_RUNTIME_CAPABILITY_MAP: Record<string, Partial<Record<EvidenceCapability, string[]>>> = {
+  shopify: {
+    order_value: ['orders.read'],
+    line_items: ['orders.read'],
+    customer_history: ['orders.read'],
+    refund_history: ['refunds.read'],
+    reship_history: ['fulfilments.read'],
+    tracking_number: ['fulfilments.read'],
+    dispute_status: ['disputes.read'],
+    chargeback_evidence: ['disputes.read'],
+    recovery_deadline: ['disputes.read'],
+  },
+  gorgias: {
+    ticket_messages: ['messages.read', 'tickets.read'],
+    ticket_attachments: ['tickets.read'],
+    customer_claim_reason: ['tickets.read'],
+    requested_action: ['tickets.read'],
+  },
+  shipbob: {
+    warehouse_pick_pack: ['fulfilments.read'],
+    warehouse_exception: ['fulfilments.read'],
+    three_pl_sla_claim_status: ['fulfilments.read'],
+  },
+  ups: {
+    tracking_number: ['shipments.read'],
+    tracking_events: ['tracking_events.read'],
+    delivery_status: ['shipments.read'],
+    delivery_photo: ['delivery_proof.read'],
+    signature: ['delivery_proof.read'],
+  },
+  fedex: {
+    tracking_number: ['shipments.read'],
+    tracking_events: ['tracking_events.read'],
+    delivery_status: ['shipments.read'],
+    delivery_photo: ['delivery_proof.read'],
+    signature: ['delivery_proof.read'],
+  },
+  document_upload: {
+    contract_terms: ['documents.read'],
+    recovery_deadline: ['documents.read'],
+  },
+};
+
+function resolveEvidenceCapabilities(
+  provider: IntegrationProvider,
+  capabilities: ConnectorCatalogueItem['capabilities'],
+): NonNullable<ConnectorCatalogueItem['evidenceCapabilities']> {
+  return provider.evidenceCapabilities.map((id) => {
+    const candidateIds = EVIDENCE_RUNTIME_CAPABILITY_MAP[provider.id]?.[id] ?? [`evidence.${id}`];
+    const candidates = capabilities.filter((capability) => candidateIds.includes(capability.id));
+    const supported = candidates.filter((candidate) => candidate.support !== 'unsupported');
+    if (provider.codeMaturity === 'slot_only') {
+      return {
+        id,
+        support: 'unsupported',
+        availability: 'unsupported',
+        availabilityReason: 'Provider lifecycle is planned.',
+      };
+    }
+    if (!supported.length) {
+      return {
+        id,
+        support: 'unknown',
+        availability: 'unavailable',
+        availabilityReason: 'No runtime capability is registered for this evidence type.',
+      };
+    }
+    const enabled = supported.find((candidate) => candidate.availability === 'enabled');
+    if (enabled) {
+      return {
+        id,
+        support: enabled.support,
+        availability: enabled.availability,
+        availabilityReason: enabled.availabilityReason,
+      };
+    }
+    const candidate = supported.find((entry) => entry.availability !== 'unsupported') ?? supported[0];
+    return {
+      id,
+      support: candidate.support,
+      availability: candidate.availability,
+      availabilityReason: candidate.availabilityReason,
+    };
+  });
+}
+
 export async function loadConnectorCatalogue(
   client: SupabaseClient,
   merchantId: string,
@@ -144,7 +254,7 @@ export async function loadConnectorCatalogue(
   const [{ data, error }, storedViews, { data: gorgiasRows }, { data: shopifyRows }] = await Promise.all([
     client
       .from(TABLES.MERCHANT_INTEGRATIONS)
-      .select('id,provider_id,status,provider_account_name,last_sync_started_at,last_sync_completed_at,last_successful_sync_at,last_verified_at,webhook_last_received_at,last_error_code,last_error_message,last_error,imported_record_count,granted_scopes,writeback_enabled,updated_at')
+      .select('id,provider_id,status,provider_account_name,last_sync_started_at,last_sync_completed_at,last_successful_sync_at,last_verified_at,last_verification_status,last_verification_error,webhook_last_received_at,last_error_code,last_error_message,last_error,imported_record_count,granted_scopes,writeback_enabled,updated_at')
       .eq('merchant_id', merchantId),
     getStoredIntegrationViews(client, merchantId),
     // Gorgias's real "still hearing from it" signal AND its live-verification
@@ -210,6 +320,7 @@ export async function loadConnectorCatalogue(
           availabilityReason: capability.availabilityReason,
         }))
       : fallbackCapabilities(provider, status);
+    const evidenceCapabilities = resolveEvidenceCapabilities(provider, capabilities);
 
     const freshness = resolveConnectorFreshness({
       providerId: provider.id,
@@ -270,6 +381,14 @@ export async function loadConnectorCatalogue(
       lastVerifiedAt: provider.id in PROVIDER_VERIFIED_AT
         ? PROVIDER_VERIFIED_AT[provider.id]
         : primary?.last_verified_at ?? null,
+      liveVerification: primary?.last_verification_status === 'verified'
+        || primary?.last_verification_status === 'failed'
+        || primary?.last_verification_status === 'inconclusive'
+        ? {
+            status: primary.last_verification_status,
+            ...(primary.last_verification_error ? { reason: primary.last_verification_error } : {}),
+          }
+        : null,
       lastError: primary
         ? publicConnectionErrorMessage(
             primary.last_error_code,
@@ -278,9 +397,11 @@ export async function loadConnectorCatalogue(
           )
         : view?.lastError ?? null,
       importedRecords: Number(effectiveImportedRecordCount ?? 0),
+      importedRecordsKnown: effectiveImportedRecordCount != null,
       scopes,
       capabilities,
-      connectEnabled: provider.buildStatus !== 'slot_only'
+      evidenceCapabilities,
+      connectEnabled: provider.codeMaturity !== 'slot_only'
         && (Boolean(provider.setupHref) || Boolean(adapter?.manifest.launchVisible)),
     };
   });

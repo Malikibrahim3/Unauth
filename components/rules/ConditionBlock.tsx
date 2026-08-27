@@ -11,6 +11,7 @@ import {
   type RuleFieldCategory,
   type RuleFieldDef,
 } from '@/lib/rules/fields';
+import styles from './AutomationControls.module.css';
 
 interface ConditionBlockProps {
   condition: RuleCondition;
@@ -76,12 +77,7 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
       (def.type === 'string_array' && condition.operator === 'contains_any'));
 
   return (
-    <div
-      className="flex flex-col gap-2 rounded-[var(--ua-radius-control)] p-3"
-      style={{ background: 'var(--ua-surface-muted)', border: '1px solid var(--ua-border-subtle)' }}
-    >
-      <div className="flex items-start gap-2">
-        <div className="grid flex-1 grid-cols-2 gap-2">
+    <div className={styles.conditionBlock}>
           {/* Field */}
           <Select
             aria-label="Condition field"
@@ -127,21 +123,16 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
               </option>
             ))}
           </Select>
-        </div>
-
+        <div>{renderValueInput()}</div>
         <button
           type="button"
           onClick={onRemove}
           disabled={disabled}
           aria-label="Remove condition"
-          className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--ua-text-tertiary)] transition-colors hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-risk-high)]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--uo-route-radius-control)] text-[var(--uo-route-text-tertiary)] hover:bg-[var(--uo-route-surface-hover)] hover:text-[var(--uo-route-risk-high)]"
         >
           <Trash2 className="h-4 w-4" />
         </button>
-      </div>
-
-      {/* Value */}
-      <div>{renderValueInput()}</div>
     </div>
   );
 
@@ -151,7 +142,7 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
     if (isMulti) {
       const selected = Array.isArray(condition.value) ? (condition.value as string[]) : [];
       return (
-        <div className="flex flex-wrap gap-1.5">
+        <div className={styles.choiceList}>
           {(def.options ?? []).map((opt) => {
             const active = selected.includes(opt.value);
             return (
@@ -160,12 +151,8 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
                 type="button"
                 disabled={disabled}
                 onClick={() => toggleMulti(opt.value)}
-                className="rounded-full px-2.5 py-1 text-caption font-medium transition-colors"
-                style={{
-                  background: active ? 'var(--ua-action-primary)' : 'var(--ua-surface-primary)',
-                  color: active ? 'var(--ua-action-primary-fg)' : 'var(--ua-text-secondary)',
-                  border: `1px solid ${active ? 'var(--ua-action-primary)' : 'var(--ua-border-default)'}`,
-                }}
+                className={styles.choice}
+                data-active={active}
               >
                 {opt.label}
               </button>

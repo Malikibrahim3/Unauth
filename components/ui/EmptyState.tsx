@@ -75,17 +75,24 @@ export function EmptyState({
     );
   }
 
-  // default — centered full-page
+  // default — centered full-page. A thin skin over OperationalState's
+  // `empty` contract (§17.5/§17.6): same role/data-kind, so a shared query
+  // (`[role="status"][data-kind="empty"]`) finds every empty state in the
+  // product, whether it renders through here or through OperationalState
+  // directly. The icon/footer/hero layout stays — those are real content
+  // OperationalState has no slot for, and 20 real routes render through them.
   return (
     <div
       className={cn(
-        'ua-empty-state flex flex-col items-center justify-center text-center py-[var(--ua-space-10)] px-[var(--ua-space-6)]',
+        'ua-empty-state flex flex-col items-center justify-center text-center py-[var(--uo-route-space-10)] px-[var(--uo-route-space-6)]',
         className,
       )}
+      role="status"
+      data-kind="empty"
     >
       {icon ? (
         <span
-          className="ua-empty-visual mb-[var(--ua-space-4)] flex h-10 w-10 items-center justify-center rounded-[var(--ua-radius-control)]"
+          className="ua-empty-visual mb-[var(--uo-route-space-4)] flex h-10 w-10 items-center justify-center rounded-[var(--uo-route-radius-control)]"
           aria-hidden="true"
         >
           {icon}
@@ -95,12 +102,12 @@ export function EmptyState({
         {title}
       </h3>
       {description && (
-        <p className="ua-empty-state__description mt-[var(--ua-space-2)] text-small">
+        <p className="ua-empty-state__description mt-[var(--uo-route-space-2)] text-small">
           {description}
         </p>
       )}
-      {action && <div className="mt-[var(--ua-space-5)]">{action}</div>}
-      {footer && <div className="mt-[var(--ua-space-5)] w-full">{footer}</div>}
+      {action && <div className="mt-[var(--uo-route-space-5)]">{action}</div>}
+      {footer && <div className="mt-[var(--uo-route-space-5)] w-full">{footer}</div>}
     </div>
   );
 }

@@ -2,6 +2,15 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { Breadcrumb } from '@/components/authenticated/AuthenticatedPageHeader';
 import { PageFrame } from '@/components/ui/PageFrame';
+import { HandoffSettingsNav } from '@/components/settings/HandoffSettingsNav';
+import styles from '@/components/settings/OperationsSettings.module.css';
+
+export type SettingsTruth = {
+  access: string;
+  currentState: string;
+  saveBehavior: string;
+  impact: string;
+};
 
 interface SettingsPageShellProps {
   title: string;
@@ -14,6 +23,9 @@ interface SettingsPageShellProps {
   tabs?: ReactNode;
   children: ReactNode;
   className?: string;
+  surfaceId?: string;
+  layout?: 'form' | 'wide';
+  truth: SettingsTruth;
 }
 
 /**
@@ -40,14 +52,23 @@ export function SettingsPageShell({
   tabs,
   children,
   className,
+  surfaceId,
+  layout = 'form',
+  truth,
 }: SettingsPageShellProps) {
   return (
     <PageFrame
       className={cn('min-w-0', className)}
-      eyebrow={eyebrow}
+      surfaceId={surfaceId}
+      archetype="P10"
       title={title}
       subtitle={subtitle}
-      breadcrumbs={breadcrumbs}
+      eyebrow={eyebrow}
+      breadcrumbs={breadcrumbs ?? [
+        { label: 'Settings', href: '/settings/workspace/account' },
+        { label: title },
+      ]}
+      showCurrentBreadcrumb
       actions={
         primaryAction || secondaryActions?.length
           ? <>{secondaryActions}{primaryAction}</>
@@ -55,9 +76,25 @@ export function SettingsPageShell({
       }
       meta={meta}
       tabs={tabs}
-      headerCapabilityId="settings.heading"
+      headerCapabilityId="operations-settings"
     >
-      <div className="ua-settings-form">{children}</div>
+      <div className="ua-handoff-settings-layout">
+        <HandoffSettingsNav />
+        <div
+          className={cn('ua-settings-form', layout === 'wide' && 'ua-settings-form--wide')}
+          data-settings-document={surfaceId ?? 'settings'}
+        >
+          <section className={styles.settingsTruth} aria-label="Setting authority and impact">
+            <dl>
+              <div><dt>Who can change it</dt><dd>{truth.access}</dd></div>
+              <div><dt>Current state</dt><dd>{truth.currentState}</dd></div>
+              <div><dt>Save behavior</dt><dd>{truth.saveBehavior}</dd></div>
+              <div><dt>Impact</dt><dd>{truth.impact}</dd></div>
+            </dl>
+          </section>
+          {children}
+        </div>
+      </div>
     </PageFrame>
   );
 }

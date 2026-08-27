@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/server';
 import {
   isE2eTestAuthEnabled,
@@ -42,7 +41,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const secret = searchParams.get('secret');
   const merchantId = searchParams.get('merchant_id');
-  const redirectTo = searchParams.get('redirect') ?? '/claims';
+  const redirectTo = searchParams.get('redirect') ?? '/cases';
 
   if (!merchantId || !validateE2eAuthRequest({ secret, merchantId })) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
@@ -78,15 +77,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'supabase_public_config_missing' }, { status: 500 });
   }
 
-  const cookieStore = await cookies();
+  const requestHost = request.headers.get('host') ?? request.nextUrl.host;
+  const requestOrigin = `${request.nextUrl.protocol}//${requestHost}`;
+  const response = NextResponse.redirect(new URL(redirectTo, requestOrigin));
   const supabase = createServerClient(url, anonKey, {
     cookies: {
       getAll() {
-        return cookieStore.getAll();
+        return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
+          response.cookies.set(name, value, options);
         });
       },
     },
@@ -104,5 +105,5 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.redirect(new URL(redirectTo, request.url));
+  return response;
 }

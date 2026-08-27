@@ -5,7 +5,12 @@ import {
   getMerchantProfileById,
   mergeMerchantSettings,
 } from '@/lib/account/merchantProfile';
-import { resolveCallerContext } from '@/lib/permissions';
+import {
+  ACTIVE_MERCHANT_COOKIE,
+  hasPermission,
+  PERMISSIONS,
+  resolveCallerContext,
+} from '@/lib/permissions';
 import { setCategoryApplicability } from '@/lib/integrations/applicability';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { TABLES } from '@/lib/supabase/tables';
@@ -20,6 +25,7 @@ interface SetupBody {
   usesWms3pl?: boolean;
   usesReturnsPlatform?: boolean;
   profileComplete?: boolean;
+  deferOnboarding?: boolean;
   setupComplete?: boolean;
 }
 
@@ -49,11 +55,36 @@ export async function POST(request: NextRequest) {
   const adminClient = createAdminClient();
 
   try {
+    const selectedMerchantId = request.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+    const existingContext = await resolveCallerContext(serviceClient, user.id, selectedMerchantId);
+    const { data: anyActiveMembership, error: membershipError } = await serviceClient
+      .from(TABLES.MERCHANT_MEMBERS)
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('invite_status', 'active')
+      .limit(1)
+      .maybeSingle();
+    if (membershipError) {
+      return NextResponse.json({ error: 'Workspace access could not be verified.' }, { status: 503 });
+    }
+    if (anyActiveMembership && !existingContext) {
+      return NextResponse.json({ error: 'Select an active workspace before changing its profile.' }, { status: 403 });
+    }
+    if (
+      existingContext
+      && !await hasPermission(serviceClient, existingContext, PERMISSIONS.MANAGE_SETTINGS)
+    ) {
+      return NextResponse.json({ error: 'Workspace administration permission is required.' }, { status: 403 });
+    }
+
     const email = user.email?.toLowerCase() ?? '';
     const domain = email.split('@')[1] ?? '';
     const isDemo = Boolean((user.user_metadata as Record<string, unknown> | undefined)?.is_demo);
-    const isSkipAction = body.setupComplete === true;
+    const isSkipAction = body.setupComplete === true || body.deferOnboarding === true;
     const isBootstrap = body.bootstrapOnly === true;
+    if (body.deferOnboarding === true && (isBootstrap || body.profileComplete === true || body.setupComplete === true)) {
+      return NextResponse.json({ error: 'Choose either defer setup or complete setup.' }, { status: 400 });
+    }
     if (!isBootstrap && !isSkipAction && !isDemo && (!domain || PERSONAL_EMAIL_DOMAINS.has(domain))) {
       return NextResponse.json(
         { error: 'Use a company email domain to complete merchant verification.' },
@@ -61,6 +92,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const onboardingDeferredAt = body.deferOnboarding === true
+      ? new Date().toISOString()
+      : body.profileComplete === true || body.setupComplete === true
+        ? null
+        : undefined;
     const merchant = await upsertMerchantForUser(serviceClient, {
       userId: user.id,
       email: user.email,
@@ -80,6 +116,7 @@ export async function POST(request: NextRequest) {
         null,
       profileComplete:
         !isBootstrap && (body.profileComplete === true || body.setupComplete === true),
+      onboardingDeferredAt,
       // Final completion is applied only after the selected provider stack is
       // verified below. Existing completed merchants remain completed.
       setupComplete: false,
@@ -116,6 +153,7 @@ export async function POST(request: NextRequest) {
         .update({
           settings: mergeMerchantSettings(storedMerchant.settings, {
             onboarding_profile_complete: true,
+            onboarding_deferred_at: null,
             setup_complete: true,
           }),
           updated_at: new Date().toISOString(),
@@ -167,6 +205,11 @@ export async function POST(request: NextRequest) {
       || body.setupComplete === true
       || user.user_metadata?.onboarding_profile_complete === true
       || setupComplete;
+    if (setupComplete || body.profileComplete === true || body.setupComplete === true) {
+      metadataPatch.onboarding_deferred_at = null;
+    } else if (onboardingDeferredAt !== undefined) {
+      metadataPatch.onboarding_deferred_at = onboardingDeferredAt;
+    }
     metadataPatch.setup_complete = setupComplete;
 
     const metadataResult = await adminClient.auth.admin.updateUserById(user.id, {
@@ -181,6 +224,9 @@ export async function POST(request: NextRequest) {
       ok: true,
       merchantId: merchant.id,
       profileComplete: metadataPatch.onboarding_profile_complete === true,
+      onboardingDeferred:
+        typeof metadataPatch.onboarding_deferred_at === 'string'
+        && metadataPatch.onboarding_deferred_at.length > 0,
       setupComplete,
     });
   } catch (error) {
@@ -189,7 +235,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = createClient();
   const {
     data: { user },
@@ -200,7 +246,11 @@ export async function GET() {
   }
 
   const serviceClient = createServiceClient();
-  const ctx = await resolveCallerContext(serviceClient, user.id);
+  const ctx = await resolveCallerContext(
+    serviceClient,
+    user.id,
+    request.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+  );
   if (!ctx) {
     return NextResponse.json({ user: { email: user.email ?? '' }, merchant: null });
   }

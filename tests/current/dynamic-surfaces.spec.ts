@@ -1,12 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const LIST_DETAILS = [
-  { list: "/claims", pattern: "/claims/" },
-  { list: "/losses", pattern: "/losses/" },
-  { list: "/recoveries", pattern: "/recoveries/" },
-  { list: "/rules", pattern: "/rules/" },
-  { list: "/flows", pattern: "/flows/" },
-  { list: "/integrations", pattern: "/integrations/" },
+  { list: "/cases", pattern: "/cases/" },
+  { list: "/financials/losses", pattern: "/financials/losses/" },
+  { list: "/financials/recovery", pattern: "/financials/recovery/" },
+  { list: "/controls/rules", pattern: "/controls/rules/" },
+  { list: "/controls/flows", pattern: "/controls/flows/" },
+  { list: "/sources/connected", pattern: "/sources/" },
 ] as const;
 
 async function seriousAxeViolations(page: Page) {
@@ -104,31 +104,57 @@ for (const item of LIST_DETAILS) {
     test.setTimeout(4 * 60_000);
     await blockAutomaticPrefetch(page);
     await page.goto(item.list, { waitUntil: "domcontentloaded" });
-    const links = page.locator(`main a[href^="${item.pattern}"]`);
+    let detailLink = page.locator(`main a[href^="${item.pattern}"]`).first();
+    if (item.list === "/cases") {
+      const firstCaseRow = page.locator('main button[data-case-id]').first();
+      await expect(firstCaseRow).toBeVisible({ timeout: 20_000 });
+      await firstCaseRow.click();
+      detailLink = page.getByRole('link', { name: 'Expand case' });
+    }
     await expect(
-      links.first(),
+      detailLink,
       `${item.list} should expose a drillable record`,
     ).toBeVisible({ timeout: 20_000 });
-    const href = await links.first().getAttribute("href");
+    const href = await detailLink.getAttribute("href");
     expect(href, `${item.list} should expose a drillable record`).toBeTruthy();
     await assertDetailSurface(page, href!);
   });
 }
+
+test("flow-run history exposes diagnosis or its truthful zero state", async ({ page }) => {
+  test.setTimeout(4 * 60_000);
+  await page.goto("/controls/flows/runs", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { level: 1, name: "Flow runs" })).toBeVisible();
+  const runLinks = page.locator('main a[href^="/controls/flows/runs/"]');
+  if (await runLinks.count()) {
+    const href = await runLinks.first().getAttribute("href");
+    expect(href).toBeTruthy();
+    await assertDetailSurface(page, href!);
+  } else {
+    await expect(page.getByRole("heading", { name: "No historical flow runs" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open flow drafts" })).toBeVisible();
+    await assertResponsive(page, "/controls/flows/runs");
+    expect(await seriousAxeViolations(page)).toEqual([]);
+  }
+});
 
 test("customer and connected-object workspaces pass accessibility and responsive gates", async ({
   page,
 }) => {
   test.setTimeout(6 * 60_000);
   await blockAutomaticPrefetch(page);
-  await page.goto("/customers", { waitUntil: "domcontentloaded" });
+  const customerDirectoryHref = "/customers?sort=orders";
+  await page.goto(customerDirectoryHref, { waitUntil: "domcontentloaded" });
   const customerId = await page
     .getByTestId("customer-row")
     .first()
     .getAttribute("data-row-key");
   expect(customerId, "The customer directory should expose a record key").toBeTruthy();
-  const customerHref = `/customers/${customerId}?return=${encodeURIComponent("/customers")}`;
+  const customerHref = `/customers/${customerId}?return=${encodeURIComponent(customerDirectoryHref)}`;
+  const customerEvidenceHref = `/customers/${customerId}/evidence/new`;
 
   await page.goto(customerHref, { waitUntil: "domcontentloaded" });
+  await expect(page.locator("main h1").first()).toBeVisible({ timeout: 75_000 });
   const connectedRoutes = await page
     .locator(
       'main a[href^="/orders/"], main a[href^="/tickets/"], main a[href^="/shipments/"], main a[href^="/refunds/"], main a[href^="/returns/"], main a[href^="/disputes/"]',
@@ -148,5 +174,6 @@ test("customer and connected-object workspaces pass accessibility and responsive
   ).toBeGreaterThan(0);
 
   await assertDetailSurface(page, customerHref);
+  await assertDetailSurface(page, customerEvidenceHref);
   for (const route of connectedRoutes) await assertDetailSurface(page, route);
 });

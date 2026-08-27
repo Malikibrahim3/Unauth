@@ -108,6 +108,25 @@ describe('buildEvidenceChecklist', () => {
     const res = buildEvidenceChecklist(ctx, 'damaged');
     expect(res.strength).toBe('strong');
   });
+
+  it('uses canonical warehouse evidence keys when the source has returned them', () => {
+    const ctx = makeContext({
+      claim: { type: 'wrong_item' },
+      evidence: {
+        hasCustomerEvidence: true,
+        customerEvidenceItems: 1,
+        merchantEvidenceItems: 4,
+        deliveryEvidenceItems: 0,
+        totalEvidenceItems: 5,
+        hasDeliveryEvidence: true,
+        evidenceTypes: ['support_ticket', 'merchant_inspection', 'pick_pack_record', 'packing_slip', 'received_item_photo'],
+      },
+    });
+    const res = buildEvidenceChecklist(ctx, 'wrong_item');
+    const byKey = Object.fromEntries(res.items.map((item) => [item.key, item.state]));
+    expect(byKey.pick_pack_record).toBe('present');
+    expect(byKey.received_item_photo).toBe('present');
+  });
 });
 
 describe('deriveLossAttribution', () => {

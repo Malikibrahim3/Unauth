@@ -109,6 +109,14 @@ describe('direct carrier tracking evidence', () => {
     expect(found).toMatchObject({ trackingFound: true, scanCount: 6, exceptionCount: 1 });
   });
 
+  it('records GPS as supported when the connected carrier returned coordinates', () => {
+    const found = parseCarrierEvidenceRows([
+      { evidence_type: 'delivery_status', summary: 'Delivered', value: 'delivered', occurred_at: '2026-07-14T12:00:00.000Z', raw_reference: '1ZGPS', source_provider: 'ups' },
+      { evidence_type: 'gps', summary: 'Coordinates returned', value: { latitude: 51.5074, longitude: -0.1278 }, occurred_at: '2026-07-14T12:00:00.000Z', raw_reference: '1ZGPS', source_provider: 'ups' },
+    ], { provider: 'ups', providerConnected: true, trackingNumber: '1ZGPS' });
+    expect(found.gpsSupported).toBe(true);
+  });
+
   it('merges direct carrier scans into the delivery checklist', () => {
     const delivery = mergeDeliveryWithTrackingEvidence({
       status: 'success', shipment_status: 'in_transit', tracking_company: 'UPS', tracking_number: '1Z999', occurred_at: '2026-07-13T00:00:00.000Z',

@@ -2418,49 +2418,106 @@ export type Database = {
       }
       connector_action_runs: {
         Row: {
+          action_state: string
           actor_user_id: string | null
+          amount_minor: number | null
           capability_id: string
           completed_at: string | null
           connection_id: string
           created_at: string
+          currency: string | null
           external_record_id: string
+          external_reference: string | null
           id: string
           idempotency_key: string
           merchant_id: string
+          merchant_reported_at: string | null
+          merchant_reported_method: string | null
+          observed_at: string | null
+          observed_source: string | null
           payload: Json
+          provider_error: string | null
+          provider_object_id: string | null
+          provider_request_id: string | null
+          provider_status: string | null
+          receipt_evidence: Json | null
+          reconciled_at: string | null
+          request_fingerprint: string | null
+          requested_operation: string | null
           result: Json
+          retry_count: number
+          state_version: number
           status: string
           support_payout_case_id: string | null
+          updated_at: string
         }
         Insert: {
+          action_state?: string
           actor_user_id?: string | null
+          amount_minor?: number | null
           capability_id: string
           completed_at?: string | null
           connection_id: string
           created_at?: string
+          currency?: string | null
           external_record_id: string
+          external_reference?: string | null
           id?: string
           idempotency_key: string
           merchant_id: string
+          merchant_reported_at?: string | null
+          merchant_reported_method?: string | null
+          observed_at?: string | null
+          observed_source?: string | null
           payload?: Json
+          provider_error?: string | null
+          provider_object_id?: string | null
+          provider_request_id?: string | null
+          provider_status?: string | null
+          receipt_evidence?: Json | null
+          reconciled_at?: string | null
+          request_fingerprint?: string | null
+          requested_operation?: string | null
           result?: Json
+          retry_count?: number
+          state_version?: number
           status: string
           support_payout_case_id?: string | null
+          updated_at?: string
         }
         Update: {
+          action_state?: string
           actor_user_id?: string | null
+          amount_minor?: number | null
           capability_id?: string
           completed_at?: string | null
           connection_id?: string
           created_at?: string
+          currency?: string | null
           external_record_id?: string
+          external_reference?: string | null
           id?: string
           idempotency_key?: string
           merchant_id?: string
+          merchant_reported_at?: string | null
+          merchant_reported_method?: string | null
+          observed_at?: string | null
+          observed_source?: string | null
           payload?: Json
+          provider_error?: string | null
+          provider_object_id?: string | null
+          provider_request_id?: string | null
+          provider_status?: string | null
+          receipt_evidence?: Json | null
+          reconciled_at?: string | null
+          request_fingerprint?: string | null
+          requested_operation?: string | null
           result?: Json
+          retry_count?: number
+          state_version?: number
           status?: string
           support_payout_case_id?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -2495,48 +2552,75 @@ export type Database = {
       }
       context_credit_events: {
         Row: {
+          billable_event: string | null
           claim_id: string | null
           context_type: string
           credits_spent: number
           customer_ref: string | null
           id: string
+          logical_operation_id: string | null
           merchant_id: string
           metadata: Json
+          monthly_credits_spent: number
           occurred_at: string
           order_ref: string | null
           plan_tier: string
           reason: string | null
+          refunded_credits: number
+          reversed_at: string | null
+          source_object_id: string | null
+          source_object_type: string | null
+          status: string
           ticket_ref: string | null
+          topup_credits_spent: number
           user_id: string | null
         }
         Insert: {
+          billable_event?: string | null
           claim_id?: string | null
           context_type: string
           credits_spent: number
           customer_ref?: string | null
           id?: string
+          logical_operation_id?: string | null
           merchant_id: string
           metadata?: Json
+          monthly_credits_spent?: number
           occurred_at?: string
           order_ref?: string | null
           plan_tier: string
           reason?: string | null
+          refunded_credits?: number
+          reversed_at?: string | null
+          source_object_id?: string | null
+          source_object_type?: string | null
+          status?: string
           ticket_ref?: string | null
+          topup_credits_spent?: number
           user_id?: string | null
         }
         Update: {
+          billable_event?: string | null
           claim_id?: string | null
           context_type?: string
           credits_spent?: number
           customer_ref?: string | null
           id?: string
+          logical_operation_id?: string | null
           merchant_id?: string
           metadata?: Json
+          monthly_credits_spent?: number
           occurred_at?: string
           order_ref?: string | null
           plan_tier?: string
           reason?: string | null
+          refunded_credits?: number
+          reversed_at?: string | null
+          source_object_id?: string | null
+          source_object_type?: string | null
+          status?: string
           ticket_ref?: string | null
+          topup_credits_spent?: number
           user_id?: string | null
         }
         Relationships: [
@@ -3154,6 +3238,7 @@ export type Database = {
       }
       evidence_items: {
         Row: {
+          case_source_class: string | null
           claim_id: string | null
           confidence: number | null
           connection_id: string | null
@@ -3174,6 +3259,7 @@ export type Database = {
           raw_payload: Json | null
           source_account_id: string | null
           source_created_at: string | null
+          source_lineage_root_id: string | null
           source_metadata: Json
           source_record_id: string | null
           source_system: string
@@ -3187,6 +3273,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          case_source_class?: string | null
           claim_id?: string | null
           confidence?: number | null
           connection_id?: string | null
@@ -3207,6 +3294,7 @@ export type Database = {
           raw_payload?: Json | null
           source_account_id?: string | null
           source_created_at?: string | null
+          source_lineage_root_id?: string | null
           source_metadata?: Json
           source_record_id?: string | null
           source_system: string
@@ -3220,6 +3308,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          case_source_class?: string | null
           claim_id?: string | null
           confidence?: number | null
           connection_id?: string | null
@@ -3240,6 +3329,7 @@ export type Database = {
           raw_payload?: Json | null
           source_account_id?: string | null
           source_created_at?: string | null
+          source_lineage_root_id?: string | null
           source_metadata?: Json
           source_record_id?: string | null
           source_system?: string
@@ -3286,6 +3376,13 @@ export type Database = {
             columns: ["source_account_id"]
             isOneToOne: false
             referencedRelation: "source_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_items_source_lineage_root_fkey"
+            columns: ["source_lineage_root_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_items"
             referencedColumns: ["id"]
           },
         ]
@@ -5166,6 +5263,7 @@ export type Database = {
           name: string | null
           rate_limit_per_minute: number
           revoked_at: string | null
+          scopes: string[]
         }
         Insert: {
           created_at?: string
@@ -5177,6 +5275,7 @@ export type Database = {
           name?: string | null
           rate_limit_per_minute?: number
           revoked_at?: string | null
+          scopes?: string[]
         }
         Update: {
           created_at?: string
@@ -5188,6 +5287,7 @@ export type Database = {
           name?: string | null
           rate_limit_per_minute?: number
           revoked_at?: string | null
+          scopes?: string[]
         }
         Relationships: [
           {
@@ -6231,83 +6331,149 @@ export type Database = {
         Row: {
           active: boolean
           applies_to_claim_type: Database["public"]["Enums"]["recovery_rule_claim_type"]
+          approved_at: string | null
+          approved_by: string | null
           claimable_costs: string[]
+          claimant_roles: string[]
+          compensation_terms: Json
+          complete_pack_deadline_days: number | null
           confidence: Database["public"]["Enums"]["recovery_confidence"]
           created_at: string
+          critical_requirements: Json
+          deadline_basis: string | null
           deadline_days: number | null
+          effective_from: string | null
+          effective_to: string | null
           excluded_costs: string[]
+          exclusions: Json
           id: string
+          jurisdiction: string | null
           liability_cap_amount: number | null
           liability_cap_basis:
             | Database["public"]["Enums"]["recovery_liability_cap_basis"]
             | null
           liability_cap_currency: string | null
           merchant_id: string
+          minimum_wait_days: number | null
+          notice_deadline_days: number | null
           partner_id: string | null
           recovery_type: Database["public"]["Enums"]["recovery_case_type"]
           required_evidence: string[]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          rule_approval_status: string
           rule_name: string
+          service_codes: string[]
+          source_document_id: string | null
+          source_published_at: string | null
           source_type: Database["public"]["Enums"]["recovery_rule_source_type"]
           submission_email: string | null
           submission_method:
             | Database["public"]["Enums"]["recovery_submission_method"]
             | null
           submission_url: string | null
+          supersedes_rule_id: string | null
+          terms_source_url: string | null
           updated_at: string
+          version_number: number
         }
         Insert: {
           active?: boolean
           applies_to_claim_type: Database["public"]["Enums"]["recovery_rule_claim_type"]
+          approved_at?: string | null
+          approved_by?: string | null
           claimable_costs?: string[]
+          claimant_roles?: string[]
+          compensation_terms?: Json
+          complete_pack_deadline_days?: number | null
           confidence?: Database["public"]["Enums"]["recovery_confidence"]
           created_at?: string
+          critical_requirements?: Json
+          deadline_basis?: string | null
           deadline_days?: number | null
+          effective_from?: string | null
+          effective_to?: string | null
           excluded_costs?: string[]
+          exclusions?: Json
           id?: string
+          jurisdiction?: string | null
           liability_cap_amount?: number | null
           liability_cap_basis?:
             | Database["public"]["Enums"]["recovery_liability_cap_basis"]
             | null
           liability_cap_currency?: string | null
           merchant_id: string
+          minimum_wait_days?: number | null
+          notice_deadline_days?: number | null
           partner_id?: string | null
           recovery_type: Database["public"]["Enums"]["recovery_case_type"]
           required_evidence?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rule_approval_status?: string
           rule_name: string
+          service_codes?: string[]
+          source_document_id?: string | null
+          source_published_at?: string | null
           source_type?: Database["public"]["Enums"]["recovery_rule_source_type"]
           submission_email?: string | null
           submission_method?:
             | Database["public"]["Enums"]["recovery_submission_method"]
             | null
           submission_url?: string | null
+          supersedes_rule_id?: string | null
+          terms_source_url?: string | null
           updated_at?: string
+          version_number?: number
         }
         Update: {
           active?: boolean
           applies_to_claim_type?: Database["public"]["Enums"]["recovery_rule_claim_type"]
+          approved_at?: string | null
+          approved_by?: string | null
           claimable_costs?: string[]
+          claimant_roles?: string[]
+          compensation_terms?: Json
+          complete_pack_deadline_days?: number | null
           confidence?: Database["public"]["Enums"]["recovery_confidence"]
           created_at?: string
+          critical_requirements?: Json
+          deadline_basis?: string | null
           deadline_days?: number | null
+          effective_from?: string | null
+          effective_to?: string | null
           excluded_costs?: string[]
+          exclusions?: Json
           id?: string
+          jurisdiction?: string | null
           liability_cap_amount?: number | null
           liability_cap_basis?:
             | Database["public"]["Enums"]["recovery_liability_cap_basis"]
             | null
           liability_cap_currency?: string | null
           merchant_id?: string
+          minimum_wait_days?: number | null
+          notice_deadline_days?: number | null
           partner_id?: string | null
           recovery_type?: Database["public"]["Enums"]["recovery_case_type"]
           required_evidence?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rule_approval_status?: string
           rule_name?: string
+          service_codes?: string[]
+          source_document_id?: string | null
+          source_published_at?: string | null
           source_type?: Database["public"]["Enums"]["recovery_rule_source_type"]
           submission_email?: string | null
           submission_method?:
             | Database["public"]["Enums"]["recovery_submission_method"]
             | null
           submission_url?: string | null
+          supersedes_rule_id?: string | null
+          terms_source_url?: string | null
           updated_at?: string
+          version_number?: number
         }
         Relationships: [
           {
@@ -6323,6 +6489,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id", "merchant_id"]
+          },
+          {
+            foreignKeyName: "partner_recovery_rules_supersedes_fkey"
+            columns: ["supersedes_rule_id"]
+            isOneToOne: false
+            referencedRelation: "partner_recovery_rules"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -6438,7 +6611,7 @@ export type Database = {
           credits_monthly: number | null
           name: string
           plan_id: string
-          price_gbp: number
+          price_gbp: number | null
           stripe_price_id: string | null
         }
         Insert: {
@@ -6446,7 +6619,7 @@ export type Database = {
           credits_monthly?: number | null
           name: string
           plan_id: string
-          price_gbp?: number
+          price_gbp?: number | null
           stripe_price_id?: string | null
         }
         Update: {
@@ -6454,7 +6627,7 @@ export type Database = {
           credits_monthly?: number | null
           name?: string
           plan_id?: string
-          price_gbp?: number
+          price_gbp?: number | null
           stripe_price_id?: string | null
         }
         Relationships: []
@@ -6624,6 +6797,136 @@ export type Database = {
           },
         ]
       }
+      provider_credit_events: {
+        Row: {
+          actor_user_id: string | null
+          amount_minor: number
+          created_at: string
+          currency: string
+          event_type: string
+          evidence_item_id: string | null
+          financial_entry_id: string | null
+          from_status: string | null
+          id: string
+          idempotency_key: string
+          merchant_id: string
+          metadata: Json
+          provider_credit_record_id: string
+          reason: string | null
+          recovery_case_id: string | null
+          reverses_event_id: string | null
+          source_record_id: string | null
+          support_payout_case_id: string | null
+          to_status: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          amount_minor: number
+          created_at?: string
+          currency: string
+          event_type: string
+          evidence_item_id?: string | null
+          financial_entry_id?: string | null
+          from_status?: string | null
+          id?: string
+          idempotency_key: string
+          merchant_id: string
+          metadata?: Json
+          provider_credit_record_id: string
+          reason?: string | null
+          recovery_case_id?: string | null
+          reverses_event_id?: string | null
+          source_record_id?: string | null
+          support_payout_case_id?: string | null
+          to_status: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          amount_minor?: number
+          created_at?: string
+          currency?: string
+          event_type?: string
+          evidence_item_id?: string | null
+          financial_entry_id?: string | null
+          from_status?: string | null
+          id?: string
+          idempotency_key?: string
+          merchant_id?: string
+          metadata?: Json
+          provider_credit_record_id?: string
+          reason?: string | null
+          recovery_case_id?: string | null
+          reverses_event_id?: string | null
+          source_record_id?: string | null
+          support_payout_case_id?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_credit_events_evidence_item_id_fkey"
+            columns: ["evidence_item_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_credit_events_financial_entry_id_fkey"
+            columns: ["financial_entry_id"]
+            isOneToOne: false
+            referencedRelation: "case_financial_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_credit_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_credit_events_provider_credit_record_id_fkey"
+            columns: ["provider_credit_record_id"]
+            isOneToOne: false
+            referencedRelation: "provider_credit_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_credit_events_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_credit_events_reverses_event_id_fkey"
+            columns: ["reverses_event_id"]
+            isOneToOne: false
+            referencedRelation: "provider_credit_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_credit_events_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_credit_events_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "provider_credit_events_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provider_credit_records: {
         Row: {
           amount_minor: number
@@ -6645,11 +6948,16 @@ export type Database = {
           matched_by: string | null
           merchant_id: string
           metadata: Json
+          observation_authority: string
+          observed_at: string | null
           occurred_at: string | null
           provider: string
+          reconciliation_status: string
           recovery_case_id: string | null
+          reverses_credit_id: string | null
           source_account_id: string | null
           source_record_id: string | null
+          state_version: number
           support_payout_case_id: string | null
           updated_at: string
         }
@@ -6673,11 +6981,16 @@ export type Database = {
           matched_by?: string | null
           merchant_id: string
           metadata?: Json
+          observation_authority?: string
+          observed_at?: string | null
           occurred_at?: string | null
           provider: string
+          reconciliation_status?: string
           recovery_case_id?: string | null
+          reverses_credit_id?: string | null
           source_account_id?: string | null
           source_record_id?: string | null
+          state_version?: number
           support_payout_case_id?: string | null
           updated_at?: string
         }
@@ -6701,11 +7014,16 @@ export type Database = {
           matched_by?: string | null
           merchant_id?: string
           metadata?: Json
+          observation_authority?: string
+          observed_at?: string | null
           occurred_at?: string | null
           provider?: string
+          reconciliation_status?: string
           recovery_case_id?: string | null
+          reverses_credit_id?: string | null
           source_account_id?: string | null
           source_record_id?: string | null
+          state_version?: number
           support_payout_case_id?: string | null
           updated_at?: string
         }
@@ -6729,6 +7047,13 @@ export type Database = {
             columns: ["recovery_case_id"]
             isOneToOne: false
             referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_credit_records_reverses_credit_id_fkey"
+            columns: ["reverses_credit_id"]
+            isOneToOne: false
+            referencedRelation: "provider_credit_records"
             referencedColumns: ["id"]
           },
           {
@@ -6942,8 +7267,10 @@ export type Database = {
           amount_sought_minor: number
           amount_written_off_minor: number
           calculation_reason: string[]
+          claim_readiness: string
           created_at: string
           currency: string
+          current_claim_pack_id: string | null
           deadline_at: string | null
           eligible_loss_amount: number | null
           estimated_recoverable_max: number | null
@@ -6956,6 +7283,8 @@ export type Database = {
           internal_owner_user_id: string | null
           last_chased_at: string | null
           last_source_event_at: string | null
+          latest_provider_response_id: string | null
+          latest_submission_id: string | null
           loss_case_id: string | null
           merchant_id: string
           merchant_loss_amount: number
@@ -6964,6 +7293,8 @@ export type Database = {
           partner_id: string | null
           prevention_only: boolean
           provider_claim_stage: string
+          provider_position: string
+          provider_position_at: string | null
           recovery_type: Database["public"]["Enums"]["recovery_case_type"]
           rejection_reason: string | null
           status: Database["public"]["Enums"]["recovery_case_status"]
@@ -6977,8 +7308,10 @@ export type Database = {
           amount_sought_minor: number
           amount_written_off_minor?: number
           calculation_reason?: string[]
+          claim_readiness?: string
           created_at?: string
           currency?: string
+          current_claim_pack_id?: string | null
           deadline_at?: string | null
           eligible_loss_amount?: number | null
           estimated_recoverable_max?: number | null
@@ -6991,6 +7324,8 @@ export type Database = {
           internal_owner_user_id?: string | null
           last_chased_at?: string | null
           last_source_event_at?: string | null
+          latest_provider_response_id?: string | null
+          latest_submission_id?: string | null
           loss_case_id?: string | null
           merchant_id: string
           merchant_loss_amount?: number
@@ -6999,6 +7334,8 @@ export type Database = {
           partner_id?: string | null
           prevention_only?: boolean
           provider_claim_stage?: string
+          provider_position?: string
+          provider_position_at?: string | null
           recovery_type: Database["public"]["Enums"]["recovery_case_type"]
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["recovery_case_status"]
@@ -7012,8 +7349,10 @@ export type Database = {
           amount_sought_minor?: number
           amount_written_off_minor?: number
           calculation_reason?: string[]
+          claim_readiness?: string
           created_at?: string
           currency?: string
+          current_claim_pack_id?: string | null
           deadline_at?: string | null
           eligible_loss_amount?: number | null
           estimated_recoverable_max?: number | null
@@ -7026,6 +7365,8 @@ export type Database = {
           internal_owner_user_id?: string | null
           last_chased_at?: string | null
           last_source_event_at?: string | null
+          latest_provider_response_id?: string | null
+          latest_submission_id?: string | null
           loss_case_id?: string | null
           merchant_id?: string
           merchant_loss_amount?: number
@@ -7034,6 +7375,8 @@ export type Database = {
           partner_id?: string | null
           prevention_only?: boolean
           provider_claim_stage?: string
+          provider_position?: string
+          provider_position_at?: string | null
           recovery_type?: Database["public"]["Enums"]["recovery_case_type"]
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["recovery_case_status"]
@@ -7041,6 +7384,27 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recovery_cases_current_claim_pack_fkey"
+            columns: ["current_claim_pack_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_claim_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_cases_latest_provider_response_fkey"
+            columns: ["latest_provider_response_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_provider_responses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_cases_latest_submission_fkey"
+            columns: ["latest_submission_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_claim_submissions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recovery_cases_loss_case_id_fkey"
             columns: ["loss_case_id"]
@@ -7074,6 +7438,322 @@ export type Database = {
             columns: ["support_payout_case_id"]
             isOneToOne: false
             referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recovery_claim_packs: {
+        Row: {
+          created_at: string
+          finalized_at: string | null
+          generated_at: string
+          generated_by: string | null
+          id: string
+          idempotency_key: string
+          manifest: Json
+          merchant_id: string
+          pack_version: number
+          pdf_hash: string | null
+          pdf_storage_path: string | null
+          posture: string
+          readiness: string
+          readiness_snapshot: Json
+          recovery_case_id: string
+          rule_version_id: string | null
+          state: string
+          supersedes_pack_id: string | null
+          support_payout_case_id: string
+          zip_hash: string | null
+          zip_storage_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          finalized_at?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          idempotency_key: string
+          manifest?: Json
+          merchant_id: string
+          pack_version: number
+          pdf_hash?: string | null
+          pdf_storage_path?: string | null
+          posture: string
+          readiness: string
+          readiness_snapshot?: Json
+          recovery_case_id: string
+          rule_version_id?: string | null
+          state: string
+          supersedes_pack_id?: string | null
+          support_payout_case_id: string
+          zip_hash?: string | null
+          zip_storage_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          finalized_at?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          idempotency_key?: string
+          manifest?: Json
+          merchant_id?: string
+          pack_version?: number
+          pdf_hash?: string | null
+          pdf_storage_path?: string | null
+          posture?: string
+          readiness?: string
+          readiness_snapshot?: Json
+          recovery_case_id?: string
+          rule_version_id?: string | null
+          state?: string
+          supersedes_pack_id?: string | null
+          support_payout_case_id?: string
+          zip_hash?: string | null
+          zip_storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_claim_packs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_packs_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_packs_rule_version_id_fkey"
+            columns: ["rule_version_id"]
+            isOneToOne: false
+            referencedRelation: "partner_recovery_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_packs_supersedes_pack_id_fkey"
+            columns: ["supersedes_pack_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_claim_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_packs_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_packs_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recovery_claim_submissions: {
+        Row: {
+          amount_sought_minor: number | null
+          channel: string
+          claim_pack_id: string
+          created_at: string
+          currency: string | null
+          external_claim_reference: string | null
+          external_url: string | null
+          id: string
+          idempotency_key: string
+          merchant_id: string
+          notes: string | null
+          provider_account_reference: string | null
+          receipt_correspondence_id: string | null
+          receipt_evidence_item_id: string | null
+          recovery_case_id: string
+          submitted_at: string
+          submitted_by: string | null
+        }
+        Insert: {
+          amount_sought_minor?: number | null
+          channel: string
+          claim_pack_id: string
+          created_at?: string
+          currency?: string | null
+          external_claim_reference?: string | null
+          external_url?: string | null
+          id?: string
+          idempotency_key: string
+          merchant_id: string
+          notes?: string | null
+          provider_account_reference?: string | null
+          receipt_correspondence_id?: string | null
+          receipt_evidence_item_id?: string | null
+          recovery_case_id: string
+          submitted_at: string
+          submitted_by?: string | null
+        }
+        Update: {
+          amount_sought_minor?: number | null
+          channel?: string
+          claim_pack_id?: string
+          created_at?: string
+          currency?: string | null
+          external_claim_reference?: string | null
+          external_url?: string | null
+          id?: string
+          idempotency_key?: string
+          merchant_id?: string
+          notes?: string | null
+          provider_account_reference?: string | null
+          receipt_correspondence_id?: string | null
+          receipt_evidence_item_id?: string | null
+          recovery_case_id?: string
+          submitted_at?: string
+          submitted_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_claim_submissions_claim_pack_id_fkey"
+            columns: ["claim_pack_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_claim_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_submissions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_submissions_receipt_correspondence_id_fkey"
+            columns: ["receipt_correspondence_id"]
+            isOneToOne: false
+            referencedRelation: "external_correspondence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_submissions_receipt_evidence_item_id_fkey"
+            columns: ["receipt_evidence_item_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_claim_submissions_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recovery_provider_responses: {
+        Row: {
+          approved_amount_minor: number | null
+          compensation_state: string
+          created_at: string
+          credited_amount_minor: number | null
+          currency: string | null
+          external_reference: string | null
+          external_url: string | null
+          id: string
+          idempotency_key: string
+          liability_position: string
+          merchant_id: string
+          notes: string | null
+          provider: string
+          provider_amount_minor: number | null
+          received_at: string
+          recorded_by: string | null
+          recovery_case_id: string
+          response_correspondence_id: string | null
+          response_evidence_item_id: string | null
+          submission_id: string | null
+        }
+        Insert: {
+          approved_amount_minor?: number | null
+          compensation_state: string
+          created_at?: string
+          credited_amount_minor?: number | null
+          currency?: string | null
+          external_reference?: string | null
+          external_url?: string | null
+          id?: string
+          idempotency_key: string
+          liability_position: string
+          merchant_id: string
+          notes?: string | null
+          provider: string
+          provider_amount_minor?: number | null
+          received_at: string
+          recorded_by?: string | null
+          recovery_case_id: string
+          response_correspondence_id?: string | null
+          response_evidence_item_id?: string | null
+          submission_id?: string | null
+        }
+        Update: {
+          approved_amount_minor?: number | null
+          compensation_state?: string
+          created_at?: string
+          credited_amount_minor?: number | null
+          currency?: string | null
+          external_reference?: string | null
+          external_url?: string | null
+          id?: string
+          idempotency_key?: string
+          liability_position?: string
+          merchant_id?: string
+          notes?: string | null
+          provider?: string
+          provider_amount_minor?: number | null
+          received_at?: string
+          recorded_by?: string | null
+          recovery_case_id?: string
+          response_correspondence_id?: string | null
+          response_evidence_item_id?: string | null
+          submission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_provider_responses_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_provider_responses_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_provider_responses_response_correspondence_id_fkey"
+            columns: ["response_correspondence_id"]
+            isOneToOne: false
+            referencedRelation: "external_correspondence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_provider_responses_response_evidence_item_id_fkey"
+            columns: ["response_evidence_item_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_provider_responses_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_claim_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -9207,6 +9887,60 @@ export type Database = {
           },
         ]
       }
+      subscription_intents: {
+        Row: {
+          checkout_session_id: string | null
+          created_at: string
+          id: string
+          logical_operation_id: string
+          merchant_id: string
+          requested_by: string | null
+          requested_plan_id: string
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          checkout_session_id?: string | null
+          created_at?: string
+          id?: string
+          logical_operation_id: string
+          merchant_id: string
+          requested_by?: string | null
+          requested_plan_id: string
+          source: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          checkout_session_id?: string | null
+          created_at?: string
+          id?: string
+          logical_operation_id?: string
+          merchant_id?: string
+          requested_by?: string | null
+          requested_plan_id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_intents_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_intents_requested_plan_id_fkey"
+            columns: ["requested_plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["plan_id"]
+          },
+        ]
+      }
       support_case_events: {
         Row: {
           actor_identifier_hash: string | null
@@ -10178,12 +10912,16 @@ export type Database = {
           owner_user_id: string | null
           priority: string
           recovery_case_id: string | null
+          snoozed_until: string | null
           source: string
           source_metadata: Json
+          state_version: number
           status: string
           support_payout_case_id: string | null
+          task_kind: string
           title: string
           updated_at: string
+          waiting_party: string | null
         }
         Insert: {
           blocking_reason?: string | null
@@ -10201,12 +10939,16 @@ export type Database = {
           owner_user_id?: string | null
           priority?: string
           recovery_case_id?: string | null
+          snoozed_until?: string | null
           source?: string
           source_metadata?: Json
+          state_version?: number
           status?: string
           support_payout_case_id?: string | null
+          task_kind?: string
           title: string
           updated_at?: string
+          waiting_party?: string | null
         }
         Update: {
           blocking_reason?: string | null
@@ -10224,12 +10966,16 @@ export type Database = {
           owner_user_id?: string | null
           priority?: string
           recovery_case_id?: string | null
+          snoozed_until?: string | null
           source?: string
           source_metadata?: Json
+          state_version?: number
           status?: string
           support_payout_case_id?: string | null
+          task_kind?: string
           title?: string
           updated_at?: string
+          waiting_party?: string | null
         }
         Relationships: [
           {
@@ -10450,6 +11196,96 @@ export type Database = {
           },
         ]
       }
+      workspace_deletion_jobs: {
+        Row: {
+          actor_user_reference: string
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          merchant_reference: string
+          preflight: Json
+          progress: Json
+          receipt_id: string | null
+          stage: string
+          status: string
+          storage_manifest: Json
+          updated_at: string
+          verification: Json
+        }
+        Insert: {
+          actor_user_reference: string
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          last_error?: string | null
+          merchant_reference: string
+          preflight?: Json
+          progress?: Json
+          receipt_id?: string | null
+          stage?: string
+          status?: string
+          storage_manifest?: Json
+          updated_at?: string
+          verification?: Json
+        }
+        Update: {
+          actor_user_reference?: string
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          last_error?: string | null
+          merchant_reference?: string
+          preflight?: Json
+          progress?: Json
+          receipt_id?: string | null
+          stage?: string
+          status?: string
+          storage_manifest?: Json
+          updated_at?: string
+          verification?: Json
+        }
+        Relationships: []
+      }
+      workspace_deletion_receipts: {
+        Row: {
+          actor_user_reference: string
+          id: string
+          idempotency_key: string
+          job_reference: string
+          meaning: string
+          merchant_reference: string
+          verification: Json
+          verified_at: string
+        }
+        Insert: {
+          actor_user_reference: string
+          id?: string
+          idempotency_key: string
+          job_reference: string
+          meaning?: string
+          merchant_reference: string
+          verification: Json
+          verified_at?: string
+        }
+        Update: {
+          actor_user_reference?: string
+          id?: string
+          idempotency_key?: string
+          job_reference?: string
+          meaning?: string
+          merchant_reference?: string
+          verification?: Json
+          verified_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       commerce_store_connections: {
@@ -10539,6 +11375,32 @@ export type Database = {
       }
     }
     Functions: {
+      _distinctive_analytics_assert_scope: {
+        Args: {
+          p_actor_id: string
+          p_as_of: string
+          p_comparison: string
+          p_currency: string
+          p_end_at: string
+          p_merchant_id: string
+          p_range: string
+          p_start_at: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
+      _distinctive_analytics_envelope: {
+        Args: {
+          p_completeness: string
+          p_currencies: string[]
+          p_data: Json
+          p_generated_at: string
+          p_issues: Json
+          p_record_count: number
+          p_source_watermark: string
+        }
+        Returns: Json
+      }
       add_merchant_topup_credits: {
         Args: {
           p_amount_gbp: number
@@ -10585,12 +11447,16 @@ export type Database = {
           owner_user_id: string | null
           priority: string
           recovery_case_id: string | null
+          snoozed_until: string | null
           source: string
           source_metadata: Json
+          state_version: number
           status: string
           support_payout_case_id: string | null
+          task_kind: string
           title: string
           updated_at: string
+          waiting_party: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -10797,10 +11663,12 @@ export type Database = {
       consume_context_credits_if_available: {
         Args: {
           p_allow_soft_cap?: boolean
+          p_billable_event?: string
           p_claim_id?: string
           p_context_type: string
           p_credits_to_spend: number
           p_customer_ref?: string
+          p_logical_operation_id?: string
           p_merchant_id: string
           p_metadata?: Json
           p_monthly_allowance: number
@@ -10809,6 +11677,8 @@ export type Database = {
           p_period_start: string
           p_plan_tier: string
           p_reason?: string
+          p_source_object_id?: string
+          p_source_object_type?: string
           p_ticket_ref?: string
           p_user_id: string
         }
@@ -10879,6 +11749,10 @@ export type Database = {
         }
         Returns: Json
       }
+      ensure_free_billing_account: {
+        Args: { p_merchant_id: string }
+        Returns: undefined
+      }
       erase_merchant_data_subject: {
         Args: {
           p_actor_user_id: string
@@ -10895,6 +11769,14 @@ export type Database = {
           p_effective_at?: string
           p_idempotency_key: string
           p_merchant_id: string
+          p_subject_id: string
+        }
+        Returns: Json
+      }
+      export_merchant_data_subject_v1: {
+        Args: {
+          p_merchant_id: string
+          p_requested_by: string
           p_subject_id: string
         }
         Returns: Json
@@ -10922,6 +11804,34 @@ export type Database = {
           confirmed: number
         }[]
       }
+      finalize_workspace_deletion_v1: {
+        Args: { p_job_id: string; p_verification: Json }
+        Returns: {
+          actor_user_reference: string
+          id: string
+          idempotency_key: string
+          job_reference: string
+          meaning: string
+          merchant_reference: string
+          verification: Json
+          verified_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workspace_deletion_receipts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      financial_aggregate_v1: {
+        Args: {
+          p_currency?: string
+          p_from?: string
+          p_merchant_id: string
+          p_to?: string
+        }
+        Returns: Json
+      }
       flag_aged_payout_case: {
         Args: {
           p_case_id: string
@@ -10932,6 +11842,63 @@ export type Database = {
         Returns: Json
       }
       generate_evidence_reference: { Args: never; Returns: string }
+      get_automation_analytics: {
+        Args: {
+          p_actor_id: string
+          p_as_of?: string
+          p_comparison?: string
+          p_currency?: string
+          p_end_at: string
+          p_merchant_id: string
+          p_range: string
+          p_start_at: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
+      get_evidence_analytics: {
+        Args: {
+          p_actor_id: string
+          p_as_of?: string
+          p_comparison?: string
+          p_currency?: string
+          p_end_at: string
+          p_merchant_id: string
+          p_range: string
+          p_start_at: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
+      get_financial_analytics: {
+        Args: {
+          p_actor_id: string
+          p_as_of?: string
+          p_comparison?: string
+          p_currency?: string
+          p_end_at: string
+          p_merchant_id: string
+          p_range: string
+          p_start_at: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
+      get_financial_analytics_records: {
+        Args: {
+          p_actor_id: string
+          p_as_of?: string
+          p_currency: string
+          p_end_at: string
+          p_limit?: number
+          p_measure: string
+          p_merchant_id: string
+          p_offset?: number
+          p_start_at: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
       get_financial_report_records: {
         Args: {
           p_category?: string
@@ -10952,6 +11919,48 @@ export type Database = {
           total_count: number
           updated_at: string
         }[]
+      }
+      get_recovery_analytics: {
+        Args: {
+          p_actor_id: string
+          p_as_of?: string
+          p_comparison?: string
+          p_currency?: string
+          p_end_at: string
+          p_merchant_id: string
+          p_range: string
+          p_start_at: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
+      get_source_health_analytics: {
+        Args: {
+          p_actor_id: string
+          p_as_of?: string
+          p_comparison?: string
+          p_currency?: string
+          p_end_at: string
+          p_merchant_id: string
+          p_range: string
+          p_start_at: string
+          p_timezone: string
+        }
+        Returns: Json
+      }
+      get_work_analytics: {
+        Args: {
+          p_actor_id: string
+          p_as_of?: string
+          p_comparison?: string
+          p_currency?: string
+          p_end_at: string
+          p_merchant_id: string
+          p_range: string
+          p_start_at: string
+          p_timezone: string
+        }
+        Returns: Json
       }
       increment_api_key_minute_count: {
         Args: { p_key_id: string; p_window_minute: number }
@@ -10999,6 +12008,24 @@ export type Database = {
           total_orders: number
         }[]
       }
+      mark_subscription_intent_status: {
+        Args: {
+          p_checkout_session_id?: string
+          p_merchant_id: string
+          p_requested_plan_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      mark_subscription_intent_status_by_id: {
+        Args: {
+          p_checkout_session_id?: string
+          p_intent_id: string
+          p_merchant_id: string
+          p_status: string
+        }
+        Returns: boolean
+      }
       merchant_role: { Args: { p_merchant_id: string }; Returns: string }
       next_pending_processing_chunk_index: {
         Args: { p_job_id: string }
@@ -11036,9 +12063,29 @@ export type Database = {
         Args: { p_merchant_id: string }
         Returns: undefined
       }
+      purge_workspace_database_v1: {
+        Args: {
+          p_actor_user_id: string
+          p_job_id: string
+          p_merchant_id: string
+        }
+        Returns: Json
+      }
       recompute_case_financial_summary: {
         Args: { p_case_id: string; p_merchant_id: string }
         Returns: number
+      }
+      reconciliation_page_v1: {
+        Args: {
+          p_currency?: string
+          p_merchant_id: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_source?: string
+          p_status?: string
+        }
+        Returns: Json
       }
       record_account_deletion_receipt: {
         Args: {
@@ -11166,6 +12213,186 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_provider_credit_v1: {
+        Args: {
+          p_actor_user_id: string
+          p_amount_minor: number
+          p_credit_type: string
+          p_currency: string
+          p_evidence_item_id: string
+          p_external_claim_id: string
+          p_external_credit_id: string
+          p_external_order_ref: string
+          p_external_shipment_ref: string
+          p_idempotency_key: string
+          p_merchant_id: string
+          p_metadata: Json
+          p_observation_authority: string
+          p_observed_at: string
+          p_occurred_at: string
+          p_provider: string
+          p_reason: string
+          p_recovery_case_id: string
+          p_reverses_credit_id: string
+          p_source_record_id: string
+          p_support_payout_case_id: string
+        }
+        Returns: Json
+      }
+      record_recovery_claim_pack: {
+        Args: {
+          p_generated_by: string
+          p_idempotency_key: string
+          p_manifest: Json
+          p_merchant_id: string
+          p_pdf_hash: string
+          p_pdf_storage_path: string
+          p_posture: string
+          p_readiness: string
+          p_readiness_snapshot: Json
+          p_recovery_case_id: string
+          p_rule_version_id: string
+          p_state: string
+          p_supersedes_pack_id?: string
+          p_support_payout_case_id: string
+          p_zip_hash: string
+          p_zip_storage_path: string
+        }
+        Returns: {
+          created_at: string
+          finalized_at: string | null
+          generated_at: string
+          generated_by: string | null
+          id: string
+          idempotency_key: string
+          manifest: Json
+          merchant_id: string
+          pack_version: number
+          pdf_hash: string | null
+          pdf_storage_path: string | null
+          posture: string
+          readiness: string
+          readiness_snapshot: Json
+          recovery_case_id: string
+          rule_version_id: string | null
+          state: string
+          supersedes_pack_id: string | null
+          support_payout_case_id: string
+          zip_hash: string | null
+          zip_storage_path: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "recovery_claim_packs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      record_recovery_claim_submission: {
+        Args: {
+          p_amount_sought_minor: number
+          p_channel: string
+          p_claim_pack_id: string
+          p_currency: string
+          p_external_claim_reference: string
+          p_external_url: string
+          p_idempotency_key: string
+          p_merchant_id: string
+          p_notes: string
+          p_provider_account_reference: string
+          p_receipt_correspondence_id: string
+          p_receipt_evidence_item_id: string
+          p_recovery_case_id: string
+          p_submitted_at: string
+          p_submitted_by: string
+        }
+        Returns: {
+          amount_sought_minor: number | null
+          channel: string
+          claim_pack_id: string
+          created_at: string
+          currency: string | null
+          external_claim_reference: string | null
+          external_url: string | null
+          id: string
+          idempotency_key: string
+          merchant_id: string
+          notes: string | null
+          provider_account_reference: string | null
+          receipt_correspondence_id: string | null
+          receipt_evidence_item_id: string | null
+          recovery_case_id: string
+          submitted_at: string
+          submitted_by: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "recovery_claim_submissions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      record_recovery_provider_response: {
+        Args: {
+          p_approved_amount_minor: number
+          p_compensation_state: string
+          p_credited_amount_minor: number
+          p_currency: string
+          p_external_reference: string
+          p_external_url: string
+          p_idempotency_key: string
+          p_liability_position: string
+          p_merchant_id: string
+          p_notes: string
+          p_provider: string
+          p_provider_amount_minor: number
+          p_received_at: string
+          p_recorded_by: string
+          p_recovery_case_id: string
+          p_response_correspondence_id: string
+          p_response_evidence_item_id: string
+          p_submission_id: string
+        }
+        Returns: {
+          approved_amount_minor: number | null
+          compensation_state: string
+          created_at: string
+          credited_amount_minor: number | null
+          currency: string | null
+          external_reference: string | null
+          external_url: string | null
+          id: string
+          idempotency_key: string
+          liability_position: string
+          merchant_id: string
+          notes: string | null
+          provider: string
+          provider_amount_minor: number | null
+          received_at: string
+          recorded_by: string | null
+          recovery_case_id: string
+          response_correspondence_id: string | null
+          response_evidence_item_id: string | null
+          submission_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "recovery_provider_responses"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      recovery_page_v1: {
+        Args: {
+          p_currency?: string
+          p_merchant_id: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_stage?: string
+        }
+        Returns: Json
+      }
       redact_release1_investigation_subject: {
         Args: {
           p_erasure_receipt_id: string
@@ -11197,6 +12424,14 @@ export type Database = {
           p_cycle_reset_at: string
           p_merchant_id: string
           p_monthly_allowance: number
+        }
+        Returns: Json
+      }
+      reverse_context_credit_receipt: {
+        Args: {
+          p_logical_operation_id: string
+          p_merchant_id: string
+          p_reason: string
         }
         Returns: Json
       }
@@ -11249,6 +12484,27 @@ export type Database = {
         }
         Returns: Json
       }
+      transition_external_action_v1: {
+        Args: {
+          p_action_id: string
+          p_actor_user_id: string
+          p_authority: string
+          p_expected_version: number
+          p_external_reference?: string
+          p_idempotency_key: string
+          p_merchant_id: string
+          p_method?: string
+          p_observed_at?: string
+          p_observed_source?: string
+          p_provider_error?: string
+          p_provider_object_id?: string
+          p_provider_request_id?: string
+          p_provider_status?: string
+          p_receipt_evidence?: Json
+          p_target_state: string
+        }
+        Returns: Json
+      }
       transition_payout_case: {
         Args: {
           p_actor_user_id: string
@@ -11271,6 +12527,21 @@ export type Database = {
         }
         Returns: Json
       }
+      transition_provider_credit_v1: {
+        Args: {
+          p_action: string
+          p_actor_user_id: string
+          p_expected_version: number
+          p_idempotency_key: string
+          p_match_confidence: number
+          p_match_method: string
+          p_merchant_id: string
+          p_provider_credit_record_id: string
+          p_reason: string
+          p_recovery_case_id: string
+        }
+        Returns: Json
+      }
       transition_recovery_case: {
         Args: {
           p_actor_user_id: string
@@ -11284,9 +12555,63 @@ export type Database = {
         }
         Returns: Json
       }
+      transition_work_task_v1: {
+        Args: {
+          p_action: string
+          p_actor_user_id: string
+          p_allow_release_other?: boolean
+          p_expected_version: number
+          p_idempotency_key: string
+          p_merchant_id: string
+          p_outcome?: string
+          p_task_id: string
+          p_until?: string
+        }
+        Returns: Json
+      }
       try_claim_job_finalize: { Args: { p_job_id: string }; Returns: boolean }
+      upsert_subscription_intent: {
+        Args: {
+          p_logical_operation_id: string
+          p_merchant_id: string
+          p_requested_by: string
+          p_requested_plan_id: string
+          p_source: string
+        }
+        Returns: Json
+      }
+      work_queue_page_v1: {
+        Args: {
+          p_assignee?: string
+          p_merchant_id: string
+          p_now?: string
+          p_page?: number
+          p_page_size?: number
+          p_priority?: string
+          p_search?: string
+          p_sort?: string
+          p_state?: string
+          p_user_id: string
+          p_view?: string
+        }
+        Returns: Json
+      }
       work_view_counts: {
         Args: { p_merchant_id: string; p_now?: string; p_user_id: string }
+        Returns: Json
+      }
+      workspace_search_page_v1: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_result_type?: string
+          p_cursor_sort_at?: string
+          p_limit?: number
+          p_merchant_id: string
+          p_query: string
+          p_result_type?: string
+          p_source?: string
+          p_types: string[]
+        }
         Returns: Json
       }
       write_off_loss_case: {

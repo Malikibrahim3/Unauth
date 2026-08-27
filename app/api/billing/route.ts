@@ -4,6 +4,7 @@ import { PLANS, type PlanId } from '@/lib/billing/plans';
 import { gracePeriodDaysRemaining } from '@/lib/billing/subscriptionAccess';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { loadLatestSubscriptionIntent } from '@/lib/billing/subscriptionIntent';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,8 @@ async function buildBillingResponse(service: ReturnType<typeof createServiceClie
 
   const plan = PLANS[state.subscription.planId];
   const graceDays = gracePeriodDaysRemaining(state.subscription.gracePeriodEndsAt);
+  const intentRead = await loadLatestSubscriptionIntent(service, merchantId);
+  const intent = intentRead.intent;
 
   return NextResponse.json({
     planId: state.subscription.planId,
@@ -55,5 +58,14 @@ async function buildBillingResponse(service: ReturnType<typeof createServiceClie
     gracePeriodDaysRemaining: graceDays,
     stripeCustomerId: state.subscription.stripeCustomerId,
     canTopUp: state.subscription.planId !== 'free',
+    subscriptionIntentAvailability: intentRead.availability,
+    subscriptionIntent: intent
+      ? {
+          planId: intent.requestedPlanId,
+          planName: PLANS[intent.requestedPlanId].name,
+          status: intent.status,
+          updatedAt: intent.updatedAt,
+        }
+      : null,
   });
 }

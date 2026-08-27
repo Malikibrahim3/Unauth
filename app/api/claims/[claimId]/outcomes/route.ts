@@ -6,6 +6,7 @@ import {
   CASE_OUTCOME_STATES,
   CASE_OUTCOME_TYPES,
   recordCaseOutcome,
+  validateMerchantRecordedOutcomeEvidence,
   type CaseOutcomeState,
   type CaseOutcomeType,
 } from '@/lib/reconciliation/outcomes';
@@ -97,6 +98,21 @@ export async function POST(
     return NextResponse.json({ error: 'override_reason is required when the recommendation was not followed.' }, { status: 422 });
   }
 
+  const sourceRecordId = text(body?.source_record_id);
+  const sourceExternalId = text(body?.source_external_id);
+  const correlationMethod = text(body?.correlation_method);
+  const merchantEvidenceError = validateMerchantRecordedOutcomeEvidence({
+    state,
+    sourceSystem,
+    sourceRecordId,
+    sourceExternalId,
+    correlationMethod,
+    overrideReason,
+  });
+  if (merchantEvidenceError) {
+    return NextResponse.json({ error: merchantEvidenceError }, { status: 422 });
+  }
+
   const claimedItemId = text(body?.case_claimed_item_id);
   if (claimedItemId) {
     const { data: claimedItem, error } = await auth.service
@@ -116,9 +132,9 @@ export async function POST(
       outcomeType,
       state,
       sourceSystem,
-      sourceRecordId: text(body?.source_record_id),
-      sourceExternalId: text(body?.source_external_id),
-      correlationMethod: text(body?.correlation_method),
+      sourceRecordId,
+      sourceExternalId,
+      correlationMethod,
       matchStatus: (matchStatus as 'unmatched' | 'candidate' | 'matched' | 'rejected' | null) ?? 'matched',
       amountMinor,
       retailValueMinor,

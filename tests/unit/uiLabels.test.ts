@@ -27,6 +27,7 @@ describe('ui label layer', () => {
     expect(label('requestedAction', 'store_credit')).toBe('Store credit');
     expect(label('lossCategory', 'fulfilment_or_warehouse_error')).toBe('Fulfilment error');
     expect(label('workPriority', 'urgent')).toBe('Urgent');
+    expect(label('workflowStatus', 'refunded')).toBe('Refunded');
   });
 
   it('re-exports claim-type labels from the SSOT', () => {

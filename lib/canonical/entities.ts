@@ -7,7 +7,7 @@
  * CanonicalOrder/Refund/Shipment shapes that connector mappings produce, so a
  * given order is identical whether it came from Shopify or a canonical source.
  *
- * See ARCHITECTURE.md §3.
+ * See ARCHITECTURE.md for the canonical product-truth owner.
  */
 import type { CanonicalOrder, CanonicalOrderLine, CanonicalRefund, CanonicalShipment, CanonicalTicket } from '@/lib/canonical/records';
 import { CANONICAL_ENTITY_TYPES, type CanonicalEntityType } from '@/lib/canonical/records';

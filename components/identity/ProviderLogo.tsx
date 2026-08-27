@@ -37,7 +37,8 @@ export function ProviderLogo({
           alt=""
           width={dimensions - 10}
           height={dimensions - 10}
-          className="max-h-[70%] max-w-[70%] object-contain"
+          className="object-contain"
+          style={{ width: dimensions - 10, height: dimensions - 10 }}
         />
       ) : isDocument ? (
         <FileUp size={iconSize} strokeWidth={1.8} />
@@ -61,7 +62,7 @@ export function SourceMark({
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <ProviderLogo provider={source} name={display} size="sm" />
-      {!compact ? <span className="truncate capitalize text-xs font-medium text-[var(--ua-text-secondary)]">{display}</span> : null}
+      {!compact ? <span className="truncate capitalize text-xs font-medium text-[var(--uo-route-text-secondary)]">{display}</span> : null}
     </span>
   );
 }

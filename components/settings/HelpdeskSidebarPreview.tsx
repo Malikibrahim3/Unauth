@@ -7,22 +7,22 @@ interface HelpdeskSidebarPreviewProps {
 export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSidebarPreviewProps) {
   return (
     <div>
-      <p className="ua-text-label mb-2" style={{ color: 'var(--ua-text-primary)' }}>
+      <p className="ua-text-label mb-2" style={{ color: 'var(--uo-route-text-primary)' }}>
         Sidebar preview
       </p>
       <div className="flex flex-wrap items-start gap-3">
         <div
           className="ua-text-dense w-[300px] shrink-0 rounded-md border p-3"
           style={{
-            borderColor: 'var(--ua-border-default)',
-            background: 'var(--ua-text-primary)',
-            color: 'var(--ua-text-inverse)',
-            fontFamily: 'var(--ua-font-sans)',
+            borderColor: 'var(--uo-route-border-default)',
+            background: 'var(--uo-route-text-primary)',
+            color: 'var(--uo-route-text-inverse)',
+            fontFamily: 'var(--uo-route-font-sans)',
           }}
         >
           <div
             className="rounded-md border p-3"
-            style={{ background: 'var(--ua-confidence-high-bg)', borderColor: 'var(--ua-neutral)', color: 'var(--ua-neutral)' }}
+            style={{ background: 'var(--uo-route-surface-primary)', borderColor: 'var(--uo-route-border-default)', color: 'var(--uo-route-text-primary)' }}
           >
             <p className="ua-text-working-title font-bold">Case context available</p>
             <p className="mt-1">Open the case in Unauth to review store and case context.</p>
@@ -34,8 +34,8 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
             <div
               className="mt-3 rounded px-2 py-1.5 normal-case"
               style={{
-                background: 'color-mix(in srgb, var(--ua-text-primary) 8%, transparent)',
-                color: 'var(--ua-text-primary)',
+                background: 'color-mix(in srgb, var(--uo-route-text-primary) 8%, transparent)',
+                color: 'var(--uo-route-text-primary)',
               }}
             >
               Other merchants’ raw customer data is not exposed.
@@ -43,7 +43,7 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
             <div className="mt-3 flex flex-col gap-1.5">
               <span
                 className="ua-text-label block rounded py-1.5 text-center"
-                style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
+                style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
               >
                 Open case in Unauth
               </span>
@@ -53,7 +53,7 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
             <UnauthLogo kind="wordmark" tone="white" height={13} alt="" decorative />
           </div>
         </div>
-        <p className="max-w-xs text-[length:var(--ua-text-metadata-size)] leading-5" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="max-w-xs text-[length:var(--uo-route-text-metadata-size)] leading-5" style={{ color: 'var(--uo-route-text-secondary)' }}>
           Approximate appearance inside {providerLabel} (~300px sidebar). The widget is a context
           entry point, not a decisioning tool.
         </p>

@@ -2,114 +2,57 @@
 
 <!-- impeccable:product-schema 1 -->
 
-This is the canonical durable product record for visual and product-design
-work. It consolidates the existing contract in [`docs/PRODUCT.md`](docs/PRODUCT.md)
-and the current release map without changing product scope.
-
 ## Platform
 
 web
 
 ## Users
 
-Unauth is primarily used by ecommerce operations, support, loss-prevention,
-finance, and recovery teams. They work for sustained periods on desktop
-displays, often under time pressure, and need to move between customer context,
-commerce records, fulfilment evidence, financial exposure, decisions, and
-recovery work without losing the thread of a case.
-
-Secondary users include administrators configuring sources, rules, flows,
-permissions, billing, and data controls, plus support agents using compact
-helpdesk or browser-extension views.
+Unauth is used by merchant operations, loss-prevention, support and finance teams who investigate post-purchase exceptions, make evidence-backed decisions, coordinate recovery and reconcile financial outcomes.
 
 ## Product Purpose
 
-Unauth is a source-agnostic evidence reconciliation, decision-support, and
-recovery-control platform. It brings commerce, helpdesk, fulfilment, payments,
-and imported records into one operational model and timeline.
-
-The product helps a merchant understand what happened, decide what to do for
-the customer, determine where responsibility appears to sit, and pursue
-recovery. The merchant retains every final decision.
+Unauth turns connected commerce and support records into an auditable operating system for cases, losses, recoveries and reconciliation. Success means an operator can trace a financial result to its source and scope, distinguish a recommendation from a merchant decision or external action, and take the next permitted step without losing operational context.
 
 ## Positioning
 
-Unauth does not merely score a customer or display disconnected provider
-records. Its distinct mechanism is the reconciliation of source-labelled facts,
-human findings, inference, customer action, responsibility, financial loss, and
-recovery into one auditable case while keeping those concepts separate.
+Unauth joins source evidence, merchant decisions, recovery work and append-only financial history in one traceable workflow instead of treating fraud review, support resolution and loss reporting as separate dashboards.
 
 ## Operating Context
 
-- A case is the shared unit of work.
-- Operators move between Overview, Work, Cases, Losses, Recovery, Customers,
-  Rules, Flows, Reports, Integrations, and Settings.
-- A unified case timeline carries evidence, recommendations, investigations,
-  decisions, outcomes, losses, and recoveries.
-- Provider records enrich the case rather than creating provider-specific
-  product models.
-- Compact embedded views support front-line lookup; full context remains in
-  the Unauth workspace.
-- Marketing and demo surfaces use real product truth and deterministic,
-  privacy-safe examples rather than screenshot-only mock products.
+Operators work across case queues, customer and commerce records, recovery partners, reconciliation exceptions, reports and connected sources. The signed-in product is desktop-only below 1024px; it does not provide a reduced mobile triage mode. Public, authentication, and onboarding routes remain responsive through 390px.
 
 ## Capabilities and Constraints
 
-- Merchant isolation is absolute.
-- Every displayed fact retains source provenance and freshness where relevant.
-- Source facts, human findings, and inferences remain visibly distinct.
-- Reconciliation occurs at claimed-item × parcel level and supports split
-  shipments.
-- Customer treatment, responsibility, and recovery remain independent.
-- Unauth does not automatically approve, deny, refund, accuse, close a case,
-  submit an external claim, or assign responsibility.
-- Financial values use explicit currency and auditable calculations.
-- Missing, partial, stale, unsupported, and unavailable data never become zero
-  or healthy presentation.
-- Existing permissions, entitlements, routes, redirects, deep links, exports,
-  query state, audit history, and mutation behaviour are contractual.
-- The authenticated product is optimised for viewports from 1024 CSS pixels,
-  and remains fully operable through responsive reflow when the viewport,
-  browser zoom, or text scaling produces a narrower working width.
-- Public, entry, onboarding, and embedded surfaces must remain usable at their
-  real responsive or host-constrained sizes.
+- Preserve canonical routes, URL-backed filters and scope, permissions, tenancy, loaders, backend mutations and audit consequences.
+- Money is stored and presented from integer minor units. Currency, date range, timezone, comparison scope, source, freshness and reconciliation state remain explicit wherever they affect meaning.
+- Unknown or unavailable values are never presented as verified zero. Mixed currencies are separated rather than silently summed.
+- Source facts, recommendations, merchant decisions, external actions, responsibility, recovery and ledger entries are distinct records.
+- The financial ledger is append-only. Reversals and write-offs create new immutable entries and retain the original event.
+- High-impact actions use a review boundary that states the object, scope and audit consequence.
+- Missing backend capability or source data uses a truthful unavailable state; the frontend does not invent support.
+- Provider code maturity, merchant configuration, live health, import state, object-family freshness, and action capability are separate axes. No one axis implies another.
+- Pricing, signup, onboarding, billing, entitlements, credit allowances, billable events, and top-ups derive from `lib/billing/plans.ts`. A URL may propose a plan; only server-owned intent plus provider confirmation changes subscription state.
 
 ## Brand Commitments
 
-- Product name: Unauth.
-- Voice: neutral, precise, calm, evidence-first, and non-accusatory.
-- Prefer operational language such as customer action, responsibility,
-  recovery route, evidence fact, unresolved, merchant-confirmed, economic loss,
-  reconciled recovery, and net unrecovered loss.
-- Avoid language that presents risk or inference as guilt.
-- Apple is a quality discipline—clarity, hierarchy, consistency, fit, feedback,
-  and restraint—not a visual theme or permission to imitate iOS or macOS.
-- Stripe and Ramp are execution benchmarks for precision and polish, not
-  templates to copy.
+The product name is Unauth. Product language is direct, operational and evidence-led. Existing Unauth wordmark and symbol assets under `public/brand/unauth-r1/` remain the authoritative marks.
 
 ## Evidence on Hand
 
-- Existing application code and its production route manifest.
-- [`docs/PRODUCT.md`](docs/PRODUCT.md), the detailed product contract.
-- [`unauth-product-map-release-1.md`](unauth-product-map-release-1.md), the
-  current capability and workflow map.
-- [`DESIGN.md`](DESIGN.md), the current visual system.
-- Deterministic demo and capture fixtures used by the existing visual evidence
-  tooling.
-- No fabricated customers, outcomes, benchmarks, or commercial claims may be
-  introduced for visual completeness.
+- Current authority index: `ARCHITECTURE.md`.
+- Visual and interaction authority: `DESIGN.md`.
+- Executable route and surface inventory: `lib/surfaces/manifest.ts` and its verification script.
+- Connected source fixtures and current backend loaders provide product data. The UI must not fabricate customer claims, benchmarks or financial outcomes.
 
 ## Product Principles
 
-1. Reconcile evidence; do not flatten it.
-2. Keep the merchant in control of consequential decisions.
-3. Make money, provenance, uncertainty, and next action explicit.
-4. Preserve one operational thread across systems and lifecycle stages.
-5. Prefer truthful incompleteness over false certainty.
+- Make every financial result traceable.
+- Keep evidence, advice, decisions, actions and ledger consequences distinct.
+- Prefer explicit unavailable states over plausible-looking inference.
+- Preserve operator context through filters, selection and connected records.
+- Make consequential actions reviewable and auditable.
 
 ## Accessibility & Inclusion
 
-The web product targets WCAG 2.2 AA. All essential work must remain available
-to keyboard and pointer users, at 200% zoom, with reduced motion, forced
-colours, and non-colour state cues. Dense operational information must remain
-legible rather than being reduced to tiny text.
+The authenticated product must support keyboard operation, visible focus, meaningful loading/empty/unavailable/error states, readable compact layouts and chart data-table alternatives. Color is never the only carrier of financial or lifecycle meaning.

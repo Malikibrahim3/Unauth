@@ -6,7 +6,7 @@
  * value they cannot produce, so the mapping engine can distinguish "absent" from
  * a real value and apply required/fallback rules.
  *
- * See ARCHITECTURE.md §3.
+ * See ARCHITECTURE.md for the canonical product-truth owner.
  */
 import { toMinorUnits } from '@/lib/canonical/money';
 

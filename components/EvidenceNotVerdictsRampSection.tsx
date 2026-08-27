@@ -197,16 +197,16 @@ function FeatureCard({
 
 function ArrivalCard({ scale }: { scale?: number }) {
   return (
-    <FeatureCard number="01" title="A case arrives" scale={scale}>
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Helpdesk case</h3>
+    <FeatureCard number="01" title="The case is connected" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Order and support context</h3>
       <div className="space-y-2">
-        <ContextRow icon={<PackageCheck size={14} />} label="Support ticket received" />
-        <ContextRow icon={<PackageCheck size={14} />} label="Payout intent detected" />
+        <ContextRow icon={<PackageCheck size={14} />} label="Support request received" />
+        <ContextRow icon={<PackageCheck size={14} />} label="Requested action identified" />
         <ContextRow icon={<PackageCheck size={14} />} label="Order #UA-10482 linked" />
-        <ContextRow icon={<PackageCheck size={14} />} label="Item-not-received detected" />
+        <ContextRow icon={<PackageCheck size={14} />} label="Issue type classified" />
       </div>
       <CardNote>
-        A connected workflow queued the payout. Unauth puts the merchant&apos;s evidence and rule context in front of the decision.
+        A new request enters the queue with its connected order and support context—not as an isolated ticket.
       </CardNote>
     </FeatureCard>
   );
@@ -214,29 +214,29 @@ function ArrivalCard({ scale }: { scale?: number }) {
 
 function EvidenceCard({ scale }: { scale?: number }) {
   return (
-    <FeatureCard number="02" title="The gate checks it" scale={scale}>
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Delivery &amp; order evidence</h3>
+    <FeatureCard number="02" title="Evidence is assembled" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Source facts and gaps</h3>
       <div className="space-y-2">
         {demo.evidence.items.map((item) => (
           <ContextRow key={item} icon={<PackageCheck size={14} />} label={item} />
         ))}
       </div>
-      <CardNote>Example: item-not-received with connected delivery proof.</CardNote>
+      <CardNote>Unavailable facts stay visible as gaps instead of being filled with guesses.</CardNote>
     </FeatureCard>
   );
 }
 
 function AuditCard({ scale }: { scale?: number }) {
   return (
-    <FeatureCard number="05" title="The outcome is recorded" scale={scale}>
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Permanent decision record</h3>
+    <FeatureCard number="05" title="The outcome stays traceable" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Decision and financial record</h3>
       <div className="space-y-2">
         {demo.audit.items.map((item) => (
           <ContextRow key={item} icon={<ClipboardList size={14} />} label={item} />
         ))}
       </div>
       <CardNote>
-        Decision, evidence, loss owner, and recovery route are documented permanently.
+        Evidence, decision, responsibility, recovery work, and ledger outcome remain connected.
       </CardNote>
     </FeatureCard>
   );
@@ -244,23 +244,22 @@ function AuditCard({ scale }: { scale?: number }) {
 
 function RulesRunCard({ scale }: { scale?: number }) {
   const rules = [
-    'Order value: above threshold',
-    'Case count: 3rd case this quarter',
+    'Order value: £128.00',
     'Delivery state: confirmed',
-    'Prior merchant-owned case pattern',
+    'Item-level contents: unconfirmed',
+    'Merchant rule: evidence required',
   ] as const;
 
   return (
-    <FeatureCard number="03" title="Your rules run" scale={scale}>
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Merchant rules</h3>
+    <FeatureCard number="03" title="Your rules explain the recommendation" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Matched merchant rule</h3>
       <div className="space-y-2">
         {rules.map((rule) => (
           <ContextRow key={rule} icon={<CheckCircle2 size={14} />} label={rule} />
         ))}
       </div>
       <CardNote>
-        Your rules. Not Unauth&apos;s defaults. Every hold is traceable back to the rule that
-        triggered it.
+        The matched rule stays visible. It can recommend a next step; it does not record the merchant decision.
       </CardNote>
     </FeatureCard>
   );
@@ -268,15 +267,15 @@ function RulesRunCard({ scale }: { scale?: number }) {
 
 function LossAttributionCard({ scale }: { scale?: number }) {
   const rows = [
-    { label: 'Carrier fault', selected: true },
-    { label: 'Warehouse error', selected: false },
-    { label: 'Repeat claimant', selected: false },
-    { label: 'Policy override', selected: false },
+    { label: 'Carrier responsibility', selected: true },
+    { label: 'Warehouse responsibility', selected: false },
+    { label: 'Customer responsibility', selected: false },
+    { label: 'Policy-owned loss', selected: false },
   ] as const;
 
   return (
-    <FeatureCard number="04" title="Loss is attributed" scale={scale}>
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Loss owner</h3>
+    <FeatureCard number="04" title="Responsibility is assigned" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Possible loss owner</h3>
       <div className="space-y-2">
         {rows.map((row) => (
           <ContextRow
@@ -287,7 +286,7 @@ function LossAttributionCard({ scale }: { scale?: number }) {
           />
         ))}
       </div>
-      <CardNote>Every loss gets an owner and a recovery route before the outcome is set.</CardNote>
+      <CardNote>Your team assigns responsibility and keeps the relevant recovery route on the same case.</CardNote>
     </FeatureCard>
   );
 }

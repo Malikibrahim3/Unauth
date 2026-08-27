@@ -67,7 +67,7 @@ export function CaseFinancialHistoryCard({
             Recorded merchant and provider stages stay separate; approval is not recovered cash.
           </p>
         </div>
-        <Link href="/reports?range=all" className="ua-text-label text-[var(--ua-action-primary)]">
+        <Link href="/financials/reports?range=all" className="ua-text-label text-[var(--uo-route-action-primary)]">
           View reconciled reports
         </Link>
       </div>
@@ -83,7 +83,7 @@ export function CaseFinancialHistoryCard({
                   const value = financialMetricValue(bridge, metric);
                   return (
                     <div key={metric}>
-                      <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{LABELS[metric]}</dt>
+                      <dt className="text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-secondary)]">{LABELS[metric]}</dt>
                       <dd className="ua-text-label tabular-nums">
                         {known && value != null
                           ? formatMinorCurrencyNullable(value, bridge.currency)
@@ -96,11 +96,11 @@ export function CaseFinancialHistoryCard({
             </div>
           ))}
           {updatedAt ? (
-            <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Projection updated {formatDateTime(updatedAt)}</p>
+            <p className="text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]">Projection updated {formatDateTime(updatedAt)}</p>
           ) : null}
         </div>
       ) : (
-        <p className="ua-text-body mt-3 text-[var(--ua-text-secondary)]">
+        <p className="ua-text-body mt-3 text-[var(--uo-route-text-secondary)]">
           No financial stages have been recorded for this case yet. Missing values remain unavailable rather than showing as zero.
         </p>
       )}

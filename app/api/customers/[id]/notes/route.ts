@@ -1,12 +1,11 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { resolveIdentityForSourceCustomerId } from '@/lib/customers/identityNetwork';
+import { resolveIdentityForCustomerRouteId } from '@/lib/customers/identityNetwork';
 import { NextRequest, NextResponse } from 'next/server';
 import { withRequestLogging } from '@/lib/log';
 
-// Notes live on identity_notes (merchant_id + identity_id). The [id] param is
-// a source_customers.id; we resolve the identity through the merchant's own
-// signals before reading or writing.
+// Notes live on identity_notes (merchant_id + identity_id). The [id] param may
+// be the canonical customer route id or a legacy source_customers.id.
 
 async function GETHandler(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -18,7 +17,7 @@ async function GETHandler(req: NextRequest, { params }: { params: Promise<{ id: 
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
 
-  const { customer, identityId } = await resolveIdentityForSourceCustomerId(
+  const { customer, identityId } = await resolveIdentityForCustomerRouteId(
     serviceClient,
     ctx.merchantId,
     resolvedParams.id,
@@ -54,7 +53,7 @@ async function POSTHandler(req: NextRequest, { params }: { params: Promise<{ id:
   if (!body?.trim()) return NextResponse.json({ error: 'Note body is required' }, { status: 400 });
   if (body.length > 2000) return NextResponse.json({ error: 'Note must be 2000 characters or fewer' }, { status: 400 });
 
-  const { customer, identityId } = await resolveIdentityForSourceCustomerId(
+  const { customer, identityId } = await resolveIdentityForCustomerRouteId(
     serviceClient,
     ctx.merchantId,
     resolvedParams.id,

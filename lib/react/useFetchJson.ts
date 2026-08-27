@@ -36,6 +36,8 @@ type StoreEntry = {
   controller: AbortController | null;
   listeners: Set<() => void>;
   snapshot: FetchSnapshot<unknown> | null;
+  lastAccessedAt: number;
+  cleanupTimer: ReturnType<typeof setTimeout> | null;
 };
 
 const IDLE_SNAPSHOT: FetchSnapshot<unknown> = {
@@ -61,6 +63,28 @@ const SERVER_LOADING_SNAPSHOT: FetchSnapshot<unknown> = {
 };
 
 const store = new Map<string, StoreEntry>();
+const RESOURCE_TIMEOUT_MS = 12_000;
+const RESOURCE_TTL_MS = 5 * 60_000;
+const MAX_RESOURCE_ENTRIES = 100;
+
+function pruneStore(nowMs = Date.now()) {
+  for (const [key, entry] of store) {
+    if (
+      entry.listeners.size === 0
+      && entry.controller === null
+      && nowMs - entry.lastAccessedAt > RESOURCE_TTL_MS
+    ) {
+      store.delete(key);
+    }
+  }
+  if (store.size <= MAX_RESOURCE_ENTRIES) return;
+  const removable = [...store.entries()]
+    .filter(([, entry]) => entry.listeners.size === 0 && entry.controller === null)
+    .sort((a, b) => a[1].lastAccessedAt - b[1].lastAccessedAt);
+  for (const [key] of removable.slice(0, store.size - MAX_RESOURCE_ENTRIES)) {
+    store.delete(key);
+  }
+}
 
 /*
  * RUN-10: the route-ready signal needs to know whether any shared client
@@ -98,6 +122,7 @@ export function subscribeToPendingResources(listener: () => void): () => void {
 }
 
 function getEntry(key: string): StoreEntry {
+  pruneStore();
   let entry = store.get(key);
   if (!entry) {
     entry = {
@@ -109,9 +134,12 @@ function getEntry(key: string): StoreEntry {
       controller: null,
       listeners: new Set(),
       snapshot: null,
+      lastAccessedAt: Date.now(),
+      cleanupTimer: null,
     };
     store.set(key, entry);
   }
+  entry.lastAccessedAt = Date.now();
   return entry;
 }
 
@@ -136,6 +164,8 @@ function runLoad<T>(
   loader: (signal: AbortSignal) => Promise<T>,
   getDataAsOf: ((data: T) => string | null) | undefined,
   isRefresh: boolean,
+  timeoutMs: number,
+  blocksReadiness: boolean,
 ) {
   const entry = getEntry(key);
   if (entry.controller) return; // A load is already in flight; let it finish.
@@ -145,10 +175,18 @@ function runLoad<T>(
   entry.controller = controller;
   entry.status = isRefresh && entry.data !== undefined ? 'refreshing' : 'initial-loading';
   entry.error = null;
-  markResourcePending(key);
+  if (blocksReadiness) markResourcePending(key);
   notify(entry);
+  const timeoutError = new DOMException('Request timed out', 'TimeoutError');
+  let timeout!: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      controller.abort(timeoutError);
+      reject(timeoutError);
+    }, timeoutMs);
+  });
 
-  loader(controller.signal)
+  Promise.race([loader(controller.signal), deadline])
     .then((data) => {
       if (entry.generation !== generation) return; // Superseded by a newer request.
       entry.data = data;
@@ -158,16 +196,25 @@ function runLoad<T>(
     })
     .catch((err: unknown) => {
       if (entry.generation !== generation) return;
-      if (controller.signal.aborted) return; // Superseded, not a real failure.
+      if (controller.signal.aborted) {
+        const reason = controller.signal.reason;
+        if (!(reason instanceof DOMException) || reason.name !== 'TimeoutError') return;
+        entry.error = 'Request timed out. Try again.';
+        entry.status = 'error';
+        return;
+      }
       // Initial error may have no data; refresh error retains the stale data.
       entry.error = err instanceof Error ? err.message : 'Request failed';
       entry.status = 'error';
     })
     .finally(() => {
+      clearTimeout(timeout);
       if (entry.generation !== generation) return;
       entry.controller = null;
-      markResourceSettled(key);
+      entry.lastAccessedAt = Date.now();
+      if (blocksReadiness) markResourceSettled(key);
       notify(entry);
+      pruneStore();
     });
 }
 
@@ -175,15 +222,27 @@ function subscribeToLoad<T>(
   key: string,
   loader: (signal: AbortSignal) => Promise<T>,
   getDataAsOf: ((data: T) => string | null) | undefined,
+  timeoutMs: number,
+  blocksReadiness: boolean,
   onStoreChange: () => void,
 ) {
   const entry = getEntry(key);
+  if (entry.cleanupTimer) {
+    clearTimeout(entry.cleanupTimer);
+    entry.cleanupTimer = null;
+  }
   entry.listeners.add(onStoreChange);
   if (!entry.controller && entry.data === undefined && entry.error === null) {
-    runLoad(key, loader, getDataAsOf, false);
+    runLoad(key, loader, getDataAsOf, false, timeoutMs, blocksReadiness);
   }
   return () => {
     entry.listeners.delete(onStoreChange);
+    if (entry.listeners.size === 0) {
+      entry.cleanupTimer = setTimeout(() => {
+        entry.cleanupTimer = null;
+        if (entry.listeners.size === 0) entry.controller?.abort();
+      }, 0);
+    }
   };
 }
 
@@ -232,16 +291,18 @@ function useResourceStore<T>(
   loader: (signal: AbortSignal) => Promise<T>,
   enabled: boolean,
   getDataAsOf: ((data: T) => string | null) | undefined,
+  timeoutMs: number,
+  blocksReadiness: boolean,
 ): FetchSnapshot<T> & { reload: () => void } {
   const reload = useCallback(() => {
     if (!enabled) return;
-    runLoad(key, loader, getDataAsOf, true);
-  }, [enabled, key, loader, getDataAsOf]);
+    runLoad(key, loader, getDataAsOf, true, timeoutMs, blocksReadiness);
+  }, [enabled, key, loader, getDataAsOf, timeoutMs, blocksReadiness]);
 
   const snapshot = useSyncExternalStore(
     (onStoreChange) => {
       if (!enabled) return () => {};
-      return subscribeToLoad(key, loader, getDataAsOf, onStoreChange);
+      return subscribeToLoad(key, loader, getDataAsOf, timeoutMs, blocksReadiness, onStoreChange);
     },
     () => getClientSnapshot<T>(key, enabled),
     () => getServerSnapshot<T>(enabled),
@@ -262,6 +323,10 @@ export function useFetchJson<T>(
     parse?: (response: Response) => Promise<T>;
     /** Extracts a domain `dataAsOf` timestamp from the parsed response. Omit to leave it `null` — never fabricated from fetch-completion time. */
     getDataAsOf?: (data: T) => string | null;
+    /** Hard deadline for the underlying request. Defaults to 12 seconds. */
+    timeoutMs?: number;
+    /** Non-critical chrome resources can load without delaying route readiness. */
+    blocksReadiness?: boolean;
   },
 ): FetchSnapshot<T> & { reload: () => void } {
   const enabled = options?.enabled !== false && url !== null;
@@ -272,7 +337,14 @@ export function useFetchJson<T>(
     [parse, url],
   );
 
-  return useResourceStore(key, stableLoader, enabled, options?.getDataAsOf);
+  return useResourceStore(
+    key,
+    stableLoader,
+    enabled,
+    options?.getDataAsOf,
+    options?.timeoutMs ?? RESOURCE_TIMEOUT_MS,
+    options?.blocksReadiness !== false,
+  );
 }
 
 /**
@@ -282,11 +354,23 @@ export function useFetchJson<T>(
 export function useAsyncResource<T>(
   key: string,
   loader: (signal?: AbortSignal) => Promise<T>,
-  options?: { enabled?: boolean; getDataAsOf?: (data: T) => string | null },
+  options?: {
+    enabled?: boolean;
+    getDataAsOf?: (data: T) => string | null;
+    timeoutMs?: number;
+    blocksReadiness?: boolean;
+  },
 ): FetchSnapshot<T> & { reload: () => void } {
   const enabled = options?.enabled !== false;
   const loaderRef = useRef(loader);
   loaderRef.current = loader;
   const stableLoader = useCallback((signal: AbortSignal) => loaderRef.current(signal), []);
-  return useResourceStore(key, stableLoader, enabled, options?.getDataAsOf);
+  return useResourceStore(
+    key,
+    stableLoader,
+    enabled,
+    options?.getDataAsOf,
+    options?.timeoutMs ?? RESOURCE_TIMEOUT_MS,
+    options?.blocksReadiness !== false,
+  );
 }

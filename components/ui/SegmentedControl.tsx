@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/navigation/AppNavLink';
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { segmentedControlContract } from '@/styles/authenticated/contracts';
 
 export interface SegmentedControlItem {
   value: string;
@@ -27,12 +26,7 @@ export function SegmentedControl({ items, value, onValueChange, 'aria-label': ar
     <>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = cn(
-          segmentedControlContract.item,
-          segmentedControlContract.itemHeight,
-          active && segmentedControlContract.selectedItem,
-          item.disabled && 'pointer-events-none cursor-not-allowed bg-[var(--ua-surface-muted)] text-[var(--ua-text-disabled)]',
-        );
+        const classes = cn('ua-segmented__item', active && 'ua-segmented__item--active', item.disabled && 'ua-segmented__item--disabled');
         const content = <>{item.label}</>;
         if (item.href) {
           return <Link key={item.value} href={item.disabled ? '#' : item.href} aria-current={active ? 'page' : undefined} aria-disabled={item.disabled || undefined} tabIndex={item.disabled ? -1 : undefined} className={classes} onClick={item.disabled ? (event) => event.preventDefault() : undefined}>{content}</Link>;
@@ -42,11 +36,11 @@ export function SegmentedControl({ items, value, onValueChange, 'aria-label': ar
     </>
   );
   return isRouteNavigation ? (
-    <nav aria-label={ariaLabel} className={cn(segmentedControlContract.root, className)}>
+    <nav aria-label={ariaLabel} className={cn('ua-segmented', className)}>
       {renderedItems}
     </nav>
   ) : (
-    <div role="group" aria-label={ariaLabel} className={cn(segmentedControlContract.root, className)}>
+    <div role="group" aria-label={ariaLabel} className={cn('ua-segmented', className)}>
       {renderedItems}
     </div>
   );

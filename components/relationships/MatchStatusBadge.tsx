@@ -8,27 +8,27 @@ const STYLES: Record<
   { bg: string; fg: string; border: string; label: string }
 > = {
   confirmed: {
-    bg: "var(--ua-success-bg)",
-    fg: "var(--ua-success)",
-    border: "var(--ua-success-border)",
+    bg: "var(--uo-route-success-bg)",
+    fg: "var(--uo-route-success)",
+    border: "var(--uo-route-success-border)",
     label: "Confirmed",
   },
   probable: {
-    bg: "var(--ua-warning-bg)",
-    fg: "var(--ua-warning)",
-    border: "var(--ua-warning-border)",
+    bg: "var(--uo-route-warning-bg)",
+    fg: "var(--uo-route-warning)",
+    border: "var(--uo-route-warning-border)",
     label: "Probable",
   },
   ambiguous: {
-    bg: "var(--ua-critical-bg)",
-    fg: "var(--ua-critical)",
-    border: "var(--ua-risk-critical-border)",
+    bg: "var(--uo-route-critical-bg)",
+    fg: "var(--uo-route-critical)",
+    border: "var(--uo-route-risk-critical-border)",
     label: "Needs review",
   },
   unmatched: {
-    bg: "var(--ua-surface-muted)",
-    fg: "var(--ua-text-secondary)",
-    border: "var(--ua-border-default)",
+    bg: "var(--uo-route-surface-muted)",
+    fg: "var(--uo-route-text-secondary)",
+    border: "var(--uo-route-border-default)",
     label: "Unmatched",
   },
 };

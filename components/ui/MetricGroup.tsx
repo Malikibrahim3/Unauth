@@ -7,6 +7,7 @@ export interface MetricGroupItem {
   value: ReactNode;
   description?: ReactNode;
   microchart?: ReactNode;
+  icon?: ReactNode;
 }
 
 export interface MetricGroupProps {
@@ -16,6 +17,13 @@ export interface MetricGroupProps {
   desktopColumns?: number;
   mobileColumns?: number;
   itemAttributes?: (item: MetricGroupItem, index: number) => HTMLAttributes<HTMLDivElement>;
+  /** Alias for `desktopColumns` matching the shared-primitive contract; takes precedence when set. */
+  columns?: 3 | 4 | 5;
+  density?: 'standard' | 'dense';
+  /** One decision for the whole group — never per card. */
+  showIcons?: boolean;
+  /** 'divided' (default) is the single ruled ledger strip used by `/customers/[id]`; 'cards' is a gapped grid of individually-bordered cards. */
+  variant?: 'cards' | 'divided';
 }
 
 /**
@@ -33,11 +41,17 @@ export function MetricGroup({
   items,
   className,
   'aria-label': ariaLabel = 'Key metrics',
-  desktopColumns = items.length,
-  mobileColumns = items.length > 1 ? 2 : 1,
+  desktopColumns,
+  mobileColumns,
   itemAttributes,
+  columns,
+  density = 'standard',
+  showIcons = false,
+  variant = 'divided',
 }: MetricGroupProps) {
   const count = items.length;
+  const resolvedDesktopColumns = columns ?? desktopColumns ?? count;
+  const resolvedMobileColumns = mobileColumns ?? (count > 1 ? 2 : 1);
 
   if (process.env.NODE_ENV !== 'production' && count > 6) {
     console.warn(
@@ -46,16 +60,28 @@ export function MetricGroup({
   }
 
   const style = {
-    '--ua-metric-columns': count > 6 ? 4 : Math.max(1, desktopColumns),
-    '--ua-metric-mobile-columns': Math.max(1, mobileColumns),
+    '--uo-route-metric-columns': count > 6 ? 4 : Math.max(1, resolvedDesktopColumns),
+    '--uo-route-metric-mobile-columns': Math.max(1, resolvedMobileColumns),
   } as CSSProperties;
 
   return (
-    <dl className={cn('ua-metric-group', className)} style={style} data-count={count} aria-label={ariaLabel}>
+    <dl
+      className={cn(
+        'ua-metric-group',
+        variant === 'cards' && 'ua-metric-group--cards',
+        density === 'dense' && 'ua-metric-group--dense',
+        className,
+      )}
+      style={style}
+      data-count={count}
+      data-variant={variant}
+      aria-label={ariaLabel}
+    >
       {items.map((item, index) => {
         const attributes = itemAttributes?.(item, index);
         return (
         <div key={item.label} {...attributes} className={cn('ua-metric-group__item', attributes?.className)}>
+          {showIcons && item.icon ? <span className="ua-metric-group__icon" aria-hidden="true">{item.icon}</span> : null}
           <dt className="ua-metric-group__label">{item.label}</dt>
           <MetricValueCell value={item.value} />
           {item.description ? <dd className="ua-metric-group__description">{item.description}</dd> : null}
