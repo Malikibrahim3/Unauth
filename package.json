@@ -83,7 +83,7 @@
     "post:support-ingest-fixture": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/post-support-ingest-fixture.ts",
     "post:gorgias-webhook-fixture": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/post-gorgias-webhook-fixture.ts",
     "create:gorgias-support-connection": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/create-gorgias-support-connection.ts",
-    "build:extension": "cd extensions/chrome && npm ci && npm run build",
+    "build:extension": "cd extensions/chrome && npm ci --include=dev && npm run build",
     "verify:ci": "node scripts/verify-ci.mjs",
     "gen:supabase-types": "bash scripts/gen-supabase-types.sh"
   },
