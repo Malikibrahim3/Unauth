@@ -1,7 +1,7 @@
 # Deployment-candidate readiness
 
-Status: clean deployment-candidate branch verified and ready to push; PR/push
-and external gates remain pending, 27 August 2026.
+Status: clean deployment-candidate branch pushed; PR #18 is open and all
+repository, engine-evaluation, and Vercel checks are green, 27 August 2026.
 
 ## Candidate boundary
 
@@ -32,7 +32,7 @@ approval remain outside this task.
 - Starting branch: `codex/core-cleanup-refactor` at `fedd6903`.
 - Latest fetched `origin/main`: `42089ca7`.
 - Reconciliation: normal merge commit `cfd138f7`; after this receipt commit the
-  branch is 0 behind and 19 commits ahead of `origin/main`
+  branch is 0 behind and 23 commits ahead of `origin/main`
   (`git rev-list --left-right --count`). Three pre-existing commits from the
   starting branch are retained unchanged; the deployment-candidate sequence
   begins at `1620ad67`.
@@ -44,8 +44,10 @@ approval remain outside this task.
   artifacts, `30f5cf62` isolated build outputs, `cfd138f7` latest-main merge,
   `890742bb` initial deployment receipt, `2187b8bc` Zendesk environment
   contract, `a1b7a6b4` production-target extension bundle, and `413a40ed`
-  deterministic extension packaging in CI. The merge is non-rewriting and no
-  force push is permitted.
+  deterministic extension packaging in CI, `bb1a1951` independent engine
+  evaluation reporting, `3e51770a` safe CI evaluation environment, and
+  `2b20f86f` explicit installation of extension build tooling under production
+  `NODE_ENV`. The merge is non-rewriting and no force push is permitted.
 
 The requested baseline message is `feat: complete merchant-ready UX9
 application`; the authority cleanup is `refactor: consolidate canonical
@@ -136,18 +138,25 @@ The local receipt currently records:
   gates. After `413a40ed`, the production-mode extension rebuild and script
   typecheck passed and left that disposable worktree clean. The final root
   branch is clean before this documentation commit.
-- final commit SHA after this documentation receipt, checksums, GitHub Actions
-  results, and any optional preview URL/read-only smoke result are recorded
-  below or in the pull request when those external systems are available. The
-  receipt cannot grant the external approvals above.
+- GitHub Actions: Engine Eval run `33074018618` passed (F1 0.76); Deployment
+  Candidate run `33074018634` passed all 17 deterministic gates; the Vercel
+  check also passed. The fresh CI run validated the `2b20f86f` extension-build
+  contract after the earlier `vite: not found` failure was corrected.
+- Vercel preview: [branch preview](https://unauth-git-codex-deploy-989c24-malik-ibrahims-projects-e316e061.vercel.app/landing)
+  reported Ready. Safari read-only smoke loaded `/landing`, followed the
+  public `View the demo` link to `/demo?step=incoming`, and advanced one safe
+  step to `/demo?step=evidence`; the page exposed its synthetic/fabricated
+  provenance and no external action was taken.
+- The final branch tip before this receipt is `2b20f86ff8f02a3d1b841175e52b4a9441ab641b`;
+  the documentation commit containing this receipt is the final handoff tip
+  recorded in Git and PR #18. The receipt cannot grant the external approvals
+  above.
 
 ## Push and pull-request boundary
 
-The final documentation commit is
-`docs: record deployment candidate evidence and blockers`. Before pushing,
-create a fresh temporary worktree, run `npm ci` and the complete verification
-matrix, confirm an empty `git status --porcelain=v1`, and perform staged/history
-secret scans. Push without force and open an unmerged PR titled
+The final documentation receipt is an additive update after the fresh
+worktree/lockfile verification and the green GitHub Actions/Vercel checks. The
+branch was pushed without force and PR #18 is open and unmerged, titled
 `chore: prepare Unauth deployment candidate`. No production deployment, merge,
 remote migration, provider write, real-user invitation, or legal/release
 approval is authorized.
