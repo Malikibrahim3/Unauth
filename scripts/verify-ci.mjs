@@ -35,7 +35,13 @@ const steps = [
 
 for (const [label, args] of steps) {
   console.log(`\n=== ${label} ===`);
-  const result = spawnSync('npm', args, { env, stdio: 'inherit' });
+  // Jest and the application contract checks intentionally run under the
+  // caller's test environment. Vite must package the tracked extension as a
+  // production artifact, otherwise NODE_ENV=test embeds React's development
+  // runtime and changes the checked-in bundle on a clean CI checkout.
+  const stepEnv =
+    label === 'Chrome extension build' ? { ...env, NODE_ENV: 'production' } : env;
+  const result = spawnSync('npm', args, { env: stepEnv, stdio: 'inherit' });
   if (result.status !== 0) {
     console.error(`verify:ci stopped after ${label} (exit ${result.status ?? 'signal'}).`);
     process.exit(result.status ?? 1);
