@@ -1,0 +1,1 @@
+var e=`https://app.unauth.co`,t=`https://app.unauth.co`;export{t as n,e as t};

@@ -1,1 +1,0 @@
-var e=`http://localhost:3000`,t=`http://localhost:3000`;export{t as n,e as t};

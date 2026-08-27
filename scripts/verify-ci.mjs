@@ -6,6 +6,10 @@ const env = {
   // salt, but never a real credential. CI may override this with its own test
   // value; deployed environments must provide the validated secret.
   IDENTITY_SALT: process.env.IDENTITY_SALT ?? 'ci-salt-000000000000000000000000000000000000',
+  // The checked-in extension bundle is the runtime artifact served by the
+  // download route. Keep deterministic CI builds aligned with its canonical
+  // production target; local verification may override this explicitly.
+  VITE_UNAUTH_API_BASE: process.env.VITE_UNAUTH_API_BASE ?? 'https://app.unauth.co',
   UNAUTH_NEXT_DIST_DIR: process.env.UNAUTH_NEXT_DIST_DIR ?? '.next-ci',
 };
 
