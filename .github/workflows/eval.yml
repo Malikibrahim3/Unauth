@@ -20,6 +20,11 @@ jobs:
         id: eval
         env:
           IDENTITY_SALT: ${{ secrets.IDENTITY_SALT || 'ci-salt-000000000000000000000000000000000000' }}
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+          NODE_ENV: test
+          CI: 'true'
         run: npm run eval -- test-data/realistic_fraud_dataset.csv
 
       - name: Record F1 in job summary
