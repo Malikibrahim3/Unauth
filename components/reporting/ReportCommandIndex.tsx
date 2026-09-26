@@ -84,17 +84,17 @@ export function ReportCommandIndex({
   const bridge = scopedBridge(report, selectedCurrency);
 
   return (
-      <section className="ua-report-card ua-report-command" aria-labelledby="report-command-index-title">
+      <section className="report-command-index" aria-labelledby="report-command-index-title">
         <header>
           <h2 id="report-command-index-title">Open a report</h2>
           <p>Each report inherits this range, timezone and currency scope, then opens its own supporting records.</p>
         </header>
-        <div className="ua-report-command-index">
+        <div className="report-command-list">
           {REPORT_DEFINITIONS.map((definition) => (
             <Link
               key={definition.id}
               href={`/financials/reports/${definition.id}?${query}`}
-              className="ua-report-command-index__row"
+              className="report-command-row"
               data-selected={definition.id === selectedReportId ? 'true' : undefined}
               aria-current={definition.id === selectedReportId ? 'page' : undefined}
             >
@@ -111,13 +111,13 @@ export function ReportCommandIndex({
 
 export function ReportSourceCoverage({ report }: { report: IntelligenceReport }) {
   return (
-      <section className="ua-report-card ua-report-coverage" aria-labelledby="reports-source-coverage-title">
+      <section className="report-source-coverage" aria-labelledby="reports-source-coverage-title">
         <header>
           <h2 id="reports-source-coverage-title">Are the records behind these reports current?</h2>
           <p>Coverage is stated as a labelled status. Stale records stay in the report and are counted here.</p>
         </header>
-        <div className="ua-report-coverage__table" role="table" aria-label="Source record coverage">
-          <div className="ua-report-coverage__columns" role="row">
+        <div className="report-coverage-table" role="table" aria-label="Source record coverage">
+          <div className="report-coverage-row report-coverage-head" role="row">
             <span role="columnheader">Object family</span>
             <span role="columnheader">Available</span>
             <span role="columnheader">Current</span>
@@ -127,7 +127,7 @@ export function ReportSourceCoverage({ report }: { report: IntelligenceReport })
           {report.coverage.map((row) => {
             const unavailable = row.records === 0;
             return (
-              <Link key={row.objectType} href={row.href} className="ua-report-coverage__row" role="row">
+              <Link key={row.objectType} href={row.href} className="report-coverage-row" role="row">
                 <strong role="cell">{objectFamilyLabel(row.objectType)}</strong>
                 <span role="cell">{unavailable ? '— No records' : formatNumber(row.records)}</span>
                 <span role="cell"><i data-state={unavailable ? 'unavailable' : row.freshRecords === row.records ? 'current' : 'attention'}>{unavailable ? 'Unavailable' : formatNumber(row.freshRecords)}</i></span>

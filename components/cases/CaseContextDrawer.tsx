@@ -69,7 +69,7 @@ export function CaseContextDrawer({
         <div className="p-4">
           <Link
             href={`/cases/${caseId}`}
-            className="ua-text-working-title inline-flex min-h-10 items-center rounded-md bg-[var(--uo-route-action-primary)] px-4 py-2 text-[var(--uo-route-action-primary-fg)]"
+            className="font-medium text-[13px] leading-5 text-[#1c1f23] inline-flex min-h-10 items-center rounded-md bg-[#9f4f08] px-4 py-2 text-[#fff]"
           >
             Open full case
           </Link>
@@ -78,27 +78,27 @@ export function CaseContextDrawer({
     >
       <div className="space-y-6 p-4 sm:p-5">
         {error ? (
-          <p role="alert" className="ua-text-body text-[var(--uo-route-critical)]">
+          <p role="alert" className="text-[13px] leading-5 text-[#40454a] text-[#b0431a]">
             {error}
           </p>
         ) : null}
         {!data && !error ? (
-          <p role="status" className="ua-text-body text-[var(--uo-route-text-tertiary)]">
+          <p role="status" className="text-[13px] leading-5 text-[#40454a] text-[#6f6a63]">
             Loading case context…
           </p>
         ) : null}
         {data ? (
           <>
-            <section className="grid grid-cols-2 gap-4 rounded-lg border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-muted)] p-4">
+            <section className="grid grid-cols-2 gap-4 rounded-lg border border-[#eae8e5] bg-[#f4f3f1] p-4">
               <div>
-                <p className="ua-text-metadata">Status</p>
-                <p className="ua-text-dense font-medium capitalize">
+                <p className="text-[10.5px] leading-4 text-[#6f6a63]">Status</p>
+                <p className="text-[12px] leading-[1.45] text-[#40454a] font-medium capitalize">
                   {title("caseStatus", data.case.status)}
                 </p>
               </div>
               <div>
-                <p className="ua-text-metadata">Exposure</p>
-                <p className="ua-text-dense font-medium">
+                <p className="text-[10.5px] leading-4 text-[#6f6a63]">Exposure</p>
+                <p className="text-[12px] leading-[1.45] text-[#40454a] font-medium">
                   {formatCurrencyNullable(
                     data.case.amount_at_risk,
                     data.case.currency,
@@ -106,10 +106,10 @@ export function CaseContextDrawer({
                 </p>
               </div>
               <div className="col-span-2">
-                <p className="ua-text-metadata">
+                <p className="text-[10.5px] leading-4 text-[#6f6a63]">
                   Next action
                 </p>
-                <p className="ua-text-dense">
+                <p className="text-[12px] leading-[1.45] text-[#40454a]">
                   {title("nextAction", data.case.next_action)}
                   {data.case.next_action_reason
                     ? ` · ${data.case.next_action_reason}`
@@ -118,11 +118,11 @@ export function CaseContextDrawer({
               </div>
             </section>
             <section>
-              <h3 className="mb-2 ua-text-working-title">Related records</h3>
+              <h3 className="mb-2 font-medium text-[13px] leading-5 text-[#1c1f23]">Related records</h3>
               <RelatedRecordsPanel records={data.relatedRecords} />
             </section>
             <section>
-              <h3 className="mb-2 ua-text-working-title">Activity</h3>
+              <h3 className="mb-2 font-medium text-[13px] leading-5 text-[#1c1f23]">Activity</h3>
               {data.timeline.length ? (
                 <ul className="space-y-2">
                   {data.timeline
@@ -131,14 +131,14 @@ export function CaseContextDrawer({
                     .map((item) => (
                       <li
                         key={item.id}
-                        className="rounded-md border border-[var(--uo-route-border-default)] p-3 ua-text-dense"
+                        className="rounded-md border border-[#e4e3e0] p-3 text-[12px] leading-[1.45] text-[#40454a]"
                       >
                         <p className="font-medium">{item.title}</p>
-                        <p className="ua-text-metadata">
+                        <p className="text-[10.5px] leading-4 text-[#6f6a63]">
                           {item.occurredAt.slice(0, 10)} · {item.sourceSystem}
                         </p>
                         {item.summary ? (
-                          <p className="mt-1 ua-text-caption-role">
+                          <p className="mt-1 text-[11.5px] leading-[1.45] text-[#64686d]">
                             {item.summary}
                           </p>
                         ) : null}
@@ -146,7 +146,7 @@ export function CaseContextDrawer({
                     ))}
                 </ul>
               ) : (
-                <p className="ua-text-body text-[var(--uo-route-text-tertiary)]">
+                <p className="text-[13px] leading-5 text-[#40454a] text-[#6f6a63]">
                   No activity yet.
                 </p>
               )}

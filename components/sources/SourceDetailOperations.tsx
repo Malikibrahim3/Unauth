@@ -1,10 +1,9 @@
+import Link from '@/components/navigation/AppNavLink';
 import type { ConnectorCatalogueItem } from '@/lib/connectors/catalogue';
-import Link from 'next/link';
 import type { ConnectionReadModel } from '@/lib/connections/readModel';
 import type { EffectiveConnectionBadge } from '@/lib/connections/effectiveStatus';
-import { ProviderLogo } from '@/components/identity/ProviderLogo';
-import { SourceConnectionActionsOperations } from './SourceConnectionActionsOperations';
 import { formatDateMode, formatDateTime, formatNumber } from '@/lib/utils/format';
+import { buildSourceUptimeCells } from '@/lib/capabilities/derived';
 
 export type OperationsSyncJob = {
   id: string;
@@ -32,99 +31,141 @@ type Props = {
   displayNote: string | null;
   jobs: OperationsSyncJob[];
   issues: OperationsIngestionIssue[];
-  canManage: boolean;
-  setupHref: string;
 };
 
+const mono = "'IBM Plex Mono',monospace";
+const card = { background: '#fff', borderRadius: 10, boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' } as const;
+
 function humanize(value: string | null | undefined) {
-  const text = String(value ?? '').replaceAll('_', ' ').trim();
+  const text = String(value ?? '').replaceAll('_', ' ').replaceAll('.', ' ').trim();
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : 'Unavailable';
 }
 
 function runDuration(started: string, completed: string | null) {
-  if (!completed) return 'In progress';
+  if (!completed) return 'in progress';
   const duration = Date.parse(completed) - Date.parse(started);
-  if (!Number.isFinite(duration) || duration < 0) return '—';
+  if (!Number.isFinite(duration) || duration < 0) return 'unavailable';
   if (duration < 60_000) return `${Math.round(duration / 1_000)}s`;
   return `${Math.floor(duration / 60_000)}m ${Math.floor((duration % 60_000) / 1_000)}s`;
 }
 
-function runState(status: string, error: string | null) {
-  if (/complete|success/i.test(status) && !error) return 'complete';
-  if (/fail|partial|error|dead/i.test(status) || error) return 'stalled';
-  return 'running';
+function stateForCapability(capability: ConnectorCatalogueItem['capabilities'][number], connected: boolean) {
+  if (capability.support === 'unsupported' || capability.availability === 'unsupported') return { label: 'UNSUPPORTED', background: '#f4f3f1', color: '#64686d', opacity: .55 };
+  if (!connected || capability.availability === 'not_connected') return { label: 'NOT CONNECTED', background: '#f4f3f1', color: '#40454a', opacity: 1 };
+  if (capability.availability === 'enabled') return { label: 'ENABLED', background: '#eef6f1', color: '#1a6b43', opacity: 1 };
+  if (capability.availability === 'degraded' || capability.availability === 'permission_missing' || capability.availability === 'merchant_disabled') return { label: 'PARTIAL', background: '#fff3e9', color: '#7a5310', opacity: 1 };
+  return { label: 'UNAVAILABLE', background: '#f4f3f1', color: '#64686d', opacity: 1 };
 }
 
-function days(jobs: OperationsSyncJob[]) {
-  const now = new Date();
-  const result: Array<{ key: string; day: number; state: 'synced' | 'stalled' | 'none'; title: string }> = [];
-  for (let offset = 13; offset >= 0; offset -= 1) {
-    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - offset));
-    const key = date.toISOString().slice(0, 10);
-    const sameDay = jobs.filter((job) => job.created_at.startsWith(key));
-    const stalled = sameDay.some((job) => runState(job.status, job.last_error_code) === 'stalled');
-    const synced = sameDay.some((job) => runState(job.status, job.last_error_code) === 'complete');
-    result.push({ key, day: date.getUTCDate(), state: stalled ? 'stalled' : synced ? 'synced' : 'none', title: `${formatDateMode(key, 'recent')} · ${stalled ? 'sync stalled' : synced ? 'sync recorded' : 'no sync recorded'}` });
-  }
-  return result;
+function sourceStatus(readModel: ConnectionReadModel, badge: EffectiveConnectionBadge) {
+  if (readModel.configuration !== 'configured') return { label: 'NOT CONNECTED', background: '#f4f3f1', color: '#40454a' };
+  if (readModel.operational === 'healthy') return { label: 'HEALTHY', background: '#eef6f1', color: '#1a6b43' };
+  if (readModel.operational === 'attention') return { label: humanize(badge).toUpperCase(), background: '#fdf0e6', color: '#b0431a' };
+  return { label: 'NOT VERIFIED', background: '#fff3e9', color: '#7a5310' };
 }
 
-export function SourceDetailOperations({ item, readModel, badge, displayNote, jobs, issues, canManage, setupHref }: Props) {
+function SectionLabel({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
+  return <div style={{ paddingBottom: 6, display: 'flex', alignItems: 'baseline', gap: 10 }}><span style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>{children}</span><div style={{ flex: 1 }} />{aside ? <span style={{ color: '#64686d', font: `400 10px/1 ${mono}` }}>{aside}</span> : null}</div>;
+}
+
+function EmptyRows({ title, description }: { title: string; description: string }) {
+  return <div style={{ flex: 1, minHeight: 90, padding: '18px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, borderTop: '1px solid #f4f2ef', color: '#64686d' }}><strong style={{ color: '#40454a', font: "500 11.5px/1.4 'Inter',sans-serif" }}>{title}</strong><span style={{ font: "400 10.5px/1.45 'Inter',sans-serif", textAlign: 'center' }}>{description}</span></div>;
+}
+
+function UptimePanel({ jobs, deliveryModel, displayNote }: { jobs: OperationsSyncJob[]; deliveryModel: ConnectionReadModel['deliveryModel']; displayNote: string | null }) {
+  const cells = buildSourceUptimeCells(jobs, new Date(), 28);
+  const successful = cells.filter((cell) => cell.state === 'success').length;
+  return (
+    <>
+      <div style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>UPTIME · 28 DAYS</div>
+      <div style={{ ...card, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+        <div role="img" aria-label="28-day observed source-run history" style={{ display: 'flex', gap: 2 }}>
+          {cells.map((cell) => <i key={cell.date} title={`${cell.date}: ${cell.state}; ${cell.observedRuns} observed run${cell.observedRuns === 1 ? '' : 's'}`} style={{ flex: 1, height: 22, borderRadius: 2, background: cell.state === 'success' ? '#1a6b43' : cell.state === 'unknown' ? '#e4e3e0' : '#c98a1a' }} />)}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#a7abad', font: `400 9px/1 ${mono}` }}>{cells[0]?.date ? formatDateMode(cells[0].date, 'table') : '—'}</span><span style={{ color: '#a7abad', font: `400 9px/1 ${mono}` }}>{cells.at(-1)?.date ? formatDateMode(cells.at(-1)!.date, 'table') : '—'}</span></div>
+        <div style={{ paddingTop: 8, display: 'flex', alignItems: 'baseline', gap: 8, borderTop: '1px solid #f4f2ef' }}><span style={{ flex: 1, color: '#64686d', font: "400 11.5px/1.5 'Inter',sans-serif" }}>Successful days</span><span style={{ color: successful ? '#1a6b43' : '#64686d', font: `400 11.5px/1.5 ${mono}` }}>{successful} of 28 observed</span></div>
+        <div style={{ color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>{jobs.length ? 'Green is a retained successful run. Amber is degraded or failed. Grey means no run was observed.' : deliveryModel === 'periodic_sync' ? 'No retained run history is available. Grey does not mean failure.' : `${displayNote ?? 'This source does not prove a discrete daily run.'} Grey does not mean failure.`}</div>
+      </div>
+    </>
+  );
+}
+
+export function SourceDetailOperations({ item, readModel, badge, displayNote, jobs, issues }: Props) {
   const connected = readModel.configuration === 'configured';
-  const planned = item.stage === 'planned';
-  const heat = days(jobs);
+  const status = sourceStatus(readModel, badge);
+  const lastData = readModel.lastDataReceivedAt ?? item.lastSuccessfulSyncAt;
+  const delivery = readModel.deliveryModel === 'periodic_sync' ? 'scheduled sync' : readModel.deliveryModel === 'webhook' ? 'webhooks / continuous events' : 'on-demand lookup';
+  const scopes = [...new Set(item.scopes)];
+  const auth = humanize(item.authMode);
   const latestFailedRows = jobs.find((job) => (job.failed_rows ?? 0) > 0)?.failed_rows ?? null;
-  const lastSuccess = item.lastSuccessfulSyncAt ?? readModel.lastDataReceivedAt;
-  const delivery = readModel.deliveryModel === 'periodic_sync' ? 'Scheduled sync' : readModel.deliveryModel === 'webhook' ? 'Continuous event delivery' : 'On-demand lookup';
-  const writeEnabled = item.capabilities.some((capability) => capability.level !== 'read' && capability.availability === 'enabled');
-  const sourceFreshness = readModel.freshnessConfidence === 'measured'
-    ? readModel.operational === 'healthy' ? 'Current' : 'Attention'
-    : 'Unavailable';
-  const usability = planned ? 'Not available' : !connected ? 'Not configured' : readModel.operational === 'healthy' ? 'Usable now' : readModel.operational === 'unknown' ? 'Unavailable' : 'Needs attention';
-  const nextAction = planned ? 'No connection action' : connected ? readModel.operational === 'healthy' ? 'Review configuration' : 'Repair connection' : 'Connect source';
 
   return (
-    <div className="uo-page-stack" data-operations-surface="source-detail">
-      <section className="uo-card uo-source-summary" aria-labelledby="source-current-position">
-        <div className="uo-source-identity"><ProviderLogo provider={item.id} name={item.name} size="md" /><div><header><strong>{item.name}</strong><i data-state={readModel.operational}>{humanize(badge)}</i><span>{humanize(item.category)}</span></header><p>{item.account ? `Account ${item.account}` : 'Account identifier unavailable'} · {connected ? 'connected' : 'not connected'} · {writeEnabled ? 'write capability enabled' : 'read-only'}</p></div></div>
-        <div className="uo-source-position">
-          <h2 id="source-current-position">Current source position</h2>
-          <dl>
-            <div><dt>Capability</dt><dd>{item.capabilities.filter((capability) => capability.support !== 'unsupported').length} supported families</dd></div>
-            <div><dt>Workspace</dt><dd>{connected ? 'Configured' : 'Not configured'}</dd></div>
-            <div><dt>Usability</dt><dd>{usability}</dd></div>
-            <div><dt>Returned data</dt><dd>{item.importedRecordsKnown === false ? 'Unavailable' : `${formatNumber(item.importedRecords)} records`}</dd></div>
-            <div><dt>Freshness</dt><dd>{sourceFreshness}</dd></div>
-            <div><dt>Next action</dt><dd>{planned ? nextAction : <Link href={setupHref}>{nextAction}</Link>}</dd></div>
-          </dl>
+    <div data-operations-surface="source-detail" data-provenance={item.screenshotFixture} data-state-id={item.stage === 'planned' || !connected ? 'source-unavailable' : undefined} style={{ flex: 1, minHeight: 0, padding: '16px 22px 20px', display: 'flex', gap: 14, color: '#1c1f23' }}>
+      <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section style={{ ...card, flex: 'none', padding: '12px 16px 10px' }} aria-labelledby="source-capability-title">
+          <div style={{ paddingBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span id="source-capability-title" style={{ flex: 1, color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>WHAT THIS SOURCE CAN DO</span>
+            <span style={{ width: 96, flex: 'none', color: '#64686d', font: "400 9.5px/1 'Inter',sans-serif", letterSpacing: '.06em' }}>DIRECTION</span>
+            <span style={{ width: 104, flex: 'none', color: '#64686d', font: "400 9.5px/1 'Inter',sans-serif", letterSpacing: '.06em' }}>STATE</span>
+            <span style={{ width: 110, flex: 'none', color: '#64686d', font: "400 9.5px/1 'Inter',sans-serif", letterSpacing: '.06em' }}>LAST DATA</span>
+            <span style={{ width: 80, flex: 'none', color: '#64686d', font: "400 9.5px/1 'Inter',sans-serif", letterSpacing: '.06em', textAlign: 'right' }}>RECORDS</span>
+          </div>
+          {item.capabilities.slice(0, 8).map((capability) => {
+            const state = stateForCapability(capability, connected);
+            return (
+              <div key={capability.id} style={{ padding: '8px 0', display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid #f4f2ef', opacity: state.opacity }}>
+                <span style={{ flex: 1, minWidth: 0, color: '#1c1f23', font: "400 12px/1.4 'Inter',sans-serif" }}>{capability.description}</span>
+                <span style={{ width: 96, flex: 'none', color: '#64686d', font: `400 11px/1.4 ${mono}` }}>{capability.level}</span>
+                <span style={{ width: 104, flex: 'none' }}><span style={{ padding: '2px 7px', borderRadius: 5, background: state.background, color: state.color, font: "500 10px/1.5 'Inter',sans-serif" }}>{state.label}</span></span>
+                <span style={{ width: 110, flex: 'none', color: '#64686d', font: `400 11px/1.4 ${mono}` }}>{capability.lastDataReceivedAt ? formatDateTime(capability.lastDataReceivedAt) : 'Unavailable'}</span>
+                <span style={{ width: 80, flex: 'none', color: '#40454a', font: `400 11.5px/1.4 ${mono}`, textAlign: 'right' }}>{capability.recordCount != null ? formatNumber(capability.recordCount) : '—'}</span>
+              </div>
+            );
+          })}
+          <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #e4e3e0', color: '#64686d', font: "400 11.5px/1.5 'Inter',sans-serif" }}>{item.capabilities.some((capability) => ['write', 'act'].includes(capability.level) && capability.availability === 'enabled') ? `${item.name} has at least one enabled write capability. Each row above retains its exact granted state.` : `${item.name} may support writes, but this connection does not claim them where the provider did not grant or the product did not request them.`} {item.screenshotFixture ? 'Object-family activity is populated for this staging account.' : 'Object-family timestamps and counts stay unavailable rather than inheriting source-level totals.'}</div>
+        </section>
+
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: 12 }}>
+          <section style={{ ...card, flex: 1, minWidth: 0, padding: '12px 15px 11px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }} aria-labelledby="recent-imports-title">
+            <SectionLabel aside={delivery}><span id="recent-imports-title">RECENT IMPORTS</span></SectionLabel>
+            {jobs.length ? jobs.slice(0, 6).map((job) => {
+              const failed = (job.failed_rows ?? 0) > 0 || Boolean(job.last_error_code) || /fail|error|partial/i.test(job.status);
+              return <div key={job.id} style={{ padding: '9px 0', display: 'flex', alignItems: 'center', gap: 11, borderTop: '1px solid #f4f2ef' }}><span style={{ width: 88, flex: 'none', color: '#64686d', font: `400 11px/1.4 ${mono}` }}>{formatDateTime(job.created_at)}</span>{item.screenshotFixture ? <span style={{ width: 82, flex: 'none', color: '#1c1f23', font: `400 11.5px/1.4 ${mono}` }}>Completed</span> : <Link href={`/sources/imports/${job.id}`} style={{ width: 82, flex: 'none', color: '#1c1f23', font: `400 11.5px/1.4 ${mono}`, textDecoration: 'none' }}>{job.id.slice(0, 10)}</Link>}<span style={{ flex: 1, minWidth: 0, color: failed ? '#7a5310' : '#1a6b43', font: "400 11.5px/1.4 'Inter',sans-serif" }}>{job.processed_rows == null ? 'Rows unavailable' : `${formatNumber(job.processed_rows)} processed`}{job.failed_rows ? ` · ${formatNumber(job.failed_rows)} held` : ''} · {runDuration(job.created_at, job.completed_at)}</span></div>;
+            }) : <EmptyRows title="No retained imports" description="Connection state does not imply that a sync or import ran." />}
+            <div style={{ flex: 1 }} />
+            <div style={{ marginTop: 8, paddingTop: 9, borderTop: '1px solid #e4e3e0', color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>{displayNote ?? `Delivery uses ${delivery}. Only retained run records appear here.`}</div>
+          </section>
+          <section style={{ ...card, flex: 1, minWidth: 0, padding: '12px 15px 11px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }} aria-labelledby="failed-events-title">
+            <SectionLabel aside={`${issues.length} retained`}><span id="failed-events-title">FAILED INGESTION EVENTS</span></SectionLabel>
+            {issues.length ? issues.slice(0, 6).map((issue) => <div key={issue.id} style={{ padding: '9px 0', display: 'flex', gap: 11, borderTop: '1px solid #f4f2ef' }}><span style={{ width: 88, flex: 'none', color: '#64686d', font: `400 11px/1.5 ${mono}` }}>{formatDateTime(issue.received_at)}</span><div style={{ flex: 1, minWidth: 0 }}><div style={{ color: '#7a5310', font: "500 11.5px/1.4 'Inter',sans-serif" }}>{humanize(issue.event_type)}</div><div style={{ marginTop: 2, color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>{issue.last_error ?? `${humanize(issue.status)} · operator review required`}</div></div></div>) : <EmptyRows title="No failed ingestion events" description="No failed or dead-letter event is retained for this connection." />}
+            {latestFailedRows != null ? <div style={{ marginTop: 'auto', paddingTop: 9, borderTop: '1px solid #e4e3e0', color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>{formatNumber(latestFailedRows)} rows were held by the latest failed run; they are not silently counted as imported.</div> : null}
+          </section>
         </div>
-        <div className="uo-source-summary-stats"><div><span>Coverage</span><strong>—</strong><small>Expected-source denominator unavailable</small></div><div><span>Records held</span><strong>{item.importedRecordsKnown === false ? '—' : formatNumber(item.importedRecords)}</strong><small>canonical records</small></div><div><span>Last success</span><strong>{lastSuccess ? formatDateMode(lastSuccess, 'recent') : '—'}</strong><small>{lastSuccess ? formatDateTime(lastSuccess) : 'No successful delivery recorded'}</small></div><div><span>Excluded</span><strong>{latestFailedRows == null ? '—' : formatNumber(latestFailedRows)}</strong><small>from the latest failed run</small></div></div>
-      </section>
-
-      <div className="uo-source-lead">
-        <section className="uo-card uo-source-heat"><header className="uo-card-header"><h2>Has this source been current, day by day?</h2><p>Each cell is one day in the reporting range. Amber is a stalled sync; grey is no sync recorded.</p></header><div className="uo-heat-strip">{heat.map((day) => <div key={day.key}><i data-state={day.state} title={day.title} /><span>{day.day}</span></div>)}</div><footer><span><i data-state="synced" />Synced</span><span><i data-state="stalled" />Stalled</span><span><i data-state="none" />No sync</span><p>{readModel.deliveryModel === 'periodic_sync' ? (displayNote ?? 'Run history is retained for this source.') : `${delivery} does not guarantee a discrete daily sync run.`}</p></footer></section>
-
-        <section className="uo-card uo-source-permissions"><header className="uo-card-header"><h2>What this source is allowed to do</h2><p>Scopes granted at connection. Unauth does not claim permissions the provider did not grant.</p></header><div>{item.capabilities.slice(0, 5).map((capability) => <div key={capability.id}><span><strong>{capability.description}</strong><small>{capability.scopes.length ? capability.scopes.join(', ') : capability.availabilityReason}</small></span><b data-state={capability.availability}>{capability.availability === 'enabled' ? 'Granted' : humanize(capability.availability)}</b></div>)}</div>{item.runtimeVerificationPending ? <details className="uo-source-proof"><summary>Runtime verification pending · {item.pendingRuntimeCapabilities.length} lifecycle checks</summary><dl>{item.lifecycle.map((dim) => <div key={dim.id}><dt>{humanize(dim.id)}</dt><dd><strong>{humanize(dim.evidence)}</strong><span>{dim.detail}</span>{dim.runtimeEvidence ? <small>{dim.runtimeEvidence.result === 'passed' ? 'Passed' : 'Failed'} · {formatDateTime(dim.runtimeEvidence.verifiedAt)} · {dim.runtimeEvidence.environment}</small> : <small>No controlled runtime record retained</small>}</dd></div>)}</dl></details> : null}</section>
       </div>
 
-      <section className="uo-card uo-source-table">
-        <header className="uo-card-header"><h2>Freshness by object family</h2><p>A stale object stays visible and counted. It is never treated as absent.</p></header>
-        <div className="uo-source-freshness-grid uo-table-head"><span>Object family</span><span>Records</span><span>Latest record</span><span>Freshness</span><span>Effect on cases</span></div>
-        <div>{item.capabilities.slice(0, 8).map((capability) => { const supported = capability.support === 'supported' && capability.availability !== 'unsupported'; return <div className="uo-source-freshness-grid uo-table-row" key={capability.id}><span>{capability.description}</span><span data-align="right">—</span><span>— Object-family time unavailable</span><span><i className="uo-source-state" data-state={supported ? readModel.operational : 'unavailable'}>{supported ? sourceFreshness : 'Unavailable'}</i></span><span>{supported ? capability.availabilityReason : 'This object family cannot contribute evidence from this source'}</span></div>; })}</div>
-        <footer>Object-family record counts and timestamps stay unavailable until the connector records them separately; source-level freshness is not copied into those cells.</footer>
-      </section>
-
-      <div className="uo-source-history-pair">
-        <section className="uo-card uo-source-history"><header className="uo-card-header"><h2>Sync and import history</h2><p>Last six runs. Every retained run stays visible.</p></header><div className="uo-source-history-grid uo-table-head"><span>Run</span><span>Started</span><span>Rows</span><span>Duration</span><span>Outcome</span></div><div>{jobs.length ? jobs.slice(0, 6).map((job) => <div className="uo-source-history-grid uo-table-row" key={job.id}><span>{humanize(job.job_kind)}</span><span>{formatDateTime(job.created_at)}</span><span data-align="right">{formatNumber(job.processed_rows)}</span><span data-align="right">{runDuration(job.created_at, job.completed_at)}</span><span><i className="uo-source-state" data-state={runState(job.status, job.last_error_code)}>{humanize(job.status)}</i></span></div>) : <div className="uo-empty"><strong>No retained runs</strong><span>No sync history is inferred from connection state.</span></div>}</div></section>
-
-        <section className="uo-card uo-source-errors"><header className="uo-card-header"><h2>Ingestion errors</h2><p>{latestFailedRows == null ? 'Failed-row count is unavailable. Recorded failures remain visible.' : `${formatNumber(latestFailedRows)} rows could not be ingested in the latest failed run. They are excluded, not silently dropped.`}</p></header><div className="uo-source-error-grid uo-table-head"><span>Error</span><span>Rows</span><span>First seen</span><span>Action</span></div><div>{issues.length ? issues.slice(0, 6).map((issue) => <div className="uo-source-error-grid uo-table-row" key={issue.id}><span>{humanize(issue.event_type)}</span><span data-align="right">—</span><span>{formatDateTime(issue.received_at)}</span><span>{issue.last_error ?? 'Operator review required'}</span></div>) : <div className="uo-empty"><strong>No ingestion errors</strong><span>No failed or dead-letter events are recorded.</span></div>}</div><footer>Repairing the connection may replay failed pages; retained canonical rows are not treated as new source records.</footer></section>
-      </div>
-
-      <div className="uo-source-bottom">
-        <section className="uo-card"><header className="uo-card-header"><h2>Field mapping</h2><p>Retained with every ingested record.</p></header><div className="uo-source-unavailable"><strong>— Unavailable</strong><span>This connector does not publish a field-level mapping manifest to the application.</span></div></section>
-        <section className="uo-card"><header className="uo-card-header"><h2>Configuration</h2><p>Applies to the next successful run.</p></header><dl className="uo-source-facts"><div><dt>Schedule</dt><dd>{delivery}</dd></div><div><dt>Historical scope</dt><dd>— Unavailable</dd></div><div><dt>Timezone</dt><dd>— Provider controlled</dd></div><div><dt>Writeback</dt><dd>{writeEnabled ? 'Enabled for granted capabilities' : 'Disabled — read-only'}</dd></div></dl></section>
-        <section className="uo-card"><header className="uo-card-header"><h2>Repair or disconnect</h2><p>Disconnecting keeps every canonical record already ingested.</p></header><div className="uo-source-repair"><p>Repairing re-authorises the account and retries supported source work. Disconnecting stops future ingestion; {item.importedRecordsKnown === false ? 'records already held' : `${formatNumber(item.importedRecords)} records already held`} stay, and future freshness becomes unavailable rather than stale.</p><SourceConnectionActionsOperations providerId={item.id} providerName={item.name} setupHref={setupHref} canManage={canManage} connected={connected} planned={planned} placement="card" /></div></section>
-      </div>
+      <aside style={{ width: 300, flex: 'none', minHeight: 0, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 11, overflowY: 'auto', borderRadius: 13, background: '#f4f3f1' }}>
+        <UptimePanel jobs={jobs} deliveryModel={readModel.deliveryModel} displayNote={displayNote} />
+        <div style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>CONNECTION</div>
+        <div style={{ ...card, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[
+            ['Auth', auth],
+            ['Delivery', delivery],
+            ['Last health check', item.lastVerifiedAt ? formatDateTime(item.lastVerifiedAt) : 'Unavailable'],
+            ['Last successful sync', item.lastSuccessfulSyncAt ? formatDateTime(item.lastSuccessfulSyncAt) : readModel.deliveryModel === 'periodic_sync' ? 'Unavailable' : 'Not applicable'],
+            ['Last data received', lastData ? formatDateTime(lastData) : readModel.freshnessConfidence === 'unavailable' ? 'Unavailable' : 'No data recorded'],
+            ['Records held', item.importedRecordsKnown === false ? 'Unavailable' : formatNumber(item.importedRecords)],
+          ].map(([label, value]) => <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ flex: 1, color: '#64686d', font: "400 11.5px/1.5 'Inter',sans-serif" }}>{label}</span><span style={{ maxWidth: 160, color: value === 'Unavailable' ? '#64686d' : '#1c1f23', font: `400 11.5px/1.5 ${mono}`, textAlign: 'right' }}>{value}</span></div>)}
+          <div style={{ paddingTop: 8, display: 'flex', alignItems: 'center', gap: 8, borderTop: '1px solid #f4f2ef' }}><span style={{ flex: 1, color: '#64686d', font: "400 11.5px/1.5 'Inter',sans-serif" }}>State</span><span style={{ padding: '2px 7px', borderRadius: 5, background: status.background, color: status.color, font: "500 10px/1.5 'Inter',sans-serif" }}>{status.label}</span></div>
+        </div>
+        <div style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>SCOPES GRANTED</div>
+        <div style={{ ...card, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {scopes.length ? scopes.map((scope) => <div key={scope} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere', color: '#40454a', font: `400 11px/1.4 ${mono}` }}>{scope}</span><span style={{ color: '#1a6b43', font: `400 10px/1.4 ${mono}` }}>granted</span></div>) : <span style={{ color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>No provider scope list is retained.</span>}
+        </div>
+        <div style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>IF YOU DISCONNECT</div>
+        <div style={{ ...card, padding: '12px 13px', color: '#64686d', font: "400 11.5px/1.5 'Inter',sans-serif" }}>{item.importedRecordsKnown === false ? 'Records already imported stay, and every case built on them stays.' : `The ${formatNumber(item.importedRecords)} records already imported stay, and every case built on them stays.`} New source data stops arriving and future freshness becomes unavailable rather than zero.</div>
+        <div style={{ flex: 1 }} />
+        <div style={{ paddingTop: 10, borderTop: '1px solid #e4e3e0', color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>Coverage across all layers is on <Link href="/sources/connected" style={{ color: '#1c1f23' }}>connected sources</Link>.</div>
+      </aside>
     </div>
   );
 }

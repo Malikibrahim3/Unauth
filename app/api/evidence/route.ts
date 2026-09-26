@@ -136,8 +136,8 @@ async function POSTHandler(request: NextRequest) {
     })
 
   if (uploadError) {
-    logger.error('evidence.storage_upload_failed', { error: uploadError, referenceNumber: pkg.referenceNumber, nonFatal: true })
-    // Non-fatal — continue and save the record without a PDF path
+    logger.error('evidence.storage_upload_failed', { error: uploadError, referenceNumber: pkg.referenceNumber, nonFatal: false })
+    return NextResponse.json({ error: 'Evidence artifact could not be saved. No credits were charged.' }, { status: 502 })
   }
 
   // 7. Insert to evidence_packages
@@ -151,7 +151,7 @@ async function POSTHandler(request: NextRequest) {
       customer_profile_id:      customerProfileId,
       generated_for_order_id:   disputedOrderId,
       reference_number:         pkg.referenceNumber,
-      pdf_storage_path:         uploadError ? null : storagePath,
+      pdf_storage_path:         storagePath,
       narrative_summary:        narrative,
       signal_snapshot:          pkg.identityEvidence,
       cross_merchant_indicator: false,
@@ -189,7 +189,7 @@ async function POSTHandler(request: NextRequest) {
   if (!creditSpend.ok) {
     await deleteEvidencePackageArtifacts(scopedServiceRole, serviceRole, {
       packageId,
-      storagePath: uploadError ? null : storagePath,
+      storagePath,
     })
     return NextResponse.json(
       {

@@ -5,8 +5,11 @@ import {
   adapterDispositions,
   auditedSurfaceOwnership,
   implementationAuthority,
+  merchantClarityCoverage,
   scenarioLedger,
+  designReferenceCrosswalk,
   specificationAuthorities,
+  visualAuthorityPackage,
   sharedSurfaceFamilies,
   specializedGapDispositions,
   surfaceManifest,
@@ -34,6 +37,8 @@ const errors: string[] = [];
 
 if (
   specificationAuthorities.architectureIndex !== 'ARCHITECTURE.md' ||
+  specificationAuthorities.globalRules !== 'GLOBAL_RULES.md' ||
+  specificationAuthorities.currentExecution !== 'docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md' ||
   specificationAuthorities.productTruth !== 'PRODUCT.md' ||
   specificationAuthorities.executableSurfaceMap !== 'lib/surfaces/manifest.ts' ||
   specificationAuthorities.canonicalNavigation !== 'lib/navigation/appRoutes.ts' ||
@@ -43,6 +48,17 @@ if (
   specificationAuthorities.humanReadableInventory !== 'docs/page-inventory.md'
 ) {
   errors.push('The executable authority registry no longer matches ARCHITECTURE.md.');
+}
+
+if (
+  visualAuthorityPackage.archivePath !== '/Users/malikibrahim/Downloads/Cases page design directions.zip' ||
+  visualAuthorityPackage.archiveSha256 !== '988c09688e0a02c9138307518c6504e647db5c3a2169081932aa1b747925d4aa' ||
+  visualAuthorityPackage.shippingPageCount !== 79 ||
+  visualAuthorityPackage.behaviouralReferenceCount !== 4 ||
+  visualAuthorityPackage.sourceSelector !== '[data-screen-label]' ||
+  visualAuthorityPackage.discardOnly !== 'outer screenshot/stage wrapper and its 26px padding'
+) {
+  errors.push('The executable visual authority package record no longer matches the supplied ZIP contract.');
 }
 
 const supersededPresentationPaths = [
@@ -66,19 +82,17 @@ const supersededPresentationPaths = [
 ] as const;
 
 if (
-  implementationAuthority.presentationDisposition !== 'replace-completely' ||
-  implementationAuthority.incumbentPresentationFitness !== 'not-fit-for-purpose' ||
-  implementationAuthority.componentNamesAre !== 'target-contracts-not-implementation-approval'
+  implementationAuthority.presentationDisposition !== 'preserve-supplied-with-registered-revisions' ||
+  implementationAuthority.componentNamesAre !== 'reachable-owners-not-runtime-acceptance'
 ) {
-  errors.push('The manifest no longer enforces the binding frontend replacement authority.');
+  errors.push('The manifest no longer preserves the supplied system with registered revisions under GLOBAL_RULES.md.');
 }
 
 for (const requiredStrategy of [
-  'reuse-incumbent-component',
-  'wrap-incumbent-component',
-  'skin-or-theme-incumbent-component',
   'parallel-legacy-component-family',
   'legacy-style-or-token-fallback',
+  'unregistered-visual-revision',
+  'blanket-runtime-text-replacement',
 ] as const) {
   if (!implementationAuthority.prohibitedStrategies.includes(requiredStrategy)) {
     errors.push(`The replacement authority no longer prohibits ${requiredStrategy}.`);
@@ -177,14 +191,14 @@ for (const entry of surfaceManifest) {
   const activeRenderer = entry.primaryComponents[0];
   const escapedRenderer = activeRenderer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const rendererUse = new RegExp(
-    `(?:<\\s*${escapedRenderer}\\b|\\b${escapedRenderer}\\s*\\(|from\\s+['\"][^'\"]*${escapedRenderer}['\"])`,
+    `(?:<\\s*${escapedRenderer}\\b|\\b${escapedRenderer}\\s*\\(|\\bsource\\s*=\\s*\\{\\s*${escapedRenderer}\\s*\\}|from\\s+['\"][^'\"]*${escapedRenderer}['\"])`,
   );
-  if (!rendererUse.test(pageSource)) {
+  const reachable = reachableSource(entry.pageModule);
+  if (!rendererUse.test(pageSource) && !rendererUse.test(reachable)) {
     errors.push(
-      `Manifest entry ${entry.id} names ${activeRenderer} as its active renderer, but ${entry.pageModule} does not render or invoke it.`,
+      `Manifest entry ${entry.id} names ${activeRenderer} as its active renderer, but the reachable render graph rooted at ${entry.pageModule} does not render or invoke it.`,
     );
   }
-  const reachable = reachableSource(entry.pageModule);
   for (const component of entry.primaryComponents) {
     const escapedComponent = component.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (!new RegExp(`\\b${escapedComponent}\\b`).test(reachable)) {
@@ -242,6 +256,26 @@ if (auditedSurfaceOwnership.length !== SURFACE_MANIFEST_EXPECTED_AUDITED_SURFACE
 }
 
 const scenarioIds = scenarioLedger.map((scenario) => scenario.id);
+const planSource = readFileSync(resolve(repositoryRoot, specificationAuthorities.currentExecution), 'utf8');
+const requiredRequirementIds = [
+  ...[...planSource.matchAll(/^\| (F\d{2}|M\d{2}) \|/gm)].map((match) => match[1]),
+  ...[...planSource.matchAll(/^- \[[ x]\] (C\d{3}) /gm)].map((match) => match[1]),
+];
+const projectedRequirementIds = merchantClarityCoverage.flatMap((group) => [...group.requirementIds]);
+compareSets('Merchant clarity F/C/M requirement projection', requiredRequirementIds, projectedRequirementIds);
+const duplicateRequirements = duplicateValues(projectedRequirementIds);
+if (duplicateRequirements.length) errors.push(`Repeated requirement ownership: ${duplicateRequirements.join(', ')}.`);
+for (const group of merchantClarityCoverage) {
+  if (!group.scenarioIds.length) errors.push(`Unmapped requirement group: ${group.requirementIds.join(', ')}.`);
+  for (const id of group.scenarioIds) {
+    if (id !== '*' && !scenarioIds.includes(id)) errors.push(`Requirement projection refers to unknown scenario ${id}.`);
+  }
+}
+for (const scenario of scenarioLedger) {
+  if (!surfaceManifest.some((entry) => entry.pageModule === scenario.pageModule) && !scenario.owner.startsWith('shared:')) {
+    errors.push(`Scenario ${scenario.id} has no current page owner.`);
+  }
+}
 const duplicateScenarioIds = duplicateValues(scenarioIds);
 if (duplicateScenarioIds.length) errors.push(`Duplicate scenario IDs: ${duplicateScenarioIds.join(', ')}.`);
 if (scenarioLedger.length !== SURFACE_MANIFEST_EXPECTED_SCENARIO_COUNT) {
@@ -254,6 +288,55 @@ if (visualScenarioCount !== SURFACE_MANIFEST_EXPECTED_VISUAL_SCENARIO_COUNT) {
 }
 if (adapterScenarioCount !== SURFACE_MANIFEST_EXPECTED_ADAPTER_SCENARIO_COUNT) {
   errors.push(`Expected ${SURFACE_MANIFEST_EXPECTED_ADAPTER_SCENARIO_COUNT} adapter scenarios; found ${adapterScenarioCount}.`);
+}
+
+const expectedShippingReferenceIds = [
+  'Landing-Clean', 'Pricing-Clean', 'Demo-Context-Clean', 'Demo-Sources-Clean', 'Demo-Clean',
+  'Demo-Decision-Clean', 'Demo-Recovery-Clean', 'Legal-Privacy-Clean', 'Legal-Data-Handling-Clean',
+  'Legal-DPA-Clean', 'Legal-Pilot-Terms-Clean', 'Root-Not-Found-Clean', 'Login-Clean', 'Signup-Clean',
+  'Reset-Clean', 'Reset-Update-Clean', 'Onboarding-Store-Clean', 'Onboarding-Commerce-Clean',
+  'Onboarding-Helpdesk-Clean', 'Onboarding-Ready-Clean', 'First-Run-Clean', 'Overview-Clean', 'Work-Clean',
+  'Cases-Clean', 'Case-Review-Clean', 'Customers-Clean', 'Customer-Detail-Clean', 'Evidence-Package-Clean',
+  'Order-Detail-Clean', 'Refund-Detail-Clean', 'Return-Detail-Clean', 'Shipment-Detail-Clean', 'Ticket-Detail-Clean',
+  'Dispute-Detail-Clean', 'Loss-Ledger-Clean', 'Loss-Detail-Clean', 'Write-Off-Clean', 'Recovery-Board-Clean',
+  'Recovery-Detail-Clean', 'File-Claim-Clean', 'Reconciliation-Clean', 'Reports-Clean', 'Named-Report-Clean',
+  'Report-Records-Clean', 'Period-Close-Clean', 'Payout-Rules-Clean', 'Rule-Editor-Clean', 'Recovery-Rulebook-Clean',
+  'Flows-Clean', 'Flow-Runs-Clean', 'Flow-Run-Detail-Clean', 'Connected-Sources-Clean', 'Source-Detail-Clean',
+  'Source-Repair-Clean', 'Provider-Catalogue-Clean', 'Provider-Setup-Clean', 'Channel-Select-Clean', 'Imports-Clean',
+  'Import-Job-Detail-Clean', 'Mapping-Repair-Clean', 'Settings-Clean', 'Account-Settings-Clean', 'Team-Clean',
+  'Audit-Log-Clean', 'Data-Privacy-Clean', 'Agreements-Clean', 'API-Access-Clean', 'Billing-Clean', 'Notifications-Clean',
+  'Search-Clean', 'Command-Palette-Clean', 'Help-Clean', 'Help-Article-Clean', 'Loading-Registry-Clean',
+  'Loading-Detail-Clean', 'Not-Found-Clean', 'Route-Error-Clean', 'Global-Error-Clean', 'Desktop-Required-Clean',
+] as const;
+const expectedBehaviouralReferenceIds = ['States-Board-Clean', 'Keyboard-Clean', 'Desk-1280-Clean', 'Scorecard'] as const;
+const referenceIds = designReferenceCrosswalk.map((reference) => reference.id);
+const duplicateReferenceIds = duplicateValues(referenceIds);
+if (duplicateReferenceIds.length) errors.push(`Duplicate design reference IDs: ${duplicateReferenceIds.join(', ')}.`);
+compareSets('Shipping ZIP reference IDs', expectedShippingReferenceIds, designReferenceCrosswalk.filter((reference) => reference.kind === 'shipping').map((reference) => reference.id));
+compareSets('Behavioural ZIP reference IDs', expectedBehaviouralReferenceIds, designReferenceCrosswalk.filter((reference) => reference.kind === 'behavioural').map((reference) => reference.id));
+if (designReferenceCrosswalk.filter((reference) => reference.kind === 'shipping').length !== 79) {
+  errors.push(`Expected 79 shipping ZIP references; found ${designReferenceCrosswalk.filter((reference) => reference.kind === 'shipping').length}.`);
+}
+if (designReferenceCrosswalk.filter((reference) => reference.kind === 'behavioural').length !== 4) {
+  errors.push(`Expected four behavioural ZIP references; found ${designReferenceCrosswalk.filter((reference) => reference.kind === 'behavioural').length}.`);
+}
+const referenceOwners = new Set([
+  ...surfaceManifest.map((entry) => entry.pathPattern),
+  ...sharedSurfaceFamilies.map((family) => family.id),
+]);
+for (const reference of designReferenceCrosswalk) {
+  if (!referenceOwners.has(reference.owner)) errors.push(`Design reference ${reference.id} points to an unknown owner: ${reference.owner}.`);
+}
+const manifestReferenceIds = surfaceManifest.flatMap((entry) => entry.referenceIds);
+// Route-owned references are attached directly to their manifest entry. Shared
+// shell/loading/error references are attached to the executable crosswalk's
+// shared owner because they intentionally span more than one page module.
+const manifestShippingReferenceIds = designReferenceCrosswalk
+  .filter((reference) => reference.kind === 'shipping' && !reference.owner.startsWith('shared:'))
+  .map((reference) => reference.id);
+compareSets('Manifest shipping reference IDs', manifestShippingReferenceIds, manifestReferenceIds);
+if (manifestReferenceIds.length !== manifestShippingReferenceIds.length) {
+  errors.push(`Expected every shipping reference to be attached to a canonical surface owner; found ${manifestReferenceIds.length} attached IDs.`);
 }
 for (const entry of surfaceManifest) {
   const disposition = visualDispositionBySurfaceId[entry.id];
@@ -324,8 +407,9 @@ for (const entry of surfaceManifest) {
   }
 }
 
+const canonicalManifestPaths = new Set(surfaceManifest.map((entry) => entry.pathPattern));
 const expectedLegacyAliases = LEGACY_UI_REDIRECTS.map((redirect) => redirect.source).filter(
-  (source) => source !== '/',
+  (source) => source !== '/' && !canonicalManifestPaths.has(source),
 );
 const manifestLegacyAliases = surfaceManifest.flatMap((entry) => [...entry.legacyAliases]);
 compareSets('Legacy alias ownership', expectedLegacyAliases, manifestLegacyAliases);
@@ -389,13 +473,16 @@ for (const expectedSource of [
 }
 
 const sharedStateSourceChecks = [
-  ['app/(app)/loading.tsx', ['authenticated-route-loading-shell']],
-  ['app/(app)/not-found.tsx', ['authenticated-not-found', 'EmptyState', 'ButtonLink']],
-  ['app/not-found.tsx', ['root-not-found', 'RecoveryShell']],
-  ['app/global-error.tsx', ['root-global-error', '#f4f5f1', '#176b39']],
-  ['components/states/OperationalRouteError.tsx', ['route-error-boundaries', 'No data or workflow state was changed.']],
-  ['components/system/DesktopRequiredBoundary.tsx', ['ua-desktop-required', 'at least 1024px wide']],
-  ['app/(app)/layout.tsx', ['DesktopRequiredBoundary', 'getRequestPermissions']],
+  ['app/(app)/loading.tsx', ['SuppliedAuthenticatedRouteLoading']],
+  ['app/(app)/not-found.tsx', ['ExactNotFound']],
+  ['components/system/ExactNotFound.tsx', ['SuppliedVisualBody', 'Not-Found-Clean']],
+  ['app/not-found.tsx', ['RootNotFoundVisual', 'Root-Not-Found-Clean']],
+  ['app/global-error.tsx', ['GlobalErrorVisual', 'Global-Error-Clean', 'reset()', 'DesktopRequiredBoundary']],
+  ['components/states/OperationalRouteError.tsx', ['route-error-boundaries', 'Route-Error-Clean', 'A page failing should cost you one page']],
+  ['components/system/DesktopRequiredBoundary.tsx', ['unsupported-portable', 'data-narrow-desktop', 'Open Unauth on a desktop']],
+  ['lib/device/desktopSupport.ts', ['iPadDesktopUserAgent', "viewportWidth < 1024", 'SAFE_RETURN_KEYS']],
+  ['app/layout.tsx', ['DesktopRequiredBoundary', 'throwForRootAcceptanceScenario']],
+  ['app/(app)/layout.tsx', ['getRequestPermissions', 'AuthenticatedDesignShell']],
   ['app/(app)/search/page.tsx', ['getRequestPermissions', 'permissions={permissions}']],
   ['components/search/WorkspaceSearch.tsx', ['getCommandPaletteNavItems(permissionSet)', 'allowedSearchApiTypes']],
   ['app/api/search/route.ts', ['partitionSearchApiTypes', 'restrictedTypes', 'permissions.has(PERMISSIONS.VIEW_INBOX)']],
@@ -404,18 +491,8 @@ for (const [sourcePath, requiredFragments] of sharedStateSourceChecks) {
   const source = readFileSync(resolve(repositoryRoot, sourcePath), 'utf8');
   for (const fragment of requiredFragments) {
     if (!source.includes(fragment)) {
-      errors.push(`${sourcePath} no longer contains the P08 integration contract: ${fragment}.`);
+      errors.push(`${sourcePath} no longer contains the full-app integration contract: ${fragment}.`);
     }
-  }
-}
-
-const responsiveSource = readFileSync(
-  resolve(repositoryRoot, 'styles/operations/foundation.css'),
-  'utf8',
-);
-for (const expectedSource of ['@media (max-width: 1023px)', '.ua-desktop-product { display: none; }', '.ua-desktop-required { display: grid;']) {
-  if (!responsiveSource.includes(expectedSource)) {
-    errors.push(`The authenticated desktop gate no longer contains: ${expectedSource}.`);
   }
 }
 
@@ -507,47 +584,28 @@ for (const sourceFile of presentationSourceFiles) {
   }
 }
 
-const authenticatedStyleEntry = readFileSync(
-  resolve(repositoryRoot, 'styles/authenticated/index.css'),
-  'utf8',
+const competingStylePaths = globSync(
+  ['styles/authenticated/**', 'styles/p07.css'],
+  { cwd: repositoryRoot, nodir: true },
 );
-const authenticatedImports = [...authenticatedStyleEntry.matchAll(/@import\s+["']([^"']+)["']/g)]
-  .map((match) => match[1]);
-compareSets(
-  'Authenticated stylesheet entry imports',
-  [
-    './dashboard-design-challenge-6-palette.css',
-    './replacement.css',
-    '../p07.css',
-    './i2-4.css',
-    './i3-0.css',
-    './i3-1.css',
-    './i3-2.css',
-    './i3-3.css',
-    './i3-4.css',
-    './dashboard-design-challenge-6-shell.css',
-    './dashboard-design-challenge-6.css',
-    './dashboard-design-challenge-6-entry.css',
-    './color-modes.css',
-  ],
-  authenticatedImports,
-);
-
-const operationsStyleEntry = readFileSync(resolve(repositoryRoot, 'styles/operations/index.css'), 'utf8');
-const operationsImports = [...operationsStyleEntry.matchAll(/@import\s+["']([^"']+)["']/g)].map((match) => match[1]);
-compareSets(
-  'Evidence Operations stylesheet imports',
-  ['./palette.css', './foundation.css', './primitives.css', './route-bridge.css', './shell.css', './evidence.css', './financial.css', './sources.css', './support.css', './workspace.css', './surfaces.css', './entry.css', '../evidence-operations.css'],
-  operationsImports,
-);
+if (competingStylePaths.length > 0) {
+  errors.push(`Competing presentation files still exist: ${competingStylePaths.sort().join(', ')}.`);
+}
 
 const rootLayoutSource = readFileSync(resolve(repositoryRoot, 'app/layout.tsx'), 'utf8');
-if (rootLayoutSource.includes('styles/authenticated/index.css')) {
-  errors.push('The root layout must not load the frozen authenticated compatibility cascade.');
+if (rootLayoutSource.includes('styles/authenticated/')) {
+  errors.push('The root layout must not load a competing presentation cascade.');
 }
 const publicLayoutSource = readFileSync(resolve(repositoryRoot, 'app/(public)/layout.tsx'), 'utf8');
-if (!publicLayoutSource.includes("@/styles/authenticated/index.css")) {
-  errors.push('Frozen public routes must retain their isolated compatibility cascade.');
+if (!publicLayoutSource.includes("@/components/public/PublicUI") || !publicLayoutSource.includes('<PublicRoot>')) {
+  errors.push('Public routes must use the registered Loop public presentation root.');
+}
+const publicRootSource = readFileSync(resolve(repositoryRoot, 'components/public/PublicUI.tsx'), 'utf8');
+if (!publicRootSource.includes('data-public-root') || !publicRootSource.includes('unauth-public-refinement-2026-09-16')) {
+  errors.push('Public root must declare the approved public-only revision and scope.');
+}
+if (publicLayoutSource.includes('styles/authenticated/') || publicLayoutSource.includes('styles/p07.css')) {
+  errors.push('Public routes still load a competing presentation cascade.');
 }
 const productLayoutSource = readFileSync(resolve(repositoryRoot, 'app/(app)/layout.tsx'), 'utf8');
 for (const prohibited of ['ColorModeProvider', 'data-color-mode=', 'dashboard-design-challenge']) {
@@ -555,14 +613,18 @@ for (const prohibited of ['ColorModeProvider', 'data-color-mode=', 'dashboard-de
 }
 
 const purgeFiles = globSync(
-  ['app/(app)/**/*.{ts,tsx,css}', 'app/(auth)/**/*.{ts,tsx,css}', 'app/onboarding/**/*.{ts,tsx,css}', 'components/**/*.{ts,tsx,css}', 'styles/operations/**/*.css', 'styles/evidence-operations.css'],
-  { cwd: repositoryRoot, ignore: ['components/public/**'] },
+  ['app/**/*.{ts,tsx,css}', 'components/**/*.{ts,tsx,css}', 'styles/**/*.css'],
+  { cwd: repositoryRoot },
 );
 const purgePatterns = [
   /--ua-/,
   /--c-[A-Za-z0-9-]+/,
   /dashboard-design-challenge/i,
   /Challenge6/,
+  /data-challenge6/i,
+  /landing-visual-system=["']neutral/i,
+  /styles\/authenticated\//,
+  /styles\/p07\.css/,
   /Signal Ledger/,
   /\bMocha\b/,
   /color-modes\.css/,

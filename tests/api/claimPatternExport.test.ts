@@ -1,0 +1,21 @@
+import { NextRequest, NextResponse } from 'next/server';
+jest.mock('@/lib/supabase/server',()=>({createClient:jest.fn(),createServiceClient:jest.fn()}));
+jest.mock('@/lib/permissions',()=>({PERMISSIONS:{VIEW_AUDIT:'view',EXPORT_AUDIT:'export'},requirePermission:jest.fn()}));
+jest.mock('@/lib/permissions/audit',()=>({logAction:jest.fn()}));
+jest.mock('@/lib/product/requireEntitlement',()=>({merchantHasEntitlement:jest.fn()}));
+jest.mock('@/lib/reporting/claimPatternRead',()=>({loadClaimPatterns:jest.fn(),claimPatternFingerprint:()=> 'expected'}));
+import { createClient,createServiceClient } from '@/lib/supabase/server';
+import { requirePermission } from '@/lib/permissions';
+import { logAction } from '@/lib/permissions/audit';
+import { merchantHasEntitlement } from '@/lib/product/requireEntitlement';
+import { loadClaimPatterns } from '@/lib/reporting/claimPatternRead';
+import { GET } from '@/app/api/reports/claims/route';
+const report={from:'2026-08-08',to:'2026-09-07T00:00:00Z',readAt:'2026-09-07T00:00:00Z',timezone:'UTC',state:'complete',issues:[],workAvailable:true,cases:[{id:'case',orderId:'order',submittedAt:'2026-09-01',groups:{issue:[{key:'missing',label:'=unsafe'}]},allocationEligible:{issue:true},money:[],work:[]}]};
+const request=(fingerprint='expected')=>new NextRequest(`http://localhost/api/reports/claims?view=patterns&dimension=issue&range=30d&timezone=UTC&asOf=2026-09-07T00:00:00Z&fingerprint=${fingerprint}&group=missing`);
+beforeEach(()=>{jest.clearAllMocks();(createClient as jest.Mock).mockReturnValue({auth:{getUser:async()=>({data:{user:{id:'user'}}})}});(createServiceClient as jest.Mock).mockReturnValue({});(requirePermission as jest.Mock).mockResolvedValue({denied:null,ctx:{merchantId:'tenant'}});(merchantHasEntitlement as jest.Mock).mockResolvedValue(true);(loadClaimPatterns as jest.Mock).mockResolvedValue(report);});
+test('export uses server tenant and exact reviewed scope, protects CSV cells and records export audit',async()=>{
+ const response=await GET(request());expect(response.status).toBe(200);expect(await response.text()).toContain("'=unsafe");expect(loadClaimPatterns).toHaveBeenCalledWith({},'tenant','30d','UTC',new Date('2026-09-07T00:00:00Z'));expect(logAction).toHaveBeenCalledTimes(1);
+});
+test('changed source refuses export and creates no receipt',async()=>{expect((await GET(request('stale'))).status).toBe(409);expect(logAction).not.toHaveBeenCalled();});
+test('export permission denial reads no report',async()=>{(requirePermission as jest.Mock).mockResolvedValueOnce({denied:null,ctx:{merchantId:'tenant'}}).mockResolvedValueOnce({denied:NextResponse.json({error:'Forbidden'},{status:403})});expect((await GET(request())).status).toBe(403);expect(loadClaimPatterns).not.toHaveBeenCalled();});
+test('entitlement denial reads no report',async()=>{(merchantHasEntitlement as jest.Mock).mockResolvedValue(false);expect((await GET(request())).status).toBe(403);expect(loadClaimPatterns).not.toHaveBeenCalled();});

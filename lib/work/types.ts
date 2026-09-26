@@ -158,7 +158,12 @@ export function validWorkActions(input: {
   }
   if (['open', 'blocked'].includes(item.status) && canOperateOwnedTask && !snoozed) actions.push('start');
   if (['open', 'in_progress', 'blocked'].includes(item.status) && canOperateOwnedTask) actions.push('snooze');
-  if (item.status === 'in_progress' && canOperateOwnedTask) actions.push('complete');
+  if (item.status === 'in_progress' && (ownedByCurrentUser || canManageAnyAssignment)) actions.push('complete');
   if (item.status === 'completed') actions.push('reopen');
   return [...new Set(actions)];
+}
+
+/** Work lifecycle is independent of case, recovery and money outcomes. */
+export function isActiveWorkTask(status: string): boolean {
+  return ['open', 'in_progress', 'blocked'].includes(status);
 }

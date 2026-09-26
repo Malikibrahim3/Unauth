@@ -4,6 +4,7 @@ import { TABLES } from './lib/supabase/tables';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createRequestId, merchantIdHeader, requestIdHeader } from '@/lib/log';
 import { authReturnPath } from '@/lib/auth/routeContinuity';
+import { safeUuidRedirectSegment } from '@/lib/navigation/preservedRedirect';
 
 export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
@@ -16,6 +17,12 @@ export async function proxy(request: NextRequest) {
     },
   });
   const { pathname } = request.nextUrl;
+  // Public demo reads are browser-local simulations, even with an existing session.
+  // Do not create an auth client, refresh cookies or resolve a tenant here.
+  if (pathname === '/demo' && (request.method === 'GET' || request.method === 'HEAD')) {
+    supabaseResponse.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
+    return supabaseResponse;
+  }
   const isApiRoute = pathname.startsWith('/api');
   const isAuthRoute =
     pathname.startsWith('/login') ||
@@ -96,6 +103,33 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  const customerClaimsMatch = user
+    ? pathname.match(/^\/customers\/([^/]+)\/claims$/)
+    : null;
+  if (customerClaimsMatch) {
+    let customerId: string;
+    try {
+      customerId = encodeURIComponent(decodeURIComponent(customerClaimsMatch[1]));
+    } catch {
+      customerId = encodeURIComponent(customerClaimsMatch[1]);
+    }
+    const claimId = safeUuidRedirectSegment(request.nextUrl.searchParams.get('claimId') ?? undefined);
+    const url = request.nextUrl.clone();
+    if (claimId) {
+      url.pathname = `/cases/${claimId}`;
+      url.searchParams.delete('claimId');
+      url.searchParams.set('return', `/customers/${customerId}?tab=cases`);
+    } else {
+      url.pathname = `/customers/${customerId}`;
+      url.searchParams.delete('claimId');
+      url.searchParams.delete('return');
+      url.searchParams.set('tab', 'cases');
+    }
+    const response = NextResponse.redirect(url);
+    response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
+    return response;
+  }
+
   if (user && isApiRoute) {
     try {
       const selectedMerchantId = request.cookies.get('unauth_active_merchant')?.value;
@@ -127,5 +161,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|html)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|html|woff|woff2|ttf|otf)$).*)'],
 };

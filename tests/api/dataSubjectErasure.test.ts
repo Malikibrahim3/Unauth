@@ -14,7 +14,7 @@ jest.mock('@/lib/privacy/storageCleanup', () => ({ processPrivacyStorageCleanup:
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
 import { processPrivacyStorageCleanup } from '@/lib/privacy/storageCleanup';
-import { POST } from '@/app/api/settings/data-subject-erasure/route';
+import { GET, POST } from '@/app/api/settings/data-subject-erasure/route';
 
 const USER_ID = '10000000-0000-4000-8000-000000000001';
 const MERCHANT_ID = '10000000-0000-4000-8000-000000000010';
@@ -25,6 +25,13 @@ function request(body: unknown) {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
+  });
+}
+
+function statusRequest(query: string) {
+  return new NextRequest(`http://localhost/api/settings/data-subject-erasure?${query}`, {
+    method: 'GET',
+    headers: { accept: 'application/json' },
   });
 }
 
@@ -75,38 +82,87 @@ describe('POST /api/settings/data-subject-erasure', () => {
     expect(response.status).toBe(400);
   });
 
-  it('passes only the authenticated merchant and actor to the service-only RPC', async () => {
+  it('blocks erasure before persistence when verified preview is unavailable', async () => {
     const { rpc } = setup();
     const response = await POST(request({ subjectId: SUBJECT_ID, idempotencyKey: 'request-123', confirm: 'ERASE' }));
-    expect(response.status).toBe(200);
-    expect(rpc).toHaveBeenCalledWith('erase_release1_merchant_data_subject', expect.objectContaining({
-      p_merchant_id: MERCHANT_ID,
-      p_subject_id: SUBJECT_ID,
-      p_actor_user_id: USER_ID,
-      p_idempotency_key: 'request-123',
-    }));
-    expect(processPrivacyStorageCleanup).toHaveBeenCalledWith(
-      expect.anything(),
-      { receiptId: '10000000-0000-4000-8000-000000000099' },
-    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'erasure_preview_unavailable' });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(processPrivacyStorageCleanup).not.toHaveBeenCalled();
   });
-
-  it('does not disclose a customer belonging to another merchant', async () => {
-    setup({ rpcError: { code: 'P0002', message: 'subject_not_found' } });
+  it('does not disclose subject existence through the unavailable preview boundary', async () => {
+    const { rpc } = setup({ rpcError: { code: 'P0002', message: 'subject_not_found' } });
     const response = await POST(request({ subjectId: SUBJECT_ID, idempotencyKey: 'request-123', confirm: 'ERASE' }));
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ error: 'Customer not found in this workspace.' });
+    expect(response.status).toBe(409);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it('retains permission denial even while preview is unavailable', async () => {
+    const { rpc } = setup({ denied: true });
+    expect((await POST(request({ subjectId: SUBJECT_ID, idempotencyKey: 'request-123', confirm: 'ERASE' }))).status).toBe(403);
+    expect(rpc).not.toHaveBeenCalled();
   });
 
-  it('returns a durable database success while making deferred Storage cleanup explicit', async () => {
+});
+
+describe('GET /api/settings/data-subject-erasure', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('returns the merchant-scoped receipt and retryable cleanup state without exposing object paths', async () => {
     setup();
-    (processPrivacyStorageCleanup as jest.Mock).mockRejectedValueOnce(new Error('storage unavailable'));
-    const response = await POST(request({ subjectId: SUBJECT_ID, idempotencyKey: 'request-123', confirm: 'ERASE' }));
+    const receipt = {
+      id: '10000000-0000-4000-8000-000000000099',
+      subject_reference: SUBJECT_ID,
+      merchant_customer_reference: SUBJECT_ID,
+      scope_counts: { cases_preserved: 1 },
+      effective_at: '2026-08-31T12:00:00.000Z',
+      recorded_at: '2026-08-31T12:00:00.000Z',
+      meaning: 'Merchant-scoped data subject erasure completed',
+    };
+    const jobs = [
+      {
+        id: '10000000-0000-4000-8000-000000000101',
+        status: 'failed',
+        attempts: 2,
+        max_attempts: 8,
+        next_attempt_at: '2026-08-31T13:00:00.000Z',
+        completed_at: null,
+        last_error: 'storage unavailable',
+        created_at: '2026-08-31T12:00:00.000Z',
+        updated_at: '2026-08-31T12:30:00.000Z',
+      },
+    ];
+    const makeChain = (data: unknown, error: unknown = null) => {
+      const result = { data, error };
+      const chain: Record<string, unknown> = {};
+      for (const method of ['select', 'eq', 'order', 'limit']) chain[method] = jest.fn(() => chain);
+      chain.maybeSingle = jest.fn().mockResolvedValue(result);
+      chain.then = (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => Promise.resolve(result).then(resolve, reject);
+      return chain;
+    };
+    const service = {
+      from: jest.fn((table: string) => table === 'data_subject_erasure_receipts' ? makeChain(receipt) : makeChain(jobs)),
+    };
+    (createServiceClient as jest.Mock).mockReturnValue(service);
+
+    const response = await GET(statusRequest(`subjectId=${SUBJECT_ID}`));
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      ok: true,
-      storageCleanup: null,
-      storageCleanupError: 'Storage cleanup remains queued for retry.',
+    const body = await response.json();
+    expect(body).toMatchObject({
+      writesPerformed: 0,
+      receipt: { id: receipt.id, subject_reference: SUBJECT_ID },
+      storageCleanup: {
+        totalJobs: 1,
+        counts: { failed: 1 },
+        retryable: true,
+        nextAttemptAt: '2026-08-31T13:00:00.000Z',
+        lastError: 'storage unavailable',
+      },
+      steps: [
+        { key: 'database', state: 'completed' },
+        { key: 'storage', state: 'queued' },
+        { key: 'backupCycle', state: 'unavailable' },
+      ],
     });
+    expect(JSON.stringify(body)).not.toContain('object_path');
   });
 });

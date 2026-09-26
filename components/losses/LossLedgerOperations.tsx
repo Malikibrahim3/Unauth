@@ -1,366 +1,89 @@
-import Link from 'next/link';
-import { formatDateMode, formatMoney, formatNumber } from '@/lib/utils/format';
+import Link from '@/components/navigation/AppNavLink';
+import { formatDayMonthInTimeZone, formatMinorCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import { label } from '@/lib/ui/labels';
-import { shortRef } from '@/lib/ui/displayRef';
-import { Pagination } from '@/components/ui/Pagination';
+import { objectDisplayRef, shortRef } from '@/lib/ui/displayRef';
 import type { LossLedgerRow } from './LossLedger';
 import type { CanonicalFinancialAggregate } from '@/lib/financial/canonicalAggregates';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 7;
+const sans = "'Inter',sans-serif";
 
-type CauseGroup = {
-  key: string;
-  name: string;
-  rows: LossLedgerRow[];
-  realisedMinor: number;
-  recoverableMinor: number;
-  priorMinor: number | null;
-};
-
-type Props = {
-  rows: LossLedgerRow[];
-  priorRows?: LossLedgerRow[];
-  currency: string | null;
-  rangeLabel: string;
-  selectedCause: string | null;
-  hrefForCause: (cause: string | null) => string;
-  page: number;
-  hrefForPage: (page: number) => string;
-  aggregate: CanonicalFinancialAggregate;
-  recordLimitation: string | null;
-};
+type CauseGroup = { key: string; name: string; rows: LossLedgerRow[]; realisedMinor: number | null; priorMinor: number | null };
+type Props = { rows: LossLedgerRow[]; priorRows?: LossLedgerRow[]; currency: string | null; rangeLabel: string; selectedCause: string | null; hrefForCause: (cause: string | null) => string; page: number; hrefForPage: (page: number) => string; aggregate: CanonicalFinancialAggregate; recordLimitation: string | null };
 
 function rowCause(row: LossLedgerRow) {
   const key = row.attribution ?? row.category ?? 'unattributed';
-  return {
-    key,
-    name: row.attribution ? label('attribution', key) : label('lossCategory', key),
-  };
+  return { key, name: row.attribution ? label('attribution', key) : label('lossCategory', key) };
 }
 
-function sumKnown(rows: LossLedgerRow[], pick: (row: LossLedgerRow) => number | null | undefined) {
-  let total = 0;
-  let known = false;
-  for (const row of rows) {
-    const value = pick(row);
-    if (value == null) continue;
-    known = true;
-    total += value;
-  }
-  return known || rows.length === 0 ? total : null;
+function money(value: number | null | undefined, currency: string | null) {
+  return formatMinorCurrencyNullable(value, currency);
 }
 
-function money(value: number | null, currency: string | null) {
-  if (value == null || !currency) return '—';
-  try {
-    return formatMoney(value, currency).replace(/\.00$/, '');
-  } catch {
-    return '—';
-  }
-}
-
-function signedMoney(value: number | null, currency: string | null) {
-  if (value == null || !currency) return '—';
-  return value === 0 ? money(0, currency) : `−${money(Math.abs(value), currency)}`;
-}
-
-function axisMoney(value: number, currency: string | null) {
-  if (!currency) return '—';
-  const major = value / 100;
-
-  const symbol = money(0, currency).replace(/0(?:\.00)?$/, '');
-
-  if (major === 0) return `${symbol}0`;
-
-  if (Math.abs(major) >= 1000) {
-    const thousands = major / 1000;
-    return `${symbol}${thousands.toFixed(Number.isInteger(thousands) ? 0 : 1)}k`;
-  }
-  return money(value, currency).replace(/\.00$/, '');
-}
-
-function niceCeil(value: number) {
-  if (!(value > 0)) return 100;
-  const exponent = Math.pow(10, Math.floor(Math.log10(value)));
-  const normalized = value / exponent;
-  const step = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 2.5 ? 2.5 : normalized <= 5 ? 5 : 10;
-  return step * exponent;
-}
-
-function stageFor(row: LossLedgerRow) {
-  if (row.writtenOff || row.preventionOnly || (row.realisedLossMinor != null && row.recoveredMinor != null && row.recoveredMinor >= row.realisedLossMinor)) return 'Closed';
-  const status = `${row.status} ${row.financialState}`.toLowerCase();
-  if (/recover|approved|paid|submitted|response/.test(status)) return 'Recovery';
-  if (/confirm|decision|review/.test(status)) return 'Decision';
-  if (/evidence|investigat|estimate/.test(status)) return 'Evidence';
-  return 'Intake';
-}
-
-function initials(name: string | null | undefined) {
-  if (!name) return '—';
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || '—';
-}
-
-function causeGroups(rows: LossLedgerRow[], priorRows: LossLedgerRow[]): CauseGroup[] {
+function groupsFor(rows: LossLedgerRow[], priorRows: LossLedgerRow[]): CauseGroup[] {
   const groups = new Map<string, CauseGroup>();
   for (const row of rows) {
     const cause = rowCause(row);
-    const group = groups.get(cause.key) ?? {
-      key: cause.key,
-      name: cause.name,
-      rows: [],
-      realisedMinor: 0,
-      recoverableMinor: 0,
-      priorMinor: null,
-    };
-    group.rows.push(row);
-    group.realisedMinor += row.realisedLossMinor ?? 0;
-    const openRecoverable = row.recoverableMinor == null
-      ? 0
-      : Math.max(0, row.recoverableMinor - (row.recoveredMinor ?? 0) - (row.writtenOff ? row.recoverableMinor : 0));
-    group.recoverableMinor += Math.min(row.realisedLossMinor ?? openRecoverable, openRecoverable);
-    groups.set(cause.key, group);
-  }
-
-  const priorByCause = new Map<string, LossLedgerRow[]>();
-  for (const row of priorRows) {
-    const key = rowCause(row).key;
-    priorByCause.set(key, [...(priorByCause.get(key) ?? []), row]);
+    const group = groups.get(cause.key) ?? { key: cause.key, name: cause.name, rows: [], realisedMinor: null, priorMinor: null };
+    group.rows.push(row); if (row.realisedLossMinor != null) group.realisedMinor = (group.realisedMinor ?? 0) + row.realisedLossMinor; groups.set(cause.key, group);
   }
   for (const group of groups.values()) {
-    const matchingPriorRows = priorByCause.get(group.key) ?? [];
-    group.priorMinor = matchingPriorRows.length
-      ? sumKnown(matchingPriorRows, (row) => row.realisedLossMinor)
-      : null;
+    const prior = priorRows.filter((row) => rowCause(row).key === group.key && row.realisedLossMinor != null);
+    group.priorMinor = prior.length ? prior.reduce((sum, row) => sum + (row.realisedLossMinor ?? 0), 0) : null;
   }
-
-  return [...groups.values()]
-    .sort((left, right) => right.realisedMinor - left.realisedMinor)
-    .slice(0, 6);
+  return [...groups.values()].sort((left, right) => (right.realisedMinor ?? -Infinity) - (left.realisedMinor ?? -Infinity)).slice(0, 6);
 }
 
-function LossCauseChart({
-  groups,
-  currency,
-  href,
-}: {
-  groups: CauseGroup[];
-  currency: string | null;
-  href: string;
-}) {
-  if (!groups.length || !currency || groups.every((group) => group.realisedMinor === 0)) {
-    return (
-      <div className="uo-empty" data-state-id="loss-cause-chart-unavailable">
-        <strong>Loss position unavailable</strong>
-        <span>No compatible realised-loss values exist in this scope.</span>
-      </div>
-    );
+function stage(row: LossLedgerRow) {
+  if (row.writtenOff) return 'WRITTEN OFF';
+  const value = `${row.status} ${row.financialState}`.toLowerCase();
+  if (/reconcil/.test(value)) return 'RECONCILED';
+  if (/paid/.test(value)) return 'PAID';
+  if (/recover|submitted|approved/.test(value)) return 'IN RECOVERY';
+  if (/evidence/.test(value)) return 'EVIDENCE DUE';
+  return row.status.replaceAll('_', ' ').toUpperCase();
+}
+
+function stageTone(row: LossLedgerRow) {
+  const value = stage(row);
+  if (/(PAID|RECONCILED)/.test(value)) return { background: '#eef6f1', color: '#1a6b43' };
+  if (/DUE/.test(value)) return { background: '#fdf0e6', color: '#b0431a' };
+  return { background: '#fff3e9', color: '#7a5310' };
+}
+
+function weekBuckets(rows: LossLedgerRow[]) {
+  const buckets = new Map<string, { date: Date; value: number }>();
+  for (const row of rows) {
+    const raw = row.effectiveAt;
+    if (!raw || Number.isNaN(Date.parse(raw)) || row.realisedLossMinor == null) continue;
+    const date = new Date(raw); const monday = new Date(date); const day = monday.getUTCDay() || 7; monday.setUTCDate(monday.getUTCDate() - day + 1); monday.setUTCHours(0,0,0,0);
+    const key = monday.toISOString().slice(0,10); const bucket = buckets.get(key) ?? { date: monday, value: 0 }; bucket.value += row.realisedLossMinor; buckets.set(key,bucket);
   }
-
-  const maximum = Math.max(
-    ...groups.flatMap((group) => [group.realisedMinor, group.priorMinor ?? 0]),
-    1,
-  );
-  const axisMaximum = niceCeil(maximum * 1.08);
-  const axisPoints = [0, 0.5, 1];
-  const axisPosition = (value: number) => `${Math.max(0, Math.min(100, (value / axisMaximum) * 100)).toFixed(2)}%`;
-
-  return (
-    <div className="uo-loss-chart" aria-label="Realised loss by cause against the prior period">
-      <div className="uo-loss-chart-axis" aria-hidden="true">
-        <span />
-        <div>
-          {axisPoints.map((point) => (
-            <span
-              key={point}
-              style={{
-                left: `${point * 100}%`,
-                transform: point === 0 ? 'translateX(0)' : point === 1 ? 'translateX(-100%)' : 'translateX(-50%)',
-              }}
-            >
-              {axisMoney(axisMaximum * point, currency)}
-            </span>
-          ))}
-        </div>
-        <span />
-        <span />
-      </div>
-
-      <div className="uo-loss-chart-rows">
-        {groups.map((group) => {
-          const confirmed = Math.max(0, group.realisedMinor - group.recoverableMinor);
-          const recoverable = Math.max(0, group.realisedMinor - confirmed);
-          const delta = group.priorMinor != null && group.priorMinor > 0
-            ? ((group.realisedMinor - group.priorMinor) / group.priorMinor) * 100
-            : null;
-
-          return (
-            <div className="uo-loss-chart-row" key={group.key}>
-              <span className="uo-loss-chart-label" title={group.name}>{group.name}</span>
-              <div className="uo-loss-chart-track">
-                {axisPoints.map((point) => <i key={point} style={{ left: `${point * 100}%` }} aria-hidden="true" />)}
-                <span
-                  className="uo-loss-chart-bar"
-                  style={{ width: axisPosition(group.realisedMinor) }}
-                  role="img"
-                  aria-label={`${group.name}: ${money(group.realisedMinor, currency)}`}
-                >
-                  <b style={{ width: `${group.realisedMinor > 0 ? (confirmed / group.realisedMinor) * 100 : 0}%` }} />
-                  <em style={{ width: `${group.realisedMinor > 0 ? (recoverable / group.realisedMinor) * 100 : 0}%` }} />
-                </span>
-                {group.priorMinor != null ? (
-                  <i
-                    className="uo-loss-chart-prior"
-                    style={{ left: axisPosition(group.priorMinor) }}
-                    role="img"
-                    title={`Prior 30 days: ${money(group.priorMinor, currency)}`}
-                    aria-label={`Prior 30 days: ${money(group.priorMinor, currency)}`}
-                  />
-                ) : null}
-              </div>
-              <strong>{axisMoney(group.realisedMinor, currency)}</strong>
-              <span className={delta == null ? 'uo-loss-chart-delta uo-muted' : `uo-loss-chart-delta ${delta >= 0 ? 'uo-loss-chart-delta--negative' : 'uo-loss-chart-delta--positive'}`}>
-                {delta == null ? 'Prior unavailable' : `${delta >= 0 ? '+' : '−'}${Math.abs(delta).toFixed(1)}% vs prior`}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="uo-chart-footnote">
-        <span>{currency} · Europe/London · realised loss only, excluding prevented and recovered amounts · prior period shown where recorded</span>
-        <Link href={href}>View chart data</Link>
-      </div>
-    </div>
-  );
+  return [...buckets.values()].sort((a,b) => a.date.getTime() - b.date.getTime()).slice(-10);
 }
 
 export function LossLedgerOperations({ rows, priorRows = [], currency, rangeLabel, selectedCause, hrefForCause, page, hrefForPage, aggregate, recordLimitation }: Props) {
-  const compatibleRows = currency ? rows.filter((row) => row.currency?.toUpperCase() === currency.toUpperCase()) : rows;
-  const compatiblePriorRows = currency ? priorRows.filter((row) => row.currency?.toUpperCase() === currency.toUpperCase()) : priorRows;
-  const groups = causeGroups(compatibleRows, compatiblePriorRows);
-  const filteredRows = selectedCause
-    ? compatibleRows.filter((row) => rowCause(row).key === selectedCause)
-    : compatibleRows;
-  const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const compatible = currency ? rows.filter((row) => row.currency?.toUpperCase() === currency.toUpperCase()) : rows;
+  const prior = currency ? priorRows.filter((row) => row.currency?.toUpperCase() === currency.toUpperCase()) : priorRows;
+  const groups = currency ? groupsFor(compatible, prior) : [];
+  const filtered = selectedCause ? compatible.filter((row) => rowCause(row).key === selectedCause) : compatible;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(Math.max(1, page), pageCount);
-  const visibleRows = filteredRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const aggregateRow = currency ? aggregate.currencies.find((row) => row.currency === currency.toUpperCase()) ?? null : null;
-  const identified = aggregateRow?.knownStates.includes('exposed') ? aggregateRow.exposedMinor : null;
-  const prevented = aggregateRow?.knownStates.includes('prevented') ? aggregateRow.preventedMinor : null;
+  const gross = aggregateRow?.knownStates.includes('confirmed_loss') ? aggregateRow.confirmedLossMinor : null;
   const recovered = aggregateRow?.knownStates.includes('recovered') ? aggregateRow.recoveredMinor : null;
-  const realised = aggregateRow?.knownStates.includes('confirmed_loss') ? aggregateRow.confirmedLossMinor : null;
-  const identifiedCount = aggregateRow?.caseCountsByState.exposed ?? null;
-  const preventedShare = identified && prevented != null ? `${Math.round((prevented / identified) * 1000) / 10}% of identified` : 'Share unavailable';
-  const periodLabel = rangeLabel.replace(/^Last\s+/i, '').toLowerCase();
-  const kpis = [
-    { label: 'Identified', value: money(identified, currency), sub: `${identifiedCount == null ? '—' : formatNumber(identifiedCount)} canonical cases · ${periodLabel}`, tone: 'default' },
-    { label: 'Prevented', value: money(prevented, currency), sub: preventedShare, tone: 'positive' },
-    { label: 'Recovered', value: money(recovered, currency), sub: 'from carriers & partners', tone: 'accent' },
-    { label: 'Realised loss', value: money(realised, currency), sub: 'confirmed, written off', tone: 'critical' },
-  ];
+  const writtenOff = aggregateRow?.knownStates.includes('written_off') ? aggregateRow.writtenOffMinor : null;
+  const net = aggregateRow?.knownStates.includes('final_net_loss') ? aggregateRow.finalNetLossMinor : null;
+  const weeks = currency ? weekBuckets(compatible) : [];
+  const weekMaximum = Math.max(1, Math.ceil(Math.max(0, ...weeks.map((week) => week.value)) / 100000) * 100000);
+  const causeMaximum = Math.max(1, ...groups.map((group) => group.realisedMinor ?? 0));
+  const causeTotal = compatible.reduce((total,row) => total + (row.realisedLossMinor ?? 0),0);
 
-  return (
-    <div className="uo-page-stack" data-operations-surface="loss-ledger">
-      <div className="uo-kpi-grid">
-        {kpis.map((kpi) => (
-          <section className="uo-kpi" key={kpi.label}>
-            <span>{kpi.label}</span>
-            <strong data-tone={kpi.tone}>{kpi.value}</strong>
-            <small>{kpi.sub}</small>
-          </section>
-        ))}
-      </div>
-      <p className="uo-scope-note">{aggregate.source === 'canonical' ? `${aggregate.definitionVersion} · ${aggregate.timeBasis.replaceAll('_', ' ')} · currencies separated · unknown values withheld` : 'Canonical financial scope unavailable.'}</p>
-      {recordLimitation ? <p className="uo-inline-warning">{recordLimitation}</p> : null}
-
-      <section className="uo-card uo-loss-table">
-        <header className="uo-loss-table-header">
-          <div>
-            <h2>Loss entries requiring financial review</h2>
-            <p className="uo-scope-note">Open a row to trace source evidence, responsibility, recovery position and append-only ledger history.</p>
-          </div>
-          <nav className="uo-cause-filters" aria-label="Loss cause filters">
-            <Link href={hrefForCause(null)} aria-current={!selectedCause ? 'page' : undefined}>All</Link>
-            {groups.slice(0, 4).map((group) => (
-              <Link key={group.key} href={hrefForCause(group.key)} aria-current={selectedCause === group.key ? 'page' : undefined}>
-                {group.name}
-              </Link>
-            ))}
-          </nav>
-        </header>
-
-        <div className="uo-loss-grid uo-table-head">
-          <span>Case</span><span>Customer</span><span>Cause</span><span>Identified</span><span>Prevented</span><span>Recovered</span><span>Realised</span><span>Stage</span><span>Updated</span>
-        </div>
-        <div className="uo-table-body">
-          {visibleRows.length ? visibleRows.map((row) => {
-            const detailHref = row.detailHref ?? `/financials/losses/${row.id}`;
-            const customer = row.customerName ?? 'Customer unavailable';
-            const rowIdentified = row.realisedLossMinor ?? row.estimatedLossMinor;
-            const rowPrevented = row.preventedMinor ?? (row.preventionOnly ? rowIdentified : null);
-            return (
-              <Link className="uo-loss-grid uo-table-row" href={detailHref} key={row.id}>
-                <span className="uo-mono">{shortRef(row.caseReference, row.supportPayoutCaseId ?? row.id)}</span>
-                <span className="uo-person"><i>{initials(row.customerName)}</i><b title={customer}>{customer}</b></span>
-                <span>{rowCause(row).name}</span>
-                <span data-align="right">{money(rowIdentified, row.currency)}</span>
-                <span data-align="right" data-tone={rowPrevented != null ? 'positive' : undefined}>{signedMoney(rowPrevented, row.currency)}</span>
-                <span data-align="right" data-tone={row.recoveredMinor != null ? 'accent' : undefined}>{signedMoney(row.recoveredMinor, row.currency)}</span>
-                <span data-align="right" data-tone={row.realisedLossMinor != null ? 'critical' : undefined}>{money(row.realisedLossMinor, row.currency)}</span>
-                <span><i className="uo-stage" data-stage={stageFor(row).toLowerCase()}>{stageFor(row)}</i></span>
-                <span className="uo-muted">{row.updatedAt ? formatDateMode(row.updatedAt, 'recent') : '—'}</span>
-              </Link>
-            );
-          }) : (
-            <div className="uo-empty">
-              <strong>No loss entries match this cause</strong>
-              <span>The underlying ledger has not been changed.</span>
-            </div>
-          )}
-        </div>
-
-        <div className="uo-loss-grid uo-table-total">
-          <span>Totals</span><span /><span />
-          <span>{money(identified, currency)}</span>
-          <span data-tone="positive">{signedMoney(prevented, currency)}</span>
-          <span data-tone="accent">{signedMoney(recovered, currency)}</span>
-          <span data-tone="critical">{money(realised, currency)}</span>
-          <span>{formatNumber(filteredRows.length)} entries</span><span />
-        </div>
-
-        <footer className="uo-table-footer">
-          <span>Sorted by updated · — means nothing recorded yet, {currency ? money(0, currency) : '0'} means a verified zero</span>
-          <Pagination
-            page={currentPage}
-            pageSize={PAGE_SIZE}
-            total={filteredRows.length}
-            previousHref={currentPage > 1 ? hrefForPage(currentPage - 1) : undefined}
-            nextHref={currentPage < pageCount ? hrefForPage(currentPage + 1) : undefined}
-          />
-        </footer>
-      </section>
-
-      <details className="uo-card uo-secondary-analysis">
-        <summary>
-          <span><strong>Analyse realised loss by cause</strong><small>Secondary view · {currency ?? 'currency unavailable'} · {rangeLabel.toLowerCase()}</small></span>
-          <span>Show chart</span>
-        </summary>
-        <div className="uo-loss-position">
-          <header className="uo-card-header uo-card-header--split">
-            <div>
-              <h2>Where the loss sits</h2>
-              <p>Realised loss by cause · {currency ?? 'Currency unavailable'} · Europe/London · {rangeLabel.toLowerCase()} against the prior 30 days</p>
-            </div>
-            <div className="uo-legend" aria-label="Chart legend">
-              <span><i data-tone="critical" />Confirmed</span>
-              <span><i data-tone="accent" />Still recoverable</span>
-              <span><i data-tone="prior" />Prior 30 days</span>
-            </div>
-          </header>
-          <LossCauseChart groups={groups} currency={currency} href="/financials/reports/loss-causes" />
-        </div>
-      </details>
-    </div>
-  );
+  return <div data-screen-label="Loss ledger" data-visual-world="supplied-package" data-surface-id="loss-ledger" data-archetype="operations-loss-ledger" data-operations-surface="loss-ledger" style={{ flex: '1', minHeight: '0', padding: '13px 22px 16px', display: 'flex', flexDirection: 'column', gap: '11px', color: '#1c1f23', overflowY: 'auto' }}>
+    {recordLimitation ? <p style={{ margin: 0, padding: '8px 11px', borderRadius: 8, background: '#fff3e9', color: '#7a5310', font: `400 10.5px/1.4 ${sans}` }}>{recordLimitation}</p> : null}
+    <div style={{ "flex": "none", "display": "grid", "gridTemplateColumns": "repeat(4,1fr)", "gap": "1px", "background": "#eae8e5", "borderRadius": "11px", "overflow": "hidden", "boxShadow": "0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)" }}>{"\n        \n        "}<div style={{ "minWidth": 0, "background": "#ffffff", "padding": "11px 15px 12px", "display": "flex", "flexDirection": "column", "gap": "7px" }}>{"\n          "}<div style={{ "display": "flex", "alignItems": "baseline", "gap": "8px" }}>{"\n            "}<span style={{ "flex": "1", "font": "400 10.5px/1.3 'Inter',sans-serif", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{"Confirmed loss"}</span>{"\n            "}<span style={{ "font": "400 11px/1 'IBM Plex Mono',monospace", "color": "#1a6b43" }}>{"—"}</span>{"\n          "}</div>{"\n          "}<div style={{ "display": "flex", "alignItems": "flex-end", "gap": "10px" }}>{"\n            "}<span style={{ "flex": "1", "font": "400 20px/1 'IBM Plex Mono',monospace", "color": "#1c1f23", "letterSpacing": "-.012em" }}>{money(gross,currency)}</span>{"\n            "}<span style={{ "flex": "none", "paddingBottom": "2px" }}><svg role="img" aria-label="Historical trend unavailable" width="50" height="16" viewBox="0 0 50 16" style={{ "display": "block", "overflow": "visible" }}><polyline points="" fill="none" stroke="#a7abad" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"></polyline><circle cx="50" cy="4.7" r="0" fill="#a7abad"></circle></svg></span>{"\n          "}</div>{"\n          "}<span style={{ "font": "400 10.5px/1.4 'IBM Plex Mono',monospace", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{`${aggregateRow ? formatNumber(aggregateRow.caseCount) : "—"} cases · submission-date scope`}</span>{"\n        "}</div>{"\n        "}<div style={{ "minWidth": 0, "background": "#ffffff", "padding": "11px 15px 12px", "display": "flex", "flexDirection": "column", "gap": "7px" }}>{"\n          "}<div style={{ "display": "flex", "alignItems": "baseline", "gap": "8px" }}>{"\n            "}<span style={{ "flex": "1", "font": "400 10.5px/1.3 'Inter',sans-serif", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{"Received and matched"}</span>{"\n            "}<span style={{ "font": "400 11px/1 'IBM Plex Mono',monospace", "color": "#b0431a" }}>{"—"}</span>{"\n          "}</div>{"\n          "}<div style={{ "display": "flex", "alignItems": "flex-end", "gap": "10px" }}>{"\n            "}<span style={{ "flex": "1", "font": "400 20px/1 'IBM Plex Mono',monospace", "color": "#1a6b43", "letterSpacing": "-.012em" }}>{money(recovered,currency)}</span>{"\n            "}<span style={{ "flex": "none", "paddingBottom": "2px" }}><svg role="img" aria-label="Historical trend unavailable" width="50" height="16" viewBox="0 0 50 16" style={{ "display": "block", "overflow": "visible" }}><polyline points="" fill="none" stroke="#7fb598" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"></polyline><circle cx="50" cy="0.0" r="0" fill="#7fb598"></circle></svg></span>{"\n          "}</div>{"\n          "}<span style={{ "font": "400 10.5px/1.4 'IBM Plex Mono',monospace", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{"Source-backed matched credit"}</span>{"\n        "}</div>{"\n        "}<div style={{ "minWidth": 0, "background": "#ffffff", "padding": "11px 15px 12px", "display": "flex", "flexDirection": "column", "gap": "7px" }}>{"\n          "}<div style={{ "display": "flex", "alignItems": "baseline", "gap": "8px" }}>{"\n            "}<span style={{ "flex": "1", "font": "400 10.5px/1.3 'Inter',sans-serif", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{"Written off"}</span>{"\n            "}<span style={{ "font": "400 11px/1 'IBM Plex Mono',monospace", "color": "#1a6b43" }}>{"—"}</span>{"\n          "}</div>{"\n          "}<div style={{ "display": "flex", "alignItems": "flex-end", "gap": "10px" }}>{"\n            "}<span style={{ "flex": "1", "font": "400 20px/1 'IBM Plex Mono',monospace", "color": "#40454a", "letterSpacing": "-.012em" }}>{money(writtenOff,currency)}</span>{"\n            "}<span style={{ "flex": "none", "paddingBottom": "2px" }}><svg role="img" aria-label="Historical trend unavailable" width="50" height="16" viewBox="0 0 50 16" style={{ "display": "block", "overflow": "visible" }}><polyline points="" fill="none" stroke="#a7abad" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"></polyline><circle cx="50" cy="16.0" r="0" fill="#a7abad"></circle></svg></span>{"\n          "}</div>{"\n          "}<span style={{ "font": "400 10.5px/1.4 'IBM Plex Mono',monospace", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{`${formatNumber(compatible.filter((row) => row.writtenOff).length)} entries · comparison unavailable`}</span>{"\n        "}</div>{"\n        "}<div style={{ "minWidth": 0, "background": "#ffffff", "padding": "11px 15px 12px", "display": "flex", "flexDirection": "column", "gap": "7px" }}>{"\n          "}<div style={{ "display": "flex", "alignItems": "baseline", "gap": "8px" }}>{"\n            "}<span style={{ "flex": "1", "font": "400 10.5px/1.3 'Inter',sans-serif", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{"Final net loss"}</span>{"\n            "}<span style={{ "font": "400 11px/1 'IBM Plex Mono',monospace", "color": "#1a6b43" }}>{"—"}</span>{"\n          "}</div>{"\n          "}<div style={{ "display": "flex", "alignItems": "flex-end", "gap": "10px" }}>{"\n            "}<span style={{ "flex": "1", "font": "400 20px/1 'IBM Plex Mono',monospace", "color": "#b0431a", "letterSpacing": "-.012em" }}>{money(net,currency)}</span>{"\n            "}<span style={{ "flex": "none", "paddingBottom": "2px" }}><svg role="img" aria-label="Historical trend unavailable" width="50" height="16" viewBox="0 0 50 16" style={{ "display": "block", "overflow": "visible" }}><polyline points="" fill="none" stroke="#e0a97a" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"></polyline><circle cx="50" cy="0.0" r="0" fill="#e0a97a"></circle></svg></span>{"\n          "}</div>{"\n          "}<span style={{ "font": "400 10.5px/1.4 'IBM Plex Mono',monospace", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{"Final net loss recognised"}</span>{"\n        "}</div>{"\n      "}</div>
+    <div style={{ "flex": "none", "display": "flex", "gap": "11px" }}>{"\n        "}<div style={{ "background": "#ffffff", "borderRadius": "10px", "boxShadow": "0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)", "padding": "12px 16px 11px", "flex": "1", "minWidth": "0" }}>{"\n          "}<div style={{ "display": "flex", "alignItems": "baseline", "gap": "10px", "marginBottom": "11px" }}>{"\n            "}<div style={{ "font": "600 10.5px/1 'Inter',sans-serif", "letterSpacing": ".09em", "color": "#64686d" }}>{"BY CASE SUBMISSION DATE"}</div>{"\n            "}<span style={{ "font": "400 10.5px/1 'IBM Plex Mono',monospace", "color": "#64686d", "whiteSpace": "nowrap" }}>{"same population as canonical KPIs"}</span>{"\n            "}<div style={{ "flex": "1" }}></div>{"\n            "}<span style={{ "font": "400 10.5px/1 'IBM Plex Mono',monospace", "color": "#64686d" }}>{`${weeks.length} weeks`}</span>{"\n          "}</div>{"\n          "}<div style={{ "display": "flex", "gap": "0", "height": "108px", "position": "relative" }}>{"\n            "}<div style={{ "width": "48px", "flex": "none", "position": "relative" }}>{"\n              "}<div style={{ "position": "absolute", "right": "9px", "top": "-6.0px", "font": "400 9.5px/1.2 'IBM Plex Mono',monospace", "color": "#64686d" }}>{weeks.length ? money(weekMaximum,currency) : "—"}</div><div style={{ "position": "absolute", "right": "9px", "top": "48.0px", "font": "400 9.5px/1.2 'IBM Plex Mono',monospace", "color": "#64686d" }}>{weeks.length ? money(weekMaximum / 2,currency) : "—"}</div><div style={{ "position": "absolute", "right": "9px", "top": "102.0px", "font": "400 9.5px/1.2 'IBM Plex Mono',monospace", "color": "#64686d" }}>{weeks.length ? money(0,currency) : "—"}</div>{"\n            "}</div>{"\n            "}<div style={{ "flex": "1", "minWidth": "0", "position": "relative" }}>{"\n              "}<div style={{ "position": "absolute", "left": "0", "right": "0", "top": "0.0px", "height": "1px", "background": "#f4f2ef" }}></div><div style={{ "position": "absolute", "left": "0", "right": "0", "top": "54.0px", "height": "1px", "background": "#f4f2ef" }}></div><div style={{ "position": "absolute", "left": "0", "right": "0", "top": "108.0px", "height": "1px", "background": "#ddd8d1" }}></div>{"\n              "}<div style={{ "position": "absolute", "inset": "0", "display": "flex", "alignItems": "flex-end", "gap": "5px" }}>{weeks.map((week,index) => <div key={week.date.toISOString()} title={money(week.value,currency)} style={{ "flex": "1", "height": `${week.value / weekMaximum * 108}px`, "borderRadius": "3px 3px 0 0", "background": index >= Math.max(0,weeks.length - 4) ? "#ff7a30" : "#e8c9a8" }} />)}</div>{"\n            "}</div>{"\n          "}</div>{"\n          "}<div style={{ "display": "flex", "gap": "5px", "marginTop": "7px", "paddingLeft": "48px" }}>{weeks.map((week,index) => <span key={week.date.toISOString()} style={{ "flex": "1", "textAlign": "center", "font": "400 9px/1.3 'IBM Plex Mono',monospace", "color": index === weeks.length - 1 ? "#40454a" : "#64686d" }}>{formatDayMonthInTimeZone(week.date, 'UTC')}</span>)}</div>{"\n          "}<div style={{ "display": "flex", "alignItems": "baseline", "gap": "10px", "borderTop": "1px solid #eae8e5", "marginTop": "10px", "paddingTop": "9px" }}>{"\n            "}<span style={{ "font": "400 11px/1.5 'Inter',sans-serif", "color": "#64686d", "flex": "1" }}>{weeks.length ? `Weekly mean ${money(weeks.reduce((total,week) => total + week.value,0) / weeks.length,currency)} across weeks with confirmed case-submission values. Undated and unvalued entries are excluded.` : "No source-backed case-submission distribution is available in this scope."}</span>{"\n            "}<span style={{ "font": "400 11px/1.5 'IBM Plex Mono',monospace", "color": "#b0431a", "whiteSpace": "nowrap" }}>{`peak ${money(weeks.length ? Math.max(...weeks.map((week) => week.value)) : null,currency)}`}</span>{"\n          "}</div>{"\n        "}</div>{"\n        "}<div style={{ "background": "#ffffff", "borderRadius": "10px", "boxShadow": "0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)", "padding": "12px 16px 11px", "width": "404px", "flex": "none", "display": "flex", "flexDirection": "column" }}>{"\n          "}<div style={{ "display": "flex", "alignItems": "baseline", "gap": "10px", "marginBottom": "11px" }}>{"\n            "}<div style={{ "font": "600 10.5px/1 'Inter',sans-serif", "letterSpacing": ".09em", "color": "#64686d" }}>{"RANKED CAUSES"}</div>{"\n            "}<div style={{ "flex": "1" }}></div>{"\n            "}<span style={{ "font": "400 10.5px/1 'IBM Plex Mono',monospace", "color": "#64686d" }}>{`realised, ${rangeLabel}`}</span>{"\n          "}</div>{"\n          \n          "}{groups.map((group,index) => (<div key={group.key} style={{ "display": "flex", "alignItems": "center", "gap": "10px", "padding": index === 0 ? "0 0 7px" : "7px 0 7px", "textDecoration": "none" }}>{"\n            "}<Link href={hrefForCause(group.key)} style={{ "textDecoration": "none", "width": "172px", "flex": "none", "font": "400 11.5px/1.35 'Inter',sans-serif", "color": "#1c1f23", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{group.name}</Link>{"\n            "}<span style={{ "flex": "1", "height": "7px", "borderRadius": "2px", "background": "#f2f0ed", "overflow": "hidden", "display": "block" }}><span style={{ "width": `${(group.realisedMinor ?? 0) / causeMaximum * 100}%`, "height": "100%", "background": index === 0 ? "#ff7a30" : "#e8c9a8", "display": "block" }}></span></span>{"\n            "}<span style={{ "width": "76px", "flex": "none", "textAlign": "right", "font": "400 11.5px/1.4 'IBM Plex Mono',monospace", "color": "#1c1f23" }}>{money(group.realisedMinor,currency)}</span>{"\n            "}<span style={{ "width": "34px", "flex": "none", "textAlign": "right", "font": "400 10.5px/1.4 'IBM Plex Mono',monospace", "color": "#64686d" }}>{group.realisedMinor !== null && causeTotal > 0 ? `${(group.realisedMinor / causeTotal * 100).toFixed(1)}%` : "—"}</span>{"\n          "}</div>))}{"\n          "}{"\n          "}{"\n          "}{"\n          "}{"\n          "}{"\n          "}<div style={{ "flex": "1" }}></div>{"\n          "}<div style={{ "borderTop": "1px solid #eae8e5", "marginTop": "6px", "paddingTop": "9px", "font": "400 11px/1.5 'Inter',sans-serif", "color": "#64686d" }}>{`${groups.length} causes shown, ranked by confirmed realised loss. Missing amounts remain unavailable. `}<Link href="/financials/reports/loss-causes">{"See recovery rate by cause"}</Link></div>{"\n        "}</div>{"\n      "}</div>
+    <div style={{ "background": "#ffffff", "borderRadius": "10px", "boxShadow": "0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)", "padding": "11px 16px 9px", "flex": "1", "minHeight": "0", "display": "flex", "flexDirection": "column" }}>{"\n        "}<div style={{ "display": "flex", "alignItems": "center", "gap": "10px", "paddingBottom": "8px" }}>{"\n          "}<div style={{ "font": "600 10.5px/1 'Inter',sans-serif", "letterSpacing": ".09em", "color": "#64686d" }}>{"ENTRIES"}</div>{"\n          "}<span style={{ "font": "400 10.5px/1 'IBM Plex Mono',monospace", "color": "#64686d", "whiteSpace": "nowrap" }}>{"current filtered scope"}</span>{"\n          "}<div style={{ "flex": "1" }}></div>{"\n          "}<span style={{ "width": "124px", "flex": "none", "font": "400 9.5px/1 'Inter',sans-serif", "letterSpacing": ".05em", "color": "#64686d" }}>{"STATUS"}</span><span style={{ "width": "96px", "flex": "none", "font": "400 9.5px/1 'Inter',sans-serif", "letterSpacing": ".05em", "color": "#64686d" }}>{"ATTRIBUTION"}</span><span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "400 9.5px/1 'Inter',sans-serif", "letterSpacing": ".05em", "color": "#64686d" }}>{"LOSS"}</span><span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "400 9.5px/1 'Inter',sans-serif", "letterSpacing": ".05em", "color": "#64686d" }}>{"RECEIVED + MATCHED"}</span><span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "400 9.5px/1 'Inter',sans-serif", "letterSpacing": ".05em", "color": "#64686d" }}>{"NET"}</span>{"\n        "}</div>{"\n        \n        "}{visible.map((row) => (<div key={row.id} style={{ "display": "flex", "alignItems": "center", "gap": "10px", "padding": "7px 0", "borderTop": "1px solid #f4f2ef" }}>{"\n          "}<Link href={row.detailHref ?? `/financials/losses/${row.id}`} style={{ "width": "82px", "flex": "none", "font": "400 11.5px/1.4 'IBM Plex Mono',monospace" }}>{objectDisplayRef('loss', null, row.id)}</Link>{"\n          "}<span style={{ "width": "52px", "flex": "none", "font": "400 11px/1.4 'IBM Plex Mono',monospace", "color": "#64686d" }}>{row.effectiveAt ? formatDayMonthInTimeZone(new Date(row.effectiveAt), 'UTC') : '—'}</span>{"\n          "}<div style={{ "flex": "1", "minWidth": "0" }}>{"\n            "}<div style={{ "font": "400 12.5px/1.4 'Inter',sans-serif", "color": "#1c1f23", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{rowCause(row).name}</div>{"\n          "}</div>{"\n          "}<span style={{ "width": "150px", "flex": "none", "font": "400 11px/1.4 'Inter',sans-serif", "color": "#64686d", "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis" }}>{`${row.counterpartyName ?? row.source ?? "—"} · `}{row.supportPayoutCaseId ? <Link href={`/cases/${row.supportPayoutCaseId}`} style={{ "font": "400 11px/1.4 'IBM Plex Mono',monospace" }}>{row.caseReference ?? shortRef(null,row.supportPayoutCaseId)}</Link> : "Case unavailable"}</span>{"\n          "}<span style={{ "width": "124px", "flex": "none" }}><span style={{ "padding": "2px 7px", "borderRadius": "5px", "background": stageTone(row).background, "font": "500 9.5px/1.5 'Inter',sans-serif", "color": stageTone(row).color }}>{stage(row)}</span></span>{"\n          "}<span style={{ "width": "96px", "flex": "none", "font": "400 11px/1.4 'IBM Plex Mono',monospace", "color": "#64686d" }}>{row.attribution ? label("attribution",row.attribution) : "Unattributed"}</span>{"\n          "}<span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "400 12px/1.4 'IBM Plex Mono',monospace", "color": "#1c1f23" }}>{money(row.realisedLossMinor ?? row.estimatedLossMinor,row.currency)}</span>{"\n          "}<span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "400 12px/1.4 'IBM Plex Mono',monospace", "color": row.recoveredMinor ? "#1a6b43" : "#a7abad" }}>{money(row.recoveredMinor,row.currency)}</span>{"\n          "}<span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "400 12px/1.4 'IBM Plex Mono',monospace", "color": row.netUnrecoveredMinor === 0 ? "#1a6b43" : "#b0431a" }}>{money(row.netUnrecoveredMinor,row.currency)}</span>{"\n        "}</div>))}{!visible.length ? <div data-state-id="loss-chart-ledger-unavailable-states" style={{padding: "24px", borderTop: "1px solid #eae8e5", textAlign: "center", font: "400 11.5px/1.5 'Inter',sans-serif", color: "#64686d"}}>No loss entries in this scope. Missing financial stages remain unavailable, not zero.</div> : null}{"\n        "}{"\n        "}{"\n        "}{"\n        "}{"\n        "}{"\n        "}{"\n                "}<div style={{ "display": "flex", "alignItems": "center", "gap": "10px", "padding": "9px 0 3px", "borderTop": "1.5px solid #1c1f23", "marginTop": "1px" }}>{"\n          "}<span style={{ "flex": "1", "minWidth": "0", "font": "500 12.5px/1.4 'Inter',sans-serif", "color": "#1c1f23" }}>{`Canonical total · ${rangeLabel}`}</span>{"\n          "}<span style={{ "width": "124px", "flex": "none", "font": "400 11px/1.4 'IBM Plex Mono',monospace", "color": "#64686d" }}>{`${formatNumber(filtered.filter((row) => row.writtenOff).length)} written off`}</span>{"\n          "}<span style={{ "width": "96px", "flex": "none" }}></span>{"\n          "}<span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "500 12px/1.4 'IBM Plex Mono',monospace", "color": "#1c1f23" }}>{money(gross,currency)}</span>{"\n          "}<span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "500 12px/1.4 'IBM Plex Mono',monospace", "color": "#1a6b43" }}>{money(recovered,currency)}</span>{"\n          "}<span style={{ "width": "88px", "flex": "none", "textAlign": "right", "font": "500 12px/1.4 'IBM Plex Mono',monospace", "color": "#b0431a" }}>{money(net,currency)}</span>{"\n        "}</div>{"\n        "}<div style={{ "flex": "1" }}></div>{"\n        "}<div style={{ "display": "flex", "alignItems": "center", "gap": "12px", "borderTop": "1px solid #eae8e5", "marginTop": "7px", "paddingTop": "8px" }}>{"\n          "}<span style={{ "font": "400 11px/1.5 'IBM Plex Mono',monospace", "color": "#64686d" }}>{`showing ${formatNumber(visible.length)} of ${formatNumber(filtered.length)}`}</span>{"\n          "}<span style={{ "font": "400 11px/1.5 'Inter',sans-serif", "color": "#64686d" }}>{"Canonical totals are shared with "}<Link href="/financials/reports">{"Reports"}</Link>{" and "}<Link href="/financials/reconciliation">{"Reconciliation"}</Link>{". No automatic close is scheduled."}</span>{"\n          "}<div style={{ "flex": "1" }}></div>{"\n          "}{currentPage > 1 ? <Link href={hrefForPage(currentPage - 1)} style={{ "padding": "5px 9px", "borderRadius": "7px", "boxShadow": "inset 0 0 0 1px rgba(28,27,25,.09)", "font": "400 11.5px/1 'Inter',sans-serif", "color": "#40454a" }}>{"Previous"}</Link> : <span aria-disabled="true" style={{ "padding": "5px 9px", "borderRadius": "7px", "boxShadow": "inset 0 0 0 1px rgba(28,27,25,.09)", "font": "400 11.5px/1 'Inter',sans-serif", "color": "#a7abad" }}>{"Previous"}</span>}{"\n          "}{currentPage < pageCount ? <Link href={hrefForPage(currentPage + 1)} style={{ "padding": "5px 9px", "borderRadius": "7px", "boxShadow": "inset 0 0 0 1px rgba(28,27,25,.09)", "font": "400 11.5px/1 'Inter',sans-serif", "color": "#40454a" }}>{"Next"}</Link> : <span aria-disabled="true" style={{ "padding": "5px 9px", "borderRadius": "7px", "boxShadow": "inset 0 0 0 1px rgba(28,27,25,.09)", "font": "400 11.5px/1 'Inter',sans-serif", "color": "#a7abad" }}>{"Next"}</span>}{"\n        "}</div>{"\n      "}</div>
+  </div>;
 }

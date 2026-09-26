@@ -56,18 +56,46 @@ jest.mock('@/components/ui', () => ({
 }));
 
 const caseFile = {
+  version: 'case-evidence-file-v1',
   claim: {
     id: 'case-1',
+    merchantId: 'merchant-1',
     customerName: 'Taylor Reed',
     claimType: 'missing_parcel',
     issueSummary: 'Parcel not received',
+    requestedAction: 'partial_refund',
+    orderId: 'order-1',
     orderReference: '#1042',
+    ticketId: null,
+    ticketReference: null,
     amountAtRiskMinor: 2500,
     currency: 'GBP',
+    status: 'ready_for_decision',
     createdAt: '2026-08-20T09:00:00.000Z',
+    updatedAt: '2026-08-23T10:00:00.000Z',
   },
+  evidence: [],
+  customerHistory: [],
+  custodyChain: [],
+  firstEvidencedFailure: { stage: null, occurredAt: null, summary: null, evidenceIds: [] },
+  itemParcelMatrix: [],
   providerClaimReadiness: {
-    gates: Array.from({ length: 9 }, (_, index) => ({ id: `gate-${index}`, state: index < 7 ? 'met' : 'missing' })),
+    readiness: 'evidence_needed',
+    posture: 'insufficient',
+    gates: Array.from({ length: 9 }, (_, index) => ({
+      id: `gate-${index}`,
+      state: index < 7 ? 'met' : 'missing',
+      headline: `Gate ${index + 1}`,
+      reason: index < 7 ? 'Verified by fixture evidence.' : 'Fixture evidence is missing.',
+      evidenceIds: [],
+      ruleVersionId: null,
+      nextAction: index < 7 ? 'No action required.' : 'Collect the missing evidence.',
+    })),
+    hardGateIds: [],
+    missingEvidence: ['carrier scan'],
+    nextAction: 'Collect the missing carrier scan.',
+    ruleVersionId: null,
+    evaluatedAt: '2026-08-23T10:00:00.000Z',
   },
   apparentResponsibility: {
     owner: 'courier',
@@ -77,7 +105,12 @@ const caseFile = {
     supportingEvidenceIds: [],
     conflictingEvidenceIds: [],
     missingEvidence: ['carrier scan'],
+    merchantConfirmed: false,
+    merchantConfirmationState: 'unconfirmed',
+    merchantConfirmedAt: null,
+    confirmationSource: null,
   },
+  responsibilityRecommendation: null,
   decisions: [{
     id: 'decision-1',
     decision: 'partial_refund',
@@ -98,11 +131,25 @@ const caseFile = {
       source_object: {
         reference: '#1042',
         provider_href: 'https://merchant-one.myshopify.com/admin/orders/123456789',
-      },
+  },
+  partnerRule: null,
+  recoveryCase: null,
+  claimPacks: [],
+  submissions: [],
+  providerResponses: [],
+  credits: [],
+  financialEntries: [],
     },
   }],
   outcomes: [],
-  availability: { errors: [] },
+  activity: [],
+  availability: {
+    case: 'available',
+    evidence: 'available',
+    recovery: 'not_opened',
+    rule: 'not_confirmed',
+    errors: [],
+  },
 } as unknown as CaseEvidenceFile;
 
 function workbench(overrides: Partial<ClaimReviewWorkbench> = {}): ClaimReviewWorkbench {
@@ -150,40 +197,39 @@ describe('CaseDetailOperations', () => {
       />,
     );
 
-    expect(screen.getByRole('link', { name: 'Back to work' })).toHaveAttribute('href', returnHref);
-    expect(screen.getByRole('button', { name: 'Record refund authorisation' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Review merchant decision' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Approve refund' })).not.toBeInTheDocument();
-    expect(screen.getByText('Recommend collecting evidence')).toBeInTheDocument();
-    expect(screen.queryByText('Request Evidence')).not.toBeInTheDocument();
-    expect(screen.getByText('Partial refund')).toBeInTheDocument();
-    expect(screen.getByText('Manual Required')).toBeInTheDocument();
-    expect(screen.getByText('Not observed')).toBeInTheDocument();
-    expect(screen.getByText('Paid value not recorded')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Open exact Shopify order/i })).toHaveAttribute(
-      'href',
-      'https://merchant-one.myshopify.com/admin/orders/123456789',
-    );
+    expect(screen.getByText('UNAUTH RECOMMENDS · ADVISORY')).toBeInTheDocument();
+    expect(screen.getByText('Request evidence')).toBeInTheDocument();
+    expect(screen.getByText('PARTIAL REFUND')).toBeInTheDocument();
+    expect(screen.getByText('PROVIDER GATES')).toBeInTheDocument();
+    expect(screen.getByText('AUDIT TIMELINE')).toBeInTheDocument();
+    expect(screen.getByText('MONEY & RECOVERY')).toBeInTheDocument();
+    expect(screen.getByText('Received and matched')).toBeInTheDocument();
+    expect(screen.getByText('Reconciled')).toBeInTheDocument();
+    expect(screen.getByText(/order #1042/)).toBeInTheDocument();
   });
 
-  it('opens a fragment deep link on Responsibility and passes the exact investigation focus', async () => {
-    window.history.replaceState({}, '', '/cases/case-1#investigation-inv-7');
+  it('opens a responsibility deep link and passes the exact investigation focus', async () => {
+    window.history.replaceState({}, '', '/cases/case-1?tab=responsibility&investigationId=inv-7');
     render(
       <CaseDetailOperations
         wb={workbench()}
         financialSummaries={[]}
         canManage
+        investigationId="inv-7"
         caseEvidenceFile={caseFile}
       />,
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Responsibility/i })).toHaveAttribute('aria-current', 'page');
+      expect(screen.getByRole('button', { name: /Responsibility.*Focused/i })).toHaveAttribute('aria-current', 'page');
       expect(screen.getByTestId('investigations')).toHaveAttribute('data-focused', 'inv-7');
     });
     expect(window.location.search).toContain('tab=responsibility');
   });
 
-  it('keeps comments, helpdesk audit context, and linked prior cases in the Activity tab', async () => {
+  it('keeps the supplied audit timeline and decision regions in the Activity tab', async () => {
     window.history.replaceState({}, '', '/cases/case-1?tab=activity');
     render(
       <CaseDetailOperations
@@ -200,9 +246,9 @@ describe('CaseDetailOperations', () => {
       />,
     );
 
-    expect(await screen.findByText('Combined case activity')).toBeInTheDocument();
-    expect(screen.getByText('Case comments')).toBeInTheDocument();
-    expect(screen.getByText('Helpdesk source context')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Previous cases' })).toBeInTheDocument();
+    expect(await screen.findByText('AUDIT TIMELINE')).toBeInTheDocument();
+    expect(screen.getByText('No append-only activity is available for this case.')).toBeInTheDocument();
+    expect(screen.getByText('DECISION BOUNDARY')).toBeInTheDocument();
+    expect(screen.getByText('MONEY & RECOVERY')).toBeInTheDocument();
   });
 });

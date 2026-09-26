@@ -73,13 +73,13 @@ export function DeliveryPhotoFinding({
 
   return (
     <>
-      <div className="mt-3 rounded-md border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-muted)] p-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <div style={{ marginTop: 12, border: '1px solid #eae8e5', borderRadius: 6, background: '#f4f3f1', padding: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <p className="ua-text-label text-[var(--uo-route-text-primary)]">
+            <p style={{ margin: 0, color: '#1c1f23', fontSize: 11, fontWeight: 500, lineHeight: '16px' }}>
               Human photo finding
             </p>
-            <p className="ua-text-caption-role mt-1">
+            <p style={{ margin: '4px 0 0', color: '#64686d', fontSize: 11.5, lineHeight: 1.45 }}>
               {finding ? FINDING_LABELS[finding] : 'The delivery photo has not been interpreted yet.'}
               {recordedAt ? ` · ${formatDateTime(recordedAt)}` : ''}
             </p>
@@ -91,11 +91,11 @@ export function DeliveryPhotoFinding({
           ) : null}
         </div>
         {rationale ? (
-          <p className="ua-text-caption-role mt-2 leading-relaxed">
+          <p style={{ margin: '8px 0 0', color: '#64686d', fontSize: 11.5, lineHeight: 1.625 }}>
             {rationale}
           </p>
         ) : null}
-        <p className="mt-2 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]">
+        <p style={{ margin: '8px 0 0', color: '#6f6a63', fontSize: 10.5 }}>
           This records a human observation and refreshes the advisory recommendation. It does not decide the customer outcome.
         </p>
       </div>
@@ -110,7 +110,7 @@ export function DeliveryPhotoFinding({
           size="md"
           closeOnBackdrop={!busy}
           footer={(
-            <div className="flex w-full justify-end gap-2">
+            <div style={{ display: 'flex', width: '100%', justifyContent: 'flex-end', gap: 8 }}>
               <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>
                 Cancel
               </Button>
@@ -124,16 +124,16 @@ export function DeliveryPhotoFinding({
             </div>
           )}
         >
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {error ? (
-              <p role="alert" className="ua-text-body rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3 text-[var(--uo-route-risk-critical)]">
+              <p role="alert" style={{ margin: 0, border: '1px solid #edc6b5', borderRadius: 6, background: '#fdf0e6', padding: 12, color: '#b0431a', fontSize: 13, lineHeight: '20px' }}>
                 {error}
               </p>
             ) : null}
-            <label className="ua-text-body block font-medium">
+            <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
               Finding
               <Select
-                className="mt-1"
+                style={{ marginTop: 4 }}
                 value={draftFinding}
                 onChange={(event) => setDraftFinding(event.target.value as PhotoFinding)}
               >
@@ -142,10 +142,10 @@ export function DeliveryPhotoFinding({
                 ))}
               </Select>
             </label>
-            <label className="ua-text-body block font-medium">
+            <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
               Rationale
               <Textarea
-                className="mt-1 min-h-28"
+                style={{ minHeight: 112, marginTop: 4 }}
                 maxLength={2000}
                 value={draftRationale}
                 onChange={(event) => setDraftRationale(event.target.value)}

@@ -338,15 +338,15 @@ export function ReconciliationSummaryCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3 p-4">
         <div className="flex items-start gap-3">
-          <ShieldQuestion className="mt-0.5 shrink-0 text-[var(--uo-route-action-primary)]" size={19} aria-hidden="true" />
+          <ShieldQuestion className="mt-0.5 shrink-0 text-[#9f4f08]" size={19} aria-hidden="true" />
           <div>
-            <p className="text-[length:var(--uo-route-text-metadata-size)] font-semibold text-[var(--uo-route-text-secondary)]">
+            <p className="text-[length:10.5px] font-semibold text-[#64686d]">
               Decision evidence
             </p>
-            <h3 id="case-evidence-readiness-title" className="ua-text-section-title mt-1 text-[var(--uo-route-text-primary)]">
+            <h3 id="case-evidence-readiness-title" className="font-semibold text-[14px] leading-5 text-[#1c1f23] mt-1 text-[#1c1f23]">
               Evidence and readiness
             </h3>
-            <p className="ua-text-caption-role mt-1 max-w-2xl leading-relaxed">
+            <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1 max-w-2xl leading-relaxed">
               Follow the source record through verified facts and recommendations before recording a merchant decision.
             </p>
           </div>
@@ -366,7 +366,7 @@ export function ReconciliationSummaryCard({
               Update recommendations
             </Button>
           ) : (
-            <p className="max-w-44 text-right text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]">
+            <p className="max-w-44 text-right text-[length:10.5px] text-[#6f6a63]">
               {!canManage
                 ? 'Read-only access: recommendations cannot be updated.'
                 : !requiredContextReady
@@ -377,14 +377,14 @@ export function ReconciliationSummaryCard({
         </div>
       </div>
 
-      <dl className="grid border-t border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-secondary)] sm:grid-cols-2 lg:grid-cols-4" aria-label="Evidence readiness summary">
-        <div className="p-3.5 lg:border-r lg:border-[var(--uo-route-border-subtle)]">
-          <dt className="text-[length:var(--uo-route-text-metadata-size)] font-semibold text-[var(--uo-route-text-tertiary)]">Evidence readiness</dt>
-          <dd className="ua-text-working-title mt-1 text-[var(--uo-route-text-primary)]">{readiness.readiness}</dd>
+      <dl className="grid border-t border-[#eae8e5] bg-[#f4f3f1] sm:grid-cols-2 lg:grid-cols-4" aria-label="Evidence readiness summary">
+        <div className="p-3.5 lg:border-r lg:border-[#eae8e5]">
+          <dt className="text-[length:10.5px] font-semibold text-[#6f6a63]">Evidence readiness</dt>
+          <dd className="font-medium text-[13px] leading-5 text-[#1c1f23] mt-1 text-[#1c1f23]">{readiness.readiness}</dd>
         </div>
-        <div className="border-t border-[var(--uo-route-border-subtle)] p-3.5 sm:border-l sm:border-t-0 lg:border-l-0 lg:border-r">
-          <dt className="text-[length:var(--uo-route-text-metadata-size)] font-semibold text-[var(--uo-route-text-tertiary)]">Provenance</dt>
-          <dd className="ua-text-working-title mt-1 text-[var(--uo-route-text-primary)]">
+        <div className="border-t border-[#eae8e5] p-3.5 sm:border-l sm:border-t-0 lg:border-l-0 lg:border-r">
+          <dt className="text-[length:10.5px] font-semibold text-[#6f6a63]">Provenance</dt>
+          <dd className="font-medium text-[13px] leading-5 text-[#1c1f23] mt-1 text-[#1c1f23]">
             {loading && !data
               ? 'Loading…'
               : error && !data
@@ -392,9 +392,9 @@ export function ReconciliationSummaryCard({
                 : countLabel(facts.length, 'fact')}
           </dd>
         </div>
-        <div className="border-t border-[var(--uo-route-border-subtle)] p-3.5 lg:border-r">
-          <dt className="text-[length:var(--uo-route-text-metadata-size)] font-semibold text-[var(--uo-route-text-tertiary)]">Named gaps</dt>
-          <dd className="ua-text-working-title mt-1 text-[var(--uo-route-text-primary)]">
+        <div className="border-t border-[#eae8e5] p-3.5 lg:border-r">
+          <dt className="text-[length:10.5px] font-semibold text-[#6f6a63]">Named gaps</dt>
+          <dd className="font-medium text-[13px] leading-5 text-[#1c1f23] mt-1 text-[#1c1f23]">
             {readiness.state === 'loading'
               ? 'Not yet evaluated'
               : readiness.state === 'unavailable'
@@ -408,27 +408,27 @@ export function ReconciliationSummaryCard({
                   )}
           </dd>
         </div>
-        <div className="border-t border-[var(--uo-route-border-subtle)] p-3.5 sm:border-l lg:border-l-0">
-          <dt className="text-[length:var(--uo-route-text-metadata-size)] font-semibold text-[var(--uo-route-text-tertiary)]">Next action</dt>
-          <dd className="ua-text-working-title mt-1 text-[var(--uo-route-text-primary)]">
+        <div className="border-t border-[#eae8e5] p-3.5 sm:border-l lg:border-l-0">
+          <dt className="text-[length:10.5px] font-semibold text-[#6f6a63]">Next action</dt>
+          <dd className="font-medium text-[13px] leading-5 text-[#1c1f23] mt-1 text-[#1c1f23]">
             {readiness.nextAction}
           </dd>
         </div>
       </dl>
 
       {loading && !data ? (
-        <div className="space-y-3 border-t border-[var(--uo-route-border-subtle)] p-4" aria-label="Loading evidence and recommendations">
+        <div className="space-y-3 border-t border-[#eae8e5] p-4" aria-label="Loading evidence and recommendations">
           <Bone className="h-36" />
           <p className="sr-only" role="status">Loading case evidence</p>
         </div>
       ) : error && !data ? (
-        <div className="border-t border-[var(--uo-route-border-subtle)] p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3" role="alert">
+        <div className="border-t border-[#eae8e5] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[#edc6b5] bg-[#fdf0e6] p-3" role="alert">
             <div className="flex min-w-0 items-start gap-2">
-              <CircleAlert size={16} className="mt-0.5 shrink-0 text-[var(--uo-route-risk-critical)]" aria-hidden="true" />
+              <CircleAlert size={16} className="mt-0.5 shrink-0 text-[#b0431a]" aria-hidden="true" />
               <div>
-                <p className="ua-text-working-title text-[var(--uo-route-risk-critical)]">Case evidence could not be loaded</p>
-                <p className="ua-text-caption-role mt-1">
+                <p className="font-medium text-[13px] leading-5 text-[#1c1f23] text-[#b0431a]">Case evidence could not be loaded</p>
+                <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1">
                   {error} No recommendation or merchant decision was changed.
                 </p>
               </div>
@@ -441,43 +441,43 @@ export function ReconciliationSummaryCard({
       ) : (
         <>
           {hasStaleData ? (
-            <div className="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-warning-border)] bg-[var(--uo-route-warning-bg)] p-3" role="status">
-              <p className="ua-text-caption-role">
+            <div className="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[#ead8b6] bg-[#fff3e9] p-3" role="status">
+              <p className="text-[11.5px] leading-[1.45] text-[#64686d]">
                 The last loaded evidence remains visible. Refresh failed: {error}
               </p>
               <Button type="button" variant="secondary" size="sm" onClick={reload}>Retry</Button>
             </div>
           ) : null}
 
-          <div className="border-t border-[var(--uo-route-border-subtle)] p-4">
+          <div className="border-t border-[#eae8e5] p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
-                <h4 className="ua-text-working-title text-[var(--uo-route-text-primary)]">Independent recommendations</h4>
-                <p className="ua-text-caption-role mt-1">
+                <h4 className="font-medium text-[13px] leading-5 text-[#1c1f23] text-[#1c1f23]">Independent recommendations</h4>
+                <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1">
                   Customer action, responsibility, and recovery stay separate. The merchant makes the final decision.
                 </p>
               </div>
-              {isRefreshing ? <span role="status" className="ua-text-caption-role">Updating…</span> : null}
+              {isRefreshing ? <span role="status" className="text-[11.5px] leading-[1.45] text-[#64686d]">Updating…</span> : null}
             </div>
             {rows.length > 0 ? (
-              <div className="mt-3 grid divide-y divide-[var(--uo-route-border-subtle)] border-y border-[var(--uo-route-border-subtle)] md:grid-cols-3 md:divide-x md:divide-y-0">
+              <div className="mt-3 grid divide-y divide-[#eae8e5] border-y border-[#eae8e5] md:grid-cols-3 md:divide-x md:divide-y-0">
                 {rows.map(([key, recommendation]) => {
                   const explanationText = (recommendation.explanation ?? 'Review the evidence before acting.').trim();
                   const showExplanation = (explanationCounts.get(explanationText) ?? 0) <= 1;
                   return (
                     <div key={key} className="min-w-0 px-3 py-3 first:pl-0 last:pr-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="ua-text-label">{labels[key] ?? key}</p>
+                        <p className="text-[11px] font-medium leading-4 text-[#64686d]">{labels[key] ?? key}</p>
                         <Badge tone={tone(recommendation.assessment_state)} size="sm" dot>
                           {stateLabel(recommendation.assessment_state)}
                         </Badge>
                       </div>
-                      <p className="ua-text-working-title mt-2 text-[var(--uo-route-text-primary)]">{recommendation.headline ?? 'No recommendation yet'}</p>
+                      <p className="font-medium text-[13px] leading-5 text-[#1c1f23] mt-2 text-[#1c1f23]">{recommendation.headline ?? 'No recommendation yet'}</p>
                       {showExplanation ? (
-                        <p className="ua-text-caption-role mt-1 leading-5">{explanationText}</p>
+                        <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1 leading-5">{explanationText}</p>
                       ) : null}
                       {recommendation.missing_evidence && recommendation.missing_evidence.length > 0 ? (
-                        <p className="ua-text-metadata mt-2">
+                        <p className="text-[10.5px] leading-4 text-[#6f6a63] mt-2">
                           Missing: {recommendation.missing_evidence.slice(0, 3).map((item) => humanize(item, item)).join(', ')}
                         </p>
                       ) : null}
@@ -486,21 +486,21 @@ export function ReconciliationSummaryCard({
                 })}
               </div>
             ) : (
-              <p className="ua-text-body mt-3 text-[var(--uo-route-text-secondary)]">
+              <p className="text-[13px] leading-5 text-[#40454a] mt-3 text-[#64686d]">
                 Select the affected item to calculate recommendations from the order and source evidence.
               </p>
             )}
           </div>
 
-          <div className="border-t border-[var(--uo-route-border-subtle)] p-4">
+          <div className="border-t border-[#eae8e5] p-4">
             <div>
-              <h4 className="ua-text-working-title text-[var(--uo-route-text-primary)]">Evidence spine</h4>
-              <p className="ua-text-caption-role mt-1">
+              <h4 className="font-medium text-[13px] leading-5 text-[#1c1f23] text-[#1c1f23]">Evidence spine</h4>
+              <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1">
                 Labels and provenance distinguish what a provider reported, what a person found, and what the system inferred.
               </p>
             </div>
             {facts.length > 0 ? (
-              <div className="mt-3 divide-y divide-[var(--uo-route-border-subtle)] border-y border-[var(--uo-route-border-subtle)]">
+              <div className="mt-3 divide-y divide-[#eae8e5] border-y border-[#eae8e5]">
                 {(Object.keys(FACT_KIND_COPY) as Array<keyof typeof FACT_KIND_COPY>).map((kind) => {
                   const kindFacts = factsByKind[kind];
                   if (kindFacts.length === 0) return null;
@@ -508,15 +508,15 @@ export function ReconciliationSummaryCard({
                   return (
                     <section key={kind} className="grid gap-3 py-3 md:grid-cols-[180px_minmax(0,1fr)]" data-evidence-kind={kind}>
                       <div>
-                        <h5 className="ua-text-metadata text-[var(--uo-route-text-primary)]">{copy.label}</h5>
-                        <p className="mt-1 text-[length:var(--uo-route-text-metadata-size)] leading-4 text-[var(--uo-route-text-tertiary)]">{copy.description}</p>
+                        <h5 className="text-[10.5px] leading-4 text-[#6f6a63] text-[#1c1f23]">{copy.label}</h5>
+                        <p className="mt-1 text-[length:10.5px] leading-4 text-[#6f6a63]">{copy.description}</p>
                       </div>
                       <div>
                         {kindFacts.slice(0, 8).map((fact) => (
                           <SourceTraceRow
                             key={fact.id}
                             kind={`Provider record · ${humanize(fact.sourceProvider, 'Unknown provider')}`}
-                            summary={<p className="font-medium text-[var(--uo-route-text-primary)]">
+                            summary={<p className="font-medium text-[#1c1f23]">
                               {fact.summary ?? humanize(fact.evidenceType, 'Evidence item')}
                             </p>}
                             meta={<>
@@ -534,7 +534,7 @@ export function ReconciliationSummaryCard({
                 })}
               </div>
             ) : (
-              <p className="ua-text-body mt-3 text-[var(--uo-route-text-secondary)]">
+              <p className="text-[13px] leading-5 text-[#40454a] mt-3 text-[#64686d]">
                 No canonical evidence facts are on file yet. Missing evidence remains explicit rather than being inferred from silence.
               </p>
             )}
@@ -550,12 +550,12 @@ export function ReconciliationSummaryCard({
           .find((recommendation) => recommendation.policy_snapshot?.rule_name || recommendation.merchant_rule_version_id);
         if (!appliedRule) return null;
         return (
-          <div className="ua-text-dense border-t border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-muted)] px-4 py-3">
-            <span className="font-semibold text-[var(--uo-route-text-secondary)]">Applied rule: </span>
-            <span className="font-medium text-[var(--uo-route-text-primary)]">
+          <div className="text-[12px] leading-[1.45] text-[#40454a] border-t border-[#eae8e5] bg-[#f4f3f1] px-4 py-3">
+            <span className="font-semibold text-[#64686d]">Applied rule: </span>
+            <span className="font-medium text-[#1c1f23]">
               {appliedRule.policy_snapshot?.rule_name ?? 'Merchant policy'}
             </span>
-            <span className="text-[var(--uo-route-text-secondary)]">
+            <span className="text-[#64686d]">
               {' · '}Version {appliedRule.policy_snapshot?.version ?? appliedRule.merchant_rule_version_id?.slice(-6) ?? 'recorded'}
             </span>
           </div>
@@ -563,15 +563,15 @@ export function ReconciliationSummaryCard({
       })() : null}
 
       {claimedItems.length === 0 && candidates.length > 0 ? (
-        <div className="border-t border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-muted)] p-4">
-          <p className="ua-text-label">Order-line candidates</p>
-          <p className="ua-text-metadata mt-1">Select the item the customer says is affected. Unauth will not infer this from an order-level refund.</p>
+        <div className="border-t border-[#eae8e5] bg-[#f4f3f1] p-4">
+          <p className="text-[11px] font-medium leading-4 text-[#64686d]">Order-line candidates</p>
+          <p className="text-[10.5px] leading-4 text-[#6f6a63] mt-1">Select the item the customer says is affected. Unauth will not infer this from an order-level refund.</p>
           <div className="mt-2 space-y-2">
             {candidates.slice(0, 8).map((line) => (
-              <div key={line.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-primary)] px-3 py-2">
+              <div key={line.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#eae8e5] bg-[#fff] px-3 py-2">
                 <div className="min-w-0">
-                  <p className="ua-text-working-title truncate text-[var(--uo-route-text-primary)]">{line.title ?? line.sku ?? 'Unnamed item'}</p>
-                  <p className="ua-text-metadata">{line.sku ?? 'No SKU'} · Qty {line.quantity ?? 1}</p>
+                  <p className="font-medium text-[13px] leading-5 text-[#1c1f23] truncate text-[#1c1f23]">{line.title ?? line.sku ?? 'Unnamed item'}</p>
+                  <p className="text-[10.5px] leading-4 text-[#6f6a63]">{line.sku ?? 'No SKU'} · Qty {line.quantity ?? 1}</p>
                 </div>
                 <Button type="button" size="sm" variant="secondary" disabled={!canMutate || busy} onClick={() => void selectLine(line.id)}>
                   Match item
@@ -583,13 +583,13 @@ export function ReconciliationSummaryCard({
       ) : null}
 
       {matrix.length > 0 ? (
-        <div className="border-t border-[var(--uo-route-border-subtle)] p-4">
-          <p className="ua-text-label">Item × parcel reconciliation</p>
+        <div className="border-t border-[#eae8e5] p-4">
+          <p className="text-[11px] font-medium leading-4 text-[#64686d]">Item × parcel reconciliation</p>
           <div className="mt-2 space-y-1.5">
             {matrix.slice(0, 12).map((row, index) => (
-              <div key={`${row.claimedItemId ?? 'item'}-${row.parcelId ?? 'unassigned'}-${index}`} className="ua-text-dense flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--uo-route-border-subtle)] px-3 py-2">
-                <span className="font-medium text-[var(--uo-route-text-primary)]">{row.claimedSku ?? 'Claimed item'}</span>
-                <span className="text-[var(--uo-route-text-secondary)]">{row.parcelId ? `Parcel ${row.parcelId.slice(-6)}` : 'No parcel record'} · {label('workflowStatus', row.state ?? 'unknown')}</span>
+              <div key={`${row.claimedItemId ?? 'item'}-${row.parcelId ?? 'unassigned'}-${index}`} className="text-[12px] leading-[1.45] text-[#40454a] flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#eae8e5] px-3 py-2">
+                <span className="font-medium text-[#1c1f23]">{row.claimedSku ?? 'Claimed item'}</span>
+                <span className="text-[#64686d]">{row.parcelId ? `Parcel ${row.parcelId.slice(-6)}` : 'No parcel record'} · {label('workflowStatus', row.state ?? 'unknown')}</span>
                 <Badge tone={row.physicalProof ? 'success' : 'warning'} size="sm" dot>{row.physicalProof ? 'Physical proof' : 'System record only'}</Badge>
               </div>
             ))}
@@ -597,11 +597,11 @@ export function ReconciliationSummaryCard({
         </div>
       ) : null}
 
-      <div className="border-t border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-muted)] p-4">
+      <div className="border-t border-[#eae8e5] bg-[#f4f3f1] p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <p className="ua-text-label">External outcome record</p>
-            <p className="ua-text-metadata mt-1 max-w-2xl">
+            <p className="text-[11px] font-medium leading-4 text-[#64686d]">External outcome record</p>
+            <p className="text-[10.5px] leading-4 text-[#6f6a63] mt-1 max-w-2xl">
               Report an external state without claiming success, or attach a receipt reference before recording completion. Neither action executes a refund or reship.
             </p>
           </div>
@@ -609,14 +609,14 @@ export function ReconciliationSummaryCard({
         </div>
 
         {outcomes.length > 0 ? (
-          <div className="mt-3 divide-y divide-[var(--uo-route-border-subtle)] border-y border-[var(--uo-route-border-subtle)]">
+          <div className="mt-3 divide-y divide-[#eae8e5] border-y border-[#eae8e5]">
             {outcomes.slice(0, 6).map((outcome) => (
               <div key={outcome.id} className="grid gap-1 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-4">
                 <div>
-                  <p className="ua-text-label text-[var(--uo-route-text-primary)]">
+                  <p className="text-[11px] font-medium leading-4 text-[#64686d] text-[#1c1f23]">
                     {humanize(outcome.outcome_type, 'External outcome')} · {humanize(outcome.state, 'State unavailable')}
                   </p>
-                  <p className="ua-text-metadata mt-1">
+                  <p className="text-[10.5px] leading-4 text-[#6f6a63] mt-1">
                     {humanize(outcome.source_system, 'Source unavailable')}
                     {outcome.source_external_id || outcome.source_record_id
                       ? ` · Ref ${outcome.source_external_id ?? outcome.source_record_id}`
@@ -624,11 +624,11 @@ export function ReconciliationSummaryCard({
                     {outcome.correlation_method ? ` · ${humanize(outcome.correlation_method, 'Correlation unavailable')}` : ''}
                   </p>
                 </div>
-                <p className="ua-text-label tabular-nums text-[var(--uo-route-text-primary)]">
+                <p className="text-[11px] font-medium leading-4 text-[#64686d] tabular-nums text-[#1c1f23]">
                   {outcome.amount_minor != null
                     ? formatMinorCurrencyNullable(outcome.amount_minor, outcome.currency)
                     : 'Value unavailable'}
-                  <span className="mt-1 block text-right text-[length:var(--uo-route-text-metadata-size)] font-normal text-[var(--uo-route-text-tertiary)]">
+                  <span className="mt-1 block text-right text-[length:10.5px] font-normal text-[#6f6a63]">
                     {outcome.occurred_at || outcome.observed_at
                       ? formatDateTime(outcome.occurred_at ?? outcome.observed_at ?? '')
                       : 'Time unavailable'}
@@ -638,20 +638,20 @@ export function ReconciliationSummaryCard({
             ))}
           </div>
         ) : (
-          <p className="ua-text-body mt-3 text-[var(--uo-route-text-secondary)]">
+          <p className="text-[13px] leading-5 text-[#40454a] mt-3 text-[#64686d]">
             No external outcome is recorded. A merchant decision remains an internal authorisation only.
           </p>
         )}
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="ua-text-label font-medium">
+          <label className="text-[11px] font-medium leading-4 text-[#64686d] font-medium">
             Record type
             <Select className="mt-1" value={outcomeState} onChange={(event) => setOutcomeState(event.target.value as 'reported' | 'merchant_confirmed')} disabled={!canMutate || busy}>
               <option value="reported">Reported — awaiting verification</option>
               <option value="merchant_confirmed">Receipt-backed completion</option>
             </Select>
           </label>
-          <label className="ua-text-label font-medium">
+          <label className="text-[11px] font-medium leading-4 text-[#64686d] font-medium">
             External outcome
             <Select className="mt-1" value={outcomeType} onChange={(event) => setOutcomeType(event.target.value)} disabled={!canMutate || busy}>
               <option value="no_payout">No payout</option>
@@ -662,10 +662,10 @@ export function ReconciliationSummaryCard({
               <option value="other_manual_concession">Other concession</option>
             </Select>
           </label>
-          <label className="ua-text-label font-medium">
+          <label className="text-[11px] font-medium leading-4 text-[#64686d] font-medium">
             Amount
             <input
-              className="ua-text-body mt-1 h-9 w-full rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-2 text-[var(--uo-route-text-primary)]"
+              className="text-[13px] leading-5 text-[#40454a] mt-1 h-9 w-full rounded-md border border-[#e4e3e0] bg-[#fff] px-2 text-[#1c1f23]"
               type="number"
               min="0"
               step="0.01"
@@ -676,14 +676,14 @@ export function ReconciliationSummaryCard({
               placeholder={`Optional ${currency?.toUpperCase() ?? 'value'}`}
               aria-describedby="case-outcome-amount-hint"
             />
-            <span id="case-outcome-amount-hint" className="mt-1 block text-[length:var(--uo-route-text-metadata-size)] font-normal text-[var(--uo-route-text-tertiary)]">
+            <span id="case-outcome-amount-hint" className="mt-1 block text-[length:10.5px] font-normal text-[#6f6a63]">
               Enter the amount in {currency?.toUpperCase() ?? 'the case currency'}; leave blank when unavailable.
             </span>
           </label>
-          <label className="ua-text-label font-medium">
+          <label className="text-[11px] font-medium leading-4 text-[#64686d] font-medium">
             Receipt / provider reference
             <input
-              className="ua-text-body mt-1 h-9 w-full rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-2 text-[var(--uo-route-text-primary)]"
+              className="text-[13px] leading-5 text-[#40454a] mt-1 h-9 w-full rounded-md border border-[#e4e3e0] bg-[#fff] px-2 text-[#1c1f23]"
               value={outcomeReference}
               onChange={(event) => setOutcomeReference(event.target.value)}
               disabled={!canMutate || busy}
@@ -692,7 +692,7 @@ export function ReconciliationSummaryCard({
             />
           </label>
         </div>
-        <label className="ua-text-label mt-3 block font-medium">
+        <label className="text-[11px] font-medium leading-4 text-[#64686d] mt-3 block font-medium">
           Evidence note
           <Textarea
             className="mt-1"
@@ -703,7 +703,7 @@ export function ReconciliationSummaryCard({
           />
         </label>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <p className="ua-text-metadata max-w-2xl">
+          <p className="text-[10.5px] leading-4 text-[#6f6a63] max-w-2xl">
             {outcomeState === 'merchant_confirmed'
               ? 'A receipt-backed completion can create a paid customer-concession stage when a value and currency are supplied.'
               : 'A reported state is append-only but unverified; it never creates a paid financial stage.'}
@@ -740,7 +740,7 @@ export function ReconciliationSummaryCard({
       </Modal>
 
       {message ? (
-        <p role="status" className="ua-text-caption-role flex items-center gap-1.5 border-t border-[var(--uo-route-border-subtle)] px-4 py-3">
+        <p role="status" className="text-[11.5px] leading-[1.45] text-[#64686d] flex items-center gap-1.5 border-t border-[#eae8e5] px-4 py-3">
           <CheckCircle2 size={14} aria-hidden="true" /> {message}
         </p>
       ) : null}

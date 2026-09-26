@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import type { ComponentProps } from 'react';
-import { cn } from '@/lib/utils';
 import { useOptionalNavigation } from './NavigationProvider';
 
 type AppNavLinkProps = ComponentProps<typeof Link> & {
@@ -15,7 +14,8 @@ export default function AppNavLink({
   active: _active = false,
   onNavigate,
   onClick,
-  className,
+  className: _obsoleteClassName,
+  style,
   children, ...props
 }: AppNavLinkProps) {
   const navigation = useOptionalNavigation();
@@ -28,7 +28,7 @@ export default function AppNavLink({
       {...props}
       href={href}
       prefetch={false}
-      className={cn(className, isPending && 'pointer-events-none')}
+      style={{ ...style, pointerEvents: isPending ? 'none' : style?.pointerEvents }}
       aria-busy={isPending || undefined}
       onClick={(e) => {
         onClick?.(e);

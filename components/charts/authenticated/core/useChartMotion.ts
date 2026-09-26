@@ -17,7 +17,7 @@ export type ChartMotion = {
 };
 
 /**
- * Central chart-motion gate for Instrument Grade.
+ * Central chart-motion gate for Evidence Operations.
  *
  * Charts render settled geometry on the server and on hydration. A restrained
  * data transition is allowed only when an explicit value key changes, the plot

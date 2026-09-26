@@ -51,33 +51,33 @@ export function ApiKeyCreateDialog({
       closeOnBackdrop={!state.createdSecret && !state.creating}
       closeOnEscape={!state.createdSecret && !state.creating}
       showCloseButton={!state.createdSecret && !state.creating}
-      overlayId={state.createdSecret ? "api-key-one-time-reveal" : "create-api-key"}
+      overlayId="create-reveal-and-revoke-api-key-modals"
     >
       {state.createdSecret ? (
         <>
           <p
-            className="ua-text-label"
-            style={{ color: "var(--uo-route-text-secondary)" }}
+            className="text-[11px] font-medium leading-4 text-[#64686d]"
+            style={{ color: "#64686d" }}
           >
             API Key (for Chrome, Zendesk, direct API)
           </p>
           <pre
-            className="ua-text-dense mt-2 overflow-x-auto rounded-md p-3"
-            style={{ background: "var(--uo-route-surface-secondary)", color: "var(--uo-route-text-primary)" }}
+            className="text-[12px] leading-[1.45] text-[#40454a] mt-2 overflow-x-auto rounded-md p-3"
+            style={{ background: "#f4f3f1", color: "#1c1f23" }}
           >
             {state.createdSecret}
           </pre>
           {state.createdWidgetToken ? (
             <>
               <p
-                className="ua-text-label mt-4"
-                style={{ color: "var(--uo-route-text-secondary)" }}
+                className="text-[11px] font-medium leading-4 text-[#64686d] mt-4"
+                style={{ color: "#64686d" }}
               >
                 Widget Token (for Gorgias widget URL only)
               </p>
               <pre
-                className="ua-text-dense mt-2 overflow-x-auto rounded-md p-3"
-                style={{ background: "var(--uo-route-surface-secondary)", color: "var(--uo-route-text-primary)" }}
+                className="text-[12px] leading-[1.45] text-[#40454a] mt-2 overflow-x-auto rounded-md p-3"
+                style={{ background: "#f4f3f1", color: "#1c1f23" }}
               >
                 {state.createdWidgetToken}
               </pre>
@@ -116,8 +116,8 @@ export function ApiKeyCreateDialog({
       ) : (
         <form onSubmit={onCreate}>
           <label
-            className="ua-text-label block"
-            style={{ color: "var(--uo-route-text-secondary)" }}
+            className="text-[11px] font-medium leading-4 text-[#64686d] block"
+            style={{ color: "#64686d" }}
           >
             Label
             <input
@@ -127,20 +127,20 @@ export function ApiKeyCreateDialog({
               value={state.keyName}
               onChange={(e) => onKeyNameChange(e.target.value)}
               placeholder="e.g. Gorgias integration"
-              className="ua-text-body mt-1 w-full rounded-md px-3 py-2"
+              className="text-[13px] leading-5 text-[#40454a] mt-1 w-full rounded-md px-3 py-2"
               style={{
-                background: "var(--uo-route-surface-secondary)",
-                border: "1px solid var(--uo-route-border-default)",
-                color: "var(--uo-route-text-primary)",
+                background: "#f4f3f1",
+                border: "1px solid #e4e3e0",
+                color: "#1c1f23",
               }}
             />
           </label>
           <fieldset className="mt-5 grid gap-2">
-            <legend className="ua-text-label text-[var(--uo-route-text-secondary)]">Scopes</legend>
-            <p className="ua-text-caption-role">Select only the object families this credential needs.</p>
+            <legend className="text-[11px] font-medium leading-4 text-[#64686d] text-[#64686d]">Scopes</legend>
+            <p className="text-[11.5px] leading-[1.45] text-[#64686d]">Select only the object families this credential needs.</p>
             <div className="mt-1 grid gap-2 sm:grid-cols-2">
               {API_SCOPES.map((scope) => (
-                <label key={scope} className="flex min-w-0 items-start gap-2 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-subtle)] p-2.5">
+                <label key={scope} className="flex min-w-0 items-start gap-2 rounded-[8px] border border-[#eae8e5] p-2.5">
                   <input
                     type="checkbox"
                     checked={state.scopes.includes(scope)}
@@ -148,12 +148,12 @@ export function ApiKeyCreateDialog({
                       ? [...state.scopes, scope]
                       : state.scopes.filter((value) => value !== scope))}
                   />
-                  <span className="min-w-0"><strong className="block break-words text-[length:var(--uo-route-text-caption-size)]">{scope}</strong><small className="block break-words text-[var(--uo-route-text-tertiary)]">{API_SCOPE_LABELS[scope]}</small></span>
+                  <span className="min-w-0"><strong className="block break-words text-[length:11.5px]">{scope}</strong><small className="block break-words text-[#6f6a63]">{API_SCOPE_LABELS[scope]}</small></span>
                 </label>
               ))}
             </div>
           </fieldset>
-          <label htmlFor="api-key-rate-limit" className="ua-text-label mt-5 block text-[var(--uo-route-text-secondary)]">
+          <label htmlFor="api-key-rate-limit" className="text-[11px] font-medium leading-4 text-[#64686d] mt-5 block text-[#64686d]">
             Per-minute request limit
             <Select
               id="api-key-rate-limit"
@@ -167,7 +167,7 @@ export function ApiKeyCreateDialog({
           {state.message?.type === "error" ? (
             <p
               role="alert"
-              className="ua-text-body mt-3 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-critical-border)] bg-[var(--uo-route-critical-bg)] px-3 py-2 text-[var(--uo-route-critical)]"
+              className="text-[13px] leading-5 text-[#40454a] mt-3 rounded-[8px] border border-[#edc6b5] bg-[#fdf0e6] px-3 py-2 text-[#b0431a]"
             >
               {state.message.text}
             </p>
@@ -176,16 +176,16 @@ export function ApiKeyCreateDialog({
             <button
               type="button"
               onClick={onClose}
-              className="ua-text-label rounded-md border px-3 py-2"
-              style={{ borderColor: "var(--uo-route-border-default)", color: "var(--uo-route-text-primary)" }}
+              className="text-[11px] font-medium leading-4 text-[#64686d] rounded-md border px-3 py-2"
+              style={{ borderColor: "#e4e3e0", color: "#1c1f23" }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={state.creating || !state.keyName.trim() || state.scopes.length === 0}
-              className="ua-text-working-title rounded-md px-3 py-2 disabled:opacity-50"
-              style={{ background: "var(--uo-route-action-primary)", color: "var(--uo-route-text-inverse)" }}
+              className="font-medium text-[13px] leading-5 text-[#1c1f23] rounded-md px-3 py-2 disabled:opacity-50"
+              style={{ background: "#9f4f08", color: "#fff" }}
             >
               {state.creating ? "Creating…" : "Create key"}
             </button>

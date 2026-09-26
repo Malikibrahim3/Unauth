@@ -14,21 +14,21 @@ type TeamAuditTrailSectionProps = {
 export function TeamAuditTrailSection({ auditTrail, joined = false }: TeamAuditTrailSectionProps) {
   return (
     <section
-      className={joined ? 'border-t border-[var(--uo-route-border-subtle)]' : 'rounded-md border'}
-      style={{ background: 'var(--uo-route-surface-primary)', borderColor: 'var(--uo-route-border-subtle)' }}
+      className={joined ? 'border-t border-[#eae8e5]' : 'rounded-md border'}
+      style={{ background: '#fff', borderColor: '#eae8e5' }}
     >
-      <div className="border-b px-4 py-3" style={{ borderColor: 'var(--uo-route-border-subtle)' }}>
-        <h2 className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>Role audit</h2>
-        <p className="ua-text-caption-role mt-1" style={{ color: 'var(--uo-route-text-secondary)' }}>Recent invites, role changes, and removals.</p>
+      <div className="border-b px-4 py-3" style={{ borderColor: '#eae8e5' }}>
+        <h2 className="font-medium text-[13px] leading-5 text-[#1c1f23]" style={{ color: '#1c1f23' }}>Role audit</h2>
+        <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1" style={{ color: '#64686d' }}>Recent invites, role changes, and removals.</p>
       </div>
-      <div className="divide-y" style={{ borderColor: 'var(--uo-route-border-subtle)' }}>
+      <div className="divide-y" style={{ borderColor: '#eae8e5' }}>
         {auditTrail.length === 0 ? (
-          <p className="px-4 py-5 text-[length:var(--uo-route-text-caption-size)]" style={{ color: 'var(--uo-route-text-secondary)' }}>No team role changes yet.</p>
+          <p className="px-4 py-5 text-[length:11.5px]" style={{ color: '#64686d' }}>No team role changes yet.</p>
         ) : (
           auditTrail.map((row) => (
             <div key={row.id} className="px-4 py-2.5">
-              <p className="text-[length:var(--uo-route-text-caption-size)]" style={{ color: 'var(--uo-route-text-primary)' }}>{auditText(row)}</p>
-              <p className="ua-text-caption-role mt-1">
+              <p className="text-[length:11.5px]" style={{ color: '#1c1f23' }}>{auditText(row)}</p>
+              <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1">
                 {formatTeamDate(row.created_at)} by {ROLE_LABELS[row.actor_role] ?? row.actor_role}
               </p>
             </div>

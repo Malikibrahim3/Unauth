@@ -2,8 +2,6 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import RouteProgressBar from './RouteProgressBar';
-import RoutePendingNotice from './RoutePendingNotice';
 
 type NavigationContextValue = {
   pendingHref: string | null;
@@ -46,7 +44,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   }, [pathname]);
 
   /*
-   * Instrument Grade: pending state is cleared by an actual route change
+   * Evidence Operations: pending state is cleared by an actual route change
    * (the effects above), never by a timeout. A navigation that stalls keeps its
    * progress line and, at 8s, gains RoutePendingNotice — the previous 3.5s
    * timer made the product look finished while it was still waiting.
@@ -72,8 +70,6 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       <Suspense fallback={null}>
         <NavigationSync onRouteChange={handleRouteChange} />
       </Suspense>
-      <RouteProgressBar active={pendingHref !== null} />
-      <RoutePendingNotice pendingHref={pendingHref} />
       {children}
     </NavigationContext.Provider>
   );

@@ -1,2 +1,1 @@
-import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
-export default function Loading() { return <OperationalRouteSkeleton title="Loading flows" rows={6} kpiCount={0} />; }
+export { default } from "@/components/visual-authority/SuppliedAuthenticatedRouteLoading";

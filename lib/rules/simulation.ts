@@ -1,5 +1,5 @@
 import { FIELD_DEFS_BY_NAME } from '@/lib/rules/fields';
-import type { RuleCondition, RuleSignalBag } from '@/lib/rules-engine';
+import { MONETARY_RULE_FIELDS, type RuleCondition, type RuleSignalBag } from '@/lib/rules-engine';
 
 export function validateSimulationSignals(
   conditions: RuleCondition[],
@@ -21,5 +21,6 @@ export function validateSimulationSignals(
     if (def.type === 'enum' && typeof value !== 'string') return { ok: false, error: `${field} must be one supported value or unavailable` };
     if (def.type === 'string_array' && (!Array.isArray(value) || !value.every((item) => typeof item === 'string'))) return { ok: false, error: `${field} must be a list of values or unavailable` };
   }
-  return { ok: true, signals: Object.fromEntries(required.map((field) => [field, values[field]])) };
+  const keys = [...required, ...required.filter(field => MONETARY_RULE_FIELDS.has(field)).map(field => `${field}_currency`)];
+  return { ok: true, signals: Object.fromEntries(keys.map((field) => [field, values[field] ?? null])) };
 }

@@ -85,7 +85,7 @@ describe('projectConnectionActionMode', () => {
     });
   });
 
-  it('renders the Challenge6 Shopify authorisation stage', () => {
+  it('renders the canonical Shopify authorisation stage', () => {
     render(createElement(
       ConnectorSetupShell,
       {

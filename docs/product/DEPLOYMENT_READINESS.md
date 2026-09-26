@@ -114,8 +114,8 @@ The local receipt currently records:
 - Jest: 411 suites passed, 2 intentional opt-in suites skipped, 2,912 tests
   passed, 6 tests skipped, 1 snapshot;
 - static contracts: authority, environment (115 keys), Vercel cron (7
-  authenticated routes), surface manifest (64 page modules/119 stable
-  surfaces/222 scenarios/55 aliases), UI integrity, merchant copy,
+  authenticated routes), surface manifest (65 page modules/120 stable
+  surfaces/223 scenarios/55 aliases), UI integrity, merchant copy,
   migration layout (32 unique timestamps), and Supabase contract (150 live
   tables) passed;
 - engine evaluation: 2,000 rows, F1 0.76, precision 1.00, recall 0.62;

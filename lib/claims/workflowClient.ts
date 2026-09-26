@@ -62,6 +62,28 @@ export async function submitOutcome(
   return { message: result.ok ? 'Decision saved' : result.message, idempotencyKey, data: result.data };
 }
 
+export async function reportExternalAction(
+  actionId: string,
+  input: JsonRecord,
+  idempotencyKey = newIdempotencyKey(`external-action:${actionId}:merchant-reported`),
+) {
+  const payload = {
+    ...input,
+    externalReference: typeof input.externalReference === 'string' ? sanitize(input.externalReference) : input.externalReference,
+  };
+  const result = await safePost(`/api/external-actions/${encodeURIComponent(actionId)}`, payload, { idempotencyKey });
+  return { message: result.ok ? 'Replacement dispatch recorded' : result.message, data: result.data };
+}
+
+export async function submitReplacementCost(
+  claimId: string,
+  input: JsonRecord,
+  idempotencyKey = newIdempotencyKey(`replacement-cost:${claimId}`),
+) {
+  const result = await safePost(`/api/claims/${encodeURIComponent(claimId)}/outcomes`, input, { idempotencyKey });
+  return { message: result.ok ? 'Replacement cost recorded' : result.message, data: result.data };
+}
+
 export async function submitEvidence(claimId: string, input: JsonRecord) {
   const payload = {
     ...input,

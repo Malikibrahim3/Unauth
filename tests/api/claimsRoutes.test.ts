@@ -16,12 +16,26 @@ jest.mock('@/lib/claims/store', () => {
     ...actual,
     upsertMerchantClaim: jest.fn(),
     recordMerchantCaseDecision: jest.fn(),
+    resolveCaseDecisionExpectedVersion: jest.fn(),
     upsertClaimEvidenceItem: jest.fn(),
   };
 });
 
 jest.mock('@/lib/claims/externalAction', () => ({
   prepareDecisionHandoff: jest.fn(),
+}));
+
+jest.mock('@/lib/claims/decision/evaluate', () => ({
+  computeClaimDecision: jest.fn(),
+}));
+
+jest.mock('@/lib/claims/decision/resolutionComparison', () => ({
+  buildResolutionComparison: jest.fn(),
+}));
+
+jest.mock('@/lib/claims/replacement', () => ({
+  loadReplacementReadModel: jest.fn(),
+  recordSameItemReplacement: jest.fn(),
 }));
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
@@ -36,8 +50,11 @@ import { POST as viewPost } from '@/app/api/claims/[claimId]/view/route';
 import { POST as assignmentPost } from '@/app/api/claims/[claimId]/assignment/route';
 import { POST as snoozePost } from '@/app/api/claims/[claimId]/snooze/route';
 import { POST as responseCopiedPost } from '@/app/api/claims/[claimId]/customer-response-copied/route';
-import { upsertMerchantClaim, recordMerchantCaseDecision, upsertClaimEvidenceItem } from '@/lib/claims/store';
+import { upsertMerchantClaim, recordMerchantCaseDecision, resolveCaseDecisionExpectedVersion, upsertClaimEvidenceItem } from '@/lib/claims/store';
 import { prepareDecisionHandoff } from '@/lib/claims/externalAction';
+import { computeClaimDecision } from '@/lib/claims/decision/evaluate';
+import { buildResolutionComparison } from '@/lib/claims/decision/resolutionComparison';
+import { loadReplacementReadModel, recordSameItemReplacement } from '@/lib/claims/replacement';
 import { TABLES } from '@/lib/supabase/tables';
 
 const TEST_USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -70,6 +87,7 @@ function setupServiceClient(opts: {
   assignedTo?: string | null;
   duplicateClaims?: any[];
   latestOutcome?: any;
+  existingDecision?: any;
   transitionError?: { message: string; code?: string };
 } = {}) {
   const ownsShop = opts.ownsShop ?? true;
@@ -131,6 +149,9 @@ function setupServiceClient(opts: {
             error: null,
           };
         }
+        if (table === 'case_decisions') {
+          return { data: opts.existingDecision ?? null, error: null };
+        }
         return { data: null, error: null };
       },
       then: async (resolve: any) => {
@@ -190,6 +211,9 @@ function setupServiceClient(opts: {
         return {
           select: () => makeSelectChain(table),
         };
+      }
+      if (table === 'case_decisions') {
+        return { select: () => makeSelectChain(table) };
       }
       if (claimTables.has(table)) {
         const updateChain: any = {
@@ -268,10 +292,15 @@ function setupServiceClient(opts: {
 describe('claims routes', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    (resolveCaseDecisionExpectedVersion as jest.Mock).mockResolvedValue(1);
     (prepareDecisionHandoff as jest.Mock).mockResolvedValue({
       status: 'not_applicable',
       reason: 'This decision does not require the Shopify refund handoff.',
       action: null,
+    });
+    (loadReplacementReadModel as jest.Mock).mockResolvedValue({
+      version: 'manual-same-item-replacement-v1', ready: false,
+      unavailableReasons: ['No confirmed line'], order: null, items: [], latestHandoff: null,
     });
   });
 
@@ -423,6 +452,189 @@ describe('claims routes', () => {
       caseId: '550e8400-e29b-41d4-a716-446655440000',
       decision: expect.objectContaining({ id: 'd1', decision: 'approved', amountMinor: 2500, currency: 'GBP' }),
     }));
+  });
+
+  it('rejects a stale P04 comparison before writing', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient();
+    (computeClaimDecision as jest.Mock).mockResolvedValue({ context: {}, evaluation: {}, payoutCase: {} });
+    (buildResolutionComparison as jest.Mock).mockReturnValue({
+      version: 'resolution-comparison-v1', token: 'b'.repeat(64), caseVersion: 2,
+      evidenceVersion: '2:new', policyVersion: 'v1.0:rule-1', options: [],
+    });
+    const res = await outcomePost(
+      mkReq('http://localhost/api/claims/c1/outcome', {
+        decision: 'full_refund', resolution: 'full_refund', outcome: 'pending',
+        amount_minor: 2500, currency: 'GBP', comparison_version: 'resolution-comparison-v1',
+        comparison_token: 'a'.repeat(64),
+      }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) },
+    );
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe('stale_resolution_comparison');
+    expect(recordMerchantCaseDecision).not.toHaveBeenCalled();
+  });
+
+  it('records the exact non-financial resolution and current comparison snapshot', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient();
+    const comparison = {
+      version: 'resolution-comparison-v1', token: 'a'.repeat(64), caseVersion: 1,
+      evidenceVersion: '1:current', policyVersion: 'v1.0:rule-1', options: [],
+    };
+    (computeClaimDecision as jest.Mock).mockResolvedValue({ context: {}, evaluation: {}, payoutCase: {} });
+    (buildResolutionComparison as jest.Mock).mockReturnValue(comparison);
+    (recordMerchantCaseDecision as jest.Mock).mockResolvedValue({
+      id: 'o1', decision_id: 'd1', claim_id: '550e8400-e29b-41d4-a716-446655440000',
+      decision: 'escalated', outcome: 'pending', amount_minor: null, currency: null,
+      domain_event_id: 'event-1', replayed: false,
+    });
+    const res = await outcomePost(
+      mkReq('http://localhost/api/claims/c1/outcome', {
+        decision: 'escalated', resolution: 'request_evidence', outcome: 'pending', notes: 'Ask for the missing customer statement.',
+        comparison_version: 'resolution-comparison-v1', comparison_token: 'a'.repeat(64),
+      }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) },
+    );
+    expect(res.status).toBe(200);
+    expect(recordMerchantCaseDecision).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      decision: 'escalated', resolution: 'request_evidence',
+      comparison_snapshot: comparison,
+      relatedSourceObject: expect.objectContaining({ authorization_snapshot: expect.objectContaining({ exact_resolution: 'request_evidence', case_version: 1, evidence_version: '1:current', policy_version: 'v1.0:rule-1' }) }),
+    }));
+    expect((recordMerchantCaseDecision as jest.Mock).mock.calls[0][1]).not.toHaveProperty('amount_minor');
+  });
+
+  it('rejects client comparison metadata without an exact P04 resolution', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient();
+    const res = await outcomePost(
+      mkReq('http://localhost/api/claims/c1/outcome', {
+        decision: 'escalated', outcome: 'pending', notes: 'Escalate for review.',
+        comparison_snapshot: { token: 'untrusted-client-snapshot' },
+      }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) },
+    );
+    expect(res.status).toBe(400);
+    expect(recordMerchantCaseDecision).not.toHaveBeenCalled();
+  });
+
+  it('records an exact P05 replacement without entering the refund handoff', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient();
+    const replacement = {
+      version: 'manual-same-item-replacement-v1', ready: true, unavailableReasons: [],
+      order: { id: TEST_SOURCE_ORDER_ID, reference: '#1001', currency: 'GBP' },
+      items: [{ claimedItemId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', availableQuantity: 2 }],
+      latestHandoff: null,
+    };
+    const comparison = {
+      version: 'resolution-comparison-v1', token: 'a'.repeat(64), caseVersion: 1,
+      evidenceVersion: '1:current', policyVersion: 'v1.0:rule-1', options: [],
+      priorConcession: { count: 1 }, replacement,
+    };
+    (loadReplacementReadModel as jest.Mock).mockResolvedValue(replacement);
+    (computeClaimDecision as jest.Mock).mockResolvedValue({ context: {}, evaluation: {}, payoutCase: {} });
+    (buildResolutionComparison as jest.Mock).mockReturnValue(comparison);
+    (recordSameItemReplacement as jest.Mock).mockResolvedValue({
+      id: 'o1', decision_id: 'd1', claim_id: '550e8400-e29b-41d4-a716-446655440000',
+      decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+      domain_event_id: 'event-1', replayed: false,
+      action: { id: 'action-1', capability_id: 'replacement.manual_handoff', action_state: 'handoff_ready', state_version: 1 },
+    });
+    const res = await outcomePost(
+      mkReq('http://localhost/api/claims/c1/outcome', {
+        decision: 'approved', resolution: 'same_item_replacement', outcome: 'pending',
+        amount_minor: 2500, currency: 'GBP', notes: 'Replace the damaged original item.',
+        duplicate_concession_justification: 'The prior refund covered shipping only.',
+        replacement_items: [{ claimed_item_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', quantity: 2 }],
+        comparison_version: 'resolution-comparison-v1', comparison_token: 'a'.repeat(64),
+      }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) },
+    );
+    expect(res.status).toBe(200);
+    expect(recordSameItemReplacement).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      budgetMinor: 2500,
+      currency: 'GBP',
+      items: [{ claimed_item_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', quantity: 2 }],
+      duplicateConcessionJustification: 'The prior refund covered shipping only.',
+    }));
+    expect(recordMerchantCaseDecision).not.toHaveBeenCalled();
+    expect(prepareDecisionHandoff).not.toHaveBeenCalled();
+    expect((await res.json()).external_handoff.action.capability_id).toBe('replacement.manual_handoff');
+  });
+
+  it('replays a non-financial resolution from the immutable snapshot after case facts change', async () => {
+    setupAuth(true);
+    setupPermission();
+    const comparison = { version: 'resolution-comparison-v1', token: 'a'.repeat(64), caseVersion: 1 };
+    const related = { authorization_snapshot: { exact_resolution: 'escalate', case_version: 1 } };
+    setupServiceClient({ existingDecision: {
+      support_payout_case_id: '550e8400-e29b-41d4-a716-446655440000', action: 'escalate', followed_recommendation: false,
+      recommendation_snapshot: { recommended_payout_action: null, comparison_version: 'resolution-comparison-v1', comparison_token: 'a'.repeat(64), comparison, related_source_object: related },
+    } });
+    (recordMerchantCaseDecision as jest.Mock).mockResolvedValue({ id: 'o1', decision_id: 'd1', claim_id: '550e8400-e29b-41d4-a716-446655440000', decision: 'escalated', outcome: 'pending', replayed: true });
+    const res = await outcomePost(mkReq('http://localhost/api/claims/c1/outcome', {
+      decision: 'escalated', resolution: 'escalate', outcome: 'pending', notes: 'Original escalation rationale.', comparison_version: 'resolution-comparison-v1', comparison_token: 'a'.repeat(64),
+    }), { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) });
+    expect(res.status).toBe(200);
+    expect((await res.json()).replayed).toBe(true);
+    expect(computeClaimDecision).not.toHaveBeenCalled();
+    expect(recordMerchantCaseDecision).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ comparison_snapshot: comparison, relatedSourceObject: related, followed_recommendation: false }));
+    expect(prepareDecisionHandoff).not.toHaveBeenCalled();
+  });
+
+  it('replays the original replacement snapshot without entering refund logic after eligibility changes', async () => {
+    setupAuth(true);
+    setupPermission();
+    const replacement = {
+      version: 'manual-same-item-replacement-v1', ready: true, unavailableReasons: [],
+      order: { id: TEST_SOURCE_ORDER_ID, reference: '#1001', currency: 'GBP' },
+      items: [{ claimedItemId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', availableQuantity: 1 }],
+      latestHandoff: null,
+    };
+    const comparison = {
+      version: 'resolution-comparison-v1', token: 'a'.repeat(64), caseVersion: 1,
+      evidenceVersion: '1:current', policyVersion: 'v1.0:rule-1', options: [],
+      priorConcession: { count: 0 }, replacement,
+    };
+    setupServiceClient({
+      existingDecision: {
+        support_payout_case_id: '550e8400-e29b-41d4-a716-446655440000',
+        action: 'same_item_replacement',
+        recommendation_snapshot: {
+          recommended_payout_action: null,
+          comparison_version: 'resolution-comparison-v1',
+          comparison_token: 'a'.repeat(64),
+          comparison,
+        },
+      },
+    });
+    (recordSameItemReplacement as jest.Mock).mockResolvedValue({
+      id: 'o1', decision_id: 'd1', claim_id: '550e8400-e29b-41d4-a716-446655440000',
+      decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+      domain_event_id: 'event-1', replayed: true,
+      action: { id: 'action-1', capability_id: 'replacement.manual_handoff', action_state: 'merchant_reported_attempt', state_version: 2 },
+    });
+    const res = await outcomePost(
+      mkReq('http://localhost/api/claims/c1/outcome', {
+        decision: 'approved', resolution: 'same_item_replacement', outcome: 'pending',
+        amount_minor: 2500, currency: 'GBP', notes: 'Replace the damaged original item.',
+        duplicate_concession_justification: '',
+        replacement_items: [{ claimed_item_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', quantity: 1 }],
+        comparison_version: 'resolution-comparison-v1', comparison_token: 'a'.repeat(64),
+      }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) },
+    );
+    expect(res.status).toBe(200);
+    expect(computeClaimDecision).not.toHaveBeenCalled();
+    expect(loadReplacementReadModel).not.toHaveBeenCalled();
+    expect(prepareDecisionHandoff).not.toHaveBeenCalled();
+    expect((await res.json()).external_handoff.action.action_state).toBe('merchant_reported_attempt');
   });
 
   it('records a decision on a merchant-owned CSV/manual claim without shop domain', async () => {

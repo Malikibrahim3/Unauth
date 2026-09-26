@@ -31,9 +31,9 @@ export function UnavailableValue({
   return (
     <span
       className={cn(
-        'ua-product-value ua-product-value--unavailable',
-        `ua-product-value--${kind}`,
-        `ua-product-value--placement-${placement}`,
+        'font-semibold tabular-nums text-[#1c1f23] font-semibold tabular-nums text-[#1c1f23]',
+        `font-semibold tabular-nums text-[#1c1f23]${kind}`,
+        `font-semibold tabular-nums text-[#1c1f23]${placement}`,
         className,
       )}
       data-value-state={kind}
@@ -41,9 +41,9 @@ export function UnavailableValue({
       title={reason ? `${label}: ${reason}` : label}
       {...props}
     >
-      {placement === 'measure' ? <span className="ua-product-value__track" aria-hidden="true" /> : null}
+      {placement === 'measure' ? <span className="font-semibold tabular-nums text-[#1c1f23]" aria-hidden="true" /> : null}
       <span aria-hidden="true">—</span>
-      <span className="ua-product-value__state">{label}</span>
+      <span className="font-semibold tabular-nums text-[#1c1f23]">{label}</span>
       {reason ? <span className="sr-only">. {reason}</span> : null}
     </span>
   );
@@ -100,14 +100,14 @@ export function MoneyValue({
   const formatted = formatMoneyMinorUnits(minorUnits, currency.toUpperCase());
   return (
     <span
-      className={cn('ua-product-value ua-product-value--money', isQualified && `ua-product-value--${resolvedAvailability}`, className)}
+      className={cn('font-medium tabular-nums text-[#1c1f23]', isQualified && 'text-[#64686d]', className)}
       data-value-state={isQualified ? resolvedAvailability : minorUnits === 0 ? 'verified-zero' : 'available'}
       title={isQualified && reason ? `${UNAVAILABLE_LABELS[resolvedAvailability]}: ${reason}` : undefined}
       {...props}
     >
       {prefix}
       {formatted}
-      {isQualified ? <span className="ua-product-value__state">{UNAVAILABLE_LABELS[resolvedAvailability]}</span> : null}
+      {isQualified ? <span className="ml-1 text-[10px] font-normal text-[#6f6a63]">{UNAVAILABLE_LABELS[resolvedAvailability]}</span> : null}
       {!isQualified && minorUnits === 0 ? <span className="sr-only">, verified zero</span> : null}
       {isQualified && reason ? <span className="sr-only">. {reason}</span> : null}
     </span>

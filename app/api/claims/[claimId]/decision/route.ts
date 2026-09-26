@@ -8,6 +8,8 @@ import { getRecoveryCaseForSupportPayoutCase } from '@/lib/recoveries/store';
 import { assembleEvidencePack } from '@/lib/payouts/assembleEvidencePack';
 import { listCaseClarificationRequests } from '@/lib/payouts/clarifications';
 import { getReconciliationReadModel, refreshCaseReconciliation } from '@/lib/reconciliation/caseStore';
+import { buildResolutionComparison } from '@/lib/claims/decision/resolutionComparison';
+import { loadReplacementReadModel } from '@/lib/claims/replacement';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +49,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
      * than their sum.
      */
     const claim = loaded.claim!;
-    const [computed, recoveryCase, evidencePack, clarificationRequests, reconciliation] = await Promise.all([
+    const [computed, recoveryCase, evidencePack, clarificationRequests, reconciliation, replacement] = await Promise.all([
       computeClaimDecision({ client: serviceClient, merchantId: ctx.merchantId, claimId }),
       getRecoveryCaseForSupportPayoutCase(serviceClient, ctx.merchantId, claimId),
       assembleEvidencePack({
@@ -60,15 +62,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
       }),
       listCaseClarificationRequests(serviceClient, ctx.merchantId, claimId),
       getReconciliationReadModel(serviceClient, ctx.merchantId, claimId),
+      loadReplacementReadModel(serviceClient, ctx.merchantId, claimId),
     ]);
     if (!computed) return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
 
     const formatted = formatClaimDecisionRecommendation(computed.evaluation, computed.ruleCount, computed.payoutCase);
+    const resolutionComparison = buildResolutionComparison({ ...computed, replacement });
     const recovery = computed.payoutCase?.recovery;
     const recoverable =
       recovery?.recoverability === 'recoverable' || recovery?.recoverability === 'possibly_recoverable';
 
     return NextResponse.json({
+      context: computed.context,
       evaluation: computed.evaluation,
       ruleCount: computed.ruleCount,
       evaluatedAt: computed.evaluatedAt,
@@ -85,6 +90,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
         recoverable_amount: computed.payoutCase?.exposure?.total?.amount ?? null,
       },
       reconciliation,
+      resolutionComparison,
       readOnly: true,
     });
   } catch (error) {
@@ -130,6 +136,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
     }
 
     const formatted = formatClaimDecisionRecommendation(result.evaluation, result.ruleCount, result.payoutCase);
+    const replacement = await loadReplacementReadModel(serviceClient, ctx.merchantId, claimId);
+    const resolutionComparison = buildResolutionComparison({ ...result, replacement });
 
     const recoveryCase = await getRecoveryCaseForSupportPayoutCase(serviceClient, ctx.merchantId, claimId);
     const recovery = result.payoutCase?.recovery;
@@ -172,6 +180,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
     }
 
     return NextResponse.json({
+      context: result.context,
       evaluation: result.evaluation,
       ruleCount: result.ruleCount,
       evaluatedAt: result.evaluatedAt,
@@ -181,6 +190,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
       recoveryCase,
       recovery_opportunity,
       reconciliation,
+      resolutionComparison,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

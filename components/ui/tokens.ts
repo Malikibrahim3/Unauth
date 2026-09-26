@@ -28,16 +28,16 @@ export const uiTokens = {
   },
   typography: {
     sectionEyebrow:
-      'font-mono text-xs uppercase tracking-[0.14em] text-[var(--uo-route-text-secondary)]',
+      'font-mono text-xs uppercase tracking-[0.14em] text-[#64686d]',
     sectionHeadline:
-      'mt-4 text-[1.75rem] font-semibold leading-[1.12] tracking-[-0.02em] [font-family:var(--uo-route-font-sans)] md:text-[2.375rem]',
+      'mt-4 text-[1.75rem] font-semibold leading-[1.12] tracking-[-0.02em] [font-family:Inter,ui-sans-serif,system-ui,sans-serif] md:text-[2.375rem]',
     sectionBody: 'mt-5 text-[1.0625rem] leading-[1.65]',
     landingEyebrow:
-      '[font-family:var(--uo-route-font-sans)] text-[12px] font-semibold uppercase tracking-[0.16em] text-[rgba(17,17,17,0.42)]',
+      '[font-family:Inter,ui-sans-serif,system-ui,sans-serif] text-[12px] font-semibold uppercase tracking-[0.16em] text-[rgba(17,17,17,0.42)]',
     landingHeadline:
-      'mt-4 [font-family:var(--uo-route-font-sans)] text-[clamp(2.25rem,3.6vw,2.625rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[#111111]',
+      'mt-4 [font-family:Inter,ui-sans-serif,system-ui,sans-serif] text-[clamp(2.25rem,3.6vw,2.625rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[#111111]',
     landingBody:
-      'mt-5 [font-family:var(--uo-route-font-sans)] text-[17px] leading-[1.55] tracking-[-0.025em] text-[rgba(17,17,17,0.56)]',
+      'mt-5 [font-family:Inter,ui-sans-serif,system-ui,sans-serif] text-[17px] leading-[1.55] tracking-[-0.025em] text-[rgba(17,17,17,0.56)]',
   },
   radius: {
     sm: 'rounded-md',
@@ -94,18 +94,18 @@ export const uiTokens = {
   },
   app: {
     card:
-      'rounded-[var(--uo-route-radius-surface)] border bg-[var(--uo-route-surface-primary)] shadow-none',
+      'rounded-[12px] border bg-[#fff] shadow-none',
     cardMuted:
-      'rounded-[var(--uo-route-radius-surface)] border bg-[var(--uo-route-surface-muted)] shadow-none',
+      'rounded-[12px] border bg-[#f4f3f1] shadow-none',
     cardInset:
-      'rounded-[var(--uo-route-radius-surface)] border bg-[var(--uo-route-surface-muted)]',
-    border: 'border-[var(--uo-route-border-default)]',
-    borderMuted: 'border-[var(--uo-route-border-subtle)]',
+      'rounded-[12px] border bg-[#f4f3f1]',
+    border: 'border-[#e4e3e0]',
+    borderMuted: 'border-[#eae8e5]',
     eyebrow:
-      'text-[10px] font-medium uppercase tracking-wider text-[var(--uo-route-text-tertiary)]',
-    heading: 'text-body font-semibold text-[var(--uo-route-text-primary)]',
-    body: 'text-body-sm text-[var(--uo-route-text-secondary)]',
-    caption: 'text-caption text-[var(--uo-route-text-tertiary)]',
+      'text-[10px] font-medium uppercase tracking-wider text-[#6f6a63]',
+    heading: 'text-body font-semibold text-[#1c1f23]',
+    body: 'text-body-sm text-[#64686d]',
+    caption: 'text-caption text-[#6f6a63]',
   },
 } as const;
 

@@ -1,0 +1,39 @@
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { scenarioLedger } from '@/lib/surfaces/manifest';
+import { LEGACY_DARK_COOKIE, type LightOnlyAppearance } from '@/tests/current/lightOnlyAppearance';
+
+const HEADER = 'x-unauth-acceptance-scenario';
+const ROOT = path.join(process.cwd(), 'artifacts', 'full-app-acceptance-2026-08-30');
+const VARIANTS = [{ id: 'desktop-light', width: 1440, height: 900, theme: 'light' }, { id: 'compact-light', width: 1024, height: 900, theme: 'light' }] as const satisfies readonly { id: string; width: number; height: number; theme: LightOnlyAppearance }[];
+type Config = { id: string; mode: 'error' | 'state'; path: string; selector: string; surface: string; header?: boolean };
+const CONFIGS: Config[] = [
+  { id: 'account-settings-error', mode: 'error', path: '/settings/workspace/account', selector: '[data-state-id="account-settings-error"]', surface: 'account-and-appearance', header: true },
+  { id: 'team-empty', mode: 'state', path: '/settings/workspace/team', selector: '[data-state-id="team-empty"]', surface: 'team-management', header: true },
+  { id: 'team-error', mode: 'error', path: '/settings/workspace/team', selector: '[data-state-id="team-error"]', surface: 'team-management', header: true },
+  { id: 'platform-settings-error', mode: 'error', path: '/settings/product/platform', selector: '[data-state-id="platform-settings-error"]', surface: 'platform-defaults', header: true },
+  { id: 'notification-email-unavailable', mode: 'state', path: '/settings/product/notifications', selector: '[data-state-id="notification-email-unavailable"]', surface: 'notification-preferences' },
+  { id: 'notification-settings-error', mode: 'error', path: '/settings/product/notifications', selector: '[data-state-id="notification-settings-error"]', surface: 'notification-preferences', header: true },
+  { id: 'api-access-error', mode: 'error', path: '/settings/developers/api-access', selector: '[data-state-id="api-access-error"]', surface: 'developer-api-access', header: true },
+  { id: 'audit-trail-error', mode: 'error', path: '/settings/governance/audit-trail', selector: '[data-state-id="audit-trail-error"]', surface: 'audit-trail', header: true },
+  { id: 'privacy-error', mode: 'error', path: '/settings/legal/data-privacy', selector: '[data-state-id="privacy-error"]', surface: 'data-privacy', header: true },
+  { id: 'agreements-empty', mode: 'state', path: '/settings/legal/agreements', selector: '[data-state-id="agreements-empty"]', surface: 'agreements', header: true },
+  { id: 'agreements-error', mode: 'error', path: '/settings/legal/agreements', selector: '[data-state-id="agreements-error"]', surface: 'agreements', header: true },
+  { id: 'billing-error', mode: 'error', path: '/settings/billing', selector: '[data-state-id="billing-error"]', surface: 'billing', header: true },
+];
+const manifest = new Map(scenarioLedger.map((scenario) => [scenario.id, scenario])); for (const c of CONFIGS) if (!manifest.has(c.id)) throw new Error(`Missing P06 scenario ${c.id}`);
+type Evidence = { id: string; viewport: string; theme: LightOnlyAppearance; screenshots: string[]; finalUrl: string; consoleErrors: string[]; pageErrors: string[]; failedRequests: string[]; expectedDiagnostics: string[] };
+const evidence = new Map<string, Evidence[]>();
+function dir(id: string) { const d = path.join(ROOT, 'scenarios', id); fs.mkdirSync(d, { recursive: true }); return d; }
+function marker(id: string) { return path.join(ROOT, `.${id}-active`); }
+async function shot(page: Page, id: string, name: string) { const f = path.join(dir(id), `${name}.png`); await page.screenshot({ path: f, fullPage: true }); return path.relative(ROOT, f); }
+function observe(page: Page, origin: string, errorMode: boolean) { const consoleErrors: string[] = []; const pageErrors: string[] = []; const failedRequests: string[] = []; const expectedDiagnostics: string[] = []; page.on('console', m => { if (m.type() !== 'error') return; const v = m.text(); if (errorMode && (v.includes('Local acceptance activation') || v.includes('Minified React error #441') || v.startsWith('[route-error]') || v.includes('500 (Internal Server Error)'))) expectedDiagnostics.push(v); else consoleErrors.push(v); }); page.on('pageerror', e => { if (errorMode && (e.message.includes('Local acceptance activation') || e.message.includes('Minified React error #441'))) expectedDiagnostics.push(e.message); else pageErrors.push(e.message); }); page.on('requestfailed', r => { const f = r.failure()?.errorText ?? 'failed'; if (r.url().startsWith(origin) && f !== 'net::ERR_ABORTED') failedRequests.push(`${r.method()} ${new URL(r.url()).pathname}: ${f}`); }); return { consoleErrors, pageErrors, failedRequests, expectedDiagnostics }; }
+
+test.describe('FAA-6 settings states', () => {
+  for (const c of CONFIGS) for (const v of VARIANTS) test(`${c.id} · ${v.id}`, async ({ page, context }, info: TestInfo) => {
+    test.setTimeout(90_000); const base = new URL(String(info.project.use.baseURL)); await page.setViewportSize({ width: v.width, height: v.height }); await context.addCookies([{ name: LEGACY_DARK_COOKIE, value: v.theme, domain: base.hostname, path: '/' }]); if (c.header) await context.setExtraHTTPHeaders({ [HEADER]: c.id }); const runtime = observe(page, base.origin, c.mode === 'error'); const m = marker(c.id); if (c.mode === 'error') fs.writeFileSync(m, `${c.id}\n`);
+    try { await page.goto(c.path, { waitUntil: 'domcontentloaded' }); await expect(page.locator(c.selector).first()).toBeVisible({ timeout: 20_000 }); const first = await shot(page, c.id, `${v.id}-${c.mode}`); await context.setExtraHTTPHeaders({}); if (c.mode === 'error') { await page.getByRole('button', { name: 'Try again' }).click(); if (!(await page.locator(`[data-surface-id="${c.surface}"]`).isVisible().catch(() => false))) await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 }); } else await page.goto(c.path, { waitUntil: 'domcontentloaded' }); await expect(page.locator(`[data-surface-id="${c.surface}"]`)).toBeVisible({ timeout: 30_000 }); const screenshots = [first, await shot(page, c.id, `${v.id}-settled`)]; expect(runtime.consoleErrors).toEqual([]); expect(runtime.pageErrors).toEqual([]); expect(runtime.failedRequests).toEqual([]); evidence.set(c.id, [...(evidence.get(c.id) ?? []), { id: v.id, viewport: `${v.width}x${v.height} authenticated`, theme: v.theme, screenshots, finalUrl: new URL(page.url()).pathname, ...runtime }]); } finally { if (fs.existsSync(m)) fs.unlinkSync(m); }
+  });
+  test.afterAll(() => { for (const c of CONFIGS) { const variants = evidence.get(c.id) ?? []; if (!variants.length) continue; const s = manifest.get(c.id)!; const screenshots = variants.flatMap(v => v.screenshots); const consoleErrors = variants.flatMap(v => v.consoleErrors); const pageErrors = variants.flatMap(v => v.pageErrors); const failedRequests = variants.flatMap(v => v.failedRequests); const passed = variants.length === VARIANTS.length && !consoleErrors.length && !pageErrors.length && !failedRequests.length; fs.writeFileSync(path.join(dir(c.id), 'receipt.json'), `${JSON.stringify({ schemaVersion: 2, evidenceSource: 'playwright-runtime', scenarioId: c.id, owningSurface: s.owner, declaredKind: s.kind, activation: s.activationRecipe, viewport: variants.map(v => v.viewport), theme: variants.map(v => v.theme), roleProfile: { role: 'owner', persona: null, delegatedPermissions: [] }, finalUrl: variants.at(-1)?.finalUrl, consoleErrors, pageErrors, failedRequests, expectedDiagnostics: variants.flatMap(v => v.expectedDiagnostics), screenshotOrTrace: screenshots[0], supportingEvidence: screenshots, mutationReceipt: null, cleanup: 'Removed loopback-only state activation; no settings, member, agreement, privacy, audit, API-key, or billing state changed.', verdict: passed ? 'passed' : 'partial', variants }, null, 2)}\n`); } });
+});

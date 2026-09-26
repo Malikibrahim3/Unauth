@@ -7,7 +7,6 @@ import { useLiveConnectionStatus } from "@/components/integrations/useLiveConnec
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { categoryLabel, type CatalogueRowItem } from "@/lib/integrations/catalogueView";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
-import styles from "@/components/sources/SourcesSurface.module.css";
 
 export { categoryLabel } from "@/lib/integrations/catalogueView";
 export type { CatalogueRowItem } from "@/lib/integrations/catalogueView";
@@ -32,41 +31,40 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
   const live = useLiveConnectionStatus(item.id, initialLiveState);
 
   return (
-    <li className={styles.connectionRow} data-state-id={`source-connection-${live.status}`} data-trust-state={live.status}>
-      <div className={styles.providerCell}>
+    <li style={{ display: 'grid', gridTemplateColumns: 'minmax(190px,1.2fr) 120px minmax(220px,1.4fr) 90px 130px 64px', gap: 14, alignItems: 'center', minHeight: 62, padding: '9px 16px', borderBottom: '1px solid #f4f2ef' }} data-state-id={`source-connection-${live.status}`} data-trust-state={live.status}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
         <ProviderLogo provider={item.id} name={item.name} />
-        <div className={styles.providerIdentity}>
-          <Link href={`/sources/${item.id}`} className={styles.providerLink}>{item.name}</Link>
-          <span className={styles.providerMeta}>{accountLabel(item)}</span>
+        <div style={{ display: 'grid', gap: 3, minWidth: 0 }}>
+          <Link href={`/sources/${item.id}`} style={{ overflow: 'hidden', color: '#1c1f23', fontSize: 13, fontWeight: 600, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</Link>
+          <span style={{ color: '#6f6a63', fontSize: 10.5 }}>{accountLabel(item)}</span>
         </div>
       </div>
       <div>
-        <span className={styles.mobileLabel}>Status</span>
+        <span className="sr-only">Status</span>
         <StatusBadge family="workflowStatus" value={live.status} />
       </div>
       <div>
-        <span className={styles.mobileLabel}>Data covered</span>
-        <span className={styles.coverageText}>{item.description}</span>
+        <span className="sr-only">Data covered</span>
+        <span style={{ display: 'block', color: '#40454a', fontSize: 11.5, lineHeight: '16px' }}>{item.description}</span>
         {live.note ? (
           <span
             role="status"
-            className={styles.providerMeta}
-            style={{ color: live.noteTone === "warning" ? "var(--uo-route-warning)" : "var(--uo-route-critical)" }}
+            style={{ display: 'block', marginTop: 3, color: live.noteTone === "warning" ? "#7a5310" : "#b0431a", fontSize: 10.5 }}
           >
             {live.note}
           </span>
         ) : null}
       </div>
       <div className="text-left tabular-nums md:text-right">
-        <span className={styles.mobileLabel}>Records</span>
-        <span className="ua-text-dense font-medium text-[var(--uo-route-text-primary)]">{item.importedRecordsKnown === false ? "Unavailable" : formatNumber(item.importedRecords)}</span>
+        <span className="sr-only">Records</span>
+        <span className="text-[12px] leading-[1.45] text-[#40454a] font-medium text-[#1c1f23]">{item.importedRecordsKnown === false ? "Unavailable" : formatNumber(item.importedRecords)}</span>
       </div>
-      <div className={styles.cellCopy}>
-        <span className={styles.mobileLabel}>Last data</span>
+      <div style={{ color: '#6f6a63', font: "400 10.5px/1.4 'IBM Plex Mono',monospace" }}>
+        <span className="sr-only">Last data</span>
         {activityLabel(item)}
       </div>
       <div className="text-right">
-        <Link href={`/sources/${item.id}`} className={styles.actionLink}>Manage</Link>
+        <Link href={`/sources/${item.id}`} style={{ color: '#9f4f08', fontSize: 11.5, fontWeight: 500 }}>Manage</Link>
       </div>
     </li>
   );

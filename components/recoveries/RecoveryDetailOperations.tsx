@@ -1,13 +1,13 @@
+import { isActiveWorkTask } from '@/lib/work/types';
 import Link from 'next/link';
 import type { RecoveryCase, RecoveryCaseEvent } from '@/lib/recoveries/types';
 import { RECOVERY_OWNER_LABELS, RECOVERY_STATUS_LABELS } from '@/lib/recoveries/types';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
-import { formatDateAbsolute, formatDateMode, formatDateTime, formatMoney } from '@/lib/utils/format';
+import { formatDateAbsolute, formatDateTime, formatMoney } from '@/lib/utils/format';
 import { hashId } from '@/lib/ui/displayRef';
 import { humanizeEvidenceKey } from '@/components/claims/payout/payoutCopy';
 import { label } from '@/lib/ui/labels';
 import { providerLabel } from '@/lib/ui/merchantCopy';
-import styles from './RecoveryDetailOperations.module.css';
 
 export type RecoveryCorrespondenceRow = {
   id: string;
@@ -50,6 +50,18 @@ type Props = {
   providerCreditEvents: ProviderCreditEventRow[];
 };
 
+const card = {
+  borderRadius: 10,
+  background: '#fff',
+  boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)',
+} as const;
+
+const sectionLabel = {
+  font: "600 10.5px/1 'Inter',sans-serif",
+  letterSpacing: '.09em',
+  color: '#64686d',
+} as const;
+
 function recoveryRef(id: string) {
   return `REC-${hashId(id).slice(1)}`;
 }
@@ -59,50 +71,47 @@ function caseRef(id: string) {
 }
 
 function lossRef(id: string) {
-  return `LDG-${hashId(id).slice(1)}`;
+  return `LOSS-${hashId(id).slice(1)}`;
 }
 
 function eventLabel(event: RecoveryCaseEvent) {
   if (event.event_type === 'status_changed' && event.to_status) return `Recovery status changed to ${RECOVERY_STATUS_LABELS[event.to_status]}`;
-  const map: Partial<Record<RecoveryCaseEvent['event_type'], string>> = {
-    created: 'Recovery opened from responsibility assessment',
-    evidence_added: 'Evidence added to the recovery pack',
-    submitted: 'Claim submitted to the external partner',
-    chased: 'Partner chase recorded',
-    approved: 'Partner approval recorded',
-    partially_approved: 'Partial partner approval recorded',
-    rejected: 'Partner rejection recorded',
-    appealed: 'Appeal recorded',
-    paid: 'Recovered cash recorded',
-    closed: 'Recovery closed',
+  const names: Partial<Record<RecoveryCaseEvent['event_type'], string>> = {
+    created: 'Route opened',
+    evidence_added: 'Evidence added',
+    submitted: 'Submitted',
+    chased: 'Chased',
+    approved: 'Approved',
+    partially_approved: 'Partially approved',
+    rejected: 'Rejected',
+    appealed: 'Appealed',
+    paid: 'Received',
+    closed: 'Closed',
   };
-  return map[event.event_type] ?? label('workflowStatus', event.event_type);
+  return names[event.event_type] ?? label('workflowStatus', event.event_type);
 }
 
-function eventTone(event: RecoveryCaseEvent) {
-  if (event.event_type === 'chased' || event.to_status === 'chase_due' || event.to_status === 'waiting_response') return 'warning';
-  if (['created', 'evidence_added', 'submitted', 'approved', 'paid'].includes(event.event_type)) return 'positive';
-  return 'neutral';
+function daysRemaining(value: string | null) {
+  if (!value) return null;
+  const days = Math.ceil((Date.parse(value) - Date.now()) / 86_400_000);
+  return Number.isFinite(days) ? days : null;
 }
 
-function dateLabel(value: string | null) {
-  return value ? formatDateMode(value, 'recent') : '—';
+function windowProgress(created: string, deadline: string | null) {
+  if (!deadline) return 0;
+  const start = Date.parse(created);
+  const end = Date.parse(deadline);
+  const total = end - start;
+  if (!Number.isFinite(total) || total <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round(((Date.now() - start) / total) * 100)));
 }
 
-function deadlineDetail(deadline: string | null) {
-  if (!deadline) return 'No deadline recorded';
-  const days = Math.ceil((Date.parse(deadline) - Date.now()) / 86_400_000);
-  if (days < 0) return `${Math.abs(days)} days overdue`;
-  if (days === 0) return 'Due today';
-  return `${days} days left`;
+function FactRow({ label: factLabel, value, tone = '#1c1f23', note }: { label: string; value: string; tone?: string; note?: string }) {
+  return <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ flex: 1, font: "400 11.5px/1.5 'Inter',sans-serif", color: '#64686d' }}>{factLabel}</span><span style={{ maxWidth: '62%', textAlign: 'right', font: "400 11.5px/1.5 'IBM Plex Mono',monospace", color: tone }}>{value}</span>{note ? <span style={{ marginLeft: 7, font: "400 9.5px/1.5 'IBM Plex Mono',monospace", color: '#64686d' }}>{note}</span> : null}</div>;
 }
 
-function nextChaseDetail(nextChase: string | null) {
-  if (!nextChase) return 'Not scheduled';
-  const days = Math.ceil((Date.parse(nextChase) - Date.now()) / 86_400_000);
-  if (days < 0) return `${Math.abs(days)} days overdue`;
-  if (days === 0) return 'Due today';
-  return `${days} days`;
+function LinkedRow({ type, href, value }: { type: string; href: string; value: string }) {
+  return <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 0', borderTop: '1px solid #f4f2ef' }}><div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "400 10px/1.4 'IBM Plex Mono',monospace", color: '#64686d' }}>{type}</div><div style={{ marginTop: 2, font: "500 11.5px/1.4 'Inter',sans-serif" }}><Link href={href} style={{ color: '#1c1f23', textDecoration: 'none' }}>{value}</Link></div></div></div>;
 }
 
 export function RecoveryDetailOperations({ recovery, events, correspondence, tasks, providerCreditEvents }: Props) {
@@ -110,174 +119,111 @@ export function RecoveryDetailOperations({ recovery, events, correspondence, tas
   const typeLabel = RECOVERY_TYPE_LABELS[recovery.recovery_type] ?? 'Recovery';
   const outstanding = Math.max(0, recovery.amount_sought_minor - recovery.amount_recovered_minor - recovery.amount_written_off_minor);
   const approvedRecorded = recovery.amount_approved_minor > 0 || events.some((event) => event.event_type === 'approved' || event.event_type === 'partially_approved');
-  const receivedCreditRecorded = recovery.amount_recovered_minor > 0 || providerCreditEvents.some((event) => ['observed', 'received', 'matched', 'reconciled'].includes(event.event_type) || ['observed', 'received', 'matched', 'reconciled'].includes(event.to_status ?? ''));
-  const matchedCreditRecorded = providerCreditEvents.some((event) => event.event_type === 'matched' || ['matched', 'reconciled'].includes(event.to_status ?? ''));
-  const reconciledCreditRecorded = providerCreditEvents.some((event) => event.event_type === 'reconciled' || event.to_status === 'reconciled');
-  const writtenOffRecorded = recovery.amount_written_off_minor > 0 || recovery.status === 'closed_unrecoverable';
-  const submittedEvent = events.find((event) => event.event_type === 'submitted' || event.to_status === 'submitted');
-  const chasedEvent = events.find((event) => event.event_type === 'chased' || event.to_status === 'chase_due' || event.to_status === 'waiting_response');
-  const openedEvent = events.find((event) => event.event_type === 'created') ?? events.at(-1);
-  const currentStage = recovery.status === 'chase_due' || recovery.status === 'waiting_response' ? 'Chased' : RECOVERY_STATUS_LABELS[recovery.status];
-  const timelineRecordedX = chasedEvent ? 208 : submittedEvent ? 124 : 40;
-  const combinedEvents = [
+  const receivedRecorded = recovery.amount_recovered_minor > 0 || providerCreditEvents.some((event) => ['observed', 'received', 'matched', 'reconciled'].includes(event.event_type) || ['observed', 'received', 'matched', 'reconciled'].includes(event.to_status ?? ''));
+  const matchedRecorded = providerCreditEvents.some((event) => event.event_type === 'matched' || ['matched', 'reconciled'].includes(event.to_status ?? ''));
+  const reconciledRecorded = providerCreditEvents.some((event) => event.event_type === 'reconciled' || event.to_status === 'reconciled');
+  const stageValues = [
+    { label: 'Sought', recorded: true, value: formatMoney(recovery.amount_sought_minor, recovery.currency) },
+    { label: 'Approved', recorded: approvedRecorded, value: approvedRecorded ? formatMoney(recovery.amount_approved_minor, recovery.currency) : '—' },
+    { label: 'Received', recorded: receivedRecorded, value: receivedRecorded ? formatMoney(recovery.amount_recovered_minor, recovery.currency) : '—' },
+    { label: 'Matched', recorded: matchedRecorded, value: matchedRecorded ? formatMoney(recovery.amount_recovered_minor, recovery.currency) : '—' },
+    { label: 'Reconciled', recorded: reconciledRecorded, value: reconciledRecorded ? formatMoney(recovery.amount_recovered_minor, recovery.currency) : '—' },
+  ];
+  const lastRecordedIndex = stageValues.reduce((last, stage, index) => stage.recorded ? index : last, 0);
+  const heldCount = Math.max(0, recovery.evidence_required.length - recovery.evidence_missing.length);
+  const evidenceRows = recovery.evidence_required.slice(0, 6);
+  const statusEvents = [
     ...providerCreditEvents.map((event) => ({
-      id: `provider-credit-${event.id}`,
+      id: `credit-${event.id}`,
       at: event.created_at,
-      title: `Provider credit ${event.event_type.replaceAll('_', ' ')}`,
-      detail: `${formatMoney(event.amount_minor, event.currency)} · ${event.from_status ?? 'new'} → ${event.to_status ?? event.event_type}${event.financial_entry_id ? ' · ledger entry linked' : ''}${event.reason ? ` · ${event.reason}` : ''}`,
-      tone: event.event_type === 'dismissed' || event.event_type === 'reversed' ? 'warning' : event.event_type === 'matched' || event.event_type === 'reconciled' ? 'positive' : 'neutral',
-      href: null,
+      title: `Credit ${event.event_type.replaceAll('_', ' ')}`,
+      detail: `${formatMoney(event.amount_minor, event.currency)} · ${event.reason ?? `${event.from_status ?? 'new'} → ${event.to_status ?? event.event_type}`}`,
+      actor: event.financial_entry_id ? 'ledger linked' : 'provider credit',
     })),
-    ...correspondence.map((item) => ({
-      id: `correspondence-${item.id}`,
-      at: item.received_at ?? item.sent_at ?? recovery.updated_at,
-      title: item.subject ?? `${item.direction.charAt(0).toUpperCase()}${item.direction.slice(1)} correspondence via ${providerLabel(item.source_provider)}`,
-      detail: `${providerLabel(item.source_provider)} · ${item.source_record_id}`,
-      tone: item.direction === 'outbound' ? 'warning' : 'positive',
-      href: item.source_url,
-    })),
-    ...events.map((event) => ({
-      id: `event-${event.id}`,
-      at: event.created_at,
-      title: eventLabel(event),
-      detail: event.note ?? 'Unauth recovery ledger',
-      tone: eventTone(event),
-      href: null,
-    })),
-  ].sort((left, right) => Date.parse(right.at) - Date.parse(left.at));
-  const claimRef = recovery.partner?.external_reference ?? 'Claim reference unavailable';
+    ...events.map((event) => ({ id: `event-${event.id}`, at: event.created_at, title: eventLabel(event), detail: event.note ?? (event.to_status ? `Status recorded as ${RECOVERY_STATUS_LABELS[event.to_status]}` : 'Append-only recovery event'), actor: 'recorded event' })),
+  ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 4);
+  const remaining = daysRemaining(recovery.deadline_at);
+  const progress = windowProgress(recovery.created_at, recovery.deadline_at);
+  const partnerStats = recovery.partner_statistics;
+  const contact = recovery.partner?.contact_email ?? recovery.partner?.contact_url ?? recovery.partner?.contact_instructions ?? 'Unavailable';
+  const openTasks = tasks.filter((task) => isActiveWorkTask(task.status));
 
   return (
-    <div className={styles.stack} data-operations-surface="recovery-detail">
-      <section className={`${styles.card} ${styles.summary}`}>
-        <div className={styles.summaryIdentity}>
-          <div className={styles.summaryBadges}>
-            <span className={styles.reference}>{recoveryRef(recovery.id)}</span>
-            <span className={styles.badge} data-tone={['paid', 'approved'].includes(recovery.status) ? 'positive' : 'warning'}>{RECOVERY_STATUS_LABELS[recovery.status]}</span>
-            <span className={styles.badge}>{typeLabel}</span>
+    <div data-operations-surface="recovery-detail" style={{ flex: 1, minHeight: 0, padding: '16px 22px 20px', display: 'flex', gap: 14 }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section style={{ ...card, padding: '14px 16px 14px', flex: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 16 }}><div style={sectionLabel}>MONEY STAGES</div><div style={{ flex: 1 }}/><span style={{ font: "400 10.5px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>approval is not receipt · receipt is not reconciled</span></div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+            {stageValues.map((stage, index) => {
+              const current = index === lastRecordedIndex && !stageValues[index + 1]?.recorded;
+              return (
+                <div key={stage.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', position: 'relative' }}>
+                  {index < stageValues.length - 1 ? <div style={{ position: 'absolute', left: '50%', right: '-50%', top: 9, height: 1.5, background: stageValues[index + 1]?.recorded ? '#1c1f23' : '#e4e3e0' }}/> : null}
+                  <div style={{ width: 19, height: 19, zIndex: 1, borderRadius: '50%', background: stage.recorded ? '#1c1f23' : '#fff', boxShadow: stage.recorded ? undefined : current ? 'inset 0 0 0 2px #ff7a30' : 'inset 0 0 0 1.5px #ddd8d1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{stage.recorded ? <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M2.2 5.2 4.2 7.2 7.8 3"/></svg> : null}</div>
+                  <span style={{ font: "500 12px/1.3 'Inter',sans-serif", color: stage.recorded || current ? '#1c1f23' : '#64686d' }}>{stage.label}</span>
+                  <span style={{ font: "400 13px/1 'IBM Plex Mono',monospace", color: stage.recorded ? '#1c1f23' : '#a7abad' }}>{stage.value}</span>
+                </div>
+              );
+            })}
           </div>
-          <h2 className={styles.summaryTitle}>{partnerName} · claim {claimRef}</h2>
-          <p className={styles.summaryMeta}>
-            Opened {formatDateAbsolute(recovery.created_at)} · for <Link href={`/cases/${recovery.support_payout_case_id}`}>{caseRef(recovery.support_payout_case_id)}</Link>
-            {recovery.loss_case_id ? <> and loss <Link href={`/financials/losses/${recovery.loss_case_id}`}>{lossRef(recovery.loss_case_id)}</Link></> : null} · {recovery.currency}
-          </p>
-        </div>
-        <div className={styles.summaryStats}>
-          <div><span>Outstanding</span><strong className={styles.statMoney}>{formatMoney(outstanding, recovery.currency)}</strong><small>{recovery.currency}</small></div>
-          <div><span>Claim deadline</span><strong className={styles.statDuration}>{dateLabel(recovery.deadline_at)}</strong><small>{deadlineDetail(recovery.deadline_at)}</small></div>
-          <div><span>Next chase</span><strong className={styles.statDuration}>{dateLabel(recovery.next_chase_at)}</strong><small>{nextChaseDetail(recovery.next_chase_at)}</small></div>
-        </div>
-      </section>
-
-      <section className={`${styles.card} ${styles.financialChain}`} aria-labelledby="recovery-financial-chain-title">
-        <header>
-          <h2 id="recovery-financial-chain-title">External result to reconciled money</h2>
-          <p>Each position needs its own recorded fact. Later stages are never inferred from partner approval.</p>
-        </header>
-        <ol>
-          <li data-state={approvedRecorded ? 'recorded' : 'waiting'}><span>1</span><div><strong>Provider position</strong><small>{approvedRecorded ? 'Approval recorded' : 'No approval recorded'}</small></div></li>
-          <li data-state={receivedCreditRecorded ? 'recorded' : 'waiting'}><span>2</span><div><strong>Received credit</strong><small>{receivedCreditRecorded ? formatMoney(recovery.amount_recovered_minor, recovery.currency) : 'No provider credit observed'}</small></div></li>
-          <li data-state={matchedCreditRecorded ? 'recorded' : 'waiting'}><span>3</span><div><strong>Matched credit</strong><small>{matchedCreditRecorded ? 'Source credit matched to this recovery' : 'No source-to-recovery match recorded'}</small></div></li>
-          <li data-state={reconciledCreditRecorded ? 'recorded' : 'waiting'}><span>4</span><div><strong>Reconciled money</strong><small>{reconciledCreditRecorded ? 'Ledger reconciliation recorded' : 'No reconciliation event recorded'}</small></div></li>
-        </ol>
-      </section>
-
-      <div className={styles.leadGrid}>
-        <section className={`${styles.card} ${styles.panel}`}>
-          <h2 className={styles.panelTitle}>Where this recovery stands against its deadline</h2>
-          <p className={styles.panelCopy}>External stages only. A stage is recorded when the partner acts, never inferred.</p>
-          <svg className={styles.timelineSvg} viewBox="0 0 640 112" role="img" aria-label={`Recovery timeline from ${formatDateAbsolute(recovery.created_at)} to ${recovery.deadline_at ? formatDateAbsolute(recovery.deadline_at) : 'an unavailable deadline'}, currently ${RECOVERY_STATUS_LABELS[recovery.status]}`}>
-            <line x1="40" y1="48" x2="600" y2="48" className={styles.timelineTrack} />
-            <line x1="40" y1="48" x2={timelineRecordedX} y2="48" className={styles.timelineRecorded} />
-            <circle cx="40" cy="48" r="5" className={styles.recordedDot} />
-            <circle cx="124" cy="48" r="5" className={submittedEvent ? styles.recordedDot : styles.futureDot} />
-            <circle cx="208" cy="48" r="5.5" className={chasedEvent ? styles.currentDot : styles.futureDot} />
-            <circle cx="404" cy="48" r="4" className={styles.futureDot} />
-            <circle cx="600" cy="48" r="4" className={styles.deadlineDot} />
-            <text x="40" y="32" textAnchor="middle" className={styles.pointLabel}>Opened</text>
-            <text x="40" y="68" textAnchor="middle">{dateLabel(openedEvent?.created_at ?? recovery.created_at)}</text>
-            <text x="124" y="32" textAnchor="middle" className={styles.pointLabel}>Submitted</text>
-            <text x="124" y="68" textAnchor="middle">{dateLabel(submittedEvent?.created_at ?? null)}</text>
-            <text x="208" y="32" textAnchor="middle" className={chasedEvent ? styles.pointLabelCurrent : styles.pointLabel}>{currentStage}</text>
-            <text x="208" y="68" textAnchor="middle">{dateLabel(chasedEvent?.created_at ?? recovery.updated_at)}</text>
-            <text x="404" y="32" textAnchor="middle" className={styles.pointLabel}>Response due</text>
-            <text x="404" y="68" textAnchor="middle">{dateLabel(recovery.next_chase_at)}</text>
-            <text x="600" y="32" textAnchor="middle" className={styles.pointLabelDeadline}>Claim deadline</text>
-            <text x="600" y="68" textAnchor="middle">{dateLabel(recovery.deadline_at)}</text>
-            <text x="40" y="98">Approval, payment and closure are drawn only after those external facts are recorded.</text>
-          </svg>
-          <div className={styles.timelineFooter}>
-            <span><i data-tone="recorded" />Recorded</span><span><i data-tone="current" />Current stage</span><span><i />Not yet recorded</span><span><i data-tone="deadline" />Deadline</span>
-            <p>{recovery.last_chased_at ? `Last chased ${formatDateAbsolute(recovery.last_chased_at)} · ${nextChaseDetail(recovery.next_chase_at)} until the next chase` : 'No partner chase has been recorded.'}</p>
-          </div>
+          <div style={{ display: 'flex', gap: 14, marginTop: 18, paddingTop: 13, borderTop: '1px solid #eae8e5' }}><span style={{ flex: 1, font: "400 11.5px/1.5 'Inter',sans-serif", color: '#64686d' }}>Outstanding is {formatMoney(outstanding, recovery.currency)}. Nothing is counted as recovered until a source credit is observed; matching and reconciliation are recorded separately.</span><span style={{ flex: 'none', font: "400 11px/1.5 'IBM Plex Mono',monospace", color: recovery.amount_written_off_minor > 0 ? '#b0431a' : '#64686d' }}>written off: {formatMoney(recovery.amount_written_off_minor, recovery.currency)}</span></div>
         </section>
 
-        <section className={`${styles.card} ${styles.panel}`}>
-          <h2 className={styles.panelTitle}>Amounts</h2>
-          <p className={styles.panelCopy}>Currency is fixed by the loss. Nothing is converted.</p>
-          <div className={styles.rows}>
-            <div className={styles.amountRow}><div><div className={styles.rowLabel}>Sought from partner</div><div className={styles.rowDetail}>Bounded by confirmed loss on {caseRef(recovery.support_payout_case_id)}</div></div><div className={styles.amountValue}>{formatMoney(recovery.amount_sought_minor, recovery.currency)}</div></div>
-            <div className={styles.amountRow}><div><div className={styles.rowLabel}>Approved by partner</div><div className={styles.rowDetail}>{approvedRecorded ? 'Recorded external approval; approval is not recovered cash' : 'No approval decision received yet'}</div></div><div className={styles.amountValue} data-state={approvedRecorded ? undefined : 'unavailable'}>{approvedRecorded ? formatMoney(recovery.amount_approved_minor, recovery.currency) : '— Unavailable'}</div></div>
-            <div className={styles.amountRow}><div><div className={styles.rowLabel}>Recovered cash</div><div className={styles.rowDetail}>{recovery.amount_recovered_minor === 0 ? 'Verified zero — nothing has been paid' : 'Received or credited and recorded in the ledger'}</div></div><div className={styles.amountValue}>{formatMoney(recovery.amount_recovered_minor, recovery.currency)}</div></div>
-            <div className={styles.amountRow}><div><div className={styles.rowLabel}>Outstanding</div><div className={styles.rowDetail}>{recovery.deadline_at ? `Still claimable until ${formatDateAbsolute(recovery.deadline_at)}` : 'Claim deadline unavailable'}</div></div><div className={styles.amountValue}>{formatMoney(outstanding, recovery.currency)}</div></div>
-            <div className={styles.amountRow}><div><div className={styles.rowLabel}>Written off</div><div className={styles.rowDetail}>{writtenOffRecorded ? 'Append-only write-off recorded on this recovery' : 'Nothing has been abandoned on this recovery'}</div></div><div className={styles.amountValue} data-state={writtenOffRecorded ? undefined : 'unavailable'}>{writtenOffRecorded ? formatMoney(recovery.amount_written_off_minor, recovery.currency) : '— No records'}</div></div>
-          </div>
-        </section>
-      </div>
-
-      <div className={styles.pairGrid}>
-        <section className={`${styles.card} ${styles.panel}`}>
-          <h2 className={styles.panelTitle}>Evidence the partner requires</h2>
-          <p className={styles.panelCopy}>From the {partnerName} agreement. A missing requirement blocks approval, not submission.</p>
-          <div className={styles.rows}>
-            {recovery.evidence_required.length ? recovery.evidence_required.map((key) => {
+        <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
+          <section style={{ ...card, padding: '12px 15px 10px', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, paddingBottom: 6 }}><div style={sectionLabel}>EVIDENCE PACK</div><div style={{ flex: 1 }}/><span style={{ font: "400 10px/1 'IBM Plex Mono',monospace", color: recovery.evidence_missing.length ? '#7a5310' : '#1a6b43' }}>{heldCount} of {recovery.evidence_required.length} · {recovery.evidence_missing.length} blocking</span></div>
+            {evidenceRows.length ? evidenceRows.map((key) => {
               const missing = recovery.evidence_missing.includes(key);
-              return <div className={styles.evidenceRow} key={key}><div><div className={styles.rowLabel}>{humanizeEvidenceKey(key)}</div><div className={styles.rowDetail}>{missing ? 'Missing · no supporting source record is attached' : 'Held · retained in the recovery evidence pack'}</div></div><strong data-state={missing ? 'missing' : 'held'}>{missing ? 'Missing' : 'Held'}</strong></div>;
-            }) : <p className={styles.empty}>No evidence requirements are recorded for this recovery route.</p>}
-          </div>
-          {recovery.evidence_required.length ? <p className={styles.empty}>{recovery.evidence_required.length - recovery.evidence_missing.length} of {recovery.evidence_required.length} recorded requirements are held. Missing evidence remains explicit.</p> : null}
-        </section>
+              return <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: '1px solid #f4f2ef' }}><span style={{ width: 7, height: 7, flex: 'none', borderRadius: '50%', background: missing ? '#b0431a' : '#1a7f4b' }}/><span style={{ flex: 1, minWidth: 0, font: "400 12px/1.4 'Inter',sans-serif", color: '#1c1f23' }}>{humanizeEvidenceKey(key)}</span><span style={{ flex: 'none', font: "400 10px/1.4 'IBM Plex Mono',monospace", color: missing ? '#b0431a' : '#64686d' }}>{missing ? 'missing' : 'held'}</span></div>;
+            }) : <div style={{ padding: '12px 0', borderTop: '1px solid #f4f2ef', font: "400 11.5px/1.5 'Inter',sans-serif", color: '#64686d' }}>No evidence requirements are recorded.</div>}
+            <div style={{ flex: 1 }}/><div style={{ marginTop: 8, paddingTop: 9, borderTop: '1px solid #e4e3e0', font: "400 11px/1.5 'Inter',sans-serif", color: '#64686d' }}>{recovery.evidence_missing.length ? `${recovery.evidence_missing.length} required ${recovery.evidence_missing.length === 1 ? 'item is' : 'items are'} still missing. Filing readiness remains separate from the provider’s eventual decision.` : 'All recorded requirements are held. Completeness does not imply provider approval.'}</div>
+          </section>
 
-        <section className={`${styles.card} ${styles.panel}`}>
-          <h2 className={styles.panelTitle}>Correspondence and status events</h2>
-          <p className={styles.panelCopy}>Append-only recovery, correspondence, credit, match, reconciliation, reversal, and write-off facts.</p>
-          <div className={styles.rows}>
-            {combinedEvents.length ? combinedEvents.map((item) => <div className={styles.eventRow} key={item.id}><i className={styles.eventDot} data-tone={item.tone} /><div><div className={styles.rowLabel}>{item.href ? <a href={item.href}>{item.title}</a> : item.title}</div><div className={styles.rowDetail}>{item.detail} · {formatDateTime(item.at)}</div></div></div>) : <p className={styles.empty}>No correspondence or recovery status events are recorded.</p>}
-          </div>
+          <section style={{ ...card, padding: '12px 15px 10px', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, paddingBottom: 6 }}><div style={sectionLabel}>CORRESPONDENCE</div><div style={{ flex: 1 }}/><span style={{ font: "400 10px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>{correspondence.length} recorded</span></div>
+            {correspondence.length ? correspondence.slice(0, 4).map((item) => {
+              const at = item.received_at ?? item.sent_at ?? recovery.updated_at;
+              return <div key={item.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderTop: '1px solid #f4f2ef' }}><span style={{ width: 12, flex: 'none', paddingTop: 1, font: "400 11px/1.5 'IBM Plex Mono',monospace", color: '#64686d' }}>{item.direction === 'outbound' ? '↗' : '↘'}</span><div style={{ flex: 1, minWidth: 0 }}><div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', font: "500 12px/1.4 'Inter',sans-serif", color: '#1c1f23' }}>{item.source_url ? <a href={item.source_url} style={{ color: 'inherit' }}>{item.subject ?? `${item.direction} correspondence`}</a> : item.subject ?? `${item.direction} correspondence`}</span><span style={{ font: "400 10px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>{formatDateTime(at)}</span></div><div style={{ marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', font: "400 11px/1.5 'Inter',sans-serif", color: '#64686d' }}>{providerLabel(item.source_provider)} · source reference retained</div></div></div>;
+            }) : <div style={{ padding: '12px 0', borderTop: '1px solid #f4f2ef', font: "400 11.5px/1.5 'Inter',sans-serif", color: '#64686d' }}>No correspondence has been recorded.</div>}
+            <div style={{ flex: 1 }}/><div style={{ marginTop: 8, paddingTop: 9, borderTop: '1px solid #e4e3e0', font: "400 11px/1.5 'Inter',sans-serif", color: '#64686d' }}>Unauth records sent and observed correspondence. It does not infer activity inside a provider portal.</div>
+          </section>
+        </div>
+
+        <section style={{ ...card, padding: '12px 16px 10px', flex: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, paddingBottom: 4 }}><div style={sectionLabel}>STATUS EVENTS</div><div style={{ flex: 1 }}/><span style={{ font: "400 10.5px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>append only</span></div>
+          {statusEvents.length ? statusEvents.map((event) => <div key={event.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: '1px solid #f4f2ef' }}><span style={{ width: 92, flex: 'none', font: "400 11px/1.4 'IBM Plex Mono',monospace", color: '#64686d' }}>{formatDateTime(event.at)}</span><span style={{ width: 120, flex: 'none', font: "500 12px/1.4 'Inter',sans-serif", color: '#1c1f23' }}>{event.title}</span><span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', font: "400 11.5px/1.4 'Inter',sans-serif", color: '#64686d' }}>{event.detail}</span><span style={{ width: 140, flex: 'none', textAlign: 'right', font: "400 10.5px/1.4 'IBM Plex Mono',monospace", color: '#64686d' }}>{event.actor}</span></div>) : <div style={{ padding: '12px 0', borderTop: '1px solid #f4f2ef', font: "400 11.5px/1.5 'Inter',sans-serif", color: '#64686d' }}>No status events are recorded.</div>}
         </section>
       </div>
 
-      <div className={styles.tripleGrid}>
-        <section className={`${styles.card} ${styles.panel}`}>
-          <h2 className={styles.panelTitle}>Partner agreement</h2>
-          <p className={styles.panelCopy}>Held in Agreements and applied to every claim on this partner.</p>
-          <dl className={styles.factList}>
-            <dt>Agreement</dt><dd>{recovery.partner ? `${partnerName} recovery terms` : '— Unavailable'}</dd>
-            <dt>Effective</dt><dd>{recovery.partner ? formatDateAbsolute(recovery.partner.created_at) : '— Unavailable'}</dd>
-            <dt>Claim window</dt><dd>{recovery.deadline_at ? `Open until ${formatDateAbsolute(recovery.deadline_at)}` : '— Unavailable'}</dd>
-            <dt>Cap per claim</dt><dd>— Unavailable</dd>
-            <dt>Channel</dt><dd>{recovery.partner?.default_contact_channel ? recovery.partner.default_contact_channel.replaceAll('_', ' ') : '— Unavailable'}</dd>
-            <dt>Confidence</dt><dd>— Unavailable</dd>
-          </dl>
-        </section>
+      <aside style={{ width: 300, flex: 'none', padding: '12px 13px', borderRadius: 13, background: '#f4f3f1', display: 'flex', flexDirection: 'column', gap: 11 }}>
+        <div style={sectionLabel}>THE CLOCK</div>
+        <div style={{ ...card, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 9, boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(176,67,26,.3)' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ flex: 1, font: "500 12.5px/1.3 'Inter',sans-serif", color: '#1c1f23' }}>{partnerName} filing window</span><span style={{ font: "400 12px/1 'IBM Plex Mono',monospace", color: remaining != null && remaining <= 7 ? '#b0431a' : '#7a5310' }}>{remaining == null ? 'unavailable' : remaining < 0 ? `${Math.abs(remaining)}d overdue` : `${remaining} days`}</span></div>
+          <div style={{ height: 5, overflow: 'hidden', borderRadius: 3, background: '#f2f0ed' }}><div style={{ width: `${progress}%`, height: '100%', background: remaining != null && remaining <= 7 ? '#b0431a' : '#c98a1a' }}/></div>
+          <div style={{ font: "400 11px/1.5 'Inter',sans-serif", color: '#64686d' }}>{recovery.deadline_at ? `Opened ${formatDateAbsolute(recovery.created_at)}, closes ${formatDateAbsolute(recovery.deadline_at)}. Provider position remains separate from recovered money.` : 'No provider filing deadline is recorded. The route remains explicit rather than assuming a window.'}</div>
+        </div>
 
-        <section className={`${styles.card} ${styles.panel}`}>
-          <h2 className={styles.panelTitle}>Open tasks</h2>
-          <p className={styles.panelCopy}>Tracked in the Work queue against this recovery.</p>
-          <div className={styles.rows}>{tasks.length ? tasks.map((task) => <div className={styles.factRow} key={task.id} style={{ padding: '9px 0' }}><div className={styles.rowLabel}>{task.title}</div><div className={styles.rowDetail}>{task.due_at ? `Due ${formatDateAbsolute(task.due_at)}` : 'No due date'} · {label('workflowStatus', task.status)}{task.blocking_reason ? ` · blocked: ${task.blocking_reason}` : ''}</div></div>) : <p className={styles.empty}>No open tasks are linked to this recovery.</p>}</div>
-        </section>
+        <div style={sectionLabel}>PARTNER</div>
+        <div style={{ ...card, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <FactRow label="Partner" value={partnerName}/>
+          <FactRow label="Route" value={typeLabel}/>
+          <FactRow label="Contact" value={contact}/>
+          <FactRow label="Response SLA" value={recovery.partner?.response_sla_hours == null ? 'Unavailable' : `${recovery.partner.response_sla_hours} hours`}/>
+          <FactRow label="Paid · observed sample" value={partnerStats?.payRatePercent == null ? 'Unavailable' : `${partnerStats.payRatePercent}%`} tone={partnerStats?.payRatePercent == null ? '#64686d' : '#1a6b43'} note={partnerStats?.sampleSize ? `of ${partnerStats.sampleSize}` : undefined}/>
+          <FactRow label="Median days to respond" value={partnerStats?.medianDays == null ? 'Unavailable' : String(partnerStats.medianDays)}/>
+        </div>
 
-        <section className={`${styles.card} ${styles.panel}`}>
-          <h2 className={styles.panelTitle}>Linked records</h2>
-          <p className={styles.panelCopy}>The thread this recovery belongs to.</p>
-          <div className={styles.rows}>
-            <Link className={styles.recordRow} href={`/cases/${recovery.support_payout_case_id}`}><b>{caseRef(recovery.support_payout_case_id)}</b><span>{typeLabel} · {label('workflowStatus', recovery.support_payout_case?.status ?? 'open')}</span></Link>
-            {recovery.loss_case_id ? <Link className={styles.recordRow} href={`/financials/losses/${recovery.loss_case_id}`}><b>{lossRef(recovery.loss_case_id)}</b><span>Confirmed loss · {formatMoney(recovery.amount_sought_minor, recovery.currency)}</span></Link> : null}
-            {recovery.support_payout_case?.source_order_id ? <Link className={styles.recordRow} href={`/orders/${recovery.support_payout_case.source_order_id}`}><b>{recovery.support_payout_case.order_number ?? `Order ${hashId(recovery.support_payout_case.source_order_id)}`}</b><span>Order · source record</span></Link> : null}
-            {recovery.support_payout_case?.source_ticket_id ? <Link className={styles.recordRow} href={`/tickets/${recovery.support_payout_case.source_ticket_id}`}><b>{recovery.support_payout_case.ticket_external_id ?? `Ticket ${hashId(recovery.support_payout_case.source_ticket_id)}`}</b><span>Support ticket · source record</span></Link> : null}
-          </div>
-        </section>
-      </div>
+        <div style={sectionLabel}>LINKED RECORDS</div>
+        <div style={{ ...card, padding: '3px 13px 9px', display: 'flex', flexDirection: 'column' }}>
+          <LinkedRow type="CASE" href={`/cases/${recovery.support_payout_case_id}`} value={caseRef(recovery.support_payout_case_id)}/>
+          {recovery.loss_case_id ? <LinkedRow type="LOSS ENTRY" href={`/financials/losses/${recovery.loss_case_id}`} value={lossRef(recovery.loss_case_id)}/>: null}
+          {recovery.support_payout_case?.source_order_id ? <LinkedRow type="ORDER" href={`/orders/${recovery.support_payout_case.source_order_id}`} value={recovery.support_payout_case.order_number ?? hashId(recovery.support_payout_case.source_order_id)}/>: null}
+          {recovery.support_payout_case?.source_ticket_id ? <LinkedRow type="SUPPORT TICKET" href={`/tickets/${recovery.support_payout_case.source_ticket_id}`} value={recovery.support_payout_case.ticket_external_id ?? `Ticket ${hashId(recovery.support_payout_case.source_ticket_id)}`}/>: null}
+          <LinkedRow type="RULEBOOK" href="/controls/rules/recovery" value={`${partnerName} · ${typeLabel.toLowerCase()}`}/>
+        </div>
+        {openTasks.length ? <><p style={{ fontSize: 11, color: '#64686d' }}>These tasks track recovery follow-up separately from the case decision and money outcome.</p><div style={sectionLabel}>OPEN WORK · {openTasks.length} tasks</div><div style={{ ...card, padding: '10px 13px', display: 'flex', flexDirection: 'column', gap: 8 }}>{openTasks.map((task) => <div key={task.id}><div style={{ font: "500 11.5px/1.4 'Inter',sans-serif", color: '#1c1f23' }}>{task.title}</div><div style={{ marginTop: 2, font: "400 10.5px/1.4 'Inter',sans-serif", color: '#64686d' }}>{task.due_at ? `Due ${formatDateAbsolute(task.due_at)}` : 'No due date'} · {label('workflowStatus', task.status)}</div></div>)}</div></> : null}
+        <div style={{ flex: 1 }}/><div style={{ paddingTop: 10, borderTop: '1px solid #e4e3e0', font: "400 11px/1.5 'Inter',sans-serif", color: '#64686d' }}>Recording an outcome does not move money. It records what the partner said; reconciliation determines whether value arrived.</div>
+      </aside>
     </div>
   );
 }

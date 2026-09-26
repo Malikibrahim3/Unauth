@@ -220,10 +220,10 @@ export async function projectOperationalNotifications(
           recipient_user_id: fallbackRecipient,
           kind: outcome ? "recovery_outcome" : "evidence_update",
           title: outcome
-            ? `Recovery updated · ${recovery.status.replaceAll("_", " ")}`
-            : "Recovery evidence is incomplete",
+            ? `Recovery ${shortRef(null, recovery.id)} · ${recovery.status.replaceAll("_", " ")}`
+            : `Recovery ${shortRef(null, recovery.id)} · evidence incomplete`,
           body: outcome
-            ? "The connected recovery record has a new source outcome."
+            ? "Review the recorded recovery stage and supporting evidence. A status change does not establish received, matched or reconciled money."
             : "Open the recovery to review missing evidence and the next source action.",
           target_href: `/financials/recovery/${recovery.id}`,
           deduplication_key: `recovery:${recovery.id}:${recovery.status}:${recovery.updated_at}`,

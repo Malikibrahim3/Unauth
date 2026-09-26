@@ -49,19 +49,19 @@ export function CaseComments({ caseId, canComment }: { caseId: string; canCommen
     }
   }
 
-  return <section className="order-4 min-w-0 rounded-lg border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] p-4 min-[1100px]:col-start-1" aria-label="Case comments">
-    <h2 className="ua-text-section-title">Comments and mentions</h2>
+  return <section className="order-4 min-w-0 rounded-lg border border-[#e4e3e0] bg-[#fff] p-4 min-[1100px]:col-start-1" aria-label="Case comments">
+    <h2 className="font-semibold text-[14px] leading-5 text-[#1c1f23]">Comments and mentions</h2>
     <div className="mt-3 space-y-2">
-      {comments.length ? comments.map((comment) => <article key={comment.id} className="ua-text-dense rounded-md p-3" style={{ background: 'var(--uo-route-surface-muted)' }}>
-        <p style={{ color: comment.deleted_at ? 'var(--uo-route-text-tertiary)' : 'var(--uo-route-text-primary)' }}>{comment.deleted_at ? 'Comment deleted' : comment.body}</p>
-        <p className="ua-text-metadata mt-1">{formatDateTime(comment.created_at)}</p>
-      </article>) : <p className="ua-text-body" style={{ color: 'var(--uo-route-text-tertiary)' }}>No comments yet.</p>}
+      {comments.length ? comments.map((comment) => <article key={comment.id} className="text-[12px] leading-[1.45] text-[#40454a] rounded-md p-3" style={{ background: '#f4f3f1' }}>
+        <p style={{ color: comment.deleted_at ? '#6f6a63' : '#1c1f23' }}>{comment.deleted_at ? 'Comment deleted' : comment.body}</p>
+        <p className="text-[10.5px] leading-4 text-[#6f6a63] mt-1">{formatDateTime(comment.created_at)}</p>
+      </article>) : <p className="text-[13px] leading-5 text-[#40454a]" style={{ color: '#6f6a63' }}>No comments yet.</p>}
     </div>
     {canComment ? <form onSubmit={submit} className="mt-4 space-y-3">
       <Textarea aria-label="Add a comment" rows={3} maxLength={10000} value={body} onChange={(event) => setBody(event.target.value)} className="resize-y" placeholder="Add context for your team…" />
       <MentionPicker members={members} selected={mentions} onChange={setMentions} />
-      <button type="submit" disabled={saving || !body.trim()} className="ua-text-working-title rounded-md px-3 py-1.5" style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-action-primary-fg)' }}>{saving ? 'Posting…' : 'Post comment'}</button>
+      <button type="submit" disabled={saving || !body.trim()} className="font-medium text-[13px] leading-5 text-[#1c1f23] rounded-md px-3 py-1.5" style={{ background: '#9f4f08', color: '#fff' }}>{saving ? 'Posting…' : 'Post comment'}</button>
     </form> : null}
-    {error ? <p role="alert" className="ua-text-caption-role mt-2" style={{ color: 'var(--uo-route-critical)' }}>{error}</p> : null}
+    {error ? <p role="alert" className="text-[11.5px] leading-[1.45] text-[#64686d] mt-2" style={{ color: '#b0431a' }}>{error}</p> : null}
   </section>;
 }

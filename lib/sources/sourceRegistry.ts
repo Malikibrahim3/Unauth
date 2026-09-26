@@ -50,32 +50,53 @@ export async function upsertSourceRecord(
   client: SupabaseClient,
   input: UpsertSourceRecordInput,
 ) {
-  const { data, error } = await client
-    .from(TABLES.SOURCE_RECORDS)
-    .upsert(
-      {
-        merchant_id: input.merchantId,
-        connection_id: input.connectionId ?? null,
-        source_account_id: input.sourceAccountId ?? null,
-        source_system: input.sourceSystem,
-        source_entity_type: input.sourceEntityType,
-        external_id: input.externalId,
-        canonical_entity_type: input.canonicalEntityType ?? null,
-        canonical_entity_id: input.canonicalEntityId ?? null,
-        source_url: input.sourceUrl ?? null,
-        source_created_at: input.sourceCreatedAt ?? null,
-        source_updated_at: input.sourceUpdatedAt ?? null,
-        sync_state: input.syncState ?? 'current',
-        freshness_state: input.freshnessState ?? 'fresh',
-        connector_version: input.connectorVersion ?? null,
-        payload_hash: input.payloadHash ?? null,
-        source_metadata: input.sourceMetadata ?? {},
-        last_synced_at: new Date().toISOString(),
-      },
-      { onConflict: SOURCE_RECORD_CONFLICT_TARGET },
-    )
-    .select()
-    .single();
+  const values = {
+    merchant_id: input.merchantId,
+    connection_id: input.connectionId ?? null,
+    source_account_id: input.sourceAccountId ?? null,
+    source_system: input.sourceSystem,
+    source_entity_type: input.sourceEntityType,
+    external_id: input.externalId,
+    canonical_entity_type: input.canonicalEntityType ?? null,
+    canonical_entity_id: input.canonicalEntityId ?? null,
+    source_url: input.sourceUrl ?? null,
+    source_created_at: input.sourceCreatedAt ?? null,
+    source_updated_at: input.sourceUpdatedAt ?? null,
+    sync_state: input.syncState ?? 'current',
+    freshness_state: input.freshnessState ?? 'fresh',
+    connector_version: input.connectorVersion ?? null,
+    payload_hash: input.payloadHash ?? null,
+    source_metadata: input.sourceMetadata ?? {},
+    last_synced_at: new Date().toISOString(),
+  };
+
+  // PostgreSQL treats NULL values as distinct in the existing connection key.
+  // Manual/API imports have no connection, so resolve that canonical row
+  // explicitly before writing to preserve replay idempotency without a schema
+  // change.
+  let result;
+  if (input.connectionId == null) {
+    const existing = await client
+      .from(TABLES.SOURCE_RECORDS)
+      .select('id')
+      .eq('merchant_id', input.merchantId)
+      .is('connection_id', null)
+      .eq('source_entity_type', input.sourceEntityType)
+      .eq('external_id', input.externalId)
+      .limit(1)
+      .maybeSingle();
+    if (existing.error) throw existing.error;
+    result = existing.data
+      ? await client.from(TABLES.SOURCE_RECORDS).update(values).eq('id', existing.data.id).select().single()
+      : await client.from(TABLES.SOURCE_RECORDS).insert(values).select().single();
+  } else {
+    result = await client
+      .from(TABLES.SOURCE_RECORDS)
+      .upsert(values, { onConflict: SOURCE_RECORD_CONFLICT_TARGET })
+      .select()
+      .single();
+  }
+  const { data, error } = result;
   if (error) throw error;
   return data;
 }

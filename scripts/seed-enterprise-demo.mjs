@@ -10,6 +10,7 @@
  *   node scripts/seed-enterprise-demo.mjs
  *   SEED_OWNER_PASSWORD='...' node scripts/seed-enterprise-demo.mjs
  *   node scripts/seed-enterprise-demo.mjs --verify-only
+ *   SEED_CUSTOMER_COUNT=10000 SEED_BACKGROUND_ORDER_COUNT=50000 node scripts/seed-enterprise-demo.mjs
  */
 
 import { createHash } from 'node:crypto';
@@ -17,6 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
+import { visualFixtureNamespace, visualFixtureId, visualFixtureEmail } from './acceptance/visual-fixture-namespace.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -42,25 +44,46 @@ if (!SUPABASE_URL || !SERVICE_ROLE) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
-const MERCHANT_ID = '4f5a8c25-6dcb-4b90-9e16-3a91c27d8f44';
-const MEMBERSHIP_ID = '7e2c6f19-1b4a-4d83-a6f0-9c5e2b7a8d31';
-const COMPANY_NAME = 'Asterlane Commerce Group';
-const LEGACY_COMPANY_NAME = 'Asterlane Commerce Group (Demo)';
-const OWNER_EMAIL = 'demo@asterlane-demo.test';
+const MERCHANT_ID = visualFixtureId('4f5a8c25-6dcb-4b90-9e16-3a91c27d8f44');
+const MEMBERSHIP_ID = visualFixtureId('7e2c6f19-1b4a-4d83-a6f0-9c5e2b7a8d31');
+const COMPANY_NAME = 'Asterlane';
+const LEGACY_COMPANY_NAMES = ['Asterlane Commerce Group', 'Asterlane Commerce Group (Demo)'];
+const OWNER_EMAIL = visualFixtureEmail('demo@asterlane-demo.test', 'visual-owner');
 const DEFAULT_OWNER_PASSWORD = 'AsterlaneDemo2026!';
-const OWNER_NAME = 'Avery Mercer';
-const SEED_TAG = 'asterlane-enterprise-demo';
-const SEED_PREFIX = 'seed-asterlane-enterprise';
+const OWNER_NAME = 'Rahul Mehta';
+const SEED_TAG = visualFixtureNamespace ? `asterlane-${visualFixtureNamespace}` : 'asterlane-enterprise-demo';
+const SEED_PREFIX = visualFixtureNamespace ? `seed-${visualFixtureNamespace}` : 'seed-asterlane-enterprise';
 const CUSTOMER_EMAIL_DOMAIN = 'asterlane-demo.test';
 const ORDER_NUMBER_PREFIX = 'ALG';
-const STORE_DOMAIN = 'asterlane-commerce-demo.myshopify.test';
-const BACKGROUND_ORDER_COUNT = 50_000;
-const OPERATIONAL_CASE_COUNT = 392;
+const STORE_DOMAIN = visualFixtureNamespace ? `asterlane-${visualFixtureNamespace}.myshopify.test` : 'asterlane-commerce-demo.myshopify.test';
+// Free-tier default keeps the complete operational fixture without bulk filler.
+const BACKGROUND_ORDER_COUNT = Number(process.env.SEED_BACKGROUND_ORDER_COUNT ?? '1000');
+const CUSTOMER_COUNT = Number(process.env.SEED_CUSTOMER_COUNT ?? '320');
+if (!Number.isInteger(BACKGROUND_ORDER_COUNT) || BACKGROUND_ORDER_COUNT < 0 || BACKGROUND_ORDER_COUNT > 100_000) {
+  throw new Error('SEED_BACKGROUND_ORDER_COUNT must be an integer between 0 and 100000.');
+}
+if (!Number.isInteger(CUSTOMER_COUNT) || CUSTOMER_COUNT < 56 || CUSTOMER_COUNT > 10_000) {
+  throw new Error('SEED_CUSTOMER_COUNT must be an integer between 56 and 10000 for the complete Asterlane case fixture.');
+}
+const OPERATIONAL_CASE_COUNT = 489;
+const AUGUST_FIXTURE = JSON.parse(fs.readFileSync(path.join(repoRoot, 'lib/product/asterlaneAugust2026.json'), 'utf8'));
 const RESET_ONLY = process.argv.includes('--reset');
 const VERIFY_ONLY = process.argv.includes('--verify-only');
 
-const ANCHOR = new Date();
-ANCHOR.setUTCMinutes(0, 0, 0);
+// Keep every generated timestamp stable across runs. The fixture is explicitly
+// the August 2026 synthetic dataset, not a rolling snapshot of the host clock.
+const ANCHOR = new Date('2026-08-31T12:00:00.000Z');
+
+if (
+  AUGUST_FIXTURE.currency !== 'GBP'
+  || AUGUST_FIXTURE.recoveredAndMatchedMinor + AUGUST_FIXTURE.absorbedMinor !== AUGUST_FIXTURE.grossExposureMinor
+  || AUGUST_FIXTURE.absorbedMinor - AUGUST_FIXTURE.writtenOffMinor !== AUGUST_FIXTURE.netUnrecoveredMinor
+  || AUGUST_FIXTURE.held?.rowCount !== 16
+  || AUGUST_FIXTURE.nonGbpRowCount !== 17
+  || AUGUST_FIXTURE.workQueue?.itemCount !== 23
+) {
+  throw new Error('Asterlane August 2026 fixture contract is internally inconsistent.');
+}
 
 function daysAgoIso(days, hour = 10) {
   const date = new Date(ANCHOR);
@@ -221,27 +244,44 @@ async function ensureMerchant() {
     'merchant lookup',
     supabase.from('merchants').select('id,name,is_demo').eq('id', MERCHANT_ID).maybeSingle(),
   );
-  if (existing && ![COMPANY_NAME, LEGACY_COMPANY_NAME].includes(existing.name)) {
+  if (existing && ![COMPANY_NAME, ...LEGACY_COMPANY_NAMES].includes(existing.name)) {
     throw new Error(`Deterministic Asterlane merchant id is already used by ${existing.name}.`);
   }
   await checked('merchant upsert', supabase.from('merchants').upsert({
     id: MERCHANT_ID,
     name: COMPANY_NAME,
     is_demo: true,
-    is_internal: false,
+    is_internal: Boolean(visualFixtureNamespace),
     settings: {
+      ...(visualFixtureNamespace ? { fixture: `visual-parity-${visualFixtureNamespace}` } : {}),
       platform: 'shopify',
       currency: 'GBP',
       timezone: 'Europe/London',
       store_domain: STORE_DOMAIN,
       setup_complete: true,
       onboarding_profile_complete: true,
+      synthetic_fixture: {
+        dataset_id: AUGUST_FIXTURE.datasetId,
+        period: AUGUST_FIXTURE.period,
+        currency: AUGUST_FIXTURE.currency,
+        gross_exposure_minor: AUGUST_FIXTURE.grossExposureMinor,
+        gross_entry_count: AUGUST_FIXTURE.grossEntryCount,
+        recovered_and_matched_minor: AUGUST_FIXTURE.recoveredAndMatchedMinor,
+        absorbed_minor: AUGUST_FIXTURE.absorbedMinor,
+        written_off_minor: AUGUST_FIXTURE.writtenOffMinor,
+        net_unrecovered_minor: AUGUST_FIXTURE.netUnrecoveredMinor,
+        held_row_count: AUGUST_FIXTURE.held.rowCount,
+        held_amount_minor: AUGUST_FIXTURE.held.amountMinor,
+        non_gbp_row_count: AUGUST_FIXTURE.nonGbpRowCount,
+        work_queue_item_count: AUGUST_FIXTURE.workQueue.itemCount,
+        work_queue_amount_minor: AUGUST_FIXTURE.workQueue.amountMinor,
+      },
       monthly_order_volume: 'over_250k',
       primary_fraud_concern: 'all',
       dataset_version: 1,
       demo_seed: SEED_TAG,
     },
-    updated_at: new Date().toISOString(),
+    updated_at: ANCHOR.toISOString(),
   }, { onConflict: 'id' }));
 }
 
@@ -253,7 +293,7 @@ async function ensureMembership(ownerId) {
     invited_email: OWNER_EMAIL,
     role: 'owner',
     invite_status: 'active',
-    accepted_at: new Date().toISOString(),
+    accepted_at: ANCHOR.toISOString(),
   }, { onConflict: 'id' }));
 }
 
@@ -311,7 +351,7 @@ async function ensureRules(ownerId) {
       created_by: ownerId,
       published_by: null,
       supersedes_version_id: latest?.id ?? null,
-      created_at: new Date().toISOString(),
+      created_at: ANCHOR.toISOString(),
       published_at: null,
     }];
   });
@@ -341,7 +381,7 @@ async function ensureBilling() {
     status: 'active',
     current_period_start: daysAgoIso(12, 0),
     current_period_end: daysFromAnchorIso(18, 0),
-    updated_at: new Date().toISOString(),
+    updated_at: ANCHOR.toISOString(),
   };
   if (subscription?.id) {
     await checked('subscription update', supabase.from('merchant_subscriptions').update(subscriptionPayload).eq('id', subscription.id));
@@ -355,12 +395,13 @@ async function ensureBilling() {
     topup_credits_remaining: 500,
     cycle_reset_at: daysFromAnchorIso(18, 0),
     last_reset_at: daysAgoIso(12, 0),
-    updated_at: new Date().toISOString(),
+    updated_at: ANCHOR.toISOString(),
   }, { onConflict: 'merchant_id' }));
 }
 
 async function ensureConnections() {
   const syncAt = daysAgoIso(0, 9);
+  const staleGorgiasSyncAt = daysAgoIso(4, 9);
   const connectionRows = [
     {
       id: uuid('integration:shopify'),
@@ -384,7 +425,7 @@ async function ensureConnections() {
       capabilities_snapshot: { read: true, read_disputes: true, read_settlements: true, writeback: false, synthetic: true },
       granted_scopes: ['read_orders', 'read_customers', 'read_fulfillments', 'read_shopify_payments_disputes'],
       subscribed: true,
-      environment: 'production',
+      environment: 'synthetic',
       connector_version: 'demo-2026.08',
       connection_created_at: daysAgoIso(240, 10),
       last_verified_at: syncAt,
@@ -402,9 +443,11 @@ async function ensureConnections() {
       category: 'helpdesk',
       status: 'connected',
       auth_mode: 'oauth',
-      last_sync_at: syncAt,
-      last_sync_started_at: daysAgoIso(0, 8),
-      last_sync_completed_at: syncAt,
+      last_sync_at: staleGorgiasSyncAt,
+      last_sync_started_at: daysAgoIso(4, 8),
+      last_sync_completed_at: staleGorgiasSyncAt,
+      last_successful_sync_at: staleGorgiasSyncAt,
+      data_fresh_through: staleGorgiasSyncAt,
       imported_record_count: OPERATIONAL_CASE_COUNT,
       display_name: 'Asterlane Support workspace',
       provider_account_id: 'asterlane-gorgias-demo',
@@ -413,15 +456,15 @@ async function ensureConnections() {
       capabilities_snapshot: { read: true, writeback: false, synthetic: true },
       granted_scopes: ['read:tickets', 'read:customers'],
       subscribed: true,
-      environment: 'production',
+      environment: 'synthetic',
       connector_version: 'demo-2026.08',
       connection_created_at: daysAgoIso(240, 10),
-      last_verified_at: syncAt,
-      last_verification_status: 'verified',
-      last_error_code: null,
-      last_error_message: null,
-      last_error: null,
-      last_error_at: null,
+      last_verified_at: staleGorgiasSyncAt,
+      last_verification_status: 'inconclusive',
+      last_error_code: 'stale_sync',
+      last_error_message: 'No successful synthetic helpdesk sync has been observed for four days.',
+      last_error: 'Synthetic Gorgias source is stale.',
+      last_error_at: staleGorgiasSyncAt,
       updated_at: syncAt,
     },
     {
@@ -444,7 +487,7 @@ async function ensureConnections() {
       capabilities_snapshot: { read: true, writeback: false, synthetic: true },
       granted_scopes: ['read_orders', 'read_shipments'],
       subscribed: true,
-      environment: 'production',
+      environment: 'sandbox',
       connector_version: 'demo-2026.08',
       connection_created_at: daysAgoIso(210, 10),
       last_verified_at: syncAt,
@@ -475,7 +518,7 @@ async function ensureConnections() {
       data_fresh_through: syncAt,
       imported_record_count: OPERATIONAL_CASE_COUNT,
       subscribed: false,
-      environment: 'production',
+      environment: 'synthetic',
       connector_version: 'demo-2026.08',
       connection_created_at: daysAgoIso(190, 10),
       last_verified_at: syncAt,
@@ -487,6 +530,9 @@ async function ensureConnections() {
       updated_at: syncAt,
     },
   ];
+  if (visualFixtureNamespace) {
+    for (const row of connectionRows) row.provider_account_id = `${row.provider_account_id}-${visualFixtureNamespace}`;
+  }
   await checked('merchant integrations upsert', supabase.from('merchant_integrations').upsert(connectionRows, { onConflict: 'id' }));
 
   await checked('store connection upsert', supabase.from('store_connections').upsert({
@@ -510,7 +556,7 @@ async function ensureConnections() {
     id: uuid('legacy:gorgias'),
     merchant_id: MERCHANT_ID,
     provider: 'gorgias',
-    provider_account_id: 'asterlane-gorgias-demo',
+    provider_account_id: visualFixtureNamespace ? `asterlane-gorgias-demo-${visualFixtureNamespace}` : 'asterlane-gorgias-demo',
     provider_account_name: 'Asterlane Commerce Support',
     provider_base_url: 'https://asterlane-commerce-demo.gorgias.test',
     status: 'active',
@@ -530,7 +576,109 @@ async function ensureConnections() {
   }, { onConflict: 'id' }));
 }
 
+async function ensureHeldFixtureRows() {
+  const heldAmounts = Array.from({ length: AUGUST_FIXTURE.held.rowCount }, (_, index) => {
+    const base = Math.floor(AUGUST_FIXTURE.held.amountMinor / AUGUST_FIXTURE.held.rowCount);
+    return base + (index === AUGUST_FIXTURE.held.rowCount - 1
+      ? AUGUST_FIXTURE.held.amountMinor - base * AUGUST_FIXTURE.held.rowCount
+      : 0);
+  });
+  const mappingRows = heldAmounts.map((amountMinor, index) => ({
+    id: uuid(`held:mapping:${index}`), merchant_id: MERCHANT_ID,
+    source_system: 'csv', source_entity_type: 'loss_entry',
+    external_id: `ASTERLANE-HELD-${String(index + 1).padStart(3, '0')}`,
+    sync_state: 'pending', freshness_state: 'unknown',
+    payload_hash: createHash('sha256').update(`held:${index}:${amountMinor}`).digest('hex'),
+    source_metadata: { synthetic: true, seed: SEED_TAG, held: true, hold_group: 'mapping', amount_minor: amountMinor, currency: 'GBP', exclusion: 'held_rows_are_not_financial_facts' },
+    source_created_at: daysAgoIso(index % 28, 10), source_updated_at: daysAgoIso(index % 28, 10),
+    ingested_at: ANCHOR.toISOString(), updated_at: ANCHOR.toISOString(),
+  }));
+  const currencies = ['USD', 'EUR', 'CAD'];
+  const currencyRows = Array.from({ length: AUGUST_FIXTURE.nonGbpRowCount }, (_, index) => ({
+    id: uuid(`held:currency:${index}`), merchant_id: MERCHANT_ID,
+    source_system: 'csv', source_entity_type: 'loss_entry',
+    external_id: `ASTERLANE-NON-GBP-${String(index + 1).padStart(3, '0')}`,
+    sync_state: 'pending', freshness_state: 'unknown',
+    payload_hash: createHash('sha256').update(`non-gbp:${index}`).digest('hex'),
+    source_metadata: { synthetic: true, seed: SEED_TAG, held: true, hold_group: 'currency', currency: currencies[index % currencies.length], exclusion: 'no_silent_currency_conversion' },
+    source_created_at: daysAgoIso(index % 28, 11), source_updated_at: daysAgoIso(index % 28, 11),
+    ingested_at: ANCHOR.toISOString(), updated_at: ANCHOR.toISOString(),
+  }));
+  await checked('held source records upsert', supabase.from('source_records').upsert([...mappingRows, ...currencyRows], { onConflict: 'id' }));
+  const persisted = await checked('held source records verify', supabase
+    .from('source_records')
+    .select('id,source_metadata')
+    .eq('merchant_id', MERCHANT_ID)
+    .contains('source_metadata', { seed: SEED_TAG, held: true }));
+  const mapping = (persisted ?? []).filter((row) => row.source_metadata?.hold_group === 'mapping');
+  const nonGbp = (persisted ?? []).filter((row) => row.source_metadata?.hold_group === 'currency');
+  const heldMinor = mapping.reduce((sum, row) => sum + Number(row.source_metadata?.amount_minor ?? 0), 0);
+  if (mapping.length !== AUGUST_FIXTURE.held.rowCount || heldMinor !== AUGUST_FIXTURE.held.amountMinor || nonGbp.length !== AUGUST_FIXTURE.nonGbpRowCount) {
+    throw new Error('Persisted Asterlane held-row identities do not reconcile.');
+  }
+}
+
+async function verifyFixtureMetadata() {
+  const merchant = await checked(
+    'Asterlane fixture metadata lookup',
+    supabase.from('merchants').select('id,is_demo,settings').eq('id', MERCHANT_ID).single(),
+  );
+  if (!merchant.is_demo) throw new Error('Asterlane fixture merchant is not marked synthetic/demo.');
+  const settings = merchant.settings && typeof merchant.settings === 'object' ? merchant.settings : {};
+  const fixture = settings.synthetic_fixture;
+  const expected = {
+    dataset_id: AUGUST_FIXTURE.datasetId,
+    period: AUGUST_FIXTURE.period,
+    currency: AUGUST_FIXTURE.currency,
+    gross_exposure_minor: AUGUST_FIXTURE.grossExposureMinor,
+    gross_entry_count: AUGUST_FIXTURE.grossEntryCount,
+    recovered_and_matched_minor: AUGUST_FIXTURE.recoveredAndMatchedMinor,
+    absorbed_minor: AUGUST_FIXTURE.absorbedMinor,
+    written_off_minor: AUGUST_FIXTURE.writtenOffMinor,
+    net_unrecovered_minor: AUGUST_FIXTURE.netUnrecoveredMinor,
+    held_row_count: AUGUST_FIXTURE.held.rowCount,
+    held_amount_minor: AUGUST_FIXTURE.held.amountMinor,
+    non_gbp_row_count: AUGUST_FIXTURE.nonGbpRowCount,
+    work_queue_item_count: AUGUST_FIXTURE.workQueue.itemCount,
+    work_queue_amount_minor: AUGUST_FIXTURE.workQueue.amountMinor,
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (fixture?.[key] !== value) {
+      throw new Error(`Asterlane fixture metadata mismatch for ${key}: expected ${value}, got ${fixture?.[key] ?? 'missing'}.`);
+    }
+  }
+  const connections = await checked(
+    'Asterlane synthetic connection lookup',
+    supabase.from('merchant_integrations').select('provider_id,environment,capabilities_snapshot').eq('merchant_id', MERCHANT_ID),
+  );
+  for (const connection of connections ?? []) {
+    const explicitSyntheticEnvironment = connection.environment === 'synthetic'
+      || (connection.provider_id === 'shipbob' && connection.environment === 'sandbox');
+    if (!explicitSyntheticEnvironment || connection.capabilities_snapshot?.synthetic !== true) {
+      throw new Error(`Connection ${connection.provider_id} is not explicitly marked synthetic.`);
+    }
+  }
+  const heldRows = await checked('Asterlane held-row lookup', supabase
+    .from('source_records')
+    .select('source_metadata')
+    .eq('merchant_id', MERCHANT_ID)
+    .contains('source_metadata', { seed: SEED_TAG, held: true }));
+  const mappingRows = (heldRows ?? []).filter((row) => row.source_metadata?.hold_group === 'mapping');
+  const currencyRows = (heldRows ?? []).filter((row) => row.source_metadata?.hold_group === 'currency');
+  const heldMinor = mappingRows.reduce((sum, row) => sum + Number(row.source_metadata?.amount_minor ?? 0), 0);
+  if (mappingRows.length !== AUGUST_FIXTURE.held.rowCount
+    || heldMinor !== AUGUST_FIXTURE.held.amountMinor
+    || currencyRows.length !== AUGUST_FIXTURE.nonGbpRowCount) {
+    throw new Error('Asterlane persisted held and non-GBP source rows do not reconcile.');
+  }
+}
+
 async function main() {
+  if (visualFixtureNamespace) {
+    if (RESET_ONLY) throw new Error('Reset is forbidden for isolated visual fixtures.');
+    const existing = await checked('isolated merchant guard', supabase.from('merchants').select('is_demo,is_internal,settings').eq('id', MERCHANT_ID).maybeSingle());
+    if (existing && (!existing.is_demo || !existing.is_internal || existing.settings?.fixture !== `visual-parity-${visualFixtureNamespace}`)) throw new Error('Isolated merchant id belongs to unrelated data.');
+  }
   let user;
   let password = null;
   if (VERIFY_ONLY) {
@@ -548,13 +696,16 @@ async function main() {
     await ensureRules(user.id);
     await ensureBilling();
     await ensureConnections();
+    await ensureHeldFixtureRows();
   }
+
+  await verifyFixtureMetadata();
 
   process.env.SEED_MERCHANT_ID = MERCHANT_ID;
   process.env.SEED_TAG = SEED_TAG;
   process.env.SEED_PREFIX = SEED_PREFIX;
   process.env.SEED_CUSTOMER_EMAIL_DOMAIN = CUSTOMER_EMAIL_DOMAIN;
-  process.env.SEED_CUSTOMER_COUNT = '10000';
+  process.env.SEED_CUSTOMER_COUNT = String(CUSTOMER_COUNT);
   process.env.SEED_BACKGROUND_ORDER_COUNT = String(BACKGROUND_ORDER_COUNT);
   process.env.SEED_CASE_AMOUNT_SCALE = '1000';
   process.env.SEED_ORDER_NUMBER_PREFIX = ORDER_NUMBER_PREFIX;
@@ -564,7 +715,8 @@ async function main() {
   process.env.SEED_RECIPIENT_USER_ID = user.id;
   process.env.SEED_USE_GENERATED_RULE_IDS = '1';
 
-  await import(pathToFileURL(path.join(__dirname, 'seed-simeon-big-merchant.mjs')).href);
+  const { seedCompletion } = await import(pathToFileURL(path.join(__dirname, 'seed-simeon-big-merchant.mjs')).href);
+  await seedCompletion;
 
   console.log(`\nAsterlane demo login\nEmail: ${OWNER_EMAIL}\nPassword: ${password ? 'created from the existing demo credential source' : 'unchanged'}\nWorkspace: ${COMPANY_NAME}\nMerchant ID: ${MERCHANT_ID}`);
   console.log(`Mode: ${RESET_ONLY ? 'reset-only' : VERIFY_ONLY ? 'verify-only' : 'seeded'} · synthetic connections are marked as demo data.`);

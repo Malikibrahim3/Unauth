@@ -61,13 +61,18 @@ export function buildFinancialWaterfall(bridge: MoneyBridge) {
   const confirmed = financialMetricValue(bridge, 'confirmed_loss');
   const recovered = financialMetricValue(bridge, 'recovered');
   const net = financialMetricValue(bridge, 'final_net_loss');
+  const adjustment = confirmed != null && recovered != null && net != null
+    ? net - Math.max(0, confirmed - recovered)
+    : null;
+  const steps = [
+    { key: 'confirmed-loss', label: 'Confirmed loss', valueMinor: confirmed, direction: 'total' as const },
+    { key: 'recovered', label: 'Received and matched', valueMinor: recovered, direction: 'subtract' as const },
+    { key: 'final-net-loss', label: 'Final net loss', valueMinor: net, direction: 'total' as const },
+  ];
   return {
-    reconciled: confirmed != null && recovered != null && net != null && Math.max(0, confirmed - recovered) === net,
-    steps: [
-      { key: 'confirmed-loss', label: 'Confirmed loss', valueMinor: confirmed, direction: 'total' as const },
-      { key: 'recovered', label: 'Recovered cash', valueMinor: recovered, direction: 'subtract' as const },
-      { key: 'final-net-loss', label: 'Final net loss', valueMinor: net, direction: 'total' as const },
-    ],
+    reconciled: confirmed != null && recovered != null && net != null && adjustment === 0,
+    adjustmentMinor: adjustment,
+    steps,
   };
 }
 

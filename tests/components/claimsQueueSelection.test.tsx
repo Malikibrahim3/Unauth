@@ -3,11 +3,15 @@
  */
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaimsQueueClient } from '@/app/(app)/cases/ClaimsQueueClient';
 import type { ClaimRow } from '@/app/(app)/cases/claimsPageData';
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
 
 function claim(id: string, amount: number): ClaimRow {
   return {
@@ -50,7 +54,7 @@ describe('ClaimsQueueClient selection continuity', () => {
     });
   });
 
-  it('keeps all eight fields in DOM and retains hidden confidence in selected context', () => {
+  it('uses the five-column supplied ledger and retains the selected context', () => {
     const row = {
       ...claim('case-a', 12000),
       order_ref: '#1001',
@@ -62,9 +66,15 @@ describe('ClaimsQueueClient selection continuity', () => {
     const { container } = render(
       <ClaimsQueueClient claims={[row]} outcomesRecord={{}} evidenceRecord={{}} customersRecord={{}} currentUserId="user-1" initialSelectedCaseId="case-a" />,
     );
-    expect(container.querySelectorAll('[role="columnheader"]')).toHaveLength(8);
-    expect(container.querySelector('[aria-label="Selected case preview"]')).toHaveTextContent('Attribution confidence');
-    expect(container.querySelector('[aria-label="Selected case preview"]')).toHaveTextContent('High');
+    expect(Array.from(container.querySelectorAll('[role="columnheader"]')).map((cell) => cell.textContent)).toEqual([
+      'CASE',
+      'CUSTOMER · REASON',
+      'STATUS',
+      'NEXT ACTION',
+      'AT RISK',
+    ]);
+    expect(container.querySelector('[aria-label="Selected case preview"]')).toHaveTextContent('Next action');
+    expect(container.querySelector('[aria-label="Selected case preview"]')).toHaveTextContent('CUSTOMER CONTEXT');
   });
 
   it('keeps the selected case bounded and expands through the canonical case page', () => {
@@ -87,11 +97,34 @@ describe('ClaimsQueueClient selection continuity', () => {
     );
   });
 
-  it('owns the six-column supported-desktop strategy in the active stylesheet', () => {
-    const css = readFileSync(join(process.cwd(), 'styles/authenticated/replacement.css'), 'utf8');
-    expect(css).toContain('@media (min-width: 1024px) and (max-width: 1399px)');
-    expect(css).toContain('.ua-case-queue__header > :nth-child(3)');
-    expect(css).toContain('.ua-case-queue__item > :nth-child(6)');
-    expect(css).toContain('.ua-case-queue__list { grid-column: 1 / -1; min-width: 0; max-height: 456px; overflow: auto;');
+  it('closes a URL-backed preview without reopening the initial selection', async () => {
+    window.history.replaceState(null, '', '/cases?selected=case-a');
+    const { container } = render(
+      <ClaimsQueueClient
+        claims={[claim('case-a', 12000)]}
+        outcomesRecord={{}}
+        evidenceRecord={{}}
+        customersRecord={{}}
+        currentUserId="user-1"
+        initialSelectedCaseId="case-a"
+      />,
+    );
+
+    act(() => {
+      screen.getByRole('button', { name: 'Close case preview' }).click();
+    });
+
+    await waitFor(() => {
+      expect(container.querySelector('[aria-label="Selected case preview"]')).not.toBeInTheDocument();
+      expect(window.location.search).toBe('');
+    });
+  });
+
+  it('owns the five-column ledger and bounded preview directly in the authority renderer', () => {
+    const source = readFileSync(join(process.cwd(), 'app/(app)/cases/ClaimsQueueClient.tsx'), 'utf8');
+    expect(source).toContain("gridTemplateColumns: '86px minmax(0,1fr) 128px 132px 84px'");
+    expect(source).toContain("gridTemplateColumns: '86px minmax(0,1fr) 128px 132px 84px'");
+    expect(source).toContain('data-preview-open');
+    expect(source).not.toContain('ua-case-queue');
   });
 });

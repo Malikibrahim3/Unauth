@@ -12,6 +12,7 @@ import {
 } from '@/lib/reconciliation/outcomes';
 import { TABLES } from '@/lib/supabase/tables';
 import { PERMISSIONS } from '@/lib/permissions';
+import { recordReplacementCost } from '@/lib/claims/replacement';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,6 +128,38 @@ export async function POST(
   }
 
   try {
+    if (outcomeType === 'replacement') {
+      const metadata = body?.metadata && typeof body.metadata === 'object'
+        ? body.metadata as Record<string, unknown>
+        : {};
+      const externalActionId = text(metadata.external_action_id);
+      const currency = text(body?.currency);
+      if (
+        state !== 'merchant_confirmed'
+        || sourceSystem !== 'merchant_manual'
+        || correlationMethod !== 'receipt_backed_manual_record'
+        || !externalActionId
+        || amountMinor == null
+        || !currency
+        || !overrideReason
+      ) {
+        return NextResponse.json({
+          error: 'Replacement cost requires its handoff, merchant-confirmed receipt, actual nonnegative cost, currency, and evidence note.',
+        }, { status: 422 });
+      }
+      const result = await recordReplacementCost(auth.mutationClient, {
+        merchantId: auth.ctx.merchantId,
+        caseId: claimId,
+        actionId: externalActionId,
+        actorUserId: auth.user.id,
+        idempotencyKey,
+        amountMinor,
+        currency,
+        reason: overrideReason,
+        occurredAt: text(body?.occurred_at),
+      });
+      return NextResponse.json(result, { status: result.replayed ? 200 : 201 });
+    }
     const result = await recordCaseOutcome(auth.mutationClient, auth.ctx.merchantId, claimId, {
       caseClaimedItemId: claimedItemId,
       outcomeType,
@@ -151,6 +184,12 @@ export async function POST(
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Could not record outcome.';
     console.error('[claims.outcomes] failed', { claimId, merchantId: auth.ctx.merchantId, message });
+    if (message.includes('idempotency_conflict')) {
+      return NextResponse.json({ error: 'This outcome request key was reused with different replacement cost details.' }, { status: 409 });
+    }
+    if (message.includes('required') || message.includes('invalid') || message.includes('mismatch')) {
+      return NextResponse.json({ error: 'The replacement cost does not satisfy its dispatch and receipt contract.' }, { status: 422 });
+    }
     return NextResponse.json({ error: 'Could not record outcome.', message }, { status: 500 });
   }
 }

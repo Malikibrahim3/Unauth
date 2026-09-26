@@ -4,6 +4,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { resolveExceptionAction } from '@/lib/exceptions/resolveExceptionAction';
 import { assignException } from '@/lib/exceptions/store';
+import { TABLES } from '@/lib/supabase/tables';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const parsed = actionSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Invalid exception action' }, { status: 400 });
+  const idempotencyKey = req.headers.get('idempotency-key')?.trim() ?? '';
+  if (idempotencyKey.length < 8 || idempotencyKey.length > 200) {
+    return NextResponse.json({ error: 'A valid Idempotency-Key header is required' }, { status: 400 });
+  }
 
   const result = await resolveExceptionAction(serviceClient, {
     merchantId: ctx.merchantId,
@@ -48,11 +53,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     resolution: parsed.data.resolution ?? null,
     expectedStateVersion: parsed.data.expectedStateVersion ?? null,
     actorUserId: user.id,
+    idempotencyKey,
   });
   if (!result.ok) {
+    if (result.reason === 'already_settled') {
+      const replay = await serviceClient
+        .from(TABLES.DOMAIN_EVENTS)
+        .select('payload')
+        .eq('merchant_id', ctx.merchantId)
+        .eq('idempotency_key', `case.exception_resolved:${id}`)
+        .maybeSingle();
+      const payload = replay.data?.payload && typeof replay.data.payload === 'object'
+        ? replay.data.payload as Record<string, unknown>
+        : null;
+      const expectedStatus = parsed.data.action === 'dismiss' || parsed.data.action === 'reject' ? 'dismissed' : 'resolved';
+      if (
+        !replay.error
+        && payload?.request_idempotency_key === idempotencyKey
+        && payload.action === parsed.data.action
+        && payload.resolution === (parsed.data.resolution ?? null)
+        && payload.selected_candidate_id === (parsed.data.selectedCandidateId ?? null)
+        && payload.settle_status === expectedStatus
+      ) {
+        return NextResponse.json({ ok: true, replayed: true, matchStatus: payload.match_status ?? null, settleStatus: expectedStatus });
+      }
+    }
     return NextResponse.json({ error: result.reason }, { status: STATUS_BY_REASON[result.reason ?? ''] ?? 422 });
   }
-  return NextResponse.json({ ok: true, exception: result.exception, matchStatus: result.matchStatus, settleStatus: result.settleStatus });
+  return NextResponse.json({ ok: true, replayed: false, exception: result.exception, matchStatus: result.matchStatus, settleStatus: result.settleStatus });
 }
 
 /** PATCH — claim/release an open exception for the current operator. */

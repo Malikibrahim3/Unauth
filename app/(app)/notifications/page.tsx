@@ -7,6 +7,7 @@ import {
   type NotificationItem,
 } from "@/components/notifications/NotificationCentre";
 import { listNotificationsPage, NOTIFICATION_FILTERS, type NotificationFilter } from "@/lib/notifications/store";
+import { acceptanceScenarioFromHeaders, delayForAcceptanceScenario, throwForAcceptanceScenario } from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ export default async function NotificationsPage({
 }: {
   searchParams?: Promise<{ tab?: string; cursor?: string }>;
 }) {
+  await delayForAcceptanceScenario('notifications-loading');
+  await throwForAcceptanceScenario('notifications-error');
   const routeParams = await searchParams;
   const initialFilter = (NOTIFICATION_FILTERS as readonly string[]).includes(routeParams?.tab ?? '')
     ? routeParams!.tab as NotificationFilter
@@ -39,10 +42,11 @@ export default async function NotificationsPage({
   } catch {
     page = await listNotificationsPage(serviceClient, ctx.merchantId, user.id, { filter: initialFilter });
   }
+  const forceEmpty = await acceptanceScenarioFromHeaders() === 'notifications-empty-states';
   return <NotificationCentre
-    initialNotifications={page.items as NotificationItem[]}
-    initialCounts={page.counts}
-    initialNextCursor={page.pageInfo.nextCursor}
+    initialNotifications={forceEmpty ? [] : page.items as NotificationItem[]}
+    initialCounts={forceEmpty ? { all: 0, unread: 0, needs: 0, sources: 0 } : page.counts}
+    initialNextCursor={forceEmpty ? null : page.pageInfo.nextCursor}
     initialFilter={initialFilter}
     initialCursor={routeParams?.cursor ?? null}
   />;

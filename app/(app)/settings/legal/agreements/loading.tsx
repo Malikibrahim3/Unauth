@@ -1,5 +1,1 @@
-import { SettingsRouteLoading } from '@/components/settings/SettingsRouteLoading';
-
-export default function Loading() {
-  return <SettingsRouteLoading title="Agreements" layout="wide" />;
-}
+export { default } from "@/components/visual-authority/SuppliedAuthenticatedRouteLoading";

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/navigation/AppNavLink';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Button,
@@ -159,15 +159,15 @@ export function RecoveryBoardClient({ recoveries, canManage, financialPeriod = n
       width: '180px',
       render: (item: RecoveryCase) => (
         <span className="flex min-w-0 flex-col gap-1">
-          <Link href={`/financials/recovery/${item.id}`} className="ua-text-working-title text-[var(--uo-route-text-primary)] hover:text-[var(--uo-route-action-primary)]">Recovery {hashId(item.id)}</Link>
-          <span className="ua-text-metadata">{RECOVERY_TYPE_LABELS[item.recovery_type]}</span>
+          <Link href={`/financials/recovery/${item.id}`} className="font-medium text-[13px] leading-5 text-[#1c1f23] text-[#1c1f23] hover:text-[#9f4f08]">Recovery {hashId(item.id)}</Link>
+          <span className="text-[10.5px] leading-4 text-[#6f6a63]">{RECOVERY_TYPE_LABELS[item.recovery_type]}</span>
         </span>
       ),
     },
     {
       key: 'partner',
       header: 'Partner / owner',
-      render: (item: RecoveryCase) => <span className="ua-text-dense">{item.partner?.name ?? RECOVERY_OWNER_LABELS[item.owner_type]}</span>,
+      render: (item: RecoveryCase) => <span className="text-[12px] leading-[1.45] text-[#40454a]">{item.partner?.name ?? RECOVERY_OWNER_LABELS[item.owner_type]}</span>,
     },
     {
       key: 'status',
@@ -179,7 +179,7 @@ export function RecoveryBoardClient({ recoveries, canManage, financialPeriod = n
       key: 'case',
       header: 'Case',
       render: (item: RecoveryCase) => (
-        <button type="button" className="ua-text-label text-left text-[var(--uo-route-action-primary)] underline underline-offset-2" onClick={() => updateLocation({ selected: item.id })}>
+        <button type="button" className="text-[11px] font-medium leading-4 text-[#64686d] text-left text-[#9f4f08] underline underline-offset-2" onClick={() => updateLocation({ selected: item.id })}>
           {item.support_payout_case?.order_number ?? item.support_payout_case?.ticket_external_id ?? shortRef(null, item.support_payout_case_id)}
         </button>
       ),
@@ -207,8 +207,8 @@ export function RecoveryBoardClient({ recoveries, canManage, financialPeriod = n
       header: 'Evidence / source',
       render: (item: RecoveryCase) => (
         <span className="flex min-w-0 flex-col gap-1">
-          <span className="ua-text-dense">{item.evidence_complete ? 'Complete' : `${item.evidence_missing.length} missing`}</span>
-          <span className="ua-text-metadata">{item.last_source_event_at ? `Source ${formatDate(item.last_source_event_at)}` : 'Source update unavailable'}</span>
+          <span className="text-[12px] leading-[1.45] text-[#40454a]">{item.evidence_complete ? 'Complete' : `${item.evidence_missing.length} missing`}</span>
+          <span className="text-[10.5px] leading-4 text-[#6f6a63]">{item.last_source_event_at ? `Source ${formatDate(item.last_source_event_at)}` : 'Source update unavailable'}</span>
         </span>
       ),
     },
@@ -227,7 +227,7 @@ export function RecoveryBoardClient({ recoveries, canManage, financialPeriod = n
         const [primary, ...rest] = applicable;
         return (
           <span className="flex min-w-[190px] items-center justify-between gap-2">
-            <span className="ua-text-dense text-[var(--uo-route-text-secondary)]">{recoveryNextAction(item)}</span>
+            <span className="text-[12px] leading-[1.45] text-[#40454a] text-[#64686d]">{recoveryNextAction(item)}</span>
             {canManage && primary ? (
               <span className="flex shrink-0 items-center gap-1">
                 <Button size="sm" variant="secondary" disabled={pending?.item.id === item.id} onClick={() => openAction(item, primary)}>{primary.label}</Button>
@@ -243,18 +243,18 @@ export function RecoveryBoardClient({ recoveries, canManage, financialPeriod = n
   return (
     <>
       {financialPeriod ? (
-        <div className="ua-text-body mb-3 flex flex-wrap items-center justify-between gap-3 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-accent-soft)] px-3 py-2 text-[var(--uo-route-text-secondary)]" role="status">
+        <div className="text-[13px] leading-5 text-[#40454a] mb-3 flex flex-wrap items-center justify-between gap-3 rounded-[8px] bg-[#fff3e9] px-3 py-2 text-[#64686d]" role="status">
           <span>Showing {financialPeriod.recoveryIds.length} {financialPeriod.recoveryIds.length === 1 ? 'recovery' : 'recoveries'} supporting {financialPeriod.label}.</span>
-          <Link href={financialPeriod.clearHref} className="ua-text-label text-[var(--uo-route-action-primary)] underline underline-offset-2">Clear period</Link>
+          <Link href={financialPeriod.clearHref} className="text-[11px] font-medium leading-4 text-[#64686d] text-[#9f4f08] underline underline-offset-2">Clear period</Link>
         </div>
       ) : null}
       {filter in FINANCIAL_FILTER_LABELS ? (
-        <div className="ua-text-body mb-3 flex flex-wrap items-center justify-between gap-3 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-accent-soft)] px-3 py-2 text-[var(--uo-route-text-secondary)]" role="status">
+        <div className="text-[13px] leading-5 text-[#40454a] mb-3 flex flex-wrap items-center justify-between gap-3 rounded-[8px] bg-[#fff3e9] px-3 py-2 text-[#64686d]" role="status">
           <span>Showing records that support {(FINANCIAL_FILTER_LABELS as Record<string, string>)[filter]}.</span>
-          <button type="button" onClick={() => { setFilter('all'); updateLocation({ stage: null }); }} className="ua-text-label text-[var(--uo-route-action-primary)] underline underline-offset-2">Clear financial cohort</button>
+          <button type="button" onClick={() => { setFilter('all'); updateLocation({ stage: null }); }} className="text-[11px] font-medium leading-4 text-[#64686d] text-[#9f4f08] underline underline-offset-2">Clear financial cohort</button>
         </div>
       ) : null}
-      {message && !pending ? <p role="status" className="ua-text-body mb-3 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-surface-muted)] px-3 py-2 text-[var(--uo-route-text-secondary)]">{message}</p> : null}
+      {message && !pending ? <p role="status" className="text-[13px] leading-5 text-[#40454a] mb-3 rounded-[8px] bg-[#f4f3f1] px-3 py-2 text-[#64686d]">{message}</p> : null}
       <RegistrySurface
         aria-label="Recovery operations"
         persistentTable
@@ -263,9 +263,9 @@ export function RecoveryBoardClient({ recoveries, canManage, financialPeriod = n
             search={<Input aria-label="Search recoveries" placeholder="Search recovery, partner or case" value={query} onChange={(event) => { setQuery(event.target.value); updateLocation({ query: event.target.value }); }} />}
             filters={(
               <div className="grid min-w-0 gap-2">
-                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="ua-text-metadata mr-1">Stage</span>{FILTERS.map((item) => <FilterChip key={item.key} active={filter === item.key} onClick={() => { setFilter(item.key); updateLocation({ stage: item.key }); }}>{item.label}</FilterChip>)}</div>
-                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="ua-text-metadata mr-1">Owner</span><FilterChip active={!owner} onClick={() => updateLocation({ owner: null })}>All owners</FilterChip>{ownerOptions.map((item) => <FilterChip key={item} active={owner === item} onClick={() => updateLocation({ owner: item })}>{RECOVERY_OWNER_LABELS[item]}</FilterChip>)}</div>
-                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="ua-text-metadata mr-1">Source</span><FilterChip active={!source} onClick={() => updateLocation({ source: null })}>All sources</FilterChip>{sourceOptions.map(([key, sourceLabel]) => <FilterChip key={key} active={source === key} onClick={() => updateLocation({ source: key })}>{sourceLabel}</FilterChip>)}</div>
+                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="text-[10.5px] leading-4 text-[#6f6a63] mr-1">Stage</span>{FILTERS.map((item) => <FilterChip key={item.key} active={filter === item.key} onClick={() => { setFilter(item.key); updateLocation({ stage: item.key }); }}>{item.label}</FilterChip>)}</div>
+                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="text-[10.5px] leading-4 text-[#6f6a63] mr-1">Owner</span><FilterChip active={!owner} onClick={() => updateLocation({ owner: null })}>All owners</FilterChip>{ownerOptions.map((item) => <FilterChip key={item} active={owner === item} onClick={() => updateLocation({ owner: item })}>{RECOVERY_OWNER_LABELS[item]}</FilterChip>)}</div>
+                <div className="flex min-w-0 flex-wrap items-center gap-1"><span className="text-[10.5px] leading-4 text-[#6f6a63] mr-1">Source</span><FilterChip active={!source} onClick={() => updateLocation({ source: null })}>All sources</FilterChip>{sourceOptions.map(([key, sourceLabel]) => <FilterChip key={key} active={source === key} onClick={() => updateLocation({ source: key })}>{sourceLabel}</FilterChip>)}</div>
               </div>
             )}
           />
@@ -278,7 +278,7 @@ export function RecoveryBoardClient({ recoveries, canManage, financialPeriod = n
               kind="empty"
               title="No source-backed recoveries yet"
               description="A recovery appears only after a viable loss has an evidence-backed recovery route. Connect sources or review an eligible case to start the handoff."
-              action={<Link href="/sources/connected" className="ua-text-working-title text-[var(--uo-route-action-primary)] underline underline-offset-2">Review connected sources</Link>}
+              action={<Link href="/sources/connected" className="font-medium text-[13px] leading-5 text-[#1c1f23] text-[#9f4f08] underline underline-offset-2">Review connected sources</Link>}
             />
           </div>
         ) : (

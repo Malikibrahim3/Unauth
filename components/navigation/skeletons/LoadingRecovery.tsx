@@ -22,17 +22,17 @@ export function LoadingRecovery({
   if (!slow) return null;
 
   return (
-    <div className="ua-route-loading-recovery" role="status" aria-live="polite">
+    <div className="grid min-h-[220px] place-items-center gap-3 rounded-xl border border-[#e4e3e0] bg-white p-6 text-center" role="status" aria-live="polite">
       <div>
         <strong>{title} is taking longer than expected</strong>
         <p>No values have been assumed and no action has been taken. Retry this page, or leave by the safe workspace route.</p>
       </div>
-      <div className="ua-route-loading-recovery__actions">
-        <button type="button" className="ua-button ua-button--primary ua-button--md" onClick={() => window.location.reload()}>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <button type="button" className="inline-flex items-center justify-center gap-2 rounded-lg border font-medium no-underline bg-[#1c1f23] text-white border-[#1c1f23] h-9 px-3.5 text-[12.5px]" onClick={() => window.location.reload()}>
           <RotateCcw size={14} aria-hidden="true" />
           <span>Retry this page</span>
         </button>
-        <AppNavLink href={fallbackHref} className="ua-button ua-button--secondary ua-button--md">
+        <AppNavLink href={fallbackHref} className="inline-flex items-center justify-center gap-2 rounded-lg border font-medium no-underline bg-white text-[#40454a] border-[#d8d4cf] h-9 px-3.5 text-[12.5px]">
           Go to Overview
         </AppNavLink>
       </div>

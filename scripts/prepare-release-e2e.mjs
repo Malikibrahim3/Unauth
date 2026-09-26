@@ -354,3 +354,9 @@ if (exceptionError) throw exceptionError;
 console.log(
   `Synthetic release fixture ready (${cases?.length ?? 0} cases; ${entries.length} new financial entries).`,
 );
+
+// Supabase's Node transport may retain an idle keep-alive handle after every
+// awaited fixture write has completed. This script is a one-shot preparer, so
+// terminate explicitly instead of leaving browser wrappers blocked in
+// spawnSync before Playwright can start.
+process.exit(0);

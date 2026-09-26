@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { recordMerchantCaseDecision } from '@/lib/claims/store';
+import { recordMerchantCaseDecision, resolveCaseDecisionExpectedVersion } from '@/lib/claims/store';
 import { loadClaimForMerchant } from '@/lib/claims/access';
 import { normalizeApiIdempotencyKey } from '@/lib/api/v1/ingest/requestIdempotency';
 
@@ -47,6 +47,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   try {
     const claim = loaded.claim!;
+    const expectedVersion = await resolveCaseDecisionExpectedVersion(serviceClient, {
+      merchantId: ctx.merchantId,
+      caseId: claimId,
+      idempotencyKey,
+      currentVersion: claim.state_version ?? 1,
+    });
     const outcome = await recordMerchantCaseDecision(serviceClient, {
       decision: parsed.data.decision,
       outcome: 'pending',
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       notes: parsed.data.note,
       merchantId: ctx.merchantId,
       caseId: claimId,
-      expectedVersion: claim.state_version ?? 1,
+      expectedVersion,
       actorUserId: user.id,
       idempotencyKey,
       relatedSourceObject: {

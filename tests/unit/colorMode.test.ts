@@ -1,34 +1,27 @@
-import {
-  AUTHENTICATED_THEME_COOKIE,
-  DEFAULT_AUTHENTICATED_THEME,
-  isAuthenticatedTheme,
-  readAuthenticatedTheme,
-} from '@/lib/theme/authenticatedTheme';
 import fs from 'node:fs';
 import path from 'node:path';
 
-describe('authenticated theme', () => {
-  it('defaults to light and uses a device-local cookie', () => {
-    expect(DEFAULT_AUTHENTICATED_THEME).toBe('light');
-    expect(AUTHENTICATED_THEME_COOKIE).toBe('unauth.auth-theme');
-    expect(readAuthenticatedTheme(undefined)).toBe('light');
-    expect(readAuthenticatedTheme('legacy-dark')).toBe('light');
+describe('permanent light appearance', () => {
+  it('removes the authenticated theme runtime instead of retaining an inert provider', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'components/theme/AuthenticatedThemeProvider.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'lib/theme/authenticatedTheme.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'lib/theme/colorMode.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'lib/theme/preference.ts'))).toBe(false);
   });
 
-  it.each(['light', 'dark'])('accepts %s', (theme) => {
-    expect(isAuthenticatedTheme(theme)).toBe(true);
-    expect(readAuthenticatedTheme(theme)).toBe(theme);
-  });
+  it('keeps the product light-only without retaining the historical palette cascade', () => {
+    const globals = fs.readFileSync(path.join(process.cwd(), 'app/globals.css'), 'utf8');
+    const rootLayout = fs.readFileSync(path.join(process.cwd(), 'app/layout.tsx'), 'utf8');
+    const publicLayout = fs.readFileSync(path.join(process.cwd(), 'app/(public)/layout.tsx'), 'utf8');
 
-  it.each([null, undefined, '', 'mocha', 'signal', 'sepia'])('rejects legacy or unsupported value %s', (theme) => {
-    expect(isAuthenticatedTheme(theme)).toBe(false);
-  });
-
-  it('keeps public and entry selectors outside the dark override', () => {
-    const css = fs.readFileSync(path.join(process.cwd(), 'styles/evidence-operations.css'), 'utf8');
-    expect(css).toContain('.uo-product:not([data-auth-theme="dark"])');
-    expect(css).toContain('.uo-product[data-auth-theme="dark"]');
-    expect(css).toContain('.ua-public-route');
-    expect(css).toContain('color-scheme: light;');
+    expect(rootLayout).toContain("import './globals.css'");
+    expect(publicLayout).toContain('data-unauth-ui="supplied-package"');
+    expect(globals).not.toMatch(/--(?:ua|uo)-|\.(?:ua|uo)-/);
+    expect(globals).not.toContain('data-auth-theme');
+    expect(globals).not.toContain('color-scheme: dark');
+    expect(globals).toContain('color-scheme: light;');
+    expect(fs.existsSync(path.join(process.cwd(), 'styles/evidence-operations.css'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'styles/authenticated'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'styles/p07.css'))).toBe(false);
   });
 });

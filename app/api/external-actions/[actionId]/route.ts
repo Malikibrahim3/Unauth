@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { normalizeApiIdempotencyKey } from '@/lib/api/v1/ingest/requestIdempotency';
 import { transitionExternalAction } from '@/lib/claims/externalAction';
+import { reportReplacementDispatch } from '@/lib/claims/replacement';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 
@@ -35,24 +36,46 @@ export async function POST(
 
   const { actionId } = await params;
   try {
-    const result = await transitionExternalAction(service, {
-      merchantId: ctx.merchantId,
-      actionId,
-      actorUserId: user.id,
-      authority: 'merchant',
-      targetState: 'merchant_reported_attempt',
-      expectedVersion: parsed.data.expectedVersion,
-      idempotencyKey,
-      method: parsed.data.method,
-      externalReference: parsed.data.externalReference ?? null,
-      receiptEvidence: parsed.data.receiptEvidence ?? null,
-    });
+    const { data: action, error: actionError } = await service
+      .from('connector_action_runs')
+      .select('capability_id')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('id', actionId)
+      .maybeSingle();
+    if (actionError) throw new Error(actionError.message);
+    if (!action) return NextResponse.json({ error: 'External action not found' }, { status: 404 });
+    const result = action.capability_id === 'replacement.manual_handoff'
+      ? await reportReplacementDispatch(service, {
+          merchantId: ctx.merchantId,
+          actionId,
+          actorUserId: user.id,
+          expectedVersion: parsed.data.expectedVersion,
+          idempotencyKey,
+          method: parsed.data.method,
+          externalReference: parsed.data.externalReference ?? null,
+          receiptEvidence: parsed.data.receiptEvidence ?? null,
+        })
+      : await transitionExternalAction(service, {
+          merchantId: ctx.merchantId,
+          actionId,
+          actorUserId: user.id,
+          authority: 'merchant',
+          targetState: 'merchant_reported_attempt',
+          expectedVersion: parsed.data.expectedVersion,
+          idempotencyKey,
+          method: parsed.data.method,
+          externalReference: parsed.data.externalReference ?? null,
+          receiptEvidence: parsed.data.receiptEvidence ?? null,
+        });
     return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes('not_found')) return NextResponse.json({ error: 'External action not found' }, { status: 404 });
     if (message.includes('version_conflict') || message.includes('idempotency_conflict')) {
       return NextResponse.json({ error: 'This external action changed. Refresh before retrying.' }, { status: 409 });
+    }
+    if (message.includes('receipt_required')) {
+      return NextResponse.json({ error: 'Record a Shopify replacement reference or retained receipt.' }, { status: 400 });
     }
     if (message.includes('rejected') || message.includes('transition')) {
       return NextResponse.json({ error: 'That external-action transition is not valid now.' }, { status: 409 });

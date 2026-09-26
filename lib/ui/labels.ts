@@ -289,6 +289,7 @@ const workflowStatus: Record<string, string> = {
   failed: 'Failed',
   error: 'Error',
   processing: 'Processing',
+  pending: 'Pending',
   queued: 'Queued',
   running: 'Running',
   blocked: 'Blocked',

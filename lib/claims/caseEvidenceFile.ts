@@ -175,6 +175,7 @@ export type CaseDecisionRecord = {
   recordedAt: string | null;
   reversesDecisionId: string | null;
   supersedesDecisionId: string | null;
+  recommendationSnapshot: Record<string, unknown> | null;
 };
 
 export type CaseExternalActionRecord = {
@@ -216,6 +217,12 @@ export type CaseEvidenceFile = {
     customerName: string | null;
     orderId: string | null;
     orderReference: string | null;
+    orderSource: string | null;
+    orderStore: string | null;
+    orderSourceAccountId: string | null;
+    orderPlacedAt: string | null;
+    orderAmountMinor: number | null;
+    orderCurrency: string | null;
     ticketId: string | null;
     ticketReference: string | null;
     amountAtRiskMinor: number | null;
@@ -770,7 +777,7 @@ export async function loadCaseEvidenceFile(
         query
           .from(TABLES.SOURCE_ORDERS)
           .select(
-            "id,external_id,order_number,customer_name,source_customer_id",
+            "id,external_id,order_number,customer_name,source_customer_id,source,source_name,source_account_id,placed_at,total_price,currency",
           )
           .eq("merchant_id", merchantId)
           .eq("id", claim.source_order_id)
@@ -1025,6 +1032,9 @@ export async function loadCaseEvidenceFile(
       recordedAt: stringOrNull(row.recorded_at),
       reversesDecisionId: stringOrNull(row.reverses_decision_id),
       supersedesDecisionId: stringOrNull(row.supersedes_decision_id),
+      recommendationSnapshot: row.recommendation_snapshot && typeof row.recommendation_snapshot === 'object'
+        ? record(row.recommendation_snapshot)
+        : null,
     }),
   );
   const externalActions: CaseExternalActionRecord[] = rows(
@@ -1217,6 +1227,12 @@ export async function loadCaseEvidenceFile(
       orderReference: stringOrNull(
         sourceOrderRow.order_number ?? sourceOrderRow.external_id,
       ),
+      orderSource: stringOrNull(sourceOrderRow.source),
+      orderStore: stringOrNull(sourceOrderRow.source_name),
+      orderSourceAccountId: stringOrNull(sourceOrderRow.source_account_id),
+      orderPlacedAt: stringOrNull(sourceOrderRow.placed_at),
+      orderAmountMinor: majorAmountToMinor(sourceOrderRow.total_price, sourceOrderRow.currency),
+      orderCurrency: stringOrNull(sourceOrderRow.currency)?.toUpperCase() ?? null,
       ticketId: stringOrNull(claim.source_ticket_id),
       ticketReference: stringOrNull(ticketRow.external_id),
       amountAtRiskMinor: majorAmountToMinor(claim.amount_at_risk, claim.currency),

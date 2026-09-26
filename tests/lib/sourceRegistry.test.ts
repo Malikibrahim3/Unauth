@@ -11,7 +11,19 @@ function makeClient() {
       calls.opts = opts;
       return builder;
     }),
+    insert: jest.fn((row: any) => {
+      calls.row = row;
+      return builder;
+    }),
+    update: jest.fn((row: any) => {
+      calls.row = row;
+      return builder;
+    }),
     select: jest.fn(() => builder),
+    eq: jest.fn(() => builder),
+    is: jest.fn(() => builder),
+    limit: jest.fn(() => builder),
+    maybeSingle: jest.fn(async () => ({ data: null, error: null })),
     single: jest.fn(async () => ({ data: { id: 'sr-1', ...calls.row }, error: null })),
   };
   const client = { from: jest.fn(() => builder) } as any;
@@ -70,6 +82,7 @@ describe('upsertSourceRecord', () => {
     await expect(
       upsertSourceRecord(client, {
         merchantId: 'm-1',
+        connectionId: 'conn-uk',
         sourceSystem: 'shopify',
         sourceEntityType: 'order',
         externalId: 'X',

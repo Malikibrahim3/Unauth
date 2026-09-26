@@ -225,17 +225,17 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
           style={{
             borderColor:
               state.message.type === 'error'
-                ? 'color-mix(in srgb, var(--uo-route-risk-critical) 30%, var(--uo-route-border-default))'
+                ? 'color-mix(in srgb, #b0431a 30%, #e4e3e0)'
                 : state.message.type === 'warning'
-                ? 'color-mix(in srgb, var(--uo-route-warning) 30%, var(--uo-route-border-default))'
-                : 'color-mix(in srgb, var(--uo-route-success) 30%, var(--uo-route-border-default))',
+                ? 'color-mix(in srgb, #7a5310 30%, #e4e3e0)'
+                : 'color-mix(in srgb, #1a6b43 30%, #e4e3e0)',
             background:
               state.message.type === 'error'
-                ? 'color-mix(in srgb, var(--uo-route-risk-critical) 6%, var(--uo-route-surface-primary))'
+                ? 'color-mix(in srgb, #b0431a 6%, #fff)'
                 : state.message.type === 'warning'
-                ? 'color-mix(in srgb, var(--uo-route-warning) 6%, var(--uo-route-surface-primary))'
-                : 'color-mix(in srgb, var(--uo-route-success) 6%, var(--uo-route-surface-primary))',
-            color: 'var(--uo-route-text-primary)',
+                ? 'color-mix(in srgb, #7a5310 6%, #fff)'
+                : 'color-mix(in srgb, #1a6b43 6%, #fff)',
+            color: '#1c1f23',
           }}
         >
           {state.message.text}
@@ -251,7 +251,7 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
               <Bone className="h-3 w-24" />
             </div>
           </div>
-          <Bone className="h-32 rounded-[var(--uo-route-radius-surface)]" />
+          <Bone className="h-32 rounded-[12px]" />
         </div>
       ) : state.ephemeralSecret ? (
         <FreshdeskWebhookSetupPanel

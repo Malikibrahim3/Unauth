@@ -1,14 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ArrowRight, Check, Upload } from "lucide-react";
 import { Badge, Button, DataTable, Disclosure, Input, Modal, Select, Textarea } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import styles from "@/components/sources/SourcesSurface.module.css";
+const line = '1px solid #e4e3e0';
+const panel: CSSProperties = { border: line, borderRadius: 12, background: '#fff' };
+const styles: Record<string, CSSProperties> = {
+  stack: { display: 'flex', flexDirection: 'column', gap: 16, padding: 20, background: '#ffffff', color: '#1c1f23' }, importGrid: { display: 'grid', gridTemplateColumns: '210px minmax(0,1fr)', gap: 16 }, stepRail: { ...panel, margin: 0, padding: 10, listStyle: 'none' }, stepButton: { display: 'grid', width: '100%', gridTemplateColumns: '26px 1fr', gap: 9, alignItems: 'center', padding: '9px 8px', border: 0, borderRadius: 8, background: 'transparent', color: '#40454a', textAlign: 'left' }, stepIndex: { display: 'grid', width: 22, height: 22, placeItems: 'center', borderRadius: '50%', background: '#f4f3f1', fontSize: 10 },
+  setupPanel: panel, setupMain: { padding: 18 }, setupTitle: { margin: 0, fontSize: 16 }, setupDescription: { margin: '4px 0 16px', color: '#64686d', fontSize: 12 }, setupFooter: { display: 'flex', justifyContent: 'space-between', gap: 10, padding: 14, borderTop: line }, dropzone: { display: 'grid', minHeight: 180, placeItems: 'center', padding: 24, border: '1px dashed #cfcac4', borderRadius: 10, background: '#ffffff', textAlign: 'center' }, fieldGrid: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }, mappingList: { display: 'flex', flexDirection: 'column', border: line, borderRadius: 9, overflow: 'hidden' }, mappingRow: { display: 'grid', gridTemplateColumns: '1fr 24px 1fr', gap: 10, alignItems: 'center', padding: 10, borderTop: line }, validationGrid: { display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }, validationMetric: { padding: 13, border: line, borderRadius: 9, background: '#ffffff' }, mutedCopy: { color: '#64686d', fontSize: 11.5 }, notice: { padding: 12, borderRadius: 9, background: '#fff3e9', color: '#7a5310', fontSize: 11.5 }, empty: { padding: 22, color: '#64686d', textAlign: 'center' }, actionLink: { color: '#9f4f08', textDecoration: 'none' },
+  importHistoryGrid: { display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 310px', gap: 16 }, importHistoryCard: panel, importHistoryHeading: { display: 'flex', justifyContent: 'space-between', gap: 12, padding: 15, borderBottom: line }, importHistoryHeader: { display: 'grid', gridTemplateColumns: '1.5fr .8fr .5fr 1fr .7fr .8fr', gap: 8, padding: '8px 12px', background: '#f4f3f1', color: '#64686d', fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase' }, importHistoryRows: { display: 'flex', flexDirection: 'column' }, importHistoryRow: { display: 'grid', width: '100%', gridTemplateColumns: '1.5fr .8fr .5fr 1fr .7fr .8fr', gap: 8, alignItems: 'center', padding: '10px 12px', border: 0, borderTop: line, background: '#fff', textAlign: 'left' }, importFile: { minWidth: 0 }, importType: { color: '#40454a', fontSize: 11.5 }, importRows: { fontSize: 11.5 }, importValidation: { minWidth: 0 }, importValidationTrack: { display: 'flex', height: 6, borderRadius: 99, overflow: 'hidden', background: '#e4e3e0' }, importStatus: { display: 'inline-flex', padding: '3px 6px', borderRadius: 5, background: '#f4f3f1', fontSize: 9.5, fontWeight: 600 }, importUploaded: { color: '#64686d', fontSize: 10.5 }, importHistoryFooter: { margin: 0, padding: 12, borderTop: line, color: '#64686d', fontSize: 10.5 },
+  importJobInspector: { ...panel, alignSelf: 'start', padding: 15 }, importInspectorHeader: { display: 'flex', justifyContent: 'space-between', gap: 10 }, importInspectorFigures: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8, marginTop: 12 }, importInspectorIssues: { marginTop: 12, paddingTop: 12, borderTop: line }, importClean: { display: 'flex', gap: 8, color: '#1a6b43', fontSize: 11.5 }, importUnavailable: { color: '#6f6a63', fontSize: 11.5 }, importInspectorActions: { display: 'flex', gap: 8, marginTop: 13 }, detailTopline: { display: 'flex', justifyContent: 'space-between', gap: 10 },
+};
 import { CountBars, OutcomeBand } from '@/components/charts/authenticated/SecondaryAnalytics';
 import { buildImportErrorContributions } from '@/lib/visualisation/secondaryAnalytics';
 import { formatDate, formatNumber } from '@/lib/utils/format';
+import type { HoldRatePoint } from '@/lib/capabilities/derived';
+import { replaceHistoryUrlIfChanged } from '@/lib/navigation/history';
 
 const DATASETS = ["orders", "refunds", "customers"] as const;
 type Dataset = (typeof DATASETS)[number];
@@ -138,7 +147,7 @@ const STEPS: Array<{ id: Step; label: string; description: string }> = [
   { id: "commit", label: "Commit", description: "Write valid records" },
 ];
 
-export function CanonicalCsvImportClient({ history = [], initialStep }: { history?: ImportHistoryItem[]; initialStep?: string }) {
+export function CanonicalCsvImportClient({ history = [], initialStep, holdRateTimeseries = [] }: { history?: ImportHistoryItem[]; initialStep?: string; holdRateTimeseries?: HoldRatePoint[] }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [dataset, setDataset] = useState<Dataset>("orders");
   const [active, setActive] = useState<View>(validStep(initialStep) ? initialStep : "history");
@@ -159,12 +168,36 @@ export function CanonicalCsvImportClient({ history = [], initialStep }: { histor
   const [busy, setBusy] = useState<"read" | "validate" | "commit" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const csvValueRef = useRef("");
   const headers = useMemo(() => parseHeaders(csv), [csv]);
   const sampleValues = useMemo(() => samples(csv), [csv]);
   const mappedTargets = Object.values(mapping).filter(Boolean);
   const missingRequired = FIELDS[dataset].filter((field) => field.required && !mappedTargets.includes(field.value));
   const persistableDataset = dataset !== "refunds";
   const dirtyMapping = Boolean(csv && (mappedTargets.length || result));
+
+  useEffect(() => {
+    csvValueRef.current = csv;
+  }, [csv]);
+
+  // The history/upload/map steps are URL-backed. Next's client navigation can
+  // update `initialStep` without remounting this client component, so mirror a
+  // changed query-state prop instead of leaving the previous history view on
+  // screen until a hard refresh.
+  useEffect(() => {
+    if (!validStep(initialStep)) {
+      setActive("history");
+      setContinuityNotice(null);
+      return;
+    }
+
+    setActive(initialStep);
+    setContinuityNotice(
+      initialStep !== "upload" && !csvValueRef.current
+        ? "Choose the CSV again to continue. Files and mappings are not restored from URL state."
+        : null,
+    );
+  }, [initialStep]);
 
   useEffect(() => {
     function guard(event: BeforeUnloadEvent) {
@@ -179,7 +212,7 @@ export function CanonicalCsvImportClient({ history = [], initialStep }: { histor
     const url = new URL(window.location.href);
     if (active === "history") url.searchParams.delete("step");
     else url.searchParams.set("step", active);
-    window.history.replaceState(window.history.state, "", `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
+    replaceHistoryUrlIfChanged(`${url.pathname}?${url.searchParams.toString()}${url.hash}`);
   }, [active]);
 
   useEffect(() => {
@@ -294,19 +327,20 @@ export function CanonicalCsvImportClient({ history = [], initialStep }: { histor
   const selectedErrors = selectedJob?.failed_rows ?? null;
 
   return (
-    <div className={styles.stack} data-source-import data-operations-surface="imports" data-state-id={active === "history" ? "import-history" : committed ? "import-committed" : error ? "import-error" : busy ? `import-${busy}` : csv ? `import-${active}` : "import-no-file"}>
+    <div style={styles.stack} data-source-import data-operations-surface="imports" data-state-id={active === "history" ? "import-history" : committed ? "import-committed" : error ? "import-error" : busy ? `import-${busy}` : csv ? `import-${active}` : "import-validation-empty-states"}>
       {active === "history" ? (
         history.length ? (
-          <div className={styles.importHistoryGrid}>
-            <section className={styles.importHistoryCard} aria-labelledby="import-history-title">
-              <div className={styles.importHistoryHeading}>
+          <>
+          <div style={styles.importHistoryGrid}>
+            <section style={styles.importHistoryCard} aria-labelledby="import-history-title">
+              <div style={styles.importHistoryHeading}>
                 <div><h2 id="import-history-title">Import jobs</h2><p>Rows are validated before anything is committed to the ledger</p></div>
-                <a className="ua-button ua-button--secondary ua-button--sm" download="unauth-import-template.csv" href="data:text/csv;charset=utf-8,external_id%2Ccurrency%2Ctotal_minor">Download template</a>
+                <a className="inline-flex items-center justify-center gap-2 rounded-lg border font-medium no-underline bg-white text-[#40454a] border-[#d8d4cf] h-8 px-3 text-[12px]" download="unauth-import-template.csv" href="data:text/csv;charset=utf-8,external_id%2Ccurrency%2Ctotal_minor">Download template</a>
               </div>
-              <div className={styles.importHistoryHeader} aria-hidden="true">
+              <div style={styles.importHistoryHeader} aria-hidden="true">
                 <span>File</span><span>Type</span><span>Rows</span><span>Validation</span><span>Status</span><span>Uploaded</span>
               </div>
-              <div className={styles.importHistoryRows} role="listbox" aria-label="Import jobs">
+              <div style={styles.importHistoryRows} role="listbox" aria-label="Import jobs">
                 {history.map((job) => {
                   const cursor = cursorOf(job);
                   const total = job.total_rows;
@@ -322,94 +356,121 @@ export function CanonicalCsvImportClient({ history = [], initialStep }: { histor
                       type="button"
                       role="option"
                       aria-selected={selectedJob?.id === job.id}
-                      className={styles.importHistoryRow}
+                      style={styles.importHistoryRow}
                       key={job.id}
                       onClick={() => setSelectedJobId(job.id)}
                     >
-                      <span className={styles.importFile}><strong title={cursor.file_name ?? job.label ?? "CSV import"}>{cursor.file_name ?? job.label ?? "CSV import"}</strong><small>Immutable import job</small></span>
-                      <span className={styles.importType}>{cursor.dataset ?? "— Unavailable"}</span>
-                      <span className={styles.importRows}>{formatNumber(total)}</span>
-                      <span className={styles.importValidation}>
-                        <span className={styles.importValidationTrack} data-unavailable={!knownSegments || undefined}>
+                      <span className="import-file-cell" style={styles.importFile}><strong title={cursor.file_name ?? job.label ?? "CSV import"}>{cursor.file_name ?? job.label ?? "CSV import"}</strong><small>Immutable import job</small></span>
+                      <span style={styles.importType}>{cursor.dataset ?? "— Unavailable"}</span>
+                      <span style={styles.importRows}>{formatNumber(total)}</span>
+                      <span style={styles.importValidation}>
+                        <span style={styles.importValidationTrack} data-unavailable={!knownSegments || undefined}>
                           {knownSegments ? <><i data-tone="ok" style={{ width: `${validShare}%` }} /><i data-tone="warn" style={{ width: `${warningShare}%` }} /><i data-tone="red" style={{ width: `${errorShare}%` }} /></> : null}
                         </span>
                         <small>{errors == null ? "— err" : `${errors} err`} · {warnings == null ? "— warn" : `${warnings} warn`}</small>
                       </span>
-                      <span><span className={styles.importStatus} data-tone={statusTone(job.status)}>{displayStatus(job.status)}</span></span>
-                      <span className={styles.importUploaded}>{formatWhen(job.created_at)}</span>
+                      <span><span style={styles.importStatus} data-tone={statusTone(job.status)}>{displayStatus(job.status)}</span></span>
+                      <span style={styles.importUploaded}>{formatWhen(job.created_at)}</span>
                     </button>
                   );
                 })}
               </div>
-              <p className={styles.importHistoryFooter}>Nothing is committed until you approve it. Rejected rows remain in their immutable import job so they can be corrected and re-uploaded.</p>
+              <p style={styles.importHistoryFooter}>Nothing is committed until you approve it. Rejected rows remain in their immutable import job so they can be corrected and re-uploaded.</p>
             </section>
 
             {selectedJob ? (
-              <aside className={styles.importJobInspector} aria-label="Selected import job">
-                <div className={styles.importInspectorHeader}>
+              <aside style={styles.importJobInspector} aria-label="Selected import job">
+                <div style={styles.importInspectorHeader}>
                   <div><h2 title={selectedCursor.file_name ?? selectedJob.label ?? "CSV import"}>{selectedCursor.file_name ?? selectedJob.label ?? "CSV import"}</h2><p>{selectedTotal == null ? "— rows" : `${formatNumber(selectedTotal)} rows`} · {selectedCursor.dataset ?? "type unavailable"} · uploaded {formatWhen(selectedJob.created_at).toLowerCase()}</p></div>
-                  <span className={styles.importStatus} data-tone={statusTone(selectedJob.status)}>{displayStatus(selectedJob.status)}</span>
+                  <span style={styles.importStatus} data-tone={statusTone(selectedJob.status)}>{displayStatus(selectedJob.status)}</span>
                 </div>
-                <div className={styles.importInspectorFigures}>
+                <div className="import-inspector-figures" style={styles.importInspectorFigures}>
                   <div><span>Valid</span><strong data-tone="ok">{formatNumber(selectedValid)}</strong></div>
                   <div><span>Warnings</span><strong data-tone="warn">{formatNumber(selectedWarnings)}</strong></div>
                   <div><span>Errors</span><strong data-tone="red">{formatNumber(selectedErrors)}</strong></div>
                 </div>
-                <div className={styles.importInspectorIssues}>
+                <div className="import-inspector-issues" style={styles.importInspectorIssues}>
                   <h3>Row errors</h3>
                   {selectedIssues.length ? (
                     <ul>{selectedIssues.slice(0, 4).map((issue, index) => <li key={`${issue.row ?? index}-${issue.code ?? index}`}><i /><span><strong>{issue.message ?? issue.code ?? "Validation error"}</strong><small>{issue.row == null ? "Affected rows recorded in the job" : `row ${issue.row}${issue.field ? ` · ${issue.field}` : ""}`}</small></span><b>1</b></li>)}</ul>
                   ) : selectedErrors === 0 ? (
-                    <div className={styles.importClean}><i /><span>Every row passed validation. This is a verified clean file.</span></div>
+                    <div style={styles.importClean}><i /><span>Every row passed validation. This is a verified clean file.</span></div>
                   ) : (
-                    <div className={styles.importUnavailable}>— Row-level errors unavailable</div>
+                    <div style={styles.importUnavailable}>— Row-level errors unavailable</div>
                   )}
                 </div>
-                <div className={styles.importInspectorActions}>
-                  <Link className="ua-button ua-button--primary ua-button--sm" href={`/sources/imports/${selectedJob.id}`}>{displayStatus(selectedJob.status) === "Rejected" ? "Re-upload file" : displayStatus(selectedJob.status) === "Committed" ? "View committed rows" : `Review ${selectedValid == null ? "valid" : formatNumber(selectedValid)} rows`}</Link>
-                  <Link className="ua-button ua-button--secondary ua-button--sm" href={`/sources/imports/${selectedJob.id}`}>Download errors</Link>
+                <div style={styles.importInspectorActions}>
+                  <Link className="inline-flex items-center justify-center gap-2 rounded-lg border font-medium no-underline bg-[#1c1f23] text-white border-[#1c1f23] h-8 px-3 text-[12px]" href={`/sources/imports/${selectedJob.id}`}>{displayStatus(selectedJob.status) === "Rejected" ? "Re-upload file" : displayStatus(selectedJob.status) === "Committed" ? "View committed rows" : `Review ${selectedValid == null ? "valid" : formatNumber(selectedValid)} rows`}</Link>
+                  <Link className="inline-flex items-center justify-center gap-2 rounded-lg border font-medium no-underline bg-white text-[#40454a] border-[#d8d4cf] h-8 px-3 text-[12px]" href={`/sources/imports/${selectedJob.id}`}>Download errors</Link>
                 </div>
               </aside>
             ) : null}
           </div>
+          <section style={styles.importHistoryCard} aria-labelledby="import-hold-rate-title">
+            <div style={styles.importHistoryHeading}>
+              <div><h2 id="import-hold-rate-title">Held-row rate</h2><p>Nine weekly points from retained import jobs. A missing denominator stays unavailable.</p></div>
+              <span className="text-[10.5px] leading-4 text-[#6f6a63]">Source-backed · no rows written by this view</span>
+            </div>
+            <div role="img" aria-label="Nine-week import held-row rate">
+              {holdRateTimeseries.map((point) => <div key={point.weekStart}><i data-state={point.state === 'available' ? 'stalled' : 'none'} title={`${point.weekStart}: ${point.percentage == null ? 'held-row rate unavailable' : `${point.percentage}% held`}`} /><span>{point.weekStart.slice(5)}</span></div>)}
+            </div>
+            <table className="sr-only"><caption>Nine-week import held-row rate</caption><thead><tr><th>Week starting</th><th>Held rows</th><th>Total rows</th><th>Rate</th></tr></thead><tbody>{holdRateTimeseries.map((point) => <tr key={`hold-rate-${point.weekStart}`}><td>{point.weekStart}</td><td>{point.heldRows == null ? 'Unavailable' : point.heldRows}</td><td>{point.totalRows == null ? 'Unavailable' : point.totalRows}</td><td>{point.percentage == null ? 'Unavailable' : `${point.percentage}%`}</td></tr>)}</tbody></table>
+            <p className="text-[10.5px] leading-4 text-[#6f6a63] mt-3">Held rows use the import job’s recorded failed-row count; they remain outside committed source records until corrected and re-uploaded.</p>
+          </section>
+          <style>{`
+            [data-operations-surface="imports"] .import-file-cell{display:flex;min-width:0;flex-direction:column;gap:2px}
+            [data-operations-surface="imports"] .import-file-cell strong{overflow:hidden;text-overflow:ellipsis;font-size:11px;white-space:nowrap}
+            [data-operations-surface="imports"] .import-file-cell small{color:#6f6a63;font-size:9.5px}
+            [data-operations-surface="imports"] .import-inspector-figures{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+            [data-operations-surface="imports"] .import-inspector-figures span,[data-operations-surface="imports"] .import-inspector-figures strong{display:block;text-align:center}
+            [data-operations-surface="imports"] .import-inspector-figures span{color:#6f6a63;font-size:9.5px}
+            [data-operations-surface="imports"] .import-inspector-figures strong{margin-top:4px;font:400 15px/1 'IBM Plex Mono',monospace}
+            [data-operations-surface="imports"] .import-inspector-issues h3{margin:0 0 8px;font-size:11.5px}
+            [data-operations-surface="imports"] .import-inspector-issues ul{margin:0;padding:0;list-style:none}
+            [data-operations-surface="imports"] .import-inspector-issues li{display:grid;grid-template-columns:7px 1fr auto;gap:7px;align-items:start;padding:7px 0;border-top:1px solid #eae8e5}
+            [data-operations-surface="imports"] .import-inspector-issues li i{width:6px;height:6px;margin-top:5px;border-radius:50%;background:#b0431a}
+            [data-operations-surface="imports"] .import-inspector-issues li strong,[data-operations-surface="imports"] .import-inspector-issues li small{display:block}
+            [data-operations-surface="imports"] .import-inspector-issues li strong{font-size:10.5px}.import-inspector-issues li small{color:#6f6a63;font-size:9.5px}
+          `}</style>
+          </>
         ) : (
-          <section className={styles.importHistoryCard} data-state-id="imports-first-use">
-            <div className={styles.empty}><strong>No import jobs yet</strong><p>Upload a CSV file to create the first immutable validation run.</p><button className="ua-button ua-button--primary ua-button--sm" type="button" onClick={() => setActive("upload")}>Upload file</button></div>
+          <section style={styles.importHistoryCard} data-state-id="imports-first-use">
+            <div style={styles.empty}><strong>No import jobs yet</strong><p>Upload a CSV file to create the first immutable validation run.</p><button className="inline-flex items-center justify-center gap-2 rounded-lg border font-medium no-underline bg-[#1c1f23] text-white border-[#1c1f23] h-8 px-3 text-[12px]" type="button" onClick={() => setActive("upload")}>Upload file</button></div>
           </section>
         )
       ) : (
-      <div className={styles.importGrid} id="import-workbench">
-        <ol className={styles.stepRail} aria-label="Import progress">
+      <div style={styles.importGrid} id="import-workbench">
+        <ol style={styles.stepRail} aria-label="Import progress">
           {STEPS.map((step, index) => {
             const complete = index < completedThrough;
             const available = index === 0 || Boolean(csv);
             return (
               <li key={step.id}>
-                <button className={styles.stepButton} type="button" aria-current={active === step.id ? "step" : undefined} disabled={!available} onClick={() => setActive(step.id)}>
-                  <span className={styles.stepIndex} data-state={complete ? "complete" : active === step.id ? "active" : "pending"}>{complete ? <Check size={13} aria-hidden="true" /> : index + 1}</span>
-                  <span><span className="ua-text-label block">{step.label}</span><span className="ua-text-metadata block">{step.description}</span></span>
+                <button style={styles.stepButton} type="button" aria-current={active === step.id ? "step" : undefined} disabled={!available} onClick={() => setActive(step.id)}>
+                  <span style={styles.stepIndex} data-state={complete ? "complete" : active === step.id ? "active" : "pending"}>{complete ? <Check size={13} aria-hidden="true" /> : index + 1}</span>
+                  <span><span className="text-[11px] font-medium leading-4 text-[#64686d] block">{step.label}</span><span className="text-[10.5px] leading-4 text-[#6f6a63] block">{step.description}</span></span>
                 </button>
               </li>
             );
           })}
         </ol>
 
-        <div className={styles.setupMain} aria-live="polite">
+        <div style={styles.setupMain} aria-live="polite">
           {active === "upload" ? (
-            <section className={styles.setupPanel} aria-labelledby="import-upload-title">
-              <h2 className={styles.setupTitle} id="import-upload-title">Choose source records</h2>
-              <p className={styles.setupDescription}>Select the canonical dataset before mapping. Nothing is written during upload or validation.</p>
-              {continuityNotice ? <div className={`${styles.notice} mt-4`} data-tone="warning" role="status"><span /><span>{continuityNotice}</span><span /></div> : null}
-              <div className={styles.fieldGrid}>
-                <label className="ua-text-label">Dataset<Select className="mt-1 w-full capitalize" value={dataset} onChange={(event) => changeDataset(event.target.value as Dataset)}>{DATASETS.map((value) => <option value={value} key={value}>{value}{value === "refunds" ? " · validation only" : ""}</option>)}</Select></label>
-                <label className="ua-text-label">Import name<Input className="mt-1" value={importName} onChange={(event) => setImportName(event.target.value)} placeholder="June order backfill" maxLength={200} /></label>
+            <section style={styles.setupPanel} aria-labelledby="import-upload-title">
+              <h2 style={styles.setupTitle} id="import-upload-title">Choose source records</h2>
+              <p style={styles.setupDescription}>Select the canonical dataset before mapping. Nothing is written during upload or validation.</p>
+              {continuityNotice ? <div style={{ ...styles.notice, marginTop: 16 }} data-tone="warning" role="status"><span /><span>{continuityNotice}</span><span /></div> : null}
+              <div style={styles.fieldGrid}>
+                <label className="text-[11px] font-medium leading-4 text-[#64686d]">Dataset<Select className="mt-1 w-full capitalize" value={dataset} onChange={(event) => changeDataset(event.target.value as Dataset)}>{DATASETS.map((value) => <option value={value} key={value}>{value}{value === "refunds" ? " · validation only" : ""}</option>)}</Select></label>
+                <label className="text-[11px] font-medium leading-4 text-[#64686d]">Import name<Input className="mt-1" value={importName} onChange={(event) => setImportName(event.target.value)} placeholder="June order backfill" maxLength={200} /></label>
               </div>
-              <label className={`${styles.dropzone} mt-5 cursor-pointer focus-within:ring-2 focus-within:ring-[var(--uo-route-border-focus)]`}>
-                <span><Upload size={22} aria-hidden="true" /><span className="ua-text-working-title mt-2 block">{busy === "read" ? "Reading CSV…" : fileName ?? "Choose a CSV file"}</span><span className={styles.mutedCopy}>UTF-8 CSV. Server limits and row structure are checked again before validation.</span></span>
+              <label style={{ ...styles.dropzone, marginTop: 20, cursor: 'pointer' }}>
+                <span><Upload size={22} aria-hidden="true" /><strong style={{ display: 'block', marginTop: 8 }}>{busy === "read" ? "Reading CSV…" : fileName ?? "Choose a CSV file"}</strong><span style={{ ...styles.mutedCopy, display: 'block' }}>UTF-8 CSV. Server limits and row structure are checked again before validation.</span></span>
                 <input ref={fileInput} className="sr-only" type="file" accept=".csv,text/csv" onChange={(event) => chooseFile(event.target.files?.[0] ?? null)} />
               </label>
-              {!persistableDataset ? <div className={`${styles.notice} mt-4`} data-tone="warning" role="status"><span /><span>Refund CSV validation is available, but canonical refund persistence is not enabled. Commit remains unavailable.</span><span /></div> : null}
-              <Disclosure className="mt-4" summary="Paste CSV text instead" summaryClassName="ua-text-label text-[var(--uo-route-text-link)]">
+              {!persistableDataset ? <div style={{ ...styles.notice, marginTop: 16 }} data-tone="warning" role="status"><span /><span>Refund CSV validation is available, but canonical refund persistence is not enabled. Commit remains unavailable.</span><span /></div> : null}
+              <Disclosure className="mt-4" summary="Paste CSV text instead" summaryClassName="text-[11px] font-medium leading-4 text-[#64686d] text-[#9f4f08]">
                 <Textarea className="mt-2 h-36 font-mono text-xs" value={csv} placeholder="external_id,currency,total_minor" onChange={(event) => { const value = event.currentTarget.value; setCsv(value); setFileName(null); setFileSize(new Blob([value]).size); setMapping(automaticMapping(dataset, parseHeaders(value))); setResult(null); setCommitted(null); setContinuityNotice(null); }} />
                 <Button className="mt-3" size="sm" disabled={!csv} onClick={() => setActive("map")}>Continue to mapping</Button>
               </Disclosure>
@@ -417,34 +478,34 @@ export function CanonicalCsvImportClient({ history = [], initialStep }: { histor
           ) : null}
 
           {active === "map" ? (
-            <section className={styles.setupPanel} aria-labelledby="import-map-title">
-              <div className={styles.detailTopline}><div><h2 className={styles.setupTitle} id="import-map-title">Map source columns</h2><p className={styles.setupDescription}>Required canonical fields must be mapped once. Ignored columns are never persisted.</p></div><Badge tone={missingRequired.length ? "warning" : "success"} variant="subtle" dot>{mappedTargets.length} of {headers.length} mapped</Badge></div>
-              <div className={styles.mappingList}>
+            <section style={styles.setupPanel} aria-labelledby="import-map-title">
+              <div style={styles.detailTopline}><div><h2 style={styles.setupTitle} id="import-map-title">Map source columns</h2><p style={styles.setupDescription}>Required canonical fields must be mapped once. Ignored columns are never persisted.</p></div><Badge tone={missingRequired.length ? "warning" : "success"} variant="subtle" dot>{mappedTargets.length} of {headers.length} mapped</Badge></div>
+              <div style={styles.mappingList}>
                 {headers.map((header) => (
-                  <div className={styles.mappingRow} key={header}>
-                    <div><span className="ua-text-label block">{header}</span><span className="ua-text-metadata block truncate">Sample: {sampleValues[header]}</span></div>
+                  <div style={styles.mappingRow} key={header}>
+                    <div><span className="text-[11px] font-medium leading-4 text-[#64686d] block">{header}</span><span className="text-[10.5px] leading-4 text-[#6f6a63] block truncate">Sample: {sampleValues[header]}</span></div>
                     <ArrowRight size={14} aria-hidden="true" />
                     <Select aria-label={`Map ${header}`} value={mapping[header] ?? ""} onChange={(event) => { setMapping((current) => ({ ...current, [header]: event.target.value })); setResult(null); setCommitted(null); }}>
                       <option value="">Ignore column</option>
                       {FIELDS[dataset].map((field) => <option value={field.value} key={field.value}>{field.label}{field.required ? " · required" : ""}</option>)}
                     </Select>
-                    <span className="ua-text-metadata">{mapping[header] ? "Direct mapping" : "Not imported"}</span>
+                    <span className="text-[10.5px] leading-4 text-[#6f6a63]">{mapping[header] ? "Direct mapping" : "Not imported"}</span>
                   </div>
                 ))}
               </div>
-              {missingRequired.length ? <p className={`${styles.notice} mt-4`} data-tone="warning" role="status"><span /><span>Required mappings missing: {missingRequired.map((field) => field.label).join(", ")}.</span><span /></p> : null}
-              <div className={styles.setupFooter}><Button variant="secondary" onClick={() => setActive("upload")}>Back</Button><Button disabled={missingRequired.length > 0 || !headers.length} onClick={() => { setActive("validate"); void validate(); }}>Validate rows</Button></div>
+              {missingRequired.length ? <p style={{ ...styles.notice, marginTop: 16 }} data-tone="warning" role="status"><span /><span>Required mappings missing: {missingRequired.map((field) => field.label).join(", ")}.</span><span /></p> : null}
+              <div style={styles.setupFooter}><Button variant="secondary" onClick={() => setActive("upload")}>Back</Button><Button disabled={missingRequired.length > 0 || !headers.length} onClick={() => { setActive("validate"); void validate(); }}>Validate rows</Button></div>
             </section>
           ) : null}
 
           {active === "validate" || active === "commit" ? (
-            <section className={styles.setupPanel} aria-labelledby="import-review-title">
-              <div className={styles.detailTopline}><div><h2 className={styles.setupTitle} id="import-review-title">{active === "commit" ? "Review and commit" : "Validate records"}</h2><p className={styles.setupDescription}>Validation writes nothing. Commit persists only valid, deduplicated rows with CSV provenance.</p></div>{result ? <StatusBadge family="workflowStatus" value={result.error_count ? "attention_required" : "ready"} /> : null}</div>
-              {error ? <div className={`${styles.notice} mt-4`} data-tone="danger" role="alert"><span /><div><span>{error}</span>{failedCommit ? <p className={styles.mutedCopy}>The failed job retained its mapping and row-level outcome.</p> : null}</div>{failedCommit ? <Link className={styles.actionLink} href={`/sources/imports/${failedCommit.job_id}`}>Open failed job</Link> : <span />}</div> : null}
-              {busy === "validate" ? <div className={styles.empty}>Validating rows and mapping…</div> : result ? (
+            <section style={styles.setupPanel} aria-labelledby="import-review-title">
+              <div style={styles.detailTopline}><div><h2 style={styles.setupTitle} id="import-review-title">{active === "commit" ? "Review and commit" : "Validate records"}</h2><p style={styles.setupDescription}>Validation writes nothing. Commit persists only valid, deduplicated rows with CSV provenance.</p></div>{result ? <StatusBadge family="workflowStatus" value={result.error_count ? "attention_required" : "ready"} /> : null}</div>
+              {error ? <div style={{ ...styles.notice, marginTop: 16, background: '#fdf0e6', color: '#b0431a' }} data-tone="danger" role="alert"><span /><div><span>{error}</span>{failedCommit ? <p style={styles.mutedCopy}>The failed job retained its mapping and row-level outcome.</p> : null}</div>{failedCommit ? <Link style={styles.actionLink} href={`/sources/imports/${failedCommit.job_id}`}>Open failed job</Link> : <span />}</div> : null}
+              {busy === "validate" ? <div style={styles.empty}>Validating rows and mapping…</div> : result ? (
                 <>
-                  <div className={styles.validationGrid}>
-                    {[["Total rows", result.total_rows], ["Valid", result.valid_count], ["Invalid", result.error_count], ["Duplicates skipped", result.duplicates_skipped]].map(([label, value]) => <div className={styles.validationMetric} key={String(label)}><span className="ua-text-metadata">{label}</span><strong>{value}</strong></div>)}
+                  <div style={styles.validationGrid}>
+                    {[["Total rows", result.total_rows], ["Valid", result.valid_count], ["Invalid", result.error_count], ["Duplicates skipped", result.duplicates_skipped]].map(([label, value]) => <div style={styles.validationMetric} key={String(label)}><span className="text-[10.5px] leading-4 text-[#6f6a63]">{label}</span><strong>{value}</strong></div>)}
                   </div>
                   <div className="mt-5">
                     <OutcomeBand total={result.valid_count + result.error_count + result.duplicates_skipped} segments={[
@@ -459,22 +520,22 @@ export function CanonicalCsvImportClient({ history = [], initialStep }: { histor
                       <DataTable aria-label="Import validation errors" rows={result.errors} getRowKey={(item) => `${item.row}-${item.field}-${item.code}`} density="metadata" emptyState={null} columns={[
                         { key: "row", header: "Source row", kind: "numeric", render: (item) => item.row },
                         { key: "field", header: "Field", render: (item) => item.field },
-                        { key: "code", header: "Error", render: (item) => <span className="text-[var(--uo-route-critical)]">{item.message}</span> },
+                        { key: "code", header: "Error", render: (item) => <span className="text-[#b0431a]">{item.message}</span> },
                       ]} />
                     </div>
-                  ) : <div className={`${styles.notice} mt-5`} data-tone="success"><Check size={16} aria-hidden="true" /><span>Every row passed validation.</span><span /></div>}
+                  ) : <div style={{ ...styles.notice, marginTop: 20, background: '#eaf5ef', color: '#1a6b43' }} data-tone="success"><Check size={16} aria-hidden="true" /><span>Every row passed validation.</span><span /></div>}
                 </>
-              ) : <div className={styles.empty}><Button disabled={Boolean(busy)} onClick={() => void validate()}>Run validation</Button></div>}
+              ) : <div style={styles.empty}><Button disabled={Boolean(busy)} onClick={() => void validate()}>Run validation</Button></div>}
 
               {committed ? (
-                <div className={`${styles.notice} mt-5`} data-tone="success" role="status">
+                <div style={{ ...styles.notice, marginTop: 20, background: '#eaf5ef', color: '#1a6b43' }} data-tone="success" role="status">
                   <Check size={16} aria-hidden="true" />
-                  <div><strong className="ua-text-working-title">{committed.persisted} record{committed.persisted === 1 ? "" : "s"} committed</strong><p className={styles.mutedCopy}>{committed.error_count} invalid rows remain in the immutable job record.</p></div>
-                  <Link href={`/sources/imports/${committed.job_id}`} className={styles.actionLink}>Open job</Link>
+                  <div><strong>{committed.persisted} record{committed.persisted === 1 ? "" : "s"} committed</strong><p style={styles.mutedCopy}>{committed.error_count} invalid rows remain in the immutable job record.</p></div>
+                  <Link href={`/sources/imports/${committed.job_id}`} style={styles.actionLink}>Open job</Link>
                 </div>
               ) : null}
-              {!persistableDataset ? <div className={`${styles.notice} mt-5`} data-tone="warning"><span /><span>This dataset can be validated and corrected, but it cannot be committed in the current runtime.</span><span /></div> : null}
-              <div className={styles.setupFooter}>
+              {!persistableDataset ? <div style={{ ...styles.notice, marginTop: 20 }} data-tone="warning"><span /><span>This dataset can be validated and corrected, but it cannot be committed in the current runtime.</span><span /></div> : null}
+              <div style={styles.setupFooter}>
                 <Button variant="secondary" onClick={() => setActive("map")}>Back to mapping</Button>
                 {active === "validate" ? <Button disabled={!result?.valid_count} onClick={() => setActive("commit")}>Review commit</Button> : <Button variant="commit" loading={busy === "commit"} disabled={!persistableDataset || !result?.valid_count || Boolean(busy) || Boolean(committed)} onClick={() => void commit()}>Commit {result?.valid_count ?? 0} valid rows</Button>}
               </div>
@@ -485,7 +546,7 @@ export function CanonicalCsvImportClient({ history = [], initialStep }: { histor
       )}
 
       <Modal open={Boolean(pendingFile)} onClose={() => setPendingFile(null)} title="Replace the current CSV?" description="The current mapping and validation result have not been committed." overlayId="replace-import-file-confirmation" actions={[{ label: "Replace file", variant: "danger", onClick: () => { if (pendingFile) void applyFile(pendingFile); } }]}>
-        <p className="ua-text-body text-[var(--uo-route-text-secondary)]">Replacing the file clears the current column map and validation output. No records have been written.</p>
+        <p className="text-[13px] leading-5 text-[#40454a] text-[#64686d]">Replacing the file clears the current column map and validation output. No records have been written.</p>
       </Modal>
     </div>
   );

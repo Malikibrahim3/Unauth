@@ -13,30 +13,30 @@ export function RecoveryPathCard({ recovery }: { recovery: RecoveryPath }) {
   return (
     <section
       className="rounded-md p-4 border"
-      style={{ borderColor: 'var(--uo-route-border-subtle)', background: 'var(--uo-route-surface-primary)' }}
+      style={{ borderColor: '#eae8e5', background: '#fff' }}
     >
       <div className="flex items-center justify-between mb-2">
-        <p className="ua-text-label" style={{ color: 'var(--uo-route-text-secondary)' }}>
+        <p className="text-[11px] font-medium leading-4 text-[#64686d]" style={{ color: '#64686d' }}>
           Recovery route
         </p>
         <StatusBadge family="recoverability" value={recovery.recoverability} size="sm" />
       </div>
 
-      <p className="ua-text-body" style={{ color: 'var(--uo-route-text-primary)' }}>
+      <p className="text-[13px] leading-5 text-[#40454a]" style={{ color: '#1c1f23' }}>
         Owner: <span className="font-semibold">{LIKELY_OWNER_LABELS[recovery.likelyOwner]}</span>
       </p>
 
       {recovery.requiredEvidence.length > 0 && (
         <div className="mt-2">
-          <p className="ua-text-label mb-1" style={{ color: 'var(--uo-route-text-secondary)' }}>
+          <p className="text-[11px] font-medium leading-4 text-[#64686d] mb-1" style={{ color: '#64686d' }}>
             Still needed
           </p>
           <EvidenceChecklist items={recovery.requiredEvidence.map((key) => ({ label: humanizeEvidenceKey(key) }))} />
         </div>
       )}
 
-      <p className="ua-text-caption-role mt-3">
-        <span className="font-semibold" style={{ color: 'var(--uo-route-text-primary)' }}>Support next step: </span>
+      <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-3">
+        <span className="font-semibold" style={{ color: '#1c1f23' }}>Support next step: </span>
         {recovery.suggestedNextAction}
       </p>
     </section>

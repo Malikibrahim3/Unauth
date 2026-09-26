@@ -1,9 +1,8 @@
 'use client';
 
 import Link from '@/components/navigation/AppNavLink';
-import type { ComponentProps, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-import { BUTTON_CLASS, BUTTON_SIZE_CLASS, type ButtonSize, type ButtonVariant } from './Button';
+import type { ComponentProps, CSSProperties, ReactNode } from 'react';
+import { BUTTON_SIZE_STYLE, BUTTON_STYLE, type ButtonSize, type ButtonVariant } from './Button';
 
 type ButtonLinkProps = Omit<ComponentProps<typeof Link>, 'className'> & {
   variant?: ButtonVariant;
@@ -12,11 +11,11 @@ type ButtonLinkProps = Omit<ComponentProps<typeof Link>, 'className'> & {
   leadingIcon?: ReactNode;
 };
 
-export function ButtonLink({ variant = 'primary', size = 'md', className, leadingIcon, children, ...props }: ButtonLinkProps) {
-  return (
-    <Link className={cn(BUTTON_CLASS[variant], BUTTON_SIZE_CLASS[size], className)} {...props}>
-      {leadingIcon ? <span className="ua-button__icon" aria-hidden="true">{leadingIcon}</span> : null}
-      <span>{children}</span>
-    </Link>
-  );
+const base: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderStyle: 'solid', borderRadius: 8, fontFamily: "'Inter',sans-serif", fontWeight: 500, lineHeight: 1, textDecoration: 'none' };
+
+export function ButtonLink({ variant = 'primary', size = 'md', className: _className, leadingIcon, children, style, ...props }: ButtonLinkProps) {
+  return <Link style={{ ...base, ...BUTTON_STYLE[variant], ...BUTTON_SIZE_STYLE[size], ...style }} {...props}>
+    {leadingIcon ? <span aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{leadingIcon}</span> : null}
+    <span>{children}</span>
+  </Link>;
 }

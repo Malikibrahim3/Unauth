@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const ARTIFACT_ROOT = 'artifacts/ux9/ux9-2';
 
-async function useTheme(page: Page, theme: 'light' | 'dark') {
+async function useTheme(page: Page, theme: 'light') {
   await page.context().addCookies([{
     name: 'unauth.auth-theme',
     value: theme,
@@ -11,8 +11,8 @@ async function useTheme(page: Page, theme: 'light' | 'dark') {
   }]);
 }
 
-test.describe('UX9-2 task-first Cases, Customers, and evidence work', () => {
-  test('Cases leads with the queue and groups advanced filters', async ({ page }) => {
+test.describe('full-app authority Cases, Customers, and evidence work', () => {
+  test('Cases follows the supplied analytical-to-ledger hierarchy and groups advanced filters', async ({ page }) => {
     test.setTimeout(120_000);
     await useTheme(page, 'light');
     await page.setViewportSize({ width: 1280, height: 720 });
@@ -20,13 +20,12 @@ test.describe('UX9-2 task-first Cases, Customers, and evidence work', () => {
 
     await expect(page.getByRole('heading', { level: 1, name: 'Cases' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Filters/ })).toBeVisible();
-    const registry = page.locator('.ua-case-registry');
-    const analytics = page.locator('.ua-cases-analytics');
+    const registry = page.locator('[data-case-ledger]');
+    const analytics = page.getByRole('region', { name: 'Opened against closed' });
     await expect(registry).toBeVisible();
     await expect(analytics).toBeVisible();
     const [registryBox, analyticsBox] = await Promise.all([registry.boundingBox(), analytics.boundingBox()]);
-    expect(registryBox?.y).toBeLessThan(analyticsBox?.y ?? 0);
-    await expect(analytics).not.toHaveAttribute('open');
+    expect(analyticsBox?.y).toBeLessThan(registryBox?.y ?? 0);
     await page.screenshot({ path: `${ARTIFACT_ROOT}/cases-registry-light-1280x720.png`, fullPage: true });
 
     await page.getByRole('button', { name: /Filters/ }).click();
@@ -78,13 +77,14 @@ test.describe('UX9-2 task-first Cases, Customers, and evidence work', () => {
     expect(profileHref).toMatch(/^\/customers\//);
   });
 
-  test('The Cases registry retains the same layout and meaning in dark mode', async ({ page }) => {
+  test('The Cases registry remains light-only after a legacy dark cookie', async ({ page }) => {
     test.setTimeout(120_000);
-    await useTheme(page, 'dark');
+    await useTheme(page, 'light');
+    await page.context().addCookies([{ name: 'unauth.auth-theme', value: 'dark', domain: 'localhost', path: '/' }]);
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/cases');
-    await expect(page.locator('.uo-product.ua-desktop-boundary')).toHaveAttribute('data-auth-theme', 'dark');
-    await expect(page.locator('.ua-case-registry')).toBeVisible();
-    await page.screenshot({ path: `${ARTIFACT_ROOT}/cases-registry-dark-1280x720.png`, fullPage: true });
+    await expect(page.locator('[data-unauth-ui="supplied-package"]')).not.toHaveAttribute('data-auth-theme', /.+/);
+    await expect(page.locator('[data-surface-id="cases-registry"]')).toBeVisible();
+    await page.screenshot({ path: `${ARTIFACT_ROOT}/cases-registry-legacy-cookie-light-1280x720.png`, fullPage: true });
   });
 });

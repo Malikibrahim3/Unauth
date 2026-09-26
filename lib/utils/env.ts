@@ -111,6 +111,8 @@ const envSchema = z.object({
   E2E_ALLOWED_MERCHANT_IDS: z.string().optional(),
   MERCHANT_ID: z.string().optional(),
   PLAYWRIGHT_BASE_URL: z.string().url().optional(),
+  /** Allows the bounded remaining-closure runner to reuse its own loopback server. */
+  PLAYWRIGHT_REUSE_SERVER: z.string().optional(),
   RECONCILIATION_SMOKE_MERCHANT_ID: z.string().optional(),
   RELEASE_E2E_LOCAL: z.string().optional(),
   RELEASE_E2E_PORT: z.coerce.number().int().positive().optional(),

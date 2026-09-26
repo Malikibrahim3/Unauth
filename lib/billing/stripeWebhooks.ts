@@ -20,7 +20,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   markSubscriptionIntentStatusById,
 } from '@/lib/billing/subscriptionIntent';
-import { parseRequestedPlanId } from '@/lib/billing/plans';
+import { parseRequestedPlanId, planTierOrder } from '@/lib/billing/plans';
 
 function merchantIdFromMetadata(obj: { metadata?: Stripe.Metadata | null }): string | null {
   const id = obj.metadata?.merchant_id;
@@ -242,9 +242,7 @@ async function handleInvoicePaymentSucceeded(
   }
 
   if (newPlanId && newPlanId !== state.subscription.planId) {
-    const upgrading =
-      ['free', 'pro', 'growth', 'scale'].indexOf(newPlanId) >
-      ['free', 'pro', 'growth', 'scale'].indexOf(state.subscription.planId);
+    const upgrading = planTierOrder(newPlanId) > planTierOrder(state.subscription.planId);
     if (upgrading) {
       await applyPlanUpgrade(supabase, merchantId, newPlanId, {
         sendEmail: 'plan_upgraded',

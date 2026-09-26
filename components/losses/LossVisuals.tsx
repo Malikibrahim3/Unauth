@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import Link from '@/components/navigation/AppNavLink';
 import {
   ChartFrame,
   ChartLegend,
@@ -29,12 +28,12 @@ export type LossTrendPoint = {
 
 // §14.7 — the cause ramp: monochrome, off the parent (realised-loss) outcome, rank by lightness.
 const SEGMENT_CLASSES = [
-  'bg-[var(--uo-route-cause-1)]',
-  'bg-[var(--uo-route-cause-2)]',
-  'bg-[var(--uo-route-cause-3)]',
-  'bg-[var(--uo-route-cause-4)]',
-  'bg-[var(--uo-route-cause-5)]',
-  'bg-[var(--uo-route-cause-other)]',
+  'bg-[#40454a]',
+  'bg-[#40454a]',
+  'bg-[#40454a]',
+  'bg-[#40454a]',
+  'bg-[#40454a]',
+  'bg-[#40454a]',
 ] as const;
 
 // §14.7/§18.3 — a cause breakdown ramps off the parent (realised-loss) outcome, monochrome by rank.
@@ -161,28 +160,28 @@ export function LossTrendChart({
       table={compacted.points.length ? trendTable(currency, compacted.causes, compacted.points) : undefined}
     >
       {state ?? (
-        <div className="ua-loss-history" data-history={hasTrendHistory ? 'trend-ready' : 'observed-only'}>
+        <div data-history={hasTrendHistory ? 'trend-ready' : 'observed-only'}>
           {!hasTrendHistory ? (
-            <p className="ua-observed-history-note" role="status">
+            <p className="text-[11px] leading-[1.45] text-[#64686d]" role="status">
               Showing recorded dates only. No direction, rate, or missing interval has been inferred.
             </p>
           ) : null}
-          <div className="ua-loss-history__plot">
-            <div className="ua-loss-history__scale" aria-hidden="true">
+          <div className="relative">
+            <div aria-hidden="true">
               <span>{formatMinorCurrencyNullable(maximum, currency)}</span>
               <span>{formatMinorCurrencyNullable(0, currency)}</span>
             </div>
             <div
-              className="ua-loss-history__columns"
-              style={{ '--uo-route-loss-points': compacted.points.length } as CSSProperties}
+              className="grid gap-4"
+              style={{ gridTemplateColumns: `repeat(${Math.max(1, compacted.points.length)}, minmax(18px, 1fr))` }}
               aria-label={hasTrendHistory ? 'Confirmed loss trend' : 'Confirmed loss on recorded dates'}
             >
               {compacted.points.map((point) => (
-                <div key={point.key} className="ua-loss-history__column">
+                <div key={point.key}>
                   {!hasTrendHistory ? <strong>{formatMinorCurrencyNullable(point.totalMinor, currency)}</strong> : null}
-                  <div className="ua-loss-history__bar-wrap">
+                  <div className="relative">
                     <div
-                      className="ua-loss-history__bar"
+                      className="relative"
                       style={{ height: `${Math.max(0, (point.totalMinor / scaleMaximum) * 100)}%` }}
                     >
                       {point.causes.map((cause, index) => {
@@ -196,7 +195,7 @@ export function LossTrendChart({
                             data-selected={selectedCauseKey === cause.key ? 'true' : undefined}
                             aria-label={`${point.label}: ${cause.label}, ${formatMinorCurrencyNullable(cause.valueMinor, currency)}`}
                             title={`${cause.label}: ${formatMinorCurrencyNullable(cause.valueMinor, currency)}`}
-                            className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--uo-route-border-focus)]"
+                            className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#9f4f08]"
                             style={{ height: `${height}%` }}
                           >
                             <span className={`block h-full w-full ${SEGMENT_CLASSES[index] ?? SEGMENT_CLASSES.at(-1)}`} />

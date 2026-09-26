@@ -29,7 +29,7 @@ export function Pagination({ page, pageSize, total, href, previousHref, nextHref
   return (
     <nav
       aria-label="Pagination"
-      className="mt-3 flex h-[var(--uo-route-control-height-md)] items-center justify-between gap-3 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-secondary)]"
+      className="mt-3 flex h-8 items-center justify-between gap-3 text-[10.5px] text-[#64686d]"
     >
       <p>
         {total === 0 ? 'No results' : `Showing ${resultStart}–${resultEnd} of ${total}`}
@@ -61,13 +61,13 @@ function PagerLink({
   children: React.ReactNode;
 }) {
   const className =
-    'inline-flex h-[var(--uo-route-control-height-sm)] items-center rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-control)] px-2.5 font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--uo-route-border-focus)]';
+    'inline-flex h-8 items-center rounded-[8px] border border-[#e4e3e0] px-2.5 font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9f4f08]';
   if (disabled || !href) {
     return (
       <span
         aria-disabled="true"
         aria-label={label}
-        className={`${className} pointer-events-none border-[var(--uo-route-border-subtle)] text-[var(--uo-route-text-disabled)]`}
+        className={`${className} pointer-events-none border-[#eae8e5] text-[#6f6a63]`}
       >
         {children}
       </span>
@@ -77,7 +77,7 @@ function PagerLink({
     <Link
       href={href}
       aria-label={label}
-      className={`${className} text-[var(--uo-route-text-primary)] hover:bg-[var(--uo-route-surface-hover)]`}
+      className={`${className} text-[#1c1f23] hover:bg-[#f3f0ed]`}
     >
       {children}
     </Link>

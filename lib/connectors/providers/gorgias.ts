@@ -41,8 +41,8 @@ export const gorgiasConnector: ConnectorAdapter = {
       capability('tickets.subscribe', 'subscribe', { description: 'Ticket webhooks' }),
       capability('tickets.write_note', 'write', { risk: 'low', description: 'Add internal note' }),
       capability('tickets.write_tag', 'write', { risk: 'low', description: 'Add tag' }),
-      // MVP+ boundary: autonomous denial stays unsupported.
-      capability('request.deny', 'act', { support: 'unsupported', description: 'Deny request (forbidden in MVP+)' }),
+      // No automatic customer denial is included in the initial MVP.
+      capability('request.deny', 'act', { support: 'unsupported', description: 'Deny request (not released)' }),
     ],
   },
 

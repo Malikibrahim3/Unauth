@@ -41,24 +41,24 @@ function freshnessLabel(freshness: string | null): string {
 export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
   if (records.length === 0) {
     return (
-      <div className="rounded-lg border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] p-4 text-[length:var(--uo-route-text-dense-size)] text-[var(--uo-route-text-secondary)]">
+      <div className="rounded-lg border border-[#e4e3e0] bg-[#fff] p-4 text-[length:12px] text-[#64686d]">
         No related records yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)]">
-      <ul className="divide-y divide-[var(--uo-route-border-subtle)]">
+    <div className="rounded-lg border border-[#e4e3e0] bg-[#fff]">
+      <ul className="divide-y divide-[#eae8e5]">
         {records.map((r) => {
           const label = ENTITY_LABELS[r.entityType] ?? r.entityType;
           const inner = (
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0">
-                <p className="ua-text-working-title truncate text-[var(--uo-route-text-primary)]">
+                <p className="font-medium text-[13px] leading-5 text-[#1c1f23] truncate text-[#1c1f23]">
                   {label}
                 </p>
-                <p className="mt-0.5 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]">
+                <p className="mt-0.5 text-[length:10.5px] text-[#6f6a63]">
                   {r.sourceSystem ?? "source not identified"} ·{" "}
                   {freshnessLabel(r.freshness)}
                   {r.matchMethod ? ` · ${r.matchMethod}` : ""}
@@ -77,7 +77,7 @@ export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
                   href={r.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block hover:bg-[var(--uo-route-surface-hover)]"
+                  className="block hover:bg-[#f3f0ed]"
                 >
                   {inner}
                 </a>

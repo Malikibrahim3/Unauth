@@ -1,19 +1,11 @@
 'use client';
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent,
-} from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { ChartDataTableModel } from '@/components/charts/authenticated/ChartFrame';
 import { ChartDataTable } from '@/components/charts/authenticated/ChartFrame';
 import type { DashboardChartBucket } from './dashboardModel';
-import styles from './dashboardPilot.module.css';
 
-type DashboardPositionChartProps = {
+type Props = {
   data: DashboardChartBucket[];
   secondary: Array<number | null> | null;
   comparison: boolean;
@@ -23,30 +15,18 @@ type DashboardPositionChartProps = {
   basisLabel: string;
   idleDetail: string;
   formatValue: (value: number | null) => string;
-  /** Axis ticks use compact notation (£500, £1.5k) — full precision belongs
-   * to the hover readout, not the gutter. Defaults to `formatValue` for
-   * backward compatibility. */
   formatAxisValue?: (value: number | null) => string;
   table?: ChartDataTableModel;
 };
 
-type Readout = {
-  key: string;
-  label: string;
-  current: number | null;
-  secondary: number | null;
-  previous: number | null;
-};
-
-function niceCeiling(value: number): number {
+function niceCeiling(value: number) {
   if (value <= 0) return 1;
   const magnitude = 10 ** Math.floor(Math.log10(value));
   const normalized = value / magnitude;
-  const step = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
-  return step * magnitude;
+  return (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * magnitude;
 }
 
-function lineSegments(data: DashboardChartBucket[], ceiling: number): string[] {
+function lineSegments(data: DashboardChartBucket[], ceiling: number) {
   const segments: string[] = [];
   let current: string[] = [];
   data.forEach((bucket, index) => {
@@ -55,277 +35,81 @@ function lineSegments(data: DashboardChartBucket[], ceiling: number): string[] {
       current = [];
       return;
     }
-    const x = ((index + 0.5) / data.length) * 1000;
-    const y = 100 - Math.min(100, (bucket.previousMinor / ceiling) * 100);
-    current.push(`${x},${y}`);
+    current.push(`${((index + 0.5) / data.length) * 1000},${100 - Math.min(100, bucket.previousMinor / ceiling * 100)}`);
   });
   if (current.length > 1) segments.push(current.join(' '));
   return segments;
 }
 
-export function DashboardPositionChart({
-  data,
-  secondary,
-  comparison,
-  metricLabel,
-  secondaryLabel = 'Recovered',
-  scope,
-  basisLabel,
-  idleDetail,
-  formatValue,
-  formatAxisValue = formatValue,
-  table,
-}: DashboardPositionChartProps) {
+const mono = "'IBM Plex Mono', ui-monospace, monospace";
+
+export function DashboardPositionChart({ data, secondary, comparison, metricLabel, secondaryLabel = 'Recovered', scope, basisLabel, idleDetail, formatValue, formatAxisValue = formatValue, table }: Props) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [pinnedKey, setPinnedKey] = useState<string | null>(null);
   const [rovingIndex, setRovingIndex] = useState(0);
-  const [keyboardAnnouncement, setKeyboardAnnouncement] = useState('');
+  const [announcement, setAnnouncement] = useState('');
   const [tableOpen, setTableOpen] = useState(false);
   const focusTableAfterOpen = useRef(false);
   const tableSummaryRef = useRef<HTMLElement | null>(null);
   const bucketRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const instructionsId = `dashboard-timeline-instructions-${metricLabel.toLowerCase().replaceAll(' ', '-')}`;
-  const values = data.flatMap((bucket, index) => [
-    bucket.currentMinor,
-    bucket.previousMinor,
-    secondary?.[index] ?? null,
-  ]).filter((value): value is number => value != null);
+  const values = data.flatMap((bucket, index) => [bucket.currentMinor, bucket.previousMinor, secondary?.[index] ?? null]).filter((value): value is number => value != null);
   const ceiling = niceCeiling(Math.max(0, ...values));
-  const peakIndex = data.reduce((best, bucket, index) => {
-    const value = bucket.currentMinor;
-    if (value == null || value <= 0) return best;
-    const bestValue = best === -1 ? -1 : data[best]?.currentMinor ?? -1;
-    return value > bestValue ? index : best;
-  }, -1);
+  const peakIndex = data.reduce((best, bucket, index) => (bucket.currentMinor ?? 0) > (best < 0 ? -1 : data[best].currentMinor ?? -1) ? index : best, -1);
   const peak = peakIndex >= 0 ? data[peakIndex] : null;
-  const segments = useMemo(() => lineSegments(data, ceiling), [ceiling, data]);
+  const segments = useMemo(() => lineSegments(data, ceiling), [data, ceiling]);
   const selectedKey = pinnedKey ?? activeKey;
-  const readout: Readout | null = selectedKey == null
-    ? null
-    : (() => {
-        const index = data.findIndex((bucket) => bucket.key === selectedKey);
-        if (index < 0) return null;
-        return {
-          key: data[index].key,
-          label: data[index].label,
-          current: data[index].currentMinor,
-          secondary: secondary?.[index] ?? null,
-          previous: data[index].previousMinor,
-        };
-      })();
+  const selectedIndex = selectedKey == null ? -1 : data.findIndex((bucket) => bucket.key === selectedKey);
+  const readout = selectedIndex < 0 ? null : { label: data[selectedIndex].label, current: data[selectedIndex].currentMinor, secondary: secondary?.[selectedIndex] ?? null, previous: data[selectedIndex].previousMinor };
 
-  useEffect(() => {
-    setActiveKey(null);
-    setPinnedKey(null);
-    setRovingIndex(0);
-    setKeyboardAnnouncement('');
-  }, [data]);
+  useEffect(() => { setActiveKey(null); setPinnedKey(null); setRovingIndex(0); }, [data]);
+  useEffect(() => { if (tableOpen && focusTableAfterOpen.current) { focusTableAfterOpen.current = false; tableSummaryRef.current?.focus(); } }, [tableOpen]);
 
-  useEffect(() => {
-    if (!tableOpen || !focusTableAfterOpen.current) return;
-    focusTableAfterOpen.current = false;
-    tableSummaryRef.current?.focus();
-  }, [tableOpen]);
-
-  function bucketDescription(index: number): string {
+  function description(index: number) {
     const bucket = data[index];
     const secondaryValue = secondary?.[index] ?? null;
-    return [
-      bucket.label,
-      `${metricLabel} ${formatValue(bucket.currentMinor)}`,
-      secondaryValue != null ? `${secondaryLabel} ${formatValue(secondaryValue)}` : null,
-      comparison && bucket.previousMinor != null
-        ? `Previous period ${formatValue(bucket.previousMinor)}`
-        : null,
-    ].filter(Boolean).join(', ');
+    return [bucket.label, `${metricLabel} ${formatValue(bucket.currentMinor)}`, secondaryValue != null ? `${secondaryLabel} ${formatValue(secondaryValue)}` : null, comparison && bucket.previousMinor != null ? `Previous period ${formatValue(bucket.previousMinor)}` : null].filter(Boolean).join(', ');
   }
 
-  function moveFocus(event: KeyboardEvent<HTMLButtonElement>, index: number) {
-    let nextIndex: number | null = null;
-    if (event.key === 'ArrowLeft') nextIndex = Math.max(0, index - 1);
-    if (event.key === 'ArrowRight') nextIndex = Math.min(data.length - 1, index + 1);
-    if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = data.length - 1;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      setPinnedKey(null);
-      setKeyboardAnnouncement('Pinned period cleared. Showing the selected-period summary.');
-      return;
-    }
-    if (nextIndex == null) return;
-    event.preventDefault();
-    setRovingIndex(nextIndex);
-    bucketRefs.current[nextIndex]?.focus();
-  }
-
-  function togglePin(index: number) {
-    const key = data[index].key;
-    const willPin = pinnedKey !== key;
-    setPinnedKey(willPin ? key : null);
-    setKeyboardAnnouncement(
-      `${willPin ? 'Pinned' : 'Unpinned'} ${bucketDescription(index)}`,
-    );
-  }
-
-  function openTable() {
-    focusTableAfterOpen.current = true;
-    setTableOpen(true);
+  function move(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    let next: number | null = null;
+    if (event.key === 'ArrowLeft') next = Math.max(0, index - 1);
+    if (event.key === 'ArrowRight') next = Math.min(data.length - 1, index + 1);
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = data.length - 1;
+    if (event.key === 'Escape') { event.preventDefault(); setPinnedKey(null); setAnnouncement('Pinned period cleared.'); return; }
+    if (next == null) return;
+    event.preventDefault(); setRovingIndex(next); bucketRefs.current[next]?.focus();
   }
 
   return (
-    <div className={styles.positionTimeline}>
-      <div className={styles.timelineReadout}>
-        <div>
-          <strong>{readout ? readout.label : `${scope} · ${basisLabel}`}</strong>
-          <span>
-            {readout
-              ? `${metricLabel} ${formatValue(readout.current)}`
-              : peak?.currentMinor != null && peak.currentMinor > 0
-                ? `Peak ${formatValue(peak.currentMinor)} · ${peak.label}`
-                : 'No known interval peak in this period'}
-          </span>
-        </div>
-        <div className={styles.timelineReadoutSeries}>
-          {readout ? (
-            <>
-              {readout.secondary != null ? (
-                <span data-tone="observed">{secondaryLabel} {formatValue(readout.secondary)}</span>
-              ) : null}
-              {comparison && readout.previous != null ? (
-                <span data-tone="comparison">Previous {formatValue(readout.previous)}</span>
-              ) : null}
-            </>
-          ) : (
-            <span data-tone="comparison">{idleDetail}</span>
-          )}
-        </div>
-        {table ? (
-          <button type="button" className={styles.timelineDataAction} onClick={openTable}>
-            View data
-          </button>
-        ) : null}
+    <div style={{ display: 'flex', minHeight: 0, flex: 1, flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
+        <div style={{ flex: 1 }}><strong style={{ display: 'block', fontSize: 11.5, fontWeight: 500, color: '#40454a' }}>{readout?.label ?? `${scope} · ${basisLabel}`}</strong><span style={{ fontFamily: mono, fontSize: 10.5, color: '#6f6a63' }}>{readout ? `${metricLabel} ${formatValue(readout.current)}` : peak?.currentMinor != null && peak.currentMinor > 0 ? `Peak ${formatValue(peak.currentMinor)} · ${peak.label}` : 'No known interval peak in this period'}</span></div>
+        <div style={{ display: 'flex', gap: 10, fontFamily: mono, fontSize: 10, color: '#6f6a63' }}>{readout?.secondary != null ? <span>{secondaryLabel} {formatValue(readout.secondary)}</span> : null}{comparison && readout?.previous != null ? <span>Previous {formatValue(readout.previous)}</span> : !readout ? <span>{idleDetail}</span> : null}</div>
+        {table ? <button type="button" onClick={() => { focusTableAfterOpen.current = true; setTableOpen(true); }} style={{ border: 0, background: 'transparent', color: '#9f4f08', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}>View data</button> : null}
       </div>
-
-      <p id={instructionsId} className="sr-only">
-        Use Left and Right Arrow to inspect periods, Home and End to jump, Enter
-        or Space to pin a period, and Escape to clear it.
-      </p>
-      <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {keyboardAnnouncement}
-      </span>
-
-      <div
-        className={styles.timelinePlot}
-        style={{ '--uo-route-dashboard-bucket-count': data.length } as CSSProperties}
-        role="group"
-        data-testid="financial-plot"
-        aria-label={`${metricLabel} timeline — ${scope}`}
-        aria-describedby={instructionsId}
-        onMouseLeave={() => setActiveKey(null)}
-      >
-        <div className={styles.timelineAxis} aria-hidden="true">
-          <span>{formatAxisValue(ceiling)}</span>
-          <span>{formatAxisValue(ceiling / 2)}</span>
-          <span>{formatAxisValue(0)}</span>
-        </div>
-        <div className={styles.timelineGrid} aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </div>
-
-        {comparison && segments.length > 0 ? (
-          <svg
-            className={styles.comparisonLine}
-            viewBox="0 0 1000 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            {segments.map((points) => (
-              <polyline key={points} points={points} vectorEffect="non-scaling-stroke" />
-            ))}
-          </svg>
-        ) : null}
-
-        <div className={styles.timelineBuckets}>
+      <p id={instructionsId} className="sr-only">Use Left and Right Arrow to inspect periods, Home and End to jump, Enter or Space to pin a period, and Escape to clear it.</p>
+      <span className="sr-only" aria-live="polite">{announcement}</span>
+      <div data-testid="financial-plot" role="group" aria-label={`${metricLabel} timeline — ${scope}`} aria-describedby={instructionsId} onMouseLeave={() => setActiveKey(null)} style={{ position: 'relative', minHeight: 150, flex: 1, marginLeft: 42 }}>
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>{[ceiling, ceiling / 2, 0].map((value) => <div key={value} style={{ position: 'relative', borderTop: '1px solid #eae8e5' }}><span style={{ position: 'absolute', right: 'calc(100% + 8px)', top: -6, fontFamily: mono, fontSize: 9.5, color: '#6f6a63', whiteSpace: 'nowrap' }}>{formatAxisValue(value)}</span></div>)}</div>
+        {comparison && segments.length ? <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>{segments.map((points) => <polyline key={points} points={points} fill="none" stroke="#a7abad" strokeWidth="1.2" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />)}</svg> : null}
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, data.length)}, minmax(0, 1fr))`, alignItems: 'end', gap: data.length > 30 ? 2 : 5 }}>
           {data.map((bucket, index) => {
-            const currentPercent = bucket.currentMinor == null
-              ? 0
-              : Math.max(1.5, (bucket.currentMinor / ceiling) * 100);
+            const currentHeight = bucket.currentMinor == null ? 0 : Math.max(2, bucket.currentMinor / ceiling * 100);
             const secondaryValue = secondary?.[index] ?? null;
-            const secondaryPercent = secondaryValue == null
-              ? 0
-              : Math.max(1.5, (secondaryValue / ceiling) * 100);
-            const showLabel = index === 0
-              || index === data.length - 1
-              || index % Math.max(1, Math.ceil(data.length / 5)) === 0;
-            const isSelected = selectedKey === bucket.key;
-            const style = {
-              '--uo-route-dashboard-timeline-current-scale': currentPercent / 100,
-              '--uo-route-dashboard-timeline-secondary-scale': secondaryPercent / 100,
-            } as CSSProperties;
-
-            return (
-              <button
-                key={bucket.key}
-                ref={(node) => { bucketRefs.current[index] = node; }}
-                type="button"
-                className={styles.timelineBucket}
-                style={style}
-                tabIndex={index === rovingIndex ? 0 : -1}
-                aria-label={bucketDescription(index)}
-                aria-pressed={pinnedKey === bucket.key}
-                data-selected={isSelected ? 'true' : undefined}
-                onMouseEnter={() => setActiveKey(bucket.key)}
-                onFocus={() => {
-                  setRovingIndex(index);
-                  setActiveKey(bucket.key);
-                }}
-                onBlur={() => setActiveKey(null)}
-                onKeyDown={(event) => moveFocus(event, index)}
-                onClick={() => togglePin(index)}
-              >
-                {index === peakIndex && bucket.currentMinor != null && bucket.currentMinor > 0 ? (
-                  <span
-                    className={styles.peakLabel}
-                    data-edge={index === 0 ? 'start' : index === data.length - 1 ? 'end' : undefined}
-                  >
-                    {bucket.label} · {formatValue(bucket.currentMinor)}
-                  </span>
-                ) : null}
-                <span className={styles.timelineBarSet} aria-hidden="true">
-                  <i className={styles.timelinePrimaryBar} data-series="active" />
-                  {secondaryValue != null ? <i className={styles.timelineSecondaryBar} data-series="observed" /> : null}
-                </span>
-                <span
-                  className={styles.timelineBucketLabel}
-                  data-visible={showLabel || isSelected ? 'true' : undefined}
-                  data-near-end={index === data.length - 2 ? 'true' : undefined}
-                  data-selected={isSelected ? 'true' : undefined}
-                  aria-hidden="true"
-                >
-                  {bucket.label}
-                </span>
-              </button>
-            );
+            const secondaryHeight = secondaryValue == null ? 0 : Math.max(2, secondaryValue / ceiling * 100);
+            const selected = selectedKey === bucket.key;
+            const showLabel = index === 0 || index === data.length - 1 || index % Math.max(1, Math.ceil(data.length / 5)) === 0;
+            return <button key={bucket.key} ref={(node) => { bucketRefs.current[index] = node; }} type="button" tabIndex={index === rovingIndex ? 0 : -1} aria-label={description(index)} aria-pressed={pinnedKey === bucket.key} onMouseEnter={() => setActiveKey(bucket.key)} onFocus={() => { setRovingIndex(index); setActiveKey(bucket.key); }} onBlur={() => setActiveKey(null)} onKeyDown={(event) => move(event, index)} onClick={() => { const pin = pinnedKey !== bucket.key; setPinnedKey(pin ? bucket.key : null); setAnnouncement(`${pin ? 'Pinned' : 'Unpinned'} ${description(index)}`); }} style={{ position: 'relative', height: '100%', border: 0, borderRadius: 6, background: selected ? '#f4f3f1' : 'transparent', padding: '0 2px', cursor: 'crosshair' }}>
+              <span aria-hidden="true" style={{ position: 'absolute', inset: '0 2px 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 2 }}><i style={{ width: '38%', height: `${currentHeight}%`, minHeight: bucket.currentMinor == null ? 0 : 2, borderRadius: '4px 4px 1px 1px', background: '#ff7a30' }} />{secondaryValue != null ? <i style={{ width: '30%', height: `${secondaryHeight}%`, minHeight: 2, borderRadius: '4px 4px 1px 1px', background: '#4a90d9' }} /> : null}</span>
+              {showLabel || selected ? <span aria-hidden="true" style={{ position: 'absolute', top: 'calc(100% + 7px)', left: '50%', transform: 'translateX(-50%)', fontFamily: mono, fontSize: 9, color: selected ? '#1c1f23' : '#6f6a63', whiteSpace: 'nowrap' }}>{bucket.label}</span> : null}
+            </button>;
           })}
         </div>
       </div>
-
-      <div className={styles.timelineLegend} aria-label="Chart legend">
-        <span><i data-tone="primary" />{metricLabel}</span>
-        {secondary ? <span><i data-tone="observed" />{secondaryLabel}</span> : null}
-        {comparison ? <span><i data-tone="comparison" />Previous period</span> : null}
-      </div>
-
-      {table ? (
-        <ChartDataTable
-          model={table}
-          open={tableOpen}
-          onOpenChange={setTableOpen}
-          summaryRef={tableSummaryRef}
-        />
-      ) : null}
+      <div aria-label="Chart legend" style={{ display: 'flex', gap: 16, marginTop: 23, fontSize: 10.5, color: '#64686d' }}><span><i style={{ display: 'inline-block', width: 14, height: 2, marginRight: 6, background: '#ff7a30', verticalAlign: 'middle' }} />{metricLabel}</span>{secondary ? <span><i style={{ display: 'inline-block', width: 14, height: 2, marginRight: 6, background: '#4a90d9', verticalAlign: 'middle' }} />{secondaryLabel}</span> : null}{comparison ? <span><i style={{ display: 'inline-block', width: 14, height: 1, marginRight: 6, borderTop: '1px dashed #6f6a63', verticalAlign: 'middle' }} />Previous period</span> : null}</div>
+      {table ? <ChartDataTable model={table} open={tableOpen} onOpenChange={setTableOpen} summaryRef={tableSummaryRef} /> : null}
     </div>
   );
 }

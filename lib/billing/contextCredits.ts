@@ -63,6 +63,9 @@ export const PLAN_CONTEXT_CREDITS: Record<Tier, number | null> = {
   pro: planCreditsFromTierConfig('pro'),
   growth: planCreditsFromTierConfig('growth'),
   enterprise: planCreditsFromTierConfig('enterprise'),
+  core_2026: planCreditsFromTierConfig('core_2026'),
+  scale_2026: planCreditsFromTierConfig('scale_2026'),
+  enterprise_2026: planCreditsFromTierConfig('enterprise_2026'),
 };
 
 export const CONTEXT_BILLABLE_EVENT: Record<ContextUnlockType, BillableEventId> = {

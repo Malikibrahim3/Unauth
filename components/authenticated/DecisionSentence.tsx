@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import styles from './DecisionLedger.module.css';
 
 export function DecisionSentence({ children }: { children: ReactNode }) {
-  return <p className={styles.decisionLine}>{children}</p>;
+  return <p style={{ margin: 0, color: '#40454a', font: "400 12.5px/1.55 'Inter',sans-serif" }}>{children}</p>;
 }

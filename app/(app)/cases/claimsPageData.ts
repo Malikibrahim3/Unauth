@@ -60,6 +60,8 @@ export type ClaimRow = {
   source_ticket_ref?: string | null;
   claim_type: string;
   status: string;
+  /** Optimistic-concurrency version used by assignment and bulk actions. */
+  state_version?: number;
   amount_at_risk: number | null;
   total_estimated_loss?: number | null;
   currency: string | null;

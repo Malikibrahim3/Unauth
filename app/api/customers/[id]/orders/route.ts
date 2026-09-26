@@ -39,7 +39,7 @@ async function GETHandler(
 
   let orderQuery = service
     .from(TABLES.SOURCE_ORDERS)
-    .select('id, external_id, order_number, placed_at, total_price, currency')
+    .select('id, external_id, order_number, placed_at, total_price, currency, source, source_name, source_account_id, updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (merchantCustomerId || canonical?.id) {
     orderQuery = orderQuery.eq('merchant_customer_id', merchantCustomerId ?? customerId);
@@ -58,6 +58,10 @@ async function GETHandler(
     placed_at: string | null;
     total_price: number | string | null;
     currency: string | null;
+    source: string | null;
+    source_name: string | null;
+    source_account_id: string | null;
+    updated_at: string | null;
   }>;
   const orderIds = orders.map((order) => order.id);
   const { data: claimData } = orderIds.length > 0
@@ -92,6 +96,11 @@ async function GETHandler(
       processed_at: order.placed_at ?? new Date(0).toISOString(),
       order_value: order.total_price == null ? null : Number(order.total_price),
       currency: order.currency,
+      source: order.source,
+      source_name: order.source_name,
+      source_account_id: order.source_account_id,
+      immutable_id: order.id,
+      source_updated_at: order.updated_at,
       refund_claimed: claimedOrderIds.has(order.id),
     })),
   });

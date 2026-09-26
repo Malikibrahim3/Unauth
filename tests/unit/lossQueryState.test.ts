@@ -31,6 +31,21 @@ describe('loss URL scope', () => {
     }).map((row) => row.id)).toEqual(['newer']);
   });
 
+  it('includes the start and excludes the end of the financial population', () => {
+    const rows = [
+      { ...base, id: 'inside', source: 'carrier', realisedLossMinor: 400, effectiveAt: '2026-08-31T23:59:59.999Z' },
+      { ...base, id: 'boundary', source: 'carrier', realisedLossMinor: 900, effectiveAt: '2026-09-01T00:00:00.000Z' },
+    ];
+    expect(filterAndSortLossRows(rows, {
+      fromInclusive: '2026-08-01T00:00:00.000Z',
+      toExclusive: '2026-09-01T00:00:00.000Z',
+      source: null,
+      status: 'all',
+      search: null,
+      sort: 'updated_desc',
+    }).map((row) => row.id)).toEqual(['inside']);
+  });
+
   it('qualifies a known zero when another represented row remains unavailable', () => {
     expect(summarizeLossMinor([
       { currency: 'GBP', writtenOff: false, amount: 0 },

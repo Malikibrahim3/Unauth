@@ -13,11 +13,11 @@ import { type StatusTone } from './StatusBadge';
  */
 
 const DOT: Record<StatusTone, string> = {
-  neutral: 'var(--uo-route-text-tertiary)',
-  info: 'var(--uo-route-info)',
-  warning: 'var(--uo-route-warning)',
-  success: 'var(--uo-route-success)',
-  danger: 'var(--uo-route-risk-critical)',
+  neutral: '#6f6a63',
+  info: '#247388',
+  warning: '#7a5310',
+  success: '#1a6b43',
+  danger: '#b0431a',
 };
 
 export interface SummaryRailRow {
@@ -45,11 +45,11 @@ export interface SummaryRailSection {
 function Row({ row }: { row: SummaryRailRow }) {
   const dotColour = row.tone ? DOT[row.tone] : undefined;
   const pct = row.bar != null ? Math.max(0, Math.min(1, row.bar)) * 100 : null;
-  const fill = row.barColourVar ? `var(${row.barColourVar})` : (dotColour ?? 'var(--uo-route-action-primary)');
+  const fill = row.barColourVar ? `var(${row.barColourVar})` : (dotColour ?? '#9f4f08');
 
   const head = (
     <div className="flex items-center justify-between gap-3">
-      <span className="flex min-w-0 items-center gap-2" style={{ color: 'var(--uo-route-text-secondary)', fontSize: 12 }}>
+      <span className="flex min-w-0 items-center gap-2" style={{ color: '#64686d', fontSize: 12 }}>
         {dotColour ? (
           <span
             aria-hidden="true"
@@ -62,7 +62,7 @@ function Row({ row }: { row: SummaryRailRow }) {
       {row.value != null ? (
         <span
           className="shrink-0 tabular-nums"
-          style={{ color: 'var(--uo-route-text-primary)', fontSize: 12, fontWeight: 600, fontFamily: 'var(--uo-route-font-sans)', fontVariantNumeric: 'tabular-nums' }}
+          style={{ color: '#1c1f23', fontSize: 12, fontWeight: 600, fontFamily: 'Inter,ui-sans-serif,system-ui,sans-serif', fontVariantNumeric: 'tabular-nums' }}
         >
           {row.value}
         </span>
@@ -76,9 +76,9 @@ function Row({ row }: { row: SummaryRailRow }) {
       {pct != null ? (
         <div
           className="mt-1.5 overflow-hidden"
-          style={{ height: 8, borderRadius: 'var(--uo-route-radius-round)', background: 'var(--uo-route-chart-track)' }}
+          style={{ height: 8, borderRadius: '999px', background: '#40454a' }}
         >
-          <div style={{ width: `${pct}%`, height: '100%', background: fill, borderRadius: 'var(--uo-route-radius-round)' }} />
+          <div style={{ width: `${pct}%`, height: '100%', background: fill, borderRadius: '999px' }} />
         </div>
       ) : null}
     </>
@@ -88,7 +88,7 @@ function Row({ row }: { row: SummaryRailRow }) {
     return (
       <Link
         href={row.href}
-        className="-mx-1.5 block rounded-[var(--uo-route-radius-control)] px-1.5 py-1 hover:bg-[var(--uo-route-surface-muted)] focus-visible:shadow-[inset_var(--uo-route-shadow-focus)] focus-visible:outline-none"
+        className="-mx-1.5 block rounded-[8px] px-1.5 py-1 hover:bg-[#f4f3f1] focus-visible:shadow-[inset_0 0 0 2px rgba(201,106,18,.24)] focus-visible:outline-none"
       >
         {body}
       </Link>
@@ -105,13 +105,13 @@ export function SummaryRail({ sections, className }: { sections: SummaryRailSect
           key={section.title}
           style={{
             padding: 14,
-            border: '1px solid var(--uo-route-border-default)',
-            borderRadius: 'var(--uo-route-radius-surface)',
-            background: 'var(--uo-route-surface-primary)',
+            border: '1px solid #e4e3e0',
+            borderRadius: '12px',
+            background: '#fff',
             boxShadow: 'none',
           }}
         >
-          <h2 style={{ margin: 0, color: 'var(--uo-route-text-primary)', fontSize: 13, lineHeight: '18px', fontWeight: 600 }}>{section.title}</h2>
+          <h2 style={{ margin: 0, color: '#1c1f23', fontSize: 13, lineHeight: '18px', fontWeight: 600 }}>{section.title}</h2>
           {section.children ? <div className="mt-3">{section.children}</div> : null}
           {section.rows && section.rows.length > 0 ? (
             <div className="mt-3 space-y-2.5">
@@ -121,7 +121,7 @@ export function SummaryRail({ sections, className }: { sections: SummaryRailSect
             </div>
           ) : null}
           {section.footnote ? (
-            <p className="mt-3" style={{ margin: '12px 0 0', color: 'var(--uo-route-text-tertiary)', fontSize: 11, lineHeight: 1.45 }}>
+            <p className="mt-3" style={{ margin: '12px 0 0', color: '#6f6a63', fontSize: 11, lineHeight: 1.45 }}>
               {section.footnote}
             </p>
           ) : null}

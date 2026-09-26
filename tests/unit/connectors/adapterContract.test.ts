@@ -1,5 +1,5 @@
 import { listConnectors } from '@/lib/connectors/registry';
-import { FORBIDDEN_MVP_CAPABILITIES } from '@/lib/connectors/capabilities';
+import { UNRELEASED_ACTION_CAPABILITIES } from '@/lib/connectors/capabilities';
 import { isUnsupported, type ConnectorAdapter } from '@/lib/connectors/types';
 
 const CATEGORIES = new Set([
@@ -23,9 +23,9 @@ describe.each(listConnectors().map((a) => [a.manifest.id, a] as [string, Connect
       expect(m.capabilities.length).toBeGreaterThan(0);
     });
 
-    it('never declares a forbidden MVP+ capability as supported', () => {
+    it('never declares an unreleased action as supported', () => {
       for (const c of m.capabilities) {
-        if (FORBIDDEN_MVP_CAPABILITIES.has(c.id)) {
+        if (UNRELEASED_ACTION_CAPABILITIES.has(c.id)) {
           expect(c.support).toBe('unsupported');
           expect(c.enabledByDefault).toBe(false);
         }

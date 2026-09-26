@@ -26,7 +26,11 @@ export async function fetchSearchResults(query: string, options: SearchFetchOpti
   partialFailures: string[];
   restrictedTypes: SearchApiType[];
   counts: Record<string, number>;
-  total: number;
+  total: number | null;
+  returnedCount: number;
+  coverage: 'complete' | 'partial';
+  sourcesAnswered: string[];
+  sourcesFailed: string[];
   nextCursor: string | null;
 }> {
   const trimmed = query.trim();
@@ -46,17 +50,26 @@ export async function fetchSearchResults(query: string, options: SearchFetchOpti
     partialFailures?: string[];
     restrictedTypes?: SearchApiType[];
     counts?: Record<string, number>;
-    total?: number;
+    total?: number | null;
+    returnedCount?: number;
+    coverage?: 'complete' | 'partial';
+    sourcesAnswered?: string[];
+    sourcesFailed?: string[];
     nextCursor?: string | null;
   };
-  const unifiedResults = data.results ?? [];
+  if (!Array.isArray(data.results)) throw new Error('Search results unavailable');
+  const unifiedResults = data.results;
   return {
     unifiedResults,
     customerResults: unifiedToCustomerResults(unifiedResults),
     partialFailures: data.partialFailures ?? [],
     restrictedTypes: data.restrictedTypes ?? [],
     counts: data.counts ?? { all: unifiedResults.length },
-    total: data.total ?? unifiedResults.length,
+    total: data.total === null ? null : data.total ?? unifiedResults.length,
+    returnedCount: data.returnedCount ?? unifiedResults.length,
+    coverage: data.coverage ?? 'complete',
+    sourcesAnswered: data.sourcesAnswered ?? [],
+    sourcesFailed: data.sourcesFailed ?? [],
     nextCursor: data.nextCursor ?? null,
   };
 }

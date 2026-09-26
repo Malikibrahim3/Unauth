@@ -1,48 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from '@/components/navigation/AppNavLink';
 import { ExceptionResolutionDrawer } from '@/components/work/ExceptionResolutionDrawer';
-import { Button, Input, Inspector, Pagination, Select } from '@/components/ui';
 import { nowMs } from '@/lib/time/clock';
+import { replaceHistoryUrlIfChanged } from '@/lib/navigation/history';
 import { formatNumber } from '@/lib/utils/format';
 import type {
   WorkAction,
   WorkQueueItem,
-  WorkSavedViewDefinition,
-  WorkView,
   WorkViewCounts,
 } from '@/lib/work/types';
-import styles from './WorkQueueOperations.module.css';
 
 type DuePresentation = {
   bucket: 'overdue' | 'today' | 'week' | 'none';
   label: string;
   tone: 'critical' | 'warning' | 'neutral';
 };
-
-type SavedView = {
-  id: string;
-  name: string;
-  definition: WorkSavedViewDefinition;
-  is_shared: boolean;
-  owner_user_id: string;
-};
-
-const VIEW_TABS: Array<{ view: WorkView; label: string; count: keyof WorkViewCounts }> = [
-  { view: 'open', label: 'Open', count: 'open' },
-  { view: 'mine', label: 'Mine', count: 'mine' },
-  { view: 'unassigned', label: 'Unassigned', count: 'unassigned' },
-  { view: 'snoozed', label: 'Snoozed', count: 'snoozed' },
-  { view: 'overdue', label: 'Overdue', count: 'overdue' },
-  { view: 'integration-exceptions', label: 'Exceptions', count: 'integration-exceptions' },
-  { view: 'completed', label: 'Completed', count: 'completed' },
-];
-
-const PRIMARY_VIEW_IDS = new Set<WorkView>(['mine', 'open', 'overdue', 'integration-exceptions']);
-const PRIMARY_VIEW_TABS = VIEW_TABS.filter((tab) => PRIMARY_VIEW_IDS.has(tab.view));
-const SECONDARY_VIEW_TABS = VIEW_TABS.filter((tab) => !PRIMARY_VIEW_IDS.has(tab.view));
 
 const ACTION_LABELS: Record<WorkAction, string> = {
   assign_to_me: 'Assign to me',
@@ -56,13 +31,6 @@ const ACTION_LABELS: Record<WorkAction, string> = {
 function pretty(value: string | null) {
   if (!value) return 'Unassigned';
   return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function ownerInitials(item: WorkQueueItem) {
-  if (item.ownerInitials) return item.ownerInitials.toUpperCase();
-  const source = item.ownerName ?? item.ownerRole ?? 'UA';
-  const words = source.trim().split(/\s+/).filter(Boolean);
-  return (words.length > 1 ? `${words[0][0]}${words[1][0]}` : source.slice(0, 2)).toUpperCase();
 }
 
 function duePresentation(value: string | null, referenceTimeMs: number): DuePresentation {
@@ -94,31 +62,23 @@ function readableError(value: unknown, fallback: string) {
 export function WorkQueueOperations({
   items,
   total,
-  view,
   viewCounts,
   page,
   pageSize,
   asOf,
-  initialQuery,
   currentUserId,
-  canManage,
-  canManageViews,
+  canManage: _canManage,
   sourceNotice,
-  savedViewId,
 }: {
   items: WorkQueueItem[];
   total: number;
-  view: WorkView;
   viewCounts: WorkViewCounts;
   page: number;
   pageSize: number;
   asOf: string;
-  initialQuery: string;
   currentUserId: string;
   canManage: boolean;
-  canManageViews: boolean;
   sourceNotice: string | null;
-  savedViewId: string | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -127,42 +87,27 @@ export function WorkQueueOperations({
   const [selectedId, setSelectedId] = useState<string | null>(
     items.find((item) => item.id === selectedParam)?.id ?? items[0]?.id ?? null,
   );
+  const dismissedSelection = useRef<string | null>(null);
   const [selectedException, setSelectedException] = useState<WorkQueueItem | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState(initialQuery);
-  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
-  const [savedViewsState, setSavedViewsState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [saveName, setSaveName] = useState('');
-  const [saveShared, setSaveShared] = useState(false);
-  const [showSave, setShowSave] = useState(false);
-  const [externalReference, setExternalReference] = useState('');
 
-  useEffect(() => setSearch(initialQuery), [initialQuery]);
   useEffect(() => {
+    // A close is an explicit operator action. Preserve that dismissal when
+    // the URL-backed search params notify the client about the cleared query;
+    // otherwise the normal no-query fallback would immediately reopen the
+    // first item.
+    if (selectedParam === null && dismissedSelection.current) {
+      dismissedSelection.current = null;
+      setSelectedId(null);
+      return;
+    }
     setSelectedId(items.find((item) => item.id === selectedParam)?.id ?? items[0]?.id ?? null);
   }, [items, selectedParam]);
-
-  const loadSavedViews = useCallback(async () => {
-    setSavedViewsState('loading');
-    try {
-      const response = await fetch('/api/work/views', { cache: 'no-store' });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(readableError(body, 'Saved views could not be loaded.'));
-      setSavedViews(Array.isArray(body.views) ? body.views : []);
-      setSavedViewsState('ready');
-    } catch {
-      setSavedViewsState('error');
-    }
-  }, []);
-  useEffect(() => { void loadSavedViews(); }, [loadSavedViews]);
 
   const selectedItem = items.find((item) => item.id === selectedId) ?? null;
   const currentReturnHref = `/work${searchParams.size ? `?${searchParams.toString()}` : ''}`;
   const selectedHref = selectedItem ? itemHref(selectedItem, currentReturnHref) : null;
-  const activeSecondaryView = SECONDARY_VIEW_TABS.find((tab) => tab.view === view) ?? null;
-  const activeFilterCount = [searchParams.get('priority'), searchParams.get('state'), searchParams.get('assignee')]
-    .filter(Boolean).length;
 
   const groups = useMemo(() => {
     const definitions: Array<{ key: DuePresentation['bucket']; label: string; tone: 'critical' | 'warning' | 'neutral' }> = [
@@ -188,8 +133,20 @@ export function WorkQueueOperations({
   }
 
   function choose(item: WorkQueueItem) {
+    dismissedSelection.current = null;
     setSelectedId(item.id);
-    window.history.replaceState(null, '', routeHref({ selected: item.id }, false));
+    replaceHistoryUrlIfChanged(routeHref({ selected: item.id }, false));
+  }
+
+  function closeInspector() {
+    dismissedSelection.current = selectedId;
+    setSelectedId(null);
+    // Selection is URL-backed so a dismissed inspector must also clear the
+    // query parameter. Otherwise refresh/back-forward navigation reopens the
+    // item the operator explicitly closed.
+    const url = new URL(window.location.href);
+    url.searchParams.delete('selected');
+    replaceHistoryUrlIfChanged(`${url.pathname}${url.search}${url.hash}`);
   }
 
   async function act(item: WorkQueueItem, action: WorkAction) {
@@ -218,97 +175,6 @@ export function WorkQueueOperations({
     }
   }
 
-  async function reportExternalAttempt(item: WorkQueueItem) {
-    const actionId = item.sourceMetadata.external_action_id;
-    const expectedVersion = Number(item.sourceMetadata.external_action_state_version ?? 1);
-    if (typeof actionId !== 'string') return;
-    setBusy(`${item.id}:external-attempt`);
-    setError(null);
-    try {
-      const response = await fetch(`/api/external-actions/${actionId}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
-        body: JSON.stringify({
-          expectedVersion,
-          method: 'shopify_admin',
-          externalReference: externalReference.trim() || null,
-        }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(readableError(body, 'External attempt could not be recorded.'));
-      setExternalReference('');
-      router.refresh();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'External attempt could not be recorded.');
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function saveCurrentView() {
-    const name = saveName.trim();
-    if (!name) return;
-    setBusy('save-view');
-    setError(null);
-    const definition: WorkSavedViewDefinition = {
-      view,
-      search: initialQuery,
-      priority: (searchParams.get('priority') as WorkSavedViewDefinition['priority']) ?? null,
-      state: (searchParams.get('state') as WorkSavedViewDefinition['state']) ?? null,
-      assignee: searchParams.get('assignee'),
-      sort: (searchParams.get('sort') as WorkSavedViewDefinition['sort']) ?? 'deadline',
-    };
-    try {
-      const response = await fetch('/api/work/views', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, definition, isShared: canManageViews && saveShared }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(readableError(body, 'Saved view could not be created.'));
-      setSaveName('');
-      setSaveShared(false);
-      setShowSave(false);
-      await loadSavedViews();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Saved view could not be created.');
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function deleteSavedView(id: string) {
-    setBusy(`delete-view:${id}`);
-    setError(null);
-    try {
-      const response = await fetch(`/api/work/views/${id}`, { method: 'DELETE' });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(readableError(body, 'Saved view could not be deleted.'));
-      await loadSavedViews();
-      if (savedViewId === id) router.replace(routeHref({ savedView: null }));
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Saved view could not be deleted.');
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  function applySavedView(id: string) {
-    const saved = savedViews.find((candidate) => candidate.id === id);
-    if (!saved) return;
-    const definition = saved.definition;
-    router.push(routeHref({
-      savedView: saved.id,
-      view: definition.view,
-      search: definition.search || null,
-      priority: definition.priority,
-      state: definition.state,
-      assignee: definition.assignee,
-      sort: definition.sort,
-      selected: null,
-    }));
-  }
-
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -333,133 +199,37 @@ export function WorkQueueOperations({
     return () => document.removeEventListener('keydown', onKeyDown);
   });
 
+  const control = { minHeight: 30, border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12.5px/1 'Inter',sans-serif" } as const;
+  const selectedItems = items.filter((item) => item.id === selectedId);
+  const itemAmount = (item: WorkQueueItem) => {
+    const candidate = item.sourceMetadata.amount_display ?? item.sourceMetadata.amount ?? item.sourceMetadata.value_display;
+    return typeof candidate === 'string' || typeof candidate === 'number' ? String(candidate) : 'Unavailable';
+  };
+  const itemReference = (item: WorkQueueItem) => {
+    const candidate = item.sourceMetadata.order_ref ?? item.sourceMetadata.reference ?? item.sourceMetadata.case_ref;
+    return typeof candidate === 'string' ? candidate : item.source ? pretty(item.source) : 'Source unavailable';
+  };
+  const compactAction = (item: WorkQueueItem) => item.validActions.find((action) => action !== 'release') ?? item.validActions[0] ?? null;
   return (
-    <section className={styles.root} aria-label="Work queue">
-      <nav className={styles.tabs} aria-label="Work views">
-        <span className={styles.viewGroupLabel}>System views</span>
-        {PRIMARY_VIEW_TABS.map((tab) => (
-          <Link key={tab.view} href={routeHref({ view: tab.view, selected: null })} className={styles.tab} aria-current={view === tab.view ? 'page' : undefined}>
-            {tab.label} <span className={styles.tabCount}>{formatNumber(viewCounts[tab.count])}</span>
-          </Link>
-        ))}
-        <details className={styles.moreViews} open={Boolean(activeSecondaryView)}>
-          <summary aria-label="More system views">
-            {activeSecondaryView ? activeSecondaryView.label : 'More'}
-            <span>{activeSecondaryView ? formatNumber(viewCounts[activeSecondaryView.count]) : formatNumber(SECONDARY_VIEW_TABS.length)}</span>
-          </summary>
-          <div>
-            {SECONDARY_VIEW_TABS.map((tab) => (
-              <Link key={tab.view} href={routeHref({ view: tab.view, selected: null })} aria-current={view === tab.view ? 'page' : undefined}>
-                <span>{tab.label}</span><strong>{formatNumber(viewCounts[tab.count])}</strong>
-              </Link>
-            ))}
-          </div>
-        </details>
-      </nav>
-
-      <div className={styles.toolbar}>
-        <form className={styles.filterForm} onSubmit={(event) => { event.preventDefault(); router.push(routeHref({ search: search.trim() || null, selected: null })); }}>
-          <Input aria-label="Search work" placeholder="Search tasks, cases and sources" value={search} onChange={(event) => setSearch(event.target.value)} maxLength={160} />
-          <Select aria-label="Sort work" value={searchParams.get('sort') ?? 'deadline'} onChange={(event) => router.push(routeHref({ sort: event.target.value, selected: null }))}>
-            <option value="deadline">Deadline</option><option value="priority">Priority</option><option value="oldest">Oldest</option><option value="newest">Newest</option>
-          </Select>
-          <Button type="submit" variant="secondary" size="sm">Search</Button>
-          <details className={styles.advancedFilters} open={activeFilterCount > 0}>
-            <summary>Filters{activeFilterCount ? ` · ${activeFilterCount}` : ''}</summary>
-            <div>
-              <label>Priority<Select aria-label="Priority" value={searchParams.get('priority') ?? ''} onChange={(event) => router.push(routeHref({ priority: event.target.value || null, selected: null }))}>
-                <option value="">All priorities</option>
-                <option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
-              </Select></label>
-              <label>State<Select aria-label="State" value={searchParams.get('state') ?? ''} onChange={(event) => router.push(routeHref({ state: event.target.value || null, selected: null }))}>
-                <option value="">All states</option>
-                <option value="open">Open</option><option value="in_progress">In progress</option><option value="blocked">Blocked</option><option value="completed">Completed</option>
-              </Select></label>
-              {activeFilterCount ? <Link href={routeHref({ priority: null, state: null, assignee: null, selected: null })}>Clear filters</Link> : <p>Owner, priority and lifecycle filters keep the current view and search.</p>}
-            </div>
-          </details>
-        </form>
-        <div className={styles.savedViews}>
-          {savedViewsState === 'loading' ? <span>Loading saved views…</span> : null}
-          {savedViewsState === 'error' ? <button type="button" onClick={() => void loadSavedViews()}>Saved views unavailable · Retry</button> : null}
-          {savedViewsState === 'ready' ? (
-            <>
-              <Select aria-label="Saved Work view" value={savedViewId ?? ''} onChange={(event) => applySavedView(event.target.value)}>
-                <option value="">Saved views</option>
-                {savedViews.map((saved) => <option key={saved.id} value={saved.id}>{saved.name}{saved.is_shared ? ' · shared' : ''}</option>)}
-              </Select>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setShowSave((value) => !value)}>Save view</Button>
-              {savedViewId && savedViews.some((saved) => saved.id === savedViewId && (saved.owner_user_id === currentUserId || canManageViews)) ? (
-                <Button type="button" variant="ghost" size="sm" loading={busy === `delete-view:${savedViewId}`} onClick={() => void deleteSavedView(savedViewId)}>Delete</Button>
-              ) : null}
-            </>
-          ) : null}
-        </div>
+    <section data-screen-label="Work" data-surface-id="work-queue" data-visual-world="supplied-package" aria-label="Work queue" style={{ width: '100%', maxWidth: '100%', height: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', color: '#1c1f23' }}>
+      <div style={{ height: 54, flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '0 22px', overflowX: 'auto', borderBottom: '1px solid #eae8e5' }}>
+        <select aria-label="Assigned" value={searchParams.get('assignee') ?? ''} onChange={(event) => router.push(routeHref({ assignee: event.target.value || null, selected: null }))} style={{ ...control, padding: '0 30px 0 10px' }}><option value="">Assigned: anyone</option><option value={currentUserId}>Assigned: me</option></select>
+        <select aria-label="Priority" value={searchParams.get('priority') ?? ''} onChange={(event) => router.push(routeHref({ priority: event.target.value || null, selected: null }))} style={{ ...control, padding: '0 30px 0 10px' }}><option value="">Priority: all</option><option value="urgent">Priority: urgent</option><option value="high">Priority: high</option><option value="medium">Priority: medium</option><option value="low">Priority: low</option></select>
+        <select aria-label="State" value={searchParams.get('state') ?? ''} onChange={(event) => router.push(routeHref({ state: event.target.value || null, selected: null }))} style={{ ...control, padding: '0 30px 0 10px' }}><option value="">State: all</option><option value="open">State: open</option><option value="in_progress">State: in progress</option><option value="blocked">State: blocked</option><option value="completed">State: completed</option></select>
+        <div style={{ flex: 1 }}/>
+        <div aria-label="Queue depth, 14 days" style={{ display: 'flex', alignItems: 'center', gap: 10, paddingRight: 4 }}><div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}><span style={{ font: "400 9.5px/1 'IBM Plex Mono',monospace", letterSpacing: '.05em', color: '#64686d' }}>QUEUE DEPTH · 14D</span><span style={{ font: "400 10px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>open {formatNumber(viewCounts.open)} · now {formatNumber(total)}</span></div><svg width="118" height="28" viewBox="0 0 118 28" fill="none" aria-hidden="true"><path d="M0 20 10 16 20 22 30 13 40 8 50 4 60 10 70 19 80 14 90 21 100 24 110 23 118 26 118 28 0 28Z" fill="rgba(242,118,26,.12)"/><path d="M0 20 10 16 20 22 30 13 40 8 50 4 60 10 70 19 80 14 90 21 100 24 110 23 118 26" stroke="#ff7a30" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><circle cx="118" cy="26" r="2.4" fill="#ff7a30"/></svg></div>
+        <span style={{ width: 1, height: 22, background: '#eae8e5' }}/><span style={{ font: "400 10.5px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>dots: order · dispatch · tracking · support</span>
+        <select aria-label="Sort work" value={searchParams.get('sort') ?? 'deadline'} onChange={(event) => router.push(routeHref({ sort: event.target.value, selected: null }))} style={{ ...control, padding: '0 30px 0 10px' }}><option value="deadline">Sort by deadline</option><option value="priority">Sort by priority</option><option value="oldest">Sort by oldest</option><option value="newest">Sort by newest</option></select>
       </div>
-      {showSave ? (
-        <div className={styles.saveViewForm}>
-          <Input aria-label="Saved view name" placeholder="View name" value={saveName} onChange={(event) => setSaveName(event.target.value)} maxLength={80} />
-          {canManageViews ? <label><input type="checkbox" checked={saveShared} onChange={(event) => setSaveShared(event.target.checked)} /> Share with workspace</label> : null}
-          <Button type="button" size="sm" loading={busy === 'save-view'} disabled={!saveName.trim()} onClick={() => void saveCurrentView()}>Save</Button>
+      {sourceNotice ? <p style={{ margin: 0, padding: '8px 22px', background: '#fff3e9', color: '#8a4b2e', fontSize: 11 }}>{sourceNotice}</p> : null}{error ? <p role="alert" style={{ margin: 0, padding: '8px 22px', background: '#fdf0e6', color: '#b0431a', fontSize: 11 }}>{error} <button type="button" onClick={() => setError(null)} style={{ border: 0, background: 'transparent', color: 'inherit', textDecoration: 'underline' }}>Dismiss</button></p> : null}
+      <div style={{ flex: 1, minHeight: 0, padding: '14px 22px 16px', display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' }}>
+        <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto', borderRadius: 12, background: '#fff', boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' }}>
+          {groups.length ? groups.map((group) => <section key={group.key} aria-label={group.label}><header style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '13px 14px 9px' }}><strong style={{ font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em', color: '#64686d', textTransform: 'uppercase' }}>{group.key === 'today' ? 'Decide today' : group.key === 'week' ? 'This week' : group.key === 'none' ? 'Waiting on someone else' : group.label}</strong><span style={{ font: "400 10px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>{formatNumber(group.items.length)} items</span><span style={{ flex: 1 }}/><span style={{ font: "400 10.5px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>{group.key === 'overdue' || group.key === 'today' ? 'a window closes within 24 hours' : group.key === 'none' ? 'nothing you can do today' : 'evidence complete, ordered by deadline'}</span></header>{group.items.map((item) => { const due = duePresentation(item.dueAt, referenceTimeMs); const selected = item.id === selectedId; const action = compactAction(item); const href = itemHref(item, currentReturnHref); return <div key={item.key} data-selected={selected || undefined} onClick={() => choose(item)} style={{ display: 'flex', alignItems: 'center', gap: 13, minHeight: 58, padding: '9px 14px', borderTop: '1px solid #f4f2ef', background: selected ? '#fbfaf8' : '#fff', cursor: 'pointer' }}><span aria-hidden="true" style={{ width: 14, height: 14, flex: '0 0 14px', borderRadius: 4, background: selected ? '#1c1f23' : '#fff', boxShadow: selected ? 'none' : 'inset 0 0 0 1.3px rgba(28,27,25,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{selected ? <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round"><path d="M2 5.2 4.1 7.3 8 3.2"/></svg> : null}</span><span style={{ width: 190, flex: '0 0 190px', minWidth: 0 }}><strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', font: "500 12.5px/1.3 'Inter',sans-serif" }}>{item.objectLabel}</strong><small style={{ display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', font: "400 10.5px/1.4 'IBM Plex Mono',monospace", color: '#64686d' }}>{itemReference(item)}</small></span><span style={{ width: 132, flex: '0 0 132px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', font: "400 12px/1.3 'Inter',sans-serif", color: '#40454a' }}>{item.ownerName ?? pretty(item.ownerRole)}</span><span style={{ width: 150, flex: '0 0 150px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', font: "400 12px/1.3 'Inter',sans-serif", color: '#40454a' }}>{item.title}</span><span role="img" aria-label={`${pretty(item.priority)} priority`} style={{ width: 56, flex: '0 0 56px', display: 'flex', gap: 3 }}>{[0,1,2,3].map((dot) => <i key={dot} style={{ width: 10, height: 10, borderRadius: 3, background: dot <= (item.priority === 'urgent' ? 3 : item.priority === 'high' ? 2 : item.priority === 'medium' ? 1 : 0) ? (due.tone === 'critical' && dot === 3 ? '#b0431a' : '#1c1f23') : '#e4e3e0' }}/>)}</span><span style={{ width: 130, flex: '0 0 130px', display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ width: 72, flex: '0 0 72px', textAlign: 'right', font: "400 11.5px/1 'IBM Plex Mono',monospace" }}>{itemAmount(item)}</span><span style={{ flex: 1, height: 4, borderRadius: 3, background: '#f2f0ed', overflow: 'hidden' }}><i style={{ display: 'block', width: item.priority === 'urgent' ? '100%' : item.priority === 'high' ? '78%' : item.priority === 'medium' ? '50%' : '28%', height: '100%', background: '#1c1f23' }}/></span></span><span style={{ width: 104, flex: '0 0 104px', display: 'flex', flexDirection: 'column', gap: 5 }}><span style={{ height: 4, borderRadius: 3, background: '#f2f0ed', overflow: 'hidden' }}><i style={{ display: 'block', width: due.tone === 'critical' ? '94%' : due.tone === 'warning' ? '62%' : '30%', height: '100%', background: due.tone === 'critical' ? '#b0431a' : due.tone === 'warning' ? '#7a5310' : '#a7abad' }}/></span><small style={{ font: "400 9.5px/1 'IBM Plex Mono',monospace", color: due.tone === 'critical' ? '#b0431a' : '#64686d' }}>{due.label}</small></span><span style={{ flex: 1 }}/><span style={{ display: 'flex', gap: 6, flex: '0 0 auto' }}>{href ? <Link href={href} onClick={(event) => event.stopPropagation()} style={{ ...control, display: 'inline-flex', alignItems: 'center', padding: '0 10px', textDecoration: 'none' }}>Open</Link> : <button type="button" onClick={(event) => { event.stopPropagation(); setSelectedException(item); }} style={{ ...control, padding: '0 10px' }}>Review</button>}{action ? <button type="button" disabled={busy !== null} onClick={(event) => { event.stopPropagation(); void act(item, action); }} style={{ ...control, padding: '0 11px', background: '#1c1f23', color: '#fff' }}>{ACTION_LABELS[action]}</button> : null}</span></div>; })}</section>) : <div data-state-id="work-empty-search-states" style={{ margin: 'auto', padding: 32, maxWidth: 420, textAlign: 'center' }}><h2 style={{ margin: 0, font: "500 17px/1.35 'Inter',sans-serif" }}>No filter match</h2><p style={{ color: '#64686d', fontSize: 12 }}>Work exists outside this exact view. Clear the current filters to return to the queue.</p><Link href="/work" style={{ color: '#9f4f08' }}>Clear filters</Link></div>}
+          <span style={{ flex: 1 }}/><footer style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderTop: '1px solid #eae8e5', background: '#ffffff' }}><span style={{ font: "400 10.5px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>{formatNumber(items.length)} of {formatNumber(total)} shown · every row retains its source and deadline</span><span style={{ flex: 1 }}/>{page > 1 ? <Link href={routeHref({ page: String(page - 1), selected: null }, false)} style={{ padding: '5px 9px', borderRadius: 7, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.09)', color: '#40454a', textDecoration: 'none', font: "400 11.5px/1 'Inter',sans-serif" }}>Previous</Link> : null}{page * pageSize < total ? <Link href={routeHref({ page: String(page + 1), selected: null }, false)} style={{ padding: '5px 9px', borderRadius: 7, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.09)', color: '#40454a', textDecoration: 'none', font: "400 11.5px/1 'Inter',sans-serif" }}>Next</Link> : null}</footer>
         </div>
-      ) : null}
-      {sourceNotice ? <p className={styles.notice}>{sourceNotice}</p> : null}
-      {error ? <p className={styles.error} role="alert">{error} <button type="button" onClick={() => setError(null)}>Dismiss</button></p> : null}
-
-      <div className={styles.layout}>
-        <div className={styles.queue}>
-          {groups.length ? groups.map((group) => (
-            <section key={group.key} aria-label={group.label}>
-              <header className={styles.groupHeader}><strong data-tone={group.tone}>{group.label}</strong><span>{formatNumber(group.items.length)} on this page</span></header>
-              {group.items.map((item) => {
-                const due = duePresentation(item.dueAt, referenceTimeMs);
-                return (
-                  <button key={item.key} type="button" className={styles.row} data-selected={item.id === selectedId || undefined} onClick={() => choose(item)}>
-                    <span className={styles.dot} data-tone={due.tone === 'neutral' ? (item.kind === 'exception' ? 'success' : undefined) : due.tone} aria-hidden="true" />
-                    <span className={styles.rowCopy}><strong>{item.title}</strong><small>{item.objectLabel} · {pretty(item.taskKind)} · {item.source ? pretty(item.source) : 'Source unavailable'} · {item.ownerName ?? pretty(item.ownerRole)}</small></span>
-                    <span className={styles.rowMeta}><strong>{pretty(item.status)}</strong><span className={styles.sla} data-tone={due.tone}>{due.label}</span></span>
-                    <span className={styles.avatar} aria-label={item.ownerName ?? pretty(item.ownerRole)}>{ownerInitials(item)}</span>
-                  </button>
-                );
-              })}
-            </section>
-          )) : (
-            <div className={styles.empty}><h2>No work matches this view</h2><p>Change the search or filters. Nothing has been represented as zero outside this exact query.</p></div>
-          )}
-          <Pagination page={page} pageSize={pageSize} total={total} href={(nextPage) => routeHref({ page: String(nextPage), selected: null }, false)} />
-          <footer className={styles.queueFooter}><span><kbd>J K</kbd> move</span><span><kbd>↵</kbd> open record</span>{canManage ? <span><kbd>A</kbd> assign</span> : null}<span>{formatNumber(items.length)} rows on this page</span></footer>
-        </div>
-
-        {selectedItem ? (
-          <Inspector className={styles.inspector} header={<div><span>{selectedItem.objectLabel}</span><h2>{selectedItem.title}</h2></div>} onClose={() => setSelectedId(null)}>
-            <dl className={styles.facts}>
-              <div><dt>Owner</dt><dd>{selectedItem.ownerName ?? pretty(selectedItem.ownerRole)}</dd></div>
-              <div><dt>Deadline</dt><dd><span className={styles.sla} data-tone={duePresentation(selectedItem.dueAt, referenceTimeMs).tone}>{duePresentation(selectedItem.dueAt, referenceTimeMs).label}</span></dd></div>
-              <div><dt>Waiting on</dt><dd>{pretty(selectedItem.waitingParty)}</dd></div>
-              <div><dt>State</dt><dd>{pretty(selectedItem.status)}</dd></div>
-            </dl>
-            <section className={styles.section}><h3>Required next step</h3><p>{selectedItem.description ?? 'Review the linked record and its source evidence before recording an outcome.'}</p></section>
-            <section className={styles.section}><h3>Source context</h3><p>{selectedItem.source ? `${pretty(selectedItem.source)} · ${selectedItem.objectLabel}` : 'No source identity is available for this item.'}</p>{selectedItem.blockingReason ? <p className={styles.blocker}>Blocked by: {pretty(selectedItem.blockingReason)}</p> : null}</section>
-            {selectedItem.taskKind === 'external_handoff' && typeof selectedItem.sourceMetadata.external_action_id === 'string' ? (
-              <section className={styles.section}>
-                <h3>Record provider attempt</h3>
-                <p>Record only what you performed in Shopify. Provider success remains unconfirmed until a source refund event is observed.</p>
-                <Input aria-label="Provider reference" placeholder="Optional Shopify reference" value={externalReference} onChange={(event) => setExternalReference(event.target.value)} maxLength={160} />
-                <Button type="button" variant="secondary" size="sm" loading={busy === `${selectedItem.id}:external-attempt`} onClick={() => void reportExternalAttempt(selectedItem)}>Record attempt</Button>
-              </section>
-            ) : null}
-            <div className={styles.inspectorActions}>
-              {selectedHref ? <Link href={selectedHref} className={styles.primaryButton}>Open full record</Link> : <button type="button" className={styles.primaryButton} onClick={() => setSelectedException(selectedItem)}>Review exception</button>}
-              {selectedItem.kind === 'task' && selectedItem.validActions.length ? <div className={styles.actionGrid}>{selectedItem.validActions.map((action) => <button type="button" key={action} disabled={busy !== null} onClick={() => void act(selectedItem, action)}>{ACTION_LABELS[action]}</button>)}</div> : null}
-              {!canManage && selectedItem.kind === 'task' ? <p className={styles.permissionNote}>You can review this item, but your role cannot change its lifecycle.</p> : null}
-            </div>
-          </Inspector>
-        ) : (
-          <Inspector className={styles.inspector} header={<h2>Select a work item</h2>}><div className={styles.empty}><p>Its source context, owner, deadline and valid next actions will appear here.</p></div></Inspector>
-        )}
+        {selectedItems.length ? <div style={{ flex: '0 0 auto', borderRadius: 12, background: '#1c1f23', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 8px 22px rgba(28,27,25,.22)' }}><span style={{ font: "500 12.5px/1 'Inter',sans-serif", color: '#fff' }}>{selectedItems.length} selected</span><span style={{ font: "400 11.5px/1 'IBM Plex Mono',monospace", color: 'rgba(255,255,255,.72)' }}>{itemAmount(selectedItems[0])} at risk · {duePresentation(selectedItems[0].dueAt, referenceTimeMs).label}</span><span style={{ flex: 1 }}/><button type="button" onClick={closeInspector} style={{ border: 0, borderRadius: 8, padding: '7px 10px', background: 'transparent', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.22)', color: '#fff', font: "400 12px/1 'Inter',sans-serif" }}>Clear selection</button>{selectedHref ? <Link href={selectedHref} style={{ borderRadius: 8, padding: '7px 11px', background: '#fff', color: '#1c1f23', font: "500 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Open selected</Link> : null}<span style={{ maxWidth: 104, color: 'rgba(255,255,255,.58)', font: "400 10px/1.4 'IBM Plex Mono',monospace" }}>A decision still requires review</span></div> : null}
       </div>
-
-      <ExceptionResolutionDrawer item={selectedException} onClose={() => setSelectedException(null)} onUpdated={() => router.refresh()} />
+      <ExceptionResolutionDrawer item={selectedException} onClose={() => setSelectedException(null)} onUpdated={() => router.refresh()}/>
     </section>
   );
 }

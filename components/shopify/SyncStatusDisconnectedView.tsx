@@ -45,12 +45,12 @@ export function SyncStatusDisconnectedView({
   if (variant === 'inline') {
     return (
       <>
-        <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: 'var(--uo-route-border-default)' }}>
+        <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: '#e4e3e0' }}>
           <button
             type="button"
             onClick={onOpenModal}
-            className="ua-text-working-title inline-flex items-center rounded-md px-3 py-1.5"
-            style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
+            className="font-medium text-[13px] leading-5 text-[#1c1f23] inline-flex items-center rounded-md px-3 py-1.5"
+            style={{ background: '#9f4f08', color: '#fff' }}
             data-testid="open-connect-shopify-modal"
           >
             {actionLabel}
@@ -67,7 +67,7 @@ export function SyncStatusDisconnectedView({
     <>
       <div
         className="rounded-md p-5 border space-y-4"
-        style={{ borderColor: 'var(--uo-route-border-subtle)', background: 'var(--uo-route-surface-primary)' }}
+        style={{ borderColor: '#eae8e5', background: '#fff' }}
       >
         <div className="flex items-start gap-3">
           <div
@@ -75,22 +75,22 @@ export function SyncStatusDisconnectedView({
             style={{
               background:
                 linkState === 'installed_unlinked'
-                  ? 'var(--uo-route-confidence-low)'
-                  : 'var(--uo-route-text-secondary)',
+                  ? '#7a5310'
+                  : '#64686d',
             }}
           />
           <div className="flex-1 min-w-0">
-            <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
+            <p className="font-medium text-[13px] leading-5 text-[#1c1f23]" style={{ color: '#1c1f23' }}>
               {title}
             </p>
-            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--uo-route-text-secondary)' }}>
+            <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-0.5" style={{ color: '#64686d' }}>
               {description}
             </p>
             <button
               type="button"
               onClick={onOpenModal}
-              className="ua-text-working-title inline-flex items-center mt-3 rounded-md px-3 py-1.5"
-            style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
+              className="font-medium text-[13px] leading-5 text-[#1c1f23] inline-flex items-center mt-3 rounded-md px-3 py-1.5"
+            style={{ background: '#9f4f08', color: '#fff' }}
               data-testid="open-connect-shopify-modal"
             >
               {actionLabel}

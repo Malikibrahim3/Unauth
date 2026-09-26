@@ -309,9 +309,9 @@ const DEFAULT_APP_DESTINATIONS: Array<{ permission: Permission; href: string }> 
 export async function resolveDefaultAppPath(
   serviceClient: SupabaseClient,
   userId: string,
-  options: { exclude?: string[] } = {},
+  options: { exclude?: string[]; selectedMerchantId?: string | null } = {},
 ): Promise<string> {
-  const ctx = await resolveCallerContext(serviceClient, userId);
+  const ctx = await resolveCallerContext(serviceClient, userId, options.selectedMerchantId);
   if (!ctx) return '/onboarding';
 
   const excluded = new Set(options.exclude ?? []);

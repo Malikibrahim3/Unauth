@@ -1,12 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-import { Button, Textarea } from '@/components/ui';
+import Link from '@/components/navigation/AppNavLink';
 import type { OrderOption, PackageIncludeItem, PriorMatchPreview } from '@/components/evidence/evidencePackageFormTypes';
 import { evidencePackageOrderAmount } from '@/components/evidence/evidencePackageOrderAmount';
 import { formatDateAbsolute } from '@/lib/utils/format';
-import { hashId } from '@/lib/ui/displayRef';
-import styles from './EvidencePackageOperations.module.css';
 
 type Props = {
   profileId: string;
@@ -25,20 +22,55 @@ type Props = {
   onCancel?: () => void;
 };
 
+const mono = "'IBM Plex Mono',monospace";
+const card = { background: '#fff', borderRadius: 10, boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' } as const;
+
 function availabilityDetail(item: PackageIncludeItem, priorMatch: PriorMatchPreview, checking: boolean) {
   if (item.pending || checking) return 'Checking the recorded source coverage';
   if (item.label.toLowerCase().includes('prior matching')) {
     return priorMatch === 'likely' ? 'Observed in retained customer records' : priorMatch === 'unlikely' ? 'No matching transaction was observed' : 'Source result unavailable';
   }
-  if (item.optional) return item.available ? 'Merchant note will be included' : 'Optional · add a note below';
+  if (item.optional) return item.available ? 'Merchant-authored context is held' : 'No merchant note is included';
   return item.available ? 'Held in the current customer and order records' : 'Unavailable · no supporting source record';
+}
+
+function Check({ selected }: { selected: boolean }) {
+  return (
+    <span style={{ width: 15, height: 15, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, background: selected ? '#1c1f23' : '#fff', boxShadow: selected ? 'none' : 'inset 0 0 0 1.5px #ddd8d1' }} aria-hidden="true">
+      {selected ? <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round"><path d="M2 5.2 4.1 7.3 8 3.2" /></svg> : null}
+    </span>
+  );
+}
+
+function InclusionRow({ item, priorMatchPreview, priorMatchChecking }: { item: PackageIncludeItem; priorMatchPreview: PriorMatchPreview; priorMatchChecking: boolean }) {
+  const selected = item.available;
+  const unavailable = !item.available && !item.optional && !item.pending;
+  const status = item.pending || priorMatchChecking
+    ? { label: 'CHECKING', background: '#f4f3f1', color: '#64686d' }
+    : selected
+      ? { label: 'HELD', background: '#eef6f1', color: '#1a6b43' }
+      : unavailable
+        ? { label: 'UNAVAILABLE', background: '#fdf0e6', color: '#b0431a' }
+        : { label: 'NOT INCLUDED', background: '#f4f3f1', color: '#64686d' };
+  return (
+    <div style={{ padding: '10px 0', display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid #f4f2ef', opacity: unavailable ? .6 : 1 }}>
+      <Check selected={selected} />
+      <div style={{ flex: 1, minWidth: 0 }}><div style={{ color: '#1c1f23', font: "500 12px/1.4 'Inter',sans-serif" }}>{item.label}</div><div style={{ marginTop: 2, color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>{availabilityDetail(item, priorMatchPreview, priorMatchChecking)} · {item.packEffect}</div>{!selected && item.repairHref ? <Link href={item.repairHref} style={{ display: 'inline-block', marginTop: 3, color: '#9f4f08', font: "500 10.5px/1.4 'Inter',sans-serif" }}>Review source</Link> : null}</div>
+      <span style={{ width: 110, flex: 'none', color: '#64686d', font: `400 10.5px/1.4 ${mono}` }}>{item.source}<br/>{item.freshness}</span>
+      <span style={{ width: 104, flex: 'none', textAlign: 'right' }}><span style={{ padding: '2px 7px', borderRadius: 5, background: status.background, color: status.color, font: "500 10px/1.5 'Inter',sans-serif" }}>{status.label}</span></span>
+    </div>
+  );
+}
+
+function Fact({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'neutral' | 'positive' | 'warning' }) {
+  return <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ flex: 1, color: '#64686d', font: "400 11.5px/1.5 'Inter',sans-serif" }}>{label}</span><span style={{ color: tone === 'positive' ? '#1a6b43' : tone === 'warning' ? '#7a5310' : '#40454a', font: `400 11.5px/1.5 ${mono}`, textAlign: 'right' }}>{value}</span></div>;
 }
 
 export function EvidencePackageFormFields({
   profileId,
   orders,
   selectedOrderId,
-  notes,
+  notes: _notes,
   loading,
   error,
   priorMatchPreview,
@@ -46,90 +78,73 @@ export function EvidencePackageFormFields({
   packageIncludes,
   canSubmit,
   onOrderChange,
-  onNotesChange,
+  onNotesChange: _onNotesChange,
   onSubmit,
   onCancel,
 }: Props) {
   const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
-  const availableItems = packageIncludes.filter((item) => item.available).length;
-  const unavailableItems = packageIncludes.filter((item) => !item.available && !item.optional).length;
-  const unselectedItems = packageIncludes.filter((item) => item.optional && !item.available).length;
-  const customerRef = `Customer ${hashId(profileId)}`;
-  const selectedAmount = selectedOrder ? evidencePackageOrderAmount({ amount: selectedOrder.order_value, currency: selectedOrder.currency }) : 'Amount unavailable';
+  const selectedCount = packageIncludes.filter((item) => item.available).length;
+  const unavailableCount = packageIncludes.filter((item) => !item.available && !item.optional).length;
 
   return (
-    <form id="evidence-package-form" onSubmit={onSubmit} className={styles.stack} data-operations-surface="evidence-package">
-      <div className={styles.builderGrid}>
-        <section className={styles.card} id="select-order" aria-labelledby="select-order-title">
-          <header><h2 id="select-order-title">1 · Select the order</h2><p>Choose the recorded order this evidence package will support.</p></header>
-          <div className={styles.choiceList}>
-            {orders.map((order) => {
-              const selectable = order.refund_claimed || order.id === selectedOrderId;
-              const selected = order.id === selectedOrderId;
-              return (
-                <button key={order.id} type="button" className={styles.choice} data-selected={selected} data-state={selectable ? 'available' : 'unavailable'} disabled={!selectable} onClick={() => onOrderChange(order.id)}>
-                  <i className={styles.radio} aria-hidden="true" />
-                  <span className={styles.choiceCopy}><strong className={styles.mono}>{order.order_id}</strong><small>{formatDateAbsolute(order.processed_at)} · {order.refund_claimed ? 'recorded refund claim or dispute' : 'no recorded problem'}</small></span>
-                  <b>{evidencePackageOrderAmount({ amount: order.order_value, currency: order.currency })}</b>
-                </button>
-              );
-            })}
-          </div>
-          <p className={styles.footnote}>{orders.filter((order) => !order.refund_claimed && order.id !== selectedOrderId).length} further orders have no recorded problem, so they cannot be packaged. That is not the same as having no history.</p>
-        </section>
-
-        <section className={styles.card} id="review-evidence" aria-labelledby="review-evidence-title">
-          <header><h2 id="review-evidence-title">2 · Review the evidence</h2><p>Held items retain source and freshness. Unavailable evidence stays visible as a gap.</p></header>
-          <div className={styles.choiceList}>
-            {packageIncludes.map((item) => {
-              const selected = item.available;
-              const unavailable = !item.available && !item.optional && !item.pending;
-              return <div key={item.label} className={styles.choice} data-selected={selected} data-state={unavailable ? 'unavailable' : 'available'}><i className={styles.check} aria-hidden="true" /><span className={styles.choiceCopy}><strong>{item.label}</strong><small>{availabilityDetail(item, priorMatchPreview, priorMatchChecking)}</small></span></div>;
-            })}
-            <div className={styles.choice} data-state="unavailable"><i className={styles.check} aria-hidden="true" /><span className={styles.choiceCopy}><strong>Delivery photograph</strong><small>Unavailable — no delivery photograph exists in the connected source records</small></span></div>
-          </div>
-        </section>
-
-        <div className={styles.sideStack}>
-          <section className={styles.card} id="package-summary" aria-labelledby="package-summary-title">
-            <header><h2 id="package-summary-title">3 · Confirm the package</h2><p>Review exactly what will be built before creating the package.</p></header>
-            <dl className={styles.summaryList}>
-              <dt>Package</dt><dd>Draft · identity assigned after build</dd>
-              <dt>For</dt><dd>{selectedOrder ? `${selectedOrder.order_id} · recorded problem` : '— Select an order'}</dd>
-              <dt>Customer</dt><dd>{customerRef}</dd>
-              <dt>Order</dt><dd>{selectedOrder ? `${selectedOrder.order_id} · ${selectedAmount}${selectedOrder.currency ? ` ${selectedOrder.currency}` : ''}` : '— Unavailable'}</dd>
-              <dt>Items included</dt><dd>{availableItems} of {packageIncludes.length + 1} available</dd>
-              <dt>Gaps stated</dt><dd>{unavailableItems + 1} unavailable, {unselectedItems} not selected</dd>
-              <dt>Scope line</dt><dd>{selectedOrder?.currency ?? 'Currency unavailable'} · source records as currently retained</dd>
-            </dl>
-            <div className={styles.disclosure}>The package states that a delivery photograph is unavailable. A reviewer can see the gap was disclosed rather than omitted.</div>
-            <div className={styles.confirmationBoundary}><strong>Before you build</strong><span>This creates an evidence package only. It does not decide the case, contact a provider, submit a recovery, or move money.</span></div>
-            <div className={styles.actions}><Button type="submit" size="sm" disabled={!canSubmit}>{loading ? 'Building package…' : 'Build evidence package'}</Button>{onCancel ? <Button type="button" variant="secondary" size="sm" onClick={onCancel}>Cancel</Button> : <Link href={`/customers/${profileId}`} className="ua-button ua-button--secondary ua-button--sm"><span>Cancel</span></Link>}</div>
-          </section>
-
-          <section className={styles.card}>
-            <header><h2>Where it can be used</h2><p>A package is evidence, not a decision or a claim.</p></header>
-            <div className={styles.useRows}>
-              <div><span>Attach to a case</span><small>Available after build</small></div>
-              <div><span>Submit with a recovery</span><small>Partner requirements remain separately checked</small></div>
-              <div><span>Send to a partner</span><small>External submission is a separate merchant action</small></div>
-              <div><span>Export for review</span><small>Includes the scope line and every source</small></div>
-            </div>
-          </section>
+    <form id="evidence-package-form" onSubmit={onSubmit} style={{ width: '100%', height: '100%', minHeight: 0, padding: '16px 22px 20px', display: 'flex', gap: 14, overflow: 'hidden' }} data-operations-surface="evidence-package">
+      <aside style={{ width: 300, flex: 'none', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 11, overflowY: 'auto' }}>
+        <div style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>WHICH ORDER</div>
+        <div id="select-order" style={{ ...card, padding: '4px 13px 9px', display: 'flex', flexDirection: 'column' }}>
+          {orders.map((order) => {
+            const selectable = order.refund_claimed || order.id === selectedOrderId;
+            const selected = order.id === selectedOrderId;
+            return (
+              <button key={order.id} type="button" disabled={!selectable} onClick={() => onOrderChange(order.id)} style={{ margin: '0 -13px', padding: '10px 13px', display: 'flex', alignItems: 'center', gap: 10, border: 0, borderTop: '1px solid #f4f2ef', background: selected ? '#ffffff' : '#fff', boxShadow: selected ? 'inset 2px 0 0 #ff7a30' : 'none', opacity: selectable ? 1 : .55, color: '#1c1f23', textAlign: 'left', cursor: selectable ? 'pointer' : 'default' }}>
+                <span style={{ width: 13, height: 13, flex: 'none', borderRadius: '50%', boxShadow: selected ? 'inset 0 0 0 4px #1c1f23' : 'inset 0 0 0 1.5px #ddd8d1' }} />
+                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: 'block', color: '#1c1f23', font: `${selected ? 500 : 400} 12px/1.35 ${mono}` }}>{order.order_id}</span><span style={{ display: 'block', marginTop: 3, color: '#64686d', font: "400 10.5px/1.5 'Inter',sans-serif" }}>{order.source_name ?? order.source ?? 'source unavailable'} · {formatDateAbsolute(order.processed_at)} · {evidencePackageOrderAmount({ amount: order.order_value, currency: order.currency })}</span><span style={{ display: 'block', marginTop: 2, color: '#64686d', font: `400 9.5px/1.4 ${mono}` }}>record {order.immutable_id} · account {order.source_account_id ?? 'unavailable'}</span></span>
+                <span style={{ flex: 'none', color: order.refund_claimed ? '#b0431a' : '#64686d', font: `400 10px/1.4 ${mono}` }}>{order.refund_claimed ? 'recorded problem' : 'no case'}</span>
+              </button>
+            );
+          })}
         </div>
+        <div style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>WHY THIS ORDER QUALIFIES</div>
+        <div style={{ ...card, padding: '12px 13px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Fact label="Has a recorded problem" value={selectedOrder?.refund_claimed ? 'yes' : 'no'} tone={selectedOrder?.refund_claimed ? 'positive' : 'neutral'} />
+          <Fact label="Has a disputed delivery" value="unavailable" />
+          <Fact label="Within the claim window" value="unavailable" />
+          <Fact label="Prior signal match" value={priorMatchChecking ? 'checking' : priorMatchPreview === 'likely' ? 'observed' : priorMatchPreview === 'unlikely' ? 'not observed' : 'unavailable'} tone={priorMatchPreview === 'likely' ? 'warning' : 'neutral'} />
+        </div>
+        <div style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>WHERE IT WILL GO</div>
+        <div style={{ ...card, padding: '12px 13px', color: '#64686d', font: "400 11.5px/1.5 'Inter',sans-serif" }}>A package is a file, not a submission. After build it is retained with the customer evidence record; sending it to a carrier or card network is a separate merchant action.</div>
+        <div style={{ flex: 1 }} />
+        <div style={{ paddingTop: 10, borderTop: '1px solid #e4e3e0', color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>Building a package is logged with the source facts currently held and the gaps that remain unavailable.</div>
+        <Link href={`/customers/${profileId}`} style={{ color: '#64686d', font: "400 11px/1.4 'Inter',sans-serif" }}>Back to customer</Link>
+      </aside>
+
+      <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section id="review-evidence" style={{ ...card, flex: 1, minHeight: 0, padding: '12px 16px 10px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }} aria-labelledby="what-to-include-title">
+          <div style={{ paddingBottom: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span id="what-to-include-title" style={{ flex: 1, color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>WHAT TO INCLUDE</span>
+            <span style={{ width: 110, flex: 'none', color: '#64686d', font: "400 9.5px/1 'Inter',sans-serif", letterSpacing: '.06em' }}>SOURCE</span>
+            <span style={{ width: 104, flex: 'none', color: '#64686d', font: "400 9.5px/1 'Inter',sans-serif", letterSpacing: '.06em', textAlign: 'right' }}>AVAILABILITY</span>
+          </div>
+          {packageIncludes.map((item) => <InclusionRow key={item.label} item={item} priorMatchPreview={priorMatchPreview} priorMatchChecking={priorMatchChecking} />)}
+          <div style={{ padding: '10px 0', display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid #f4f2ef', opacity: .6 }}>
+            <Check selected={false} />
+            <div style={{ flex: 1, minWidth: 0 }}><div style={{ color: '#1c1f23', font: "500 12px/1.4 'Inter',sans-serif" }}>Photograph of the delivery point</div><div style={{ marginTop: 2, color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>No delivery photograph is held in the current package source records.</div></div>
+            <span style={{ width: 110, flex: 'none', color: '#64686d', font: `400 10.5px/1.4 ${mono}` }}>carrier source</span>
+            <span style={{ width: 104, flex: 'none', textAlign: 'right' }}><span style={{ padding: '2px 7px', borderRadius: 5, background: '#fdf0e6', color: '#b0431a', font: "500 10px/1.5 'Inter',sans-serif" }}>UNAVAILABLE</span></span>
+          </div>
+          <div style={{ flex: 1 }} />
+          <div style={{ marginTop: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 14, borderRadius: 11, background: '#f4f3f1' }}>
+            <div style={{ flex: 1 }}><div style={{ color: '#1c1f23', font: "500 12.5px/1.4 'Inter',sans-serif" }}>Unavailable evidence stays visible and is deliberately left out</div><div style={{ marginTop: 4, color: '#64686d', font: "400 11.5px/1.55 'Inter',sans-serif" }}>A source gap is useful to you and cannot be presented to a carrier as if it were held. The generated package retains that boundary.</div></div>
+            <span style={{ flex: 'none', color: '#64686d', font: `400 10.5px/1.5 ${mono}` }}>{selectedCount} of {packageIncludes.length + 1} held</span>
+          </div>
+        </section>
+        <section style={{ ...card, flex: 'none', padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ flex: 1 }}><div style={{ color: '#1c1f23', font: "500 12.5px/1.4 'Inter',sans-serif" }}>The package will disclose {unavailableCount + 1} unavailable evidence item{unavailableCount + 1 === 1 ? '' : 's'}</div><div style={{ marginTop: 4, color: '#64686d', font: "400 11.5px/1.5 'Inter',sans-serif" }}>You can review connected sources first, or build now. Building creates evidence only; it does not decide the case, contact a provider, submit a recovery, or move money.</div>{error ? <div role="alert" style={{ marginTop: 6, color: '#b0431a', font: "500 11px/1.4 'Inter',sans-serif" }}>{error}</div> : null}</div>
+          <div style={{ flex: 'none', display: 'flex', gap: 8 }}>
+            {onCancel ? <button type="button" onClick={onCancel} style={{ padding: '7px 12px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12.5px/1 'Inter',sans-serif", cursor: 'pointer' }}>Cancel</button> : <Link href="/sources/connected" style={{ padding: '7px 12px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Review sources first</Link>}
+            <button type="submit" disabled={!canSubmit} style={{ padding: '7px 12px', border: 0, borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12.5px/1 'Inter',sans-serif", cursor: canSubmit ? 'pointer' : 'default', opacity: canSubmit ? 1 : .55 }}>{loading ? 'Building…' : 'Build it anyway'}</button>
+          </div>
+        </section>
       </div>
-
-      <section className={styles.card}>
-        <header><h2>What is still missing, and who can supply it</h2><p>A gap with a named owner is work. A gap with no possible source is a fact about the case.</p></header>
-        <div className={styles.gaps}>
-          <article className={styles.gap}><header><strong>Customer statement</strong><i>Requestable</i></header><p>Ask the customer to confirm the reported problem in writing.</p><small>Owner and due date are recorded when the request is created.</small></article>
-          <article className={styles.gap}><header><strong>Delivery photograph</strong><i data-state="unavailable">Unavailable</i></header><p>No connected source has a delivery photograph for this order.</p><small>It remains a disclosed case fact, not an outstanding task.</small></article>
-          <article className={styles.gap}><header><strong>Merchant note</strong><i>{notes.trim() ? 'Held' : 'Optional'}</i></header><p>{notes.trim() ? 'The merchant note below will be retained in the package.' : 'Add internal context only when it helps the reviewer interpret the source facts.'}</p><small>Notes are merchant-authored and labelled separately from source records.</small></article>
-        </div>
-        <label className={styles.notes}><span>Merchant note · optional · appears in the package · max 500 characters</span><Textarea value={notes} onChange={(event) => onNotesChange(event.target.value.slice(0, 500))} rows={3} placeholder="Additional context to include in the evidence package" /><small>{notes.length}/500</small></label>
-      </section>
-
-      {error ? <p className={styles.error} role="alert">{error}</p> : null}
     </form>
   );
 }

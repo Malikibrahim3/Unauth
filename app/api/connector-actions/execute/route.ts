@@ -8,6 +8,27 @@ export async function POST(request: Request) {
   const userClient = createClient(); const { data: { user } } = await userClient.auth.getUser(); if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const client = createServiceClient(); const { denied, ctx } = await requirePermission(client, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS); if (denied || !ctx) return denied ?? NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const parsed = connectorActionSchema.safeParse(await request.json().catch(() => null)); if (!parsed.success) return NextResponse.json({ error: 'Invalid connector action', details: parsed.error.flatten() }, { status: 400 });
-  try { return NextResponse.json({ actionRun: await executeConnectorAction(client, ctx.merchantId, user.id, parsed.data) }); }
-  catch (error) { if (error instanceof Error && error.message === 'connector_action_high_risk_forbidden') return NextResponse.json({ error: 'High-risk connector actions are unavailable' }, { status: 400 }); throw error; }
+  try {
+    const actionRun = await executeConnectorAction(client, ctx.merchantId, user.id, parsed.data);
+    const pending = ['authorised', 'provider_processing', 'provider_accepted', 'indeterminate']
+      .includes(String(actionRun?.action_state ?? ''));
+    return NextResponse.json({ actionRun }, { status: pending ? 202 : 200 });
+  }
+  catch (error) {
+    if (error instanceof Error && error.message === 'connector_action_high_risk_forbidden') {
+      return NextResponse.json({ error: 'High-risk connector actions are unavailable' }, { status: 400 });
+    }
+    if (error instanceof Error && error.message === 'connector_action_unavailable') {
+      return NextResponse.json({ error: 'This connector action is unavailable for this connection.' }, { status: 409 });
+    }
+    if (error instanceof Error && error.message === 'connector_action_idempotency_conflict') {
+      return NextResponse.json({ error: 'This action key belongs to a different request.' }, { status: 409 });
+    }
+    if (error instanceof Error && error.message === 'connector_action_case_not_found') {
+      return NextResponse.json({ error: 'Case not found in this workspace.' }, { status: 404 });
+    }
+    return NextResponse.json({
+      error: 'Action state is unavailable. Check the original action before retrying.',
+    }, { status: 503 });
+  }
 }

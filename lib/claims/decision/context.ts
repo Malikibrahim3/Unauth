@@ -79,11 +79,12 @@ export async function buildClaimDecisionContext(
   client: SupabaseClient,
   merchantId: string,
   claimId: string,
+  asOf: number = Date.now(),
 ): Promise<ClaimDecisionContext | null> {
   const { data: claimRow, error: claimError } = await client
     .from(TABLES.MERCHANT_CLAIMS)
     .select(
-      'id, merchant_id, claim_type, status, amount_at_risk, currency, reason_raw, reason_normalized, source_order_id, source_ticket_id, identity_id, created_at, submitted_at, detection_detail',
+      'id, merchant_id, claim_type, status, state_version, amount_at_risk, currency, refund_amount, replacement_item_value, replacement_shipping_cost, estimated_support_cost, reason_raw, reason_normalized, source_order_id, source_ticket_id, identity_id, created_at, updated_at, submitted_at, detection_detail',
     )
     .eq('id', claimId)
     .eq('merchant_id', merchantId)
@@ -104,6 +105,7 @@ export async function buildClaimDecisionContext(
     integrationViewsRes,
     evidenceRes,
     merchantClaimsRes,
+    priorRefundsRes,
   ] = await Promise.all([
     sourceTicketId
       ? client
@@ -117,7 +119,7 @@ export async function buildClaimDecisionContext(
       ? client
           .from('source_orders')
           .select(
-            'id, external_id, order_number, total_price, order_value, currency, placed_at, financial_status, fulfillment_state',
+            'id, external_id, order_number, total_price, order_value, currency, placed_at, financial_status, fulfillment_state, source, source_name, source_account_id',
           )
           .eq('id', sourceOrderId)
           .eq('merchant_id', merchantId)
@@ -153,7 +155,28 @@ export async function buildClaimDecisionContext(
           .eq('merchant_id', merchantId)
           .eq('identity_id', identityId)
       : Promise.resolve({ data: [], error: null }),
+    sourceOrderId
+      ? client
+          .from(TABLES.SOURCE_REFUNDS)
+          .select('amount,currency')
+          .eq('merchant_id', merchantId)
+          .eq('source_order_id', sourceOrderId)
+          .limit(200)
+      : Promise.resolve({ data: [], error: null }),
   ]);
+
+  const unavailableRuleInputs = new Set<string>(['is_network_flagged']);
+  const historyFields = ['merchant_claim_count', 'merchant_prior_claim_count', 'merchant_same_type_claim_count', 'merchant_prior_same_type_claim_count', 'days_since_last_claim', 'claim_types'];
+  const outcomeFields = ['prior_approved_claims', 'prior_denied_claims', 'prior_escalated_claims', 'prior_chargebacks_after_claims', 'prior_loss_outcomes', 'prior_recovered_outcomes'];
+  if (!identityId || merchantClaimsRes.error || (merchantClaimsRes.data?.length ?? 0) >= 1000) {
+    [...historyFields, ...outcomeFields].forEach(field => unavailableRuleInputs.add(field));
+  }
+  if (evidenceRes.error || (evidenceRes.data?.length ?? 0) >= 1000) {
+    ['has_customer_evidence', 'evidence_items_count', 'evidence_strength', 'total_estimated_loss', 'above_review_threshold', 'loss_attribution', 'loss_attribution_confidence', 'recoverability', 'likely_owner'].forEach(field => unavailableRuleInputs.add(field));
+  }
+  if (fulfillmentRes.error || integrationEvidenceRes.error || !fulfillmentRes.data) {
+    ['delivery_status', 'days_since_delivery', 'has_tracking', 'has_proof_of_delivery'].forEach(field => unavailableRuleInputs.add(field));
+  }
 
   let delivery: ClaimDecisionContext['delivery'] = null;
   const integrationViews = integrationViewsRes.data ?? [];
@@ -231,6 +254,11 @@ export async function buildClaimDecisionContext(
     hasCustomerEvidence: customerEvidenceItems > 0,
     hasDeliveryEvidence: deliveryEvidenceItems > 0 || Boolean(delivery?.hasTracking),
     evidenceTypes: [...new Set(evidenceItems.map((item) => item.evidence_type as string).filter(Boolean))],
+    latestEvidenceAt: evidenceItems
+      .flatMap((item) => [item.source_created_at, item.created_at])
+      .filter((value): value is string => typeof value === 'string' && Boolean(value))
+      .sort()
+      .at(-1) ?? null,
   };
 
   const orderRow = orderRes.data;
@@ -244,6 +272,9 @@ export async function buildClaimDecisionContext(
         createdAt: (orderRow.placed_at as string) ?? null,
         financialStatus: (orderRow.financial_status as string) ?? null,
         fulfillmentStatus: (orderRow.fulfillment_state as string) ?? null,
+        source: (orderRow.source as string) ?? null,
+        sourceName: (orderRow.source_name as string) ?? null,
+        sourceAccountId: (orderRow.source_account_id as string) ?? null,
       }
     : null;
 
@@ -295,7 +326,7 @@ export async function buildClaimDecisionContext(
       merchantPriorSameTypeClaimCount: sameTypePrior.length,
       networkClaimCount: null,
       networkSameTypeClaimCount: null,
-      daysSinceLastClaim: daysSince(lastClaimAt),
+      daysSinceLastClaim: daysSince(lastClaimAt, asOf),
       claimTypes,
       hasCrossMerchantIdentity: false,
       networkMerchantCount: 0,
@@ -304,10 +335,11 @@ export async function buildClaimDecisionContext(
 
     const otherClaimIds = otherMerchantClaims.map((c) => c.id as string);
     if (otherClaimIds.length > 0) {
-      const { data: outcomes } = await client
+      const { data: outcomes, error: outcomesError } = await client
         .from('claim_outcomes')
         .select('decision, outcome, claim_id')
-        .in('claim_id', otherClaimIds);
+        .in('claim_id', otherClaimIds.slice(0, 100));
+      if (outcomesError || otherClaimIds.length > 100 || (outcomes?.length ?? 0) >= 1000) outcomeFields.forEach(field => unavailableRuleInputs.add(field));
 
       for (const o of outcomes ?? []) {
         const decision = o.decision as string;
@@ -327,7 +359,32 @@ export async function buildClaimDecisionContext(
     }
   }
 
+  const priorRefunds = priorRefundsRes.error ? [] : (priorRefundsRes.data ?? []);
+  const priorRefundCurrencies = new Set(
+    priorRefunds.map((row) => (row.currency as string | null)?.toUpperCase()).filter(Boolean),
+  );
+  const priorRefundAmounts = priorRefunds.map((row) => num(row.amount));
+  const priorConcessions: ClaimDecisionContext['priorConcessions'] = {
+    count: priorRefunds.length,
+    amount:
+      priorRefunds.length > 0
+      && priorRefundCurrencies.size === 1
+      && priorRefundAmounts.every((amount) => amount != null)
+        ? priorRefundAmounts.reduce<number>((sum, amount) => sum + (amount ?? 0), 0)
+        : null,
+    currency: priorRefundCurrencies.size === 1 ? [...priorRefundCurrencies][0] ?? null : null,
+    coverage: priorRefundsRes.error
+      ? 'unavailable'
+      : priorRefundCurrencies.size > 1
+        ? 'mixed_currency'
+        : priorRefunds.length > 0
+          && (priorRefundCurrencies.size === 0 || priorRefundAmounts.some((amount) => amount == null))
+          ? 'unavailable'
+          : 'complete',
+  };
+
   return {
+    unavailableRuleInputs: [...unavailableRuleInputs],
     merchantId,
     claim: {
       id: claimRow.id as string,
@@ -341,6 +398,14 @@ export async function buildClaimDecisionContext(
       sourceTicketId,
       identityId,
       createdAt: (claimRow.created_at as string) ?? (claimRow.submitted_at as string) ?? null,
+      updatedAt: (claimRow.updated_at as string) ?? null,
+      stateVersion: Number.isInteger(Number(claimRow.state_version)) ? Number(claimRow.state_version) : 1,
+      costs: {
+        refundAmount: num(claimRow.refund_amount),
+        replacementItemValue: num(claimRow.replacement_item_value),
+        replacementShippingCost: num(claimRow.replacement_shipping_cost),
+        estimatedSupportCost: num(claimRow.estimated_support_cost),
+      },
       gateRecommendation: gateRecommendationFrom(claimRow.detection_detail),
     },
     ticket,
@@ -349,6 +414,7 @@ export async function buildClaimDecisionContext(
     identity,
     history,
     evidence,
+    priorConcessions,
   };
 }
 

@@ -20,9 +20,9 @@ export const PAYOUT_DISCLAIMER =
 export type PayoutTone = 'success' | 'warning' | 'neutral';
 
 export const TONE_STYLE: Record<PayoutTone, { bg: string; color: string }> = {
-  success: { bg: 'var(--uo-route-success-bg)', color: 'var(--uo-route-success)' },
-  warning: { bg: 'var(--uo-route-warning-bg)', color: 'var(--uo-route-warning)' },
-  neutral: { bg: 'var(--uo-route-surface-secondary)', color: 'var(--uo-route-text-secondary)' },
+  success: { bg: '#eaf5ef', color: '#1a6b43' },
+  warning: { bg: '#fff3e9', color: '#7a5310' },
+  neutral: { bg: '#f4f3f1', color: '#64686d' },
 };
 
 export function strengthTone(strength: EvidenceStrength): PayoutTone {

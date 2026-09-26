@@ -1,10 +1,12 @@
-import Link from 'next/link';
-import { Download } from 'lucide-react';
-import { ButtonLink } from '@/components/ui';
-import { PageFrame } from '@/components/ui/PageFrame';
-import { formatDateTime, formatNumber } from '@/lib/utils/format';
+'use client';
+import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { OverlayPortal } from '@/components/ui/OverlayPortal';
+import { useOverlayPresence } from '@/lib/design/useOverlayPresence';
+import Link from '@/components/navigation/AppNavLink';
+import { formatCurrencyNullable, formatDateTime, formatNumber } from '@/lib/utils/format';
 import { hashId } from '@/lib/ui/displayRef';
-import styles from '@/components/sources/SourcesSurface.module.css';
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json | undefined };
 type RowError = { row: number; field: string; code: string; message: string; value: string | null };
@@ -33,6 +35,11 @@ export type ImportJobRecord = {
   cursor: Json | null;
 };
 
+const sans = "'Inter',sans-serif";
+const mono = "'IBM Plex Mono',monospace";
+const line = '1px solid #eae8e5';
+const shadow = '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)';
+
 function record(value: Json | null): Record<string, Json | undefined> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
@@ -48,180 +55,93 @@ function rowErrors(value: Json): RowError[] {
   });
 }
 
-function humanize(value: string) {
+function human(value: string) {
   return value.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
 }
 
 function fileSize(value: Json | undefined) {
-  if (typeof value !== 'number') return '— Not retained';
+  if (typeof value !== 'number') return '—';
   if (value < 1024) return `${value} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function duration(start: string | null, end: string | null) {
-  if (!start || !end) return '— Not completed';
+  if (!start || !end) return '—';
   const seconds = Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s`;
-  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  return seconds < 60 ? `${seconds} seconds` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
-function tone(status: string) {
-  if (status === 'completed') return 'positive';
-  if (status === 'failed') return 'critical';
-  if (status === 'partial' || status === 'cancelled') return 'warning';
-  return 'accent';
+function statusPresentation(status: string, held: number) {
+  if (status === 'completed' && held > 0) return { label: 'COMMITTED WITH HOLDS', color: '#7a5310', bg: '#fff3e9' };
+  if (status === 'completed' || status === 'committed') return { label: 'COMMITTED', color: '#1a6b43', bg: '#eef6f1' };
+  if (status === 'failed' || status === 'dead_letter') return { label: 'FAILED', color: '#b0431a', bg: '#fdf0e6' };
+  return { label: human(status).toUpperCase(), color: '#7a5310', bg: '#fff3e9' };
 }
 
-export function ImportJobDetail({ job }: { job: ImportJobRecord }) {
+function Fact({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '7px 0', borderTop: line }}><dt style={{ flex: 1, color: '#64686d', font: `400 11.5px/1.3 ${sans}` }}>{label}</dt><dd style={{ margin: 0, color: tone ?? '#1c1f23', font: `400 11px/1 ${mono}` }}>{value}</dd></div>;
+}
+
+export function ImportJobDetail({ job, mappingOpen = false }: { job: ImportJobRecord; mappingOpen?: boolean }) {
+  const router = useRouter();
+  const closeMapping = useCallback(() => router.replace(`/sources/imports/${job.id}`), [router, job.id]);
+  const overlay = useOverlayPresence({ open: mappingOpen, onClose: closeMapping, trapFocus: true, restoreFocus: true, lockBodyScroll: true, exitDurationMs: 0 });
   const metadata = record(job.cursor);
   const mapping = record(job.column_map);
   const errors = rowErrors(job.error_log);
-  const duplicateRows = typeof metadata.duplicates_skipped === 'number' ? metadata.duplicates_skipped : null;
-  const validated = job.total_rows != null && Array.isArray(job.error_log);
-  const validRows = typeof metadata.validation_valid_rows === 'number'
-    ? metadata.validation_valid_rows
-    : job.status === 'completed'
-      ? job.processed_rows
-      : null;
-  const totalRows = job.total_rows;
-  const committed = job.status === 'completed' ? job.processed_rows : job.processed_rows || null;
+  const duplicates = typeof metadata.duplicates_skipped === 'number' ? metadata.duplicates_skipped : null;
+  const total = job.total_rows;
+  const posted = ['completed', 'committed', 'partial'].includes(job.status) ? job.processed_rows : job.processed_rows || null;
+  const held = job.failed_rows;
   const fileName = typeof metadata.file_name === 'string' && metadata.file_name ? metadata.file_name : job.label ?? 'CSV import';
-  const dataset = humanize(typeof metadata.dataset === 'string' ? metadata.dataset : 'Dataset unavailable');
-  const operatorRef = typeof metadata.imported_by === 'string' ? metadata.imported_by : '— Not retained';
+  const dataset = typeof metadata.dataset === 'string' ? human(metadata.dataset) : 'Dataset unavailable';
+  const operator = typeof metadata.imported_by === 'string' ? metadata.imported_by : job.source ?? '—';
   const jobRef = `IMP-${hashId(job.id).slice(1)}`;
-  const mappedCount = Object.keys(mapping).length;
-  const committedRate = totalRows && committed != null ? (committed / totalRows) * 100 : null;
-  const outcomeTotal = Math.max(1, totalRows ?? ((committed ?? 0) + job.failed_rows + (duplicateRows ?? 0)));
-  const mappingDownload = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(mapping, null, 2))}`;
-  const inFlight = ['queued', 'pending', 'running', 'processing'].includes(job.status);
-  const commitDetail = job.status === 'completed'
-    ? `${formatNumber(committed)} records written${job.completed_at ? ` ${formatDateTime(job.completed_at)}` : ''}`
-    : job.status === 'partial'
-      ? `${formatNumber(committed)} ${committed === 1 ? 'record' : 'records'} written · outcome incomplete${job.completed_at ? ` ${formatDateTime(job.completed_at)}` : ''}`
-      : inFlight
-        ? job.status === 'queued' || job.status === 'pending' ? 'Waiting to commit' : 'Commit in progress'
-        : job.status === 'failed' && committed == null
-          ? 'Failed · no records written'
-          : `${humanize(job.status)} · ${committed == null ? 'no committed count retained' : `${formatNumber(committed)} records written`}`;
-  const stages = [
-    { label: 'Uploaded', detail: `${fileName} · ${fileSize(metadata.file_size)} · ${job.file_hash ? `SHA-256 ${job.file_hash.slice(0, 4)}…${job.file_hash.slice(-4)}` : 'SHA-256 not retained'}`, stageTone: 'positive' },
-    { label: 'Parsed', detail: totalRows == null ? (inFlight ? 'Waiting to parse source rows' : 'Row count was not retained') : `${formatNumber(totalRows)} data rows · column count and encoding not retained`, stageTone: totalRows == null ? (inFlight ? 'accent' : 'muted') : 'positive' },
-    { label: 'Mapped', detail: mappedCount ? `${mappedCount} source columns mapped from the retained snapshot` : inFlight ? 'Waiting for a retained mapping snapshot' : 'Mapping snapshot was not retained for this job', stageTone: mappedCount ? 'positive' : inFlight ? 'accent' : 'muted' },
-    { label: 'Validated', detail: validated ? `${validRows == null ? 'Valid count unavailable' : `${formatNumber(validRows)} valid`} · ${formatNumber(job.failed_rows)} invalid · ${duplicateRows == null ? 'duplicate count unavailable' : `${formatNumber(duplicateRows)} duplicates`}` : inFlight ? 'Waiting for validation' : 'Validation outcome was not retained', stageTone: validated ? 'positive' : inFlight ? 'accent' : 'muted' },
-    { label: job.status === 'completed' ? 'Committed' : humanize(job.status), detail: commitDetail, stageTone: tone(job.status) },
-  ];
+  const state = statusPresentation(job.status, held);
+  const mappingEntries = Object.entries(mapping);
+  const errorGroups = [...new Map(errors.map((error) => [`${error.code}|${error.field}|${error.message}`, { ...error, count: 0, rows: [] as number[] }])).values()];
+  for (const group of errorGroups) {
+    const matching = errors.filter((error) => error.code === group.code && error.field === group.field && error.message === group.message);
+    group.count = matching.length;
+    group.rows = matching.map((error) => error.row);
+  }
+  const totalKnown = total != null;
+  const postedValue = posted == null ? '—' : formatNumber(posted);
+  const valuePosted = typeof metadata.value_posted === 'number' ? metadata.value_posted : null;
+  const valueHeld = typeof metadata.value_held === 'number' ? metadata.value_held : null;
+  const currency = typeof metadata.currency === 'string' ? metadata.currency : null;
+  const formatMoney = (value: number | null) => value == null || !currency ? '—' : formatCurrencyNullable(value, currency) ?? '—';
 
-  return (
-    <PageFrame
-      surfaceId="import-job-route"
-      archetype="P7-P8-import-job"
-      title={`Import job ${jobRef}`}
-      subtitle="An immutable record of one CSV import: what was uploaded, how it was mapped, which rows were rejected or skipped, and what was actually committed."
-      breadcrumbs={[{ label: 'Sources', href: '/sources/connected' }, { label: 'Imports', href: '/sources/imports' }, { label: jobRef }]}
-      actions={<><ButtonLink href={`/api/imports/${job.id}/errors`} variant="secondary" size="sm" leadingIcon={<Download size={14} aria-hidden="true" />}>Download error rows</ButtonLink><ButtonLink href="/sources/imports?step=upload" size="sm">Start a new import</ButtonLink></>}
-    >
-      <div className={styles.importJobDetail} data-operations-surface="import-job-detail" data-state-id={`import-job-${job.status}`}>
-        <section className={styles.importJobHero}>
-          <div className={styles.importJobHeroTop}>
-            <div className={styles.importJobIdentity}>
-              <div><code>{jobRef}</code><span data-tone={tone(job.status)}>{humanize(job.status === 'completed' ? 'committed' : job.status)}</span><span>{dataset}</span></div>
-              <h2>{fileName}</h2>
-              <p>Uploaded by operator {operatorRef} · {formatDateTime(job.created_at)} · attempt {job.attempts} of {job.max_attempts}{job.completed_at ? ` · committed ${formatDateTime(job.completed_at)}` : ''}</p>
-            </div>
-            <div className={styles.importJobHeroFacts}>
-              <JobFact label="Rows in file" value={totalRows == null ? '—' : formatNumber(totalRows)} detail={totalRows == null ? 'not retained' : ''} />
-              <JobFact label="Committed" value={committed == null ? '—' : formatNumber(committed)} detail={committedRate == null ? 'not retained' : `${committedRate.toFixed(1)}%`} />
-              <JobFact label="Invalid" value={validated ? formatNumber(job.failed_rows) : '—'} detail="not committed" />
-              <JobFact label="Duplicates" value={duplicateRows == null ? '—' : formatNumber(duplicateRows)} detail={duplicateRows == null ? 'not retained' : 'skipped'} />
-            </div>
-          </div>
-          <div className={styles.importJobOutcome} aria-label="Import outcome">
-            <span data-tone="positive" style={{ flexGrow: Math.max(0, committed ?? 0) }} title={`${committed ?? 'Unavailable'} committed`} />
-            <span data-tone="warning" style={{ flexGrow: Math.max(0, duplicateRows ?? 0) }} title={`${duplicateRows ?? 'Unavailable'} duplicates skipped`} />
-            <span data-tone="critical" style={{ flexGrow: Math.max(0, job.failed_rows) }} title={`${validated ? job.failed_rows : 'Unavailable'} invalid`} />
-            {!committed && !duplicateRows && !job.failed_rows ? <span data-tone="muted" style={{ flexGrow: outcomeTotal }} title="Outcome unavailable" /> : null}
-          </div>
-          <div className={styles.importJobLegend}>
-            <Legend tone="positive" label={committed == null ? 'Committed count unavailable' : `${formatNumber(committed)} committed`} />
-            <Legend tone="warning" label={duplicateRows == null ? 'Duplicate count unavailable' : `${formatNumber(duplicateRows)} duplicates skipped`} />
-            <Legend tone="critical" label={validated ? `${formatNumber(job.failed_rows)} invalid, never committed` : 'Invalid count unavailable'} />
-          </div>
-        </section>
+  return <>
+    <SetBreadcrumbLabel label={jobRef} detail="immutable · this job cannot be re-run, only superseded" />
+    <div style={{ height: 54, flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', borderBottom: line }}>
+      <span style={{ padding: '3px 7px', borderRadius: 5, background: state.bg, color: state.color, font: `500 10px/1.5 ${sans}` }}>{state.label}</span>
+      <span style={{ paddingLeft: 0, color: '#1c1f23', font: `400 20px/1 ${mono}` }}>{totalKnown ? formatNumber(total) : '—'}</span><span style={{ color: '#64686d', font: `400 11px/1 ${sans}` }}>rows read</span>
+      <span style={{ height: 26, width: 1, background: '#e4e3e0' }} /><span style={{ color: '#1a6b43', font: `400 20px/1 ${mono}` }}>{postedValue}</span><span style={{ color: '#64686d', font: `400 11px/1 ${sans}` }}>posted</span>
+      <span style={{ height: 26, width: 1, background: '#e4e3e0' }} /><span style={{ color: held ? '#b0431a' : '#1c1f23', font: `400 20px/1 ${mono}` }}>{formatNumber(held)}</span><span style={{ color: '#64686d', font: `400 11px/1 ${sans}` }}>held</span>
+      <span style={{ flex: 1 }} /><a href={`/api/imports/${job.id}/errors`} style={{ padding: '7px 11px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.1)', color: '#40454a', textDecoration: 'none', font: `400 12px/1 ${sans}` }}>Download error report</a><Link href={`/sources/imports/${job.id}?step=mapping`} style={{ padding: '7px 11px', borderRadius: 9, background: '#1c1f23', color: '#fff', textDecoration: 'none', font: `500 12px/1 ${sans}` }}>Fix the mapping and re-import</Link>
+    </div>
 
-        <div className={styles.importJobTwoUp}>
-          <section className={styles.importJobCard}>
-            <CardHeading title="What happened, in order" copy="Recorded once. This job cannot be edited or re-run in place." />
-            <ol className={styles.importJobStages}>
-              {stages.map((stage, index) => <li key={stage.label}><span data-tone={stage.stageTone}>{index + 1}</span><div><strong>{stage.label}</strong><small>{stage.detail}</small></div></li>)}
-            </ol>
-          </section>
-          <section className={styles.importJobCard}>
-            <CardHeading title="File and attempt record" copy="Kept so a figure can be traced back to the exact file that produced it." />
-            <dl className={styles.importJobFileFacts}>
-              <FileFact label="File name" value={fileName} />
-              <FileFact label="Size" value={fileSize(metadata.file_size)} />
-              <FileFact label="SHA-256" value={job.file_hash ? `${job.file_hash.slice(0, 4)}…${job.file_hash.slice(-4)}` : '— Not retained'} mono />
-              <FileFact label="Attempt" value={`${job.attempts} of ${job.max_attempts}${job.attempts > 1 ? ' · earlier attempt did not commit' : ''}`} />
-              <FileFact label="Uploaded" value={formatDateTime(job.created_at)} />
-              <FileFact label="Committed" value={job.completed_at ? formatDateTime(job.completed_at) : '— Not completed'} />
-              <FileFact label="Duration" value={duration(job.started_at ?? job.created_at, job.completed_at)} />
-              <FileFact label="Committed by" value={operatorRef} />
-            </dl>
-            <p className={styles.importJobFootnote}>Every attempt remains in history. A failed validation or commit is never presented as a successful write.</p>
-          </section>
-        </div>
+    <div data-screen-label="Import job detail" data-surface-id="import-job-route" data-archetype="P7-P8-import-job" data-operations-surface="import-job-detail" data-state-id={`import-job-${job.status}`} style={{ flex: 1, minHeight: 0, padding: '16px 22px 20px', display: 'flex', gap: 14 }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section style={{ flex: 'none', borderRadius: 12, padding: '13px 16px', background: '#f4f3f1', display: 'grid', gridTemplateColumns: '1.25fr 1.25fr 1.25fr 1.25fr 1.2fr', gap: 14 }}>{[
+          ['FILE', fileName], ['DATASET', dataset], ['STARTED', job.started_at ? formatDateTime(job.started_at) : formatDateTime(job.created_at)], ['DURATION', duration(job.started_at ?? job.created_at, job.completed_at)], ['RUN BY', operator],
+        ].map(([label, value]) => <div key={label} style={{ minWidth: 0 }}><span style={{ display: 'block', color: '#64686d', letterSpacing: '.08em', font: `500 9.5px/1 ${sans}` }}>{label}</span><strong title={value} style={{ display: 'block', marginTop: 7, overflow: 'hidden', textOverflow: 'ellipsis', color: '#1c1f23', font: `400 12.5px/1.3 ${sans}` }}>{value}</strong></div>)}</section>
 
-        <section className={styles.importJobCard}>
-          <CardHeading title="Retained mapping snapshot" copy="The mapping as it was at commit time. Later mapping changes do not alter these records." />
-          <div className={styles.importMappingTable} role="table" aria-label="Retained mapping snapshot">
-            <div role="row" className={styles.importMappingHeader}><span>CSV column</span><span>Unauth field</span><span>Transform</span><span>Required</span><span>Rows filled</span></div>
-            {Object.entries(mapping).map(([source, target]) => <div role="row" className={styles.importMappingRow} key={source}><span title={source}>{source}</span><span title={String(target)}>{String(target)}</span><span>Direct mapping</span><span><em>— Not retained</em></span><span>— Not retained</span></div>)}
-            {!mappedCount ? <p className={styles.importJobUnavailable} data-state-id="import-job-mapping-unavailable">This job did not retain its source-to-canonical mapping snapshot.</p> : null}
-          </div>
-          <p className={styles.importJobFootnote}>Currency, timezone, transforms, required state and per-column fill counts are only shown when the immutable job record retained them. Missing metadata is not inferred.</p>
-        </section>
+        <section style={{ flex: '0 0 auto', borderRadius: 10, background: '#fff', boxShadow: shadow, overflow: 'hidden' }}><header style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '12px 16px 9px' }}><strong style={{ flex: 1, color: '#64686d', letterSpacing: '.09em', font: `600 10.5px/1 ${sans}` }}>MAPPING SNAPSHOT</strong><span style={{ color: '#64686d', font: `400 10px/1 ${mono}` }}>as it was at commit · later changes do not alter this job</span></header><div role="table" aria-label="Mapping snapshot"><div role="row" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.1fr 1.25fr 82px', gap: 10, padding: '0 16px 7px', color: '#64686d', letterSpacing: '.05em', font: `400 9.5px/1 ${mono}` }}><span>FILE COLUMN</span><span>LEDGER FIELD</span><span>FIRST ROW</span><span>STATE</span></div>{mappingEntries.length ? mappingEntries.map(([source, target]) => <div role="row" key={source} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.1fr 1.25fr 82px', gap: 10, alignItems: 'center', padding: '10px 16px', borderTop: line }}><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', font: `400 11px/1 ${mono}` }}>{source}</span><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: String(target) ? '#40454a' : '#b0431a', font: `400 11.5px/1.3 ${sans}` }}>{String(target || '—')}</span><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#64686d', font: `400 10.5px/1 ${mono}` }}>— not retained</span><span style={{ justifySelf: 'end', padding: '2px 7px', borderRadius: 5, background: String(target) ? '#eef6f1' : '#fdf0e6', color: String(target) ? '#1a6b43' : '#b0431a', font: `500 10px/1.5 ${sans}` }}>{String(target) ? 'MAPPED' : 'UNMAPPED'}</span></div>) : <div data-state-id="import-job-mapping-unavailable" style={{ padding: '18px 16px', borderTop: line, color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>This job did not retain its source-to-ledger mapping snapshot.</div>}</div></section>
 
-        <section className={styles.importJobCard}>
-          <CardHeading title="Rows that were not committed" copy={`${validated ? formatNumber(job.failed_rows) : 'An unavailable number of'} invalid and ${duplicateRows == null ? 'an unavailable number of' : formatNumber(duplicateRows)} duplicate rows. Nothing was guessed or partially written.`} />
-          <div className={styles.importErrorsTable} role="table" aria-label="Rows that were not committed">
-            <div role="row" className={styles.importErrorsHeader}><span>Row</span><span>Reason</span><span>Column</span><span>Value seen</span><span>Outcome</span></div>
-            {errors.slice(0, 6).map((error) => <div role="row" className={styles.importErrorsRow} key={`${error.row}-${error.field}-${error.code}`}><span>{error.row}</span><span title={error.message}>{error.message}</span><span>{error.field}</span><span>{error.value ?? '— Not retained'}</span><span><em data-tone="critical">Rejected</em></span></div>)}
-            {!errors.length ? <p className={styles.importJobUnavailable} data-state-id="import-job-no-row-errors">No row-level rejection records were retained for this job.</p> : null}
-          </div>
-          <p className={styles.importJobFootnote}>{errors.length ? `Showing ${Math.min(6, errors.length)} of ${errors.length} retained row errors.` : 'The absence of retained row errors is not presented as proof that every row was valid.'} Download the error file for the complete retained set with original line numbers.</p>
-          <div className={styles.importJobDownloads}>
-            <ButtonLink href={`/api/imports/${job.id}/errors`} variant="secondary" size="sm">Download {errors.length ? formatNumber(errors.length) : ''} rejected rows</ButtonLink>
-            <a className="ua-button ua-button--secondary ua-button--sm" href={mappingDownload} download={`${jobRef.toLowerCase()}-mapping.json`}>Download mapping snapshot</a>
-          </div>
-        </section>
-
-        <section className={styles.importJobCard}>
-          <CardHeading title="Fixing this safely" />
-          <div className={styles.importFixGrid}>
-            <div><strong>Correct and re-import</strong><p>Fix rejected rows in a new file and import that file. Existing committed records remain untouched.</p></div>
-            <div><strong>Duplicates need nothing</strong><p>Skipped duplicate rows already exist. Re-importing the same records creates nothing new.</p></div>
-            <div data-tone="critical"><strong>This job cannot be undone</strong><p>Committed rows are canonical. Removing one requires an explicit correction that appends a record.</p></div>
-          </div>
-          <div className={styles.importFixActions}><ButtonLink href="/sources/imports?step=upload" size="sm">Start a new import</ButtonLink><Link className="ua-button ua-button--secondary ua-button--sm" href="/sources/imports">Open imports registry</Link></div>
-        </section>
+        <section style={{ flex: 1, minHeight: 0, borderRadius: 10, background: '#fff', boxShadow: shadow, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}><header style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '12px 16px 9px' }}><strong style={{ flex: 1, color: '#64686d', letterSpacing: '.09em', font: `600 10.5px/1 ${sans}` }}>WHY {formatNumber(held)} ROWS WERE HELD</strong><span style={{ color: '#b0431a', font: `400 10px/1 ${mono}` }}>{valueHeld == null ? 'held value unavailable' : `${formatMoney(valueHeld)} not counted anywhere in the product`}</span></header><div style={{ minHeight: 0, overflowY: 'auto' }}>{errorGroups.length ? errorGroups.map((group) => <div key={`${group.code}-${group.field}`} style={{ display: 'grid', gridTemplateColumns: '200px 1fr 44px', gap: 12, padding: '12px 16px', borderTop: line }}><span style={{ color: '#64686d', font: `400 10.5px/1.4 ${mono}` }}>rows {group.rows.slice(0, 5).join(', ')}{group.rows.length > 5 ? ' …' : ''}</span><div><strong style={{ display: 'block', color: '#1c1f23', font: `500 12px/1.3 ${sans}` }}>{human(group.field)} · {human(group.code)}</strong><span style={{ display: 'block', marginTop: 5, color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>{group.message}{group.value ? ` Value seen: ${group.value}.` : ''}</span></div><span style={{ textAlign: 'right', color: '#b0431a', font: `400 12px/1 ${mono}` }}>{formatNumber(group.count)}</span></div>) : <div data-state-id="import-job-no-row-errors" style={{ padding: 18, borderTop: line, color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>{held === 0 ? 'No rows were held in the retained job outcome.' : 'Row-level hold reasons were not retained. Their absence is not presented as a clean validation.'}</div>}</div><span style={{ flex: 1 }} /><footer style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderTop: line }}><span style={{ flex: 1, color: '#64686d', font: `400 11px/1.45 ${sans}` }}>Held rows are not partially posted or silently dropped. Correcting them creates a new immutable import job.</span><Link href={`/sources/imports/${job.id}?step=mapping`} style={{ color: '#9b470d', textDecoration: 'none', font: `400 11.5px/1 ${sans}` }}>Map the held columns</Link></footer></section>
       </div>
-    </PageFrame>
-  );
-}
 
-function JobFact({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return <div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>;
-}
+      <aside style={{ width: 326, flex: 'none', borderRadius: 13, padding: '12px 13px', background: '#f4f3f1', display: 'flex', flexDirection: 'column', gap: 10 }}><strong style={{ color: '#64686d', letterSpacing: '.09em', font: `600 10.5px/1 ${sans}` }}>OUTCOME</strong><section style={{ borderRadius: 10, padding: '6px 13px 10px', background: '#fff', boxShadow: shadow }}><dl style={{ margin: 0 }}><Fact label="Rows read" value={totalKnown ? formatNumber(total) : '—'} /><Fact label="Imported source records" value={postedValue} tone="#1a6b43" /><Fact label="Held on validation" value={formatNumber(held)} tone={held ? '#b0431a' : undefined} /><Fact label="Duplicates skipped" value={duplicates == null ? '—' : formatNumber(duplicates)} /><Fact label="Value posted" value={formatMoney(valuePosted)} /><Fact label="Value held" value={formatMoney(valueHeld)} tone={valueHeld ? '#b0431a' : undefined} /></dl></section><strong style={{ marginTop: 2, color: '#64686d', letterSpacing: '.09em', font: `600 10.5px/1 ${sans}` }}>WHERE THESE ROWS WENT</strong><section style={{ borderRadius: 10, padding: '5px 13px', background: '#fff', boxShadow: shadow }}>{[
+        ['LOSS LEDGER', typeof metadata.loss_entries === 'number' ? `${formatNumber(metadata.loss_entries)} entries` : '— unavailable'],
+        ['CASES OPENED', typeof metadata.cases_opened === 'number' ? `${formatNumber(metadata.cases_opened)} by rule` : '— unavailable'],
+        ['RECONCILIATION', typeof metadata.reconciliation_exceptions === 'number' ? `${formatNumber(metadata.reconciliation_exceptions)} exceptions raised` : '— unavailable'],
+        ['AUDIT', '1 import entry'],
+      ].map(([label, value], index) => <div key={label} style={{ padding: '10px 0', borderTop: index ? line : undefined }}><span style={{ display: 'block', color: '#64686d', letterSpacing: '.05em', font: `400 9.5px/1 ${mono}` }}>{label}</span><strong style={{ display: 'block', marginTop: 5, font: `500 11.5px/1.3 ${sans}` }}>{value}</strong></div>)}</section><strong style={{ marginTop: 2, color: '#64686d', letterSpacing: '.09em', font: `600 10.5px/1 ${sans}` }}>JOB RECORD</strong><section style={{ borderRadius: 10, padding: '6px 13px', background: '#fff', boxShadow: shadow }}><Fact label="Reference" value={jobRef} /><Fact label="Attempt" value={`${job.attempts} of ${job.max_attempts}`} /><Fact label="File size" value={fileSize(metadata.file_size)} /><Fact label="SHA-256" value={job.file_hash ? `${job.file_hash.slice(0, 4)}…${job.file_hash.slice(-4)}` : '—'} /></section><span style={{ flex: 1 }} /><span style={{ borderTop: '1px solid #e4e3e0', paddingTop: 10, color: '#64686d', font: `400 11px/1.5 ${sans}` }}>An import job is a permanent record. Re-importing the same file creates a new job and leaves this one exactly as it is.</span></aside>
+    </div>
 
-function Legend({ tone, label }: { tone: string; label: string }) {
-  return <span><i data-tone={tone} aria-hidden="true" />{label}</span>;
-}
-
-function CardHeading({ title, copy }: { title: string; copy?: string }) {
-  return <div className={styles.importJobCardHeading}><h2>{title}</h2>{copy ? <p>{copy}</p> : null}</div>;
-}
-
-function FileFact({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return <><dt>{label}</dt><dd className={mono ? styles.importJobMono : undefined}>{value}</dd></>;
+    {mappingOpen ? <OverlayPortal><div data-overlay-id="mapping-repair" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) closeMapping(); }} style={{ position: 'fixed', inset: 0, zIndex: 90, pointerEvents: 'auto', display: 'grid', placeItems: 'center', padding: 24, background: 'rgba(28,27,25,.3)' }}><section ref={overlay.containerRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Mapping repair" style={{ maxHeight: '100%', width: 880, maxWidth: '100%', borderRadius: 12, background: '#fff', boxShadow: '0 18px 54px rgba(28,22,14,.25)', overflowY: 'auto' }}><header style={{ padding: '16px 18px', borderBottom: line }}><h2 style={{ margin: 0, font: `500 15px/1.3 ${sans}` }}>Map columns · {fileName}</h2><p style={{ margin: '5px 0 0', color: '#64686d', font: `400 11.5px/1.45 ${sans}` }}>{jobRef} is immutable. Use your retained original file to correct and re-upload into a new job; this record will not be changed.</p></header><div style={{ padding: 18, background: '#f4f3f1' }}><div style={{ borderRadius: 10, background: '#fff', overflow: 'hidden' }}>{mappingEntries.map(([source, target], index) => <div key={source} style={{ display: 'grid', gridTemplateColumns: '1fr 24px 1fr 84px', gap: 10, alignItems: 'center', padding: '10px 12px', borderTop: index ? line : undefined }}><span style={{ font: `400 11px/1 ${mono}` }}>{source}</span><span style={{ color: '#a7abad' }}>→</span><span style={{ color: '#40454a', font: `400 11.5px/1.3 ${sans}` }}>{String(target || 'Choose a field')}</span><span style={{ color: target ? '#1a6b43' : '#7a5310', font: `500 10px/1.5 ${sans}` }}>{target ? 'RETAINED' : 'REQUIRED'}</span></div>)}</div></div><footer style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 18px', borderTop: line }}><button type="button" onClick={closeMapping}>Close</button><Link href={`/api/imports/${job.id}/errors`} style={{ padding: '7px 11px', borderRadius: 8, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.1)', color: '#40454a', textDecoration: 'none', font: `400 12px/1 ${sans}` }}>Download error report</Link><Link href="/sources/imports?step=upload" style={{ padding: '7px 11px', borderRadius: 8, background: '#1c1f23', color: '#fff', textDecoration: 'none', font: `500 12px/1 ${sans}` }}>Upload corrected file</Link></footer></section></div></OverlayPortal> : null}
+  </>;
 }

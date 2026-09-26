@@ -5,7 +5,7 @@ import {
   requiredFields,
   simulateRule,
 } from "@/lib/rules/versioning";
-import { FORBIDDEN_MVP_CAPABILITIES } from "@/lib/connectors/capabilities";
+import { UNRELEASED_ACTION_CAPABILITIES } from "@/lib/connectors/capabilities";
 import { listConnectors } from "@/lib/connectors/registry";
 
 const base: any = {
@@ -17,7 +17,7 @@ const base: any = {
   priority: 1,
   condition_operator: "and",
   conditions: [
-    { id: "c", field: "order_value_usd", operator: "gte", value: 100 },
+    { id: "c", field: "order_value_usd", operator: "gte", value: 100, currency: "GBP" },
   ],
   action: "manual_review",
 };
@@ -30,6 +30,7 @@ describe("safe configuration contracts", () => {
       days_since_last_claim: null,
       claim_types: [],
       order_value_usd: 200,
+      order_value_usd_currency: "GBP",
       account_age_days: null,
     });
     expect(result.writesPerformed).toBe(0);
@@ -44,10 +45,10 @@ describe("safe configuration contracts", () => {
     expect(conflicts[0].reason).toMatch(/different recommended action/);
   });
 
-  it("connector manifest structurally forbids payout actions", () => {
+  it("connector manifest keeps unreleased actions disabled", () => {
     for (const adapter of listConnectors()) {
       for (const capability of adapter.manifest.capabilities) {
-        if (FORBIDDEN_MVP_CAPABILITIES.has(capability.id)) {
+        if (UNRELEASED_ACTION_CAPABILITIES.has(capability.id)) {
           expect(capability.support).toBe("unsupported");
           expect(capability.enabledByDefault).toBe(false);
         }

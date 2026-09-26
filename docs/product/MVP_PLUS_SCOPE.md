@@ -2,6 +2,14 @@
 
 Status: MR0 `PASS`, 23 August 2026.
 
+The status above is historical MR0 evidence. Current app-wide constraints are
+in [GLOBAL_RULES.md](../../GLOBAL_RULES.md); the merchant desktop and decision
+workflow changes are sequenced in
+[MERCHANT_CLARITY_IMPLEMENTATION.md](MERCHANT_CLARITY_IMPLEMENTATION.md).
+Their documentation adoption does not change provider or release verdicts.
+
+The owner adopted a new authenticated MVP target on 23 September 2026 in `PRODUCT.md`. This document preserves the prior supervised certification profile and its current exclusions as a baseline; it is not the new delivery ceiling. The selected live merchant and provider/action/country coverage still require evidence and approval before enabled execution. `MERCHANT_CLARITY_IMPLEMENTATION.md#authenticated-mvp-direction--23-september-2026` maps the target to existing owners. This revision makes no real-provider connection or release claim.
+
 ## Controlled certification profile
 
 The implementation and pre-pilot verification profile is **Asterlane Commerce Group**, a synthetic controlled certification merchant. It freezes one coherent stack before recruitment. It is not a signed design partner and does not count as real-provider runtime proof.
@@ -24,11 +32,11 @@ The synthetic certification operator is Avery Mercer. During pre-pilot certifica
 - Merchant-recorded decisions, investigations, recovery handoff, reconciliation, and append-only financial history where the required source facts exist.
 - Canonical Free, Pro, Growth, and Enterprise plan requests; server-owned subscription intent; provider-confirmed activation.
 - Successful runtime usage receipts for store context, gated network context, evidence reports, and entitled API enrichment.
-- Permissioned signed-in desktop product, with responsive public, auth, and onboarding routes.
+- Desktop-only product across public entry, authentication, onboarding, interactive demos, and merchant workflows, with accessible unsupported-device notices and usable compact desktop/zoom states under the global rules.
 
 ## Excluded or blocked
 
-- Unauth does not issue refunds, deny customer requests, or submit provider claims.
+- Unauth does not issue refunds, create replacement orders, communicate customer denials, contact customers/partners, or submit provider claims. Recording a merchant decision and preparing a manual handoff are distinct from external execution.
 - Stripe as a merchant evidence connector remains planned.
 - UPS is on-demand read-only; no outbound carrier submission is promised.
 - Scheduled report delivery is unavailable.

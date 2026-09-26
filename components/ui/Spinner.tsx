@@ -1,57 +1,31 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { DELAY } from '@/lib/design/motion';
 
-const SIZE_CLASS = {
-  sm: 'h-3.5 w-3.5',
-  md: 'h-4 w-4',
-  lg: 'h-5 w-5',
-} as const;
-
-export type SpinnerSize = keyof typeof SIZE_CLASS;
+const SIZE: Record<'sm' | 'md' | 'lg', number> = { sm: 14, md: 16, lg: 20 };
+export type SpinnerSize = keyof typeof SIZE;
 
 interface SpinnerProps {
   size?: SpinnerSize;
-  /** Accessible label for the busy region. Not visually rendered. */
   label?: string;
-  /**
-   * §7.1 `DELAY.pendingIndicator`: a spinner earns its place only once real
-   * work has been visible this long — a genuinely fast action never flashes
-   * one. Pass `0` for a spinner whose caller already gated the delay itself
-   * (e.g. only rendering this component once real work is confirmed active).
-   */
   delayMs?: number;
   className?: string;
+  style?: CSSProperties;
 }
 
-/**
- * §7.6's one canonical spinner. Every other rotating-glyph call site
- * (`animate-spin` on a bare icon, each with its own ad hoc markup) should
- * render this instead, so the display threshold, accessible name, and
- * reduced-motion behavior live in one place.
- */
-export function Spinner({ size = 'md', label = 'Loading', delayMs = DELAY.pendingIndicator, className }: SpinnerProps) {
+export function Spinner({ size = 'md', label = 'Loading', delayMs = DELAY.pendingIndicator, className: _className, style }: SpinnerProps) {
   const [visible, setVisible] = useState(delayMs <= 0);
-
   useEffect(() => {
     if (delayMs <= 0) return;
     setVisible(false);
     const timer = setTimeout(() => setVisible(true), delayMs);
     return () => clearTimeout(timer);
   }, [delayMs]);
-
-  if (!visible) {
-    // The busy state is already true; only the visual affordance is delayed.
-    return <span role="status" aria-live="polite" className="sr-only">{label}</span>;
-  }
-
-  return (
-    <span role="status" aria-live="polite" className={cn('inline-flex items-center justify-center', className)}>
-      <Loader2 className={cn('ua-spinner animate-spin', SIZE_CLASS[size])} aria-hidden="true" />
-      <span className="sr-only">{label}</span>
-    </span>
-  );
+  if (!visible) return <span role="status" aria-live="polite" className="sr-only">{label}</span>;
+  const pixels = SIZE[size];
+  return <span role="status" aria-live="polite" style={{ width: pixels, height: pixels, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...style }}>
+    <svg width={pixels} height={pixels} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><g><path d="M8 1.8a6.2 6.2 0 1 1-4.4 1.8" opacity=".28"/><path d="M3.6 3.6A6.2 6.2 0 0 1 8 1.8"/><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur=".8s" repeatCount="indefinite"/></g></svg>
+    <span className="sr-only">{label}</span>
+  </span>;
 }

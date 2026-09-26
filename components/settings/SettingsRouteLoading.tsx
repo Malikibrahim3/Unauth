@@ -1,6 +1,5 @@
 import { Bone } from '@/components/ui/LoadingSkeleton';
 import { SettingsPageShell } from '@/components/settings/SettingsPageShell';
-import styles from '@/components/settings/OperationsSettings.module.css';
 
 export function SettingsRouteLoading({
   title,
@@ -22,12 +21,12 @@ export function SettingsRouteLoading({
         impact: 'No setting changes while this page loads',
       }}
     >
-      <div className={styles.settingsLoading} role="status" aria-busy="true" aria-label={`Loading ${title}`}>
+      <div style={{ display: 'grid', gap: 14 }} role="status" aria-busy="true" aria-label={`Loading ${title}`}>
         {[2, 3, 2].map((fields, section) => (
-          <section className={styles.settingsLoadingSection} key={`${title}-${section}`}>
+          <section style={{ display: 'grid', gap: 12, padding: '17px 18px', border: '1px solid #e4e3e0', borderRadius: 12, background: '#fff' }} key={`${title}-${section}`}>
             <Bone className="h-4 w-40" />
             <Bone className="h-3 w-full max-w-xl" />
-            <div className={styles.settingsLoadingFields}>
+            <div style={{ display: 'grid', gap: 10 }}>
               {Array.from({ length: fields }, (_, index) => <Bone className="h-8 w-full" key={index} />)}
             </div>
           </section>

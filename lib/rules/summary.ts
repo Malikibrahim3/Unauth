@@ -10,6 +10,7 @@
 import {
   FIELD_LABELS,
   OPERATOR_LABELS,
+  normalizeRuleOperator,
   type RuleCondition,
 } from "@/lib/rules-engine";
 import { FIELD_DEFS_BY_NAME } from "@/lib/rules/fields";
@@ -39,7 +40,7 @@ export function summarizeCondition(condition: Partial<RuleCondition>): string {
     ? (FIELD_LABELS[condition.field] ?? condition.field)
     : "—";
   const opLabel = condition.operator
-    ? (OPERATOR_LABELS[condition.operator] ?? condition.operator)
+    ? (OPERATOR_LABELS[normalizeRuleOperator(condition.operator) ?? ''] ?? `unsupported operator (${condition.operator})`)
     : "";
   const valueLabel =
     condition.value === undefined || condition.value === null

@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
-import { AuthShell } from './AuthShell';
-import '@/styles/operations/index.css';
+import { PublicRoot } from '@/components/public/PublicUI';
 
 interface AuthLayoutProps {
   children: ReactNode;
 }
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
-  return <AuthShell>{children}</AuthShell>;
+  return <PublicRoot>{children}</PublicRoot>;
 }

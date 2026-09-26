@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/navigation/AppNavLink';
 import { ChartFrame, ChartLegend, ChartState, type ChartDataTableModel } from '@/components/charts/authenticated/ChartFrame';
 import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
 import { StatusMatrix } from '@/components/charts/authenticated/StatusMatrix';
@@ -115,11 +115,11 @@ function IntervalCumulativeChart({
       table={points.length ? chartTable(points, currency) : undefined}
     >
       {points.length ? (
-        <div className="ua-interval-cumulative" aria-label={`${question}. Exact values are available in View chart data.`}>
+        <div aria-label={`${question}. Exact values are available in View chart data.`}>
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <polyline points={linePoints} />
           </svg>
-          <div className="ua-interval-cumulative__bars" aria-hidden="true">
+          <div className="relative" aria-hidden="true">
             {points.map((point) => (
               <span key={point.key}>
                 <i style={{ height: `${Math.max(point.intervalMinor > 0 ? 3 : 0, (point.intervalMinor / scale) * 100)}%` }} />
@@ -163,12 +163,12 @@ function FinancialReport({ report }: { report: IntelligenceReport }) {
           <section key={bridge.currency} className="space-y-4" aria-label={`${bridge.currency} financial performance`}>
             <FinancialWaterfallChart
               id={`named-financial-waterfall-${bridge.currency}`}
-              question="What remains after recovered cash?"
-              summary="Confirmed loss minus reconciled recovered cash equals final net loss"
+              question="What remains after received and matched credit?"
+              summary="Confirmed loss minus source-backed received and matched credit equals final net loss; period reconciliation remains separate"
               currency={bridge.currency}
-              steps={waterfall.steps.map((step) => ({ ...step, outcome: step.key === 'recovered' ? 'recovered' as const : 'realised' as const, href: financialReportRecordsHref({ range: report.range, currency: bridge.currency, metric: step.key === 'confirmed-loss' ? 'confirmed_loss' : step.key === 'recovered' ? 'recovered' : 'final_net_loss', timezone: report.timezone }) }))}
+              steps={waterfall.steps.map((step) => ({ ...step, outcome: step.key === 'recovered' ? 'recovered' as const : 'realised' as const, href: financialReportRecordsHref({ range: report.range, currency: bridge.currency, metric: step.key === 'confirmed-loss' ? 'confirmed_loss' : step.key === 'recovered' ? 'recovered' : 'final_net_loss', timezone: report.timezone, from: report.financialScope?.from ?? undefined, to: report.financialScope?.to }) }))}
               reconciled={waterfall.reconciled}
-              unavailableReason="Confirmed loss, recovered cash, and final net loss do not form a complete reconciled equation in this scope."
+              unavailableReason="Confirmed loss, received-and-matched credit, and final net loss do not form a complete equation in this scope."
             />
             <ChartFrame
               id={`named-financial-stages-${bridge.currency}`}
@@ -262,8 +262,8 @@ function RecoveryReport({ report }: { report: IntelligenceReport }) {
           <RankedContributionChart
             key={bridge.currency}
             id={`named-recovery-stage-${bridge.currency}`}
-            title="Where is recorded recovered cash sitting now?"
-            description={`Recovered cash grouped by current recovery status · ${bridge.currency}`}
+            title="Where is received and matched credit sitting now?"
+            description={`Received and matched credit grouped by current recovery status · ${bridge.currency}`}
             items={stages.map((row) => ({ label: row.label, value: row.amountMinor, displayValue: formatMinorCurrencyNullable(row.amountMinor, row.currency), detail: `${formatNumber(row.count)} records`, href: row.href, tone: 'secondary' }))}
             records={{ href: recordsHref('recovery', report, bridge.currency), label: 'View recovery records' }}
           />
@@ -280,7 +280,7 @@ function PolicyReport({ report }: { report: IntelligenceReport }) {
   return (
     <div data-report-identity="policy-decision-composition">
       <ChartFrame id="named-policy-composition" kind="policy-decision-composition" question={NAMED_REPORT_CONTRACTS.policy.question} summary="Accepted, overridden, and declined outcomes must be joined to the policy version in force" scope={`${TIME_RANGE_LABELS[report.range]} · ${report.timezone}`}>
-        <ChartState kind="unavailable" title="Policy outcome composition is unavailable" description="The current named-report projection does not load versioned recommendation snapshots and merchant decisions. Case status is not treated as a policy outcome." action={<Link className="ua-text-label text-[var(--uo-route-action-primary)]" href={recordsHref('policy', report)}>Inspect scoped records</Link>} />
+        <ChartState kind="unavailable" title="Policy outcome composition is unavailable" description="The current named-report projection does not load versioned recommendation snapshots and merchant decisions. Case status is not treated as a policy outcome." action={<Link className="text-[11px] font-medium leading-4 text-[#64686d] text-[#9f4f08]" href={recordsHref('policy', report)}>Inspect scoped records</Link>} />
       </ChartFrame>
     </div>
   );
@@ -297,9 +297,9 @@ function OperationsReport({ report }: { report: IntelligenceReport }) {
     <div className="space-y-6" data-report-identity="operations-sla-pressure">
       <ChartFrame id="named-operations-sla" kind="operations-sla-pressure" question={NAMED_REPORT_CONTRACTS.operations.question} summary="Current healthy, due-soon, and overdue cases by workflow state" scope={`${TIME_RANGE_LABELS[report.range]} · count scale`} legend={<ChartLegend items={[{ label: 'Healthy', tone: 'analytical-remainder' }, { label: 'Due soon', tone: 'analytical-comparison' }, { label: 'Overdue', tone: 'outcome-realised' }]} />} freshness={`Generated ${formatDateTime(report.generatedAt)}`} records={{ href: recordsHref('operations', report), label: 'View owner and state records' }} table={rows.length ? table : undefined}>
         {rows.length ? (
-          <div className="ua-sla-pressure" aria-label="SLA pressure by workflow state">
+          <div aria-label="SLA pressure by workflow state">
             {rows.slice(0, 8).map((row) => (
-              <Link key={row.key} href={row.href} className="ua-sla-pressure__row">
+              <Link key={row.key} href={row.href} className="border-t border-[#e4e3e0]">
                 <span>{row.label}</span>
                 <i aria-hidden="true"><span style={{ width: `${proportionalLength(row.total, maximum)}%` }}>
                   <b data-tone="healthy" style={{ width: `${proportionalLength(row.healthy, row.total)}%` }} />
@@ -326,7 +326,7 @@ function EvidenceReport({ report, measure, selectedCurrency }: { report: Intelli
   return (
     <div className="space-y-4" data-report-identity="evidence-gap-contribution">
       <MeasureSwitch reportId="evidence" report={report} measure={effectiveMeasure} currency={amountCurrency} amountAvailable={Boolean(amountCurrency)} />
-      {measure === 'amount' && !amountCurrency ? <p role="status" className="ua-text-caption-role">Select one currency before comparing blocked value. Count remains visible.</p> : null}
+      {measure === 'amount' && !amountCurrency ? <p role="status" className="text-[11.5px] leading-[1.45] text-[#64686d]">Select one currency before comparing blocked value. Count remains visible.</p> : null}
       <RankedContributionChart
         id="named-evidence-gaps"
         title={NAMED_REPORT_CONTRACTS.evidence.question}
@@ -363,7 +363,7 @@ function CoverageReport({ report }: { report: IntelligenceReport }) {
 }
 
 function ReportUnavailable({ title, description }: { title: string; description: string }) {
-  return <ChartFrame id="named-report-unavailable" kind="named-report-unavailable" question="What does this report show?" summary="The report remains scoped and traceable even when its required projection is absent"><ChartState kind="unavailable" title={title} description={description} /></ChartFrame>;
+  return <div data-state-id="named-report-unavailable"><ChartFrame id="named-report-unavailable" kind="named-report-unavailable" question="What does this report show?" summary="The report remains scoped and traceable even when its required projection is absent"><ChartState kind="unavailable" title={title} description={description} /></ChartFrame></div>;
 }
 
 export function NamedReportAnalytics({

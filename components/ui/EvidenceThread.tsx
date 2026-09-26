@@ -66,12 +66,12 @@ export function AuthorityStamp({
 }) {
   const { label, icon: Icon } = AUTHORITY_META[authority];
   return (
-    <span className={cn('ua-authority-stamp', className)} data-authority={authority}>
-      <span className="ua-authority-stamp__label">
+    <span className={cn('inline-flex items-center gap-2', className)} data-authority={authority}>
+      <span className="inline-flex items-center gap-1 text-[9.5px] font-semibold uppercase tracking-[.06em] text-[#64686d]">
         <Icon size={11} strokeWidth={1.8} aria-hidden="true" />
         {label}
       </span>
-      {machineRef ? <span className="ua-authority-stamp__ref">{machineRef}</span> : null}
+      {machineRef ? <span className="font-mono text-[9.5px] text-[#6f6a63]">{machineRef}</span> : null}
     </span>
   );
 }
@@ -89,28 +89,28 @@ export function EvidenceSpine({
 }) {
   return (
     <ol
-      className={cn('ua-evidence-thread', compact && 'ua-evidence-thread--compact', className)}
+      className={cn('relative m-0 flex list-none flex-col', compact ? 'gap-1.5' : 'gap-3', className)}
       aria-label={label}
     >
       {items.map((item) => {
         const body = (
           <>
-            <span className="ua-evidence-thread__rail" aria-hidden="true">
+            <span className="relative" aria-hidden="true">
               <span
-                className="ua-evidence-thread__node"
+                className="relative z-10 block h-2.5 w-2.5 rounded-full bg-[#1c1f23] ring-4 ring-white"
                 data-authority={item.authority}
                 data-state={item.state ?? 'known'}
               />
             </span>
-            <span className="ua-evidence-thread__content">
-              <span className="ua-evidence-thread__authority">
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2">
                 <AuthorityStamp authority={item.authority} />
-                <span className="ua-evidence-thread__label">{item.label}</span>
+                <span className="text-[11px] leading-[1.45] text-[#64686d]">{item.label}</span>
               </span>
-              <span className="ua-evidence-thread__value">{item.value}</span>
+              <span className="font-semibold tabular-nums text-[#1c1f23]">{item.value}</span>
             </span>
             {item.meta ? (
-              <span className="ua-evidence-thread__meta">{item.meta}</span>
+              <span className="text-[11px] leading-[1.45] text-[#64686d]">{item.meta}</span>
             ) : null}
           </>
         );
@@ -118,12 +118,12 @@ export function EvidenceSpine({
         return (
           <li
             key={item.key}
-            className="ua-evidence-thread__item"
+            className="relative grid grid-cols-[14px_minmax(0,1fr)_auto] items-start gap-3 rounded-lg border border-[#e4e3e0] bg-white p-3 before:absolute before:bottom-full before:left-[18px] before:h-3 before:w-px before:bg-[#d8d4cf] first:before:hidden"
             data-state={item.state ?? 'known'}
             data-authority={item.authority}
           >
             {item.href ? (
-              <Link className="ua-evidence-thread__link" href={item.href}>
+              <Link className="text-[#9f4f08] no-underline" href={item.href}>
                 {body}
               </Link>
             ) : (
@@ -155,11 +155,11 @@ export function DecisionBracket({
   const hasUnavailableLink = items.some((item) => ['missing', 'partial', 'stale'].includes(item.state ?? 'known'));
   return (
     <section
-      className={cn('ua-decision-bracket', className)}
+      className={cn('rounded-xl border border-[#e4e3e0] bg-white p-4', className)}
       data-continuity={hasUnavailableLink ? 'partial' : 'known'}
       aria-label={title}
     >
-      <header className="ua-decision-bracket__header">
+      <header className="flex items-center gap-3">
         <h3>{title}</h3>
         {description ? <p>{description}</p> : null}
       </header>

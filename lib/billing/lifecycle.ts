@@ -110,6 +110,7 @@ export async function scheduleDowngrade(
   supabase: SupabaseClient,
   merchantId: string,
   targetPlanId: PlanId,
+  options?: { sendEmail?: boolean },
 ): Promise<{ effectiveDate: string | null }> {
   const state = await getMerchantBillingState(supabase, merchantId);
   if (!state) throw new Error('Merchant billing state not found');
@@ -123,13 +124,15 @@ export async function scheduleDowngrade(
     })
     .eq('id', state.subscription.id);
 
-  const email = await getMerchantOwnerEmail(supabase, merchantId);
-  if (email) {
-    await sendBillingEmail('downgrade_scheduled', {
-      to: email,
-      planName: PLANS[targetPlanId].name,
-      effectiveDate: state.subscription.currentPeriodEnd,
-    });
+  if (options?.sendEmail !== false) {
+    const email = await getMerchantOwnerEmail(supabase, merchantId);
+    if (email) {
+      await sendBillingEmail('downgrade_scheduled', {
+        to: email,
+        planName: PLANS[targetPlanId].name,
+        effectiveDate: state.subscription.currentPeriodEnd,
+      });
+    }
   }
 
   return { effectiveDate: state.subscription.currentPeriodEnd };

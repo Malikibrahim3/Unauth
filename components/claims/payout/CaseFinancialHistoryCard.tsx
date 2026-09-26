@@ -62,12 +62,12 @@ export function CaseFinancialHistoryCard({
     <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="case-financial-history-title">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 id="case-financial-history-title" className="ua-text-working-title">Financial history</h2>
-          <p className="ua-text-caption-role mt-1">
+          <h2 id="case-financial-history-title" className="font-medium text-[13px] leading-5 text-[#1c1f23]">Financial history</h2>
+          <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1">
             Recorded merchant and provider stages stay separate; approval is not recovered cash.
           </p>
         </div>
-        <Link href="/financials/reports?range=all" className="ua-text-label text-[var(--uo-route-action-primary)]">
+        <Link href="/financials/reports?range=all" className="text-[11px] font-medium leading-4 text-[#64686d] text-[#9f4f08]">
           View reconciled reports
         </Link>
       </div>
@@ -76,15 +76,15 @@ export function CaseFinancialHistoryCard({
         <div className="mt-3 space-y-4">
           {bridges.map((bridge) => (
             <div key={bridge.currency}>
-              <h3 className="ua-text-label">{bridge.currency}</h3>
+              <h3 className="text-[11px] font-medium leading-4 text-[#64686d]">{bridge.currency}</h3>
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
                 {FINANCIAL_REPORT_METRICS.map((metric) => {
                   const known = financialMetricIsKnown(bridge, metric);
                   const value = financialMetricValue(bridge, metric);
                   return (
                     <div key={metric}>
-                      <dt className="text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-secondary)]">{LABELS[metric]}</dt>
-                      <dd className="ua-text-label tabular-nums">
+                      <dt className="text-[length:10.5px] text-[#64686d]">{LABELS[metric]}</dt>
+                      <dd className="text-[11px] font-medium leading-4 text-[#64686d] tabular-nums">
                         {known && value != null
                           ? formatMinorCurrencyNullable(value, bridge.currency)
                           : 'Unavailable'}
@@ -96,11 +96,11 @@ export function CaseFinancialHistoryCard({
             </div>
           ))}
           {updatedAt ? (
-            <p className="text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]">Projection updated {formatDateTime(updatedAt)}</p>
+            <p className="text-[length:10.5px] text-[#6f6a63]">Projection updated {formatDateTime(updatedAt)}</p>
           ) : null}
         </div>
       ) : (
-        <p className="ua-text-body mt-3 text-[var(--uo-route-text-secondary)]">
+        <p className="text-[13px] leading-5 text-[#40454a] mt-3 text-[#64686d]">
           No financial stages have been recorded for this case yet. Missing values remain unavailable rather than showing as zero.
         </p>
       )}

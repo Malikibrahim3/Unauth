@@ -1,46 +1,71 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { HELP_ARTICLES } from '@/lib/help/registry';
-import styles from './HelpOperations.module.css';
+import { replaceHistoryUrlIfChanged } from '@/lib/navigation/history';
 
-const CATEGORY_ORDER = ['Activate', 'Operate', 'Recover', 'Administer'] as const;
+import { HELP_INDEX_GROUPS, HELP_INDEX_INTRO, HelpArticleGroups } from './HelpArticleGroups';
 
 export function HelpCentre({ initialQuery = '' }: { initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery);
-  const articles = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return HELP_ARTICLES;
-    return HELP_ARTICLES.filter((article) => [article.category, article.title, article.summary, article.lead, ...article.keywords].join(' ').toLowerCase().includes(term));
+  const groups = useMemo(() => {
+    const term = query.trim().toLocaleLowerCase();
+    if (!term) return HELP_INDEX_GROUPS;
+    return HELP_INDEX_GROUPS.map((group) => ({
+      ...group,
+      articles: group.articles.filter((article) => `${group.label} ${article.title} ${article.note} ${article.keywords}`.toLocaleLowerCase().includes(term)),
+    })).filter((group) => group.articles.length > 0);
   }, [query]);
 
   useEffect(() => {
     const term = query.trim();
-    window.history.replaceState(null, '', term ? `/help?q=${encodeURIComponent(term)}` : '/help');
+    const url = new URL(window.location.href);
+    if (term) url.searchParams.set('q', term);
+    else url.searchParams.delete('q');
+    replaceHistoryUrlIfChanged(`${url.pathname}${url.search}${url.hash}`);
   }, [query]);
 
   return (
-    <div className={styles.help} data-surface-id="help-index" data-operations-surface="help">
-      <section className={styles.searchCard}>
-        <div className={styles.searchRow}>
-          <label><span className="sr-only">Search the guides</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={'Search the guides — try "unavailable", "write off" or "chargeback"'} /></label>
-          <a href="mailto:support@unauth.app" className={styles.button}>Contact support</a>
+    <div
+      data-surface-id="help-index"
+      role="region"
+      aria-label="Help content"
+      tabIndex={0}
+      data-operations-surface="help"
+      data-state-id={groups.length === 0 ? 'help-empty' : undefined}
+      style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', display: 'flex', justifyContent: 'center', padding: '34px 22px 20px' }}
+    >
+      <div style={{ width: '100%', maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 22 }}>
+        <div>
+          <div style={{ font: "500 25px/1.25 'Inter',sans-serif", letterSpacing: '-.015em', color: '#1c1f23' }}>How this product wants to be used</div>
+          <div style={{ font: "400 13.5px/1.6 'Inter',sans-serif", color: '#64686d', marginTop: 9, maxWidth: 640 }}>{HELP_INDEX_INTRO}</div>
         </div>
-        <div className={styles.common}><span>Common:</span><Link href="/help/activation">Complete activation</Link><Link href="/help/source-repair">Repair a source</Link><Link href="/help/case-investigation">Investigate a Case</Link><Link href="/help/privacy-requests">Handle a privacy request</Link></div>
-      </section>
-      {articles.length ? <div className={styles.groupGrid}>{CATEGORY_ORDER.map((category) => {
-        const categoryArticles = articles.filter((article) => article.category === category);
-        if (!categoryArticles.length) return null;
-        return <section className={styles.guideCard} key={category}><div className={styles.guideTitle}><h2 className="ua-text-working-title">{category}</h2><span>{categoryArticles.length} {categoryArticles.length === 1 ? 'guide' : 'guides'}</span></div><nav aria-label={category}>{categoryArticles.map((article) => <Link href={`/help/${article.slug}`} key={article.slug}><span><strong>{article.title}</strong><small>{article.summary}</small></span><i>›</i></Link>)}</nav></section>;
-      })}</div> : <section className={styles.empty}><h2>No guide matches “{query}”</h2><p>Try activation, source, Work, Case, recovery, reconciliation, roles, privacy, or API.</p><button type="button" onClick={() => setQuery('')}>Clear search</button></section>}
-      <section className={styles.supportCard}><div><h2>Still stuck?</h2><p>Include the workspace name, object reference, error code, and time. Do not email secrets, customer contact details, addresses, or ticket bodies.</p></div><span /><a href="mailto:support@unauth.app" className={styles.button}>Contact support</a><Link href="/sources/connected" className={styles.primary}>Check source health</Link></section>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderRadius: 10, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', maxWidth: 400 }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#64686d" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true"><circle cx="6.2" cy="6.2" r="4.2"/><path d="M9.4 9.4 12 12"/></svg>
+          <span className="sr-only">Search the articles</span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search the articles"
+            style={{ flex: 1, minWidth: 0, padding: 0, border: 0, outline: 0, background: 'transparent', font: "400 13px/1.2 'Inter',sans-serif", color: '#1c1f23' }}
+          />
+        </label>
+        {groups.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 30px' }}>
+            <HelpArticleGroups groups={groups} />
+          </div>
+        ) : (
+          <div role="status" style={{ display: 'flex', minHeight: 360, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+            <div style={{ font: "500 16px/1.35 'Inter',sans-serif", color: '#1c1f23' }}>No article matches “{query}”</div>
+            <button type="button" onClick={() => setQuery('')} style={{ marginTop: 12, padding: '7px 11px', border: 0, borderRadius: 8, background: '#f4f2ef', color: '#40454a', font: "400 12px/1 'Inter',sans-serif", cursor: 'pointer' }}>Clear search</button>
+          </div>
+        )}
+        <div style={{ borderTop: '1px solid #ece9e4', paddingTop: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ flex: 1, font: "400 12.5px/1.6 'Inter',sans-serif", color: '#64686d' }}>Nothing here answers your question? The people who built this read every message, and the reply usually contains the answer rather than a link back to this page.</span>
+          <a href="mailto:support@unauth.app" style={{ flex: 'none', padding: '8px 13px', borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Ask a person</a>
+        </div>
+      </div>
     </div>
   );
-}
-
-export function PrintButton() {
-  return <button type="button" className="ua-button ua-button--secondary ua-button--sm" onClick={() => window.print()}>Print</button>;
 }
 
 export function ArticleFeedback({ articleSlug = 'general' }: { articleSlug?: string }) {
@@ -48,18 +73,17 @@ export function ArticleFeedback({ articleSlug = 'general' }: { articleSlug?: str
 
   function recordAnswer(next: 'yes' | 'no') {
     setAnswer(next);
-    window.localStorage.setItem(`unauth.help.${articleSlug}.feedback`, next);
+    try { window.localStorage.setItem(`unauth.help.${articleSlug}.feedback`, next); } catch { /* Keep feedback usable when browser storage is unavailable. */ }
   }
 
   return (
-    <>
-      <div role="group" aria-label="Was this article useful?">
-        <button type="button" aria-pressed={answer === 'yes'} onClick={() => recordAnswer('yes')}>Yes</button>
-        <button type="button" aria-pressed={answer === 'no'} onClick={() => recordAnswer('no')}>No</button>
-      </div>
-      <p role="status" aria-live="polite">
-        {answer ? 'Thanks — your response was saved in this browser.' : 'Feedback is not attached to your workspace data.'}
-      </p>
-    </>
+    <div role="group" aria-label="Was this article useful?" style={{ display: 'flex', gap: 8 }}>
+      <button type="button" aria-pressed={answer === 'yes'} onClick={() => recordAnswer('yes')} style={{ padding: '6px 12px', border: 0, borderRadius: 8, background: answer === 'yes' ? '#f4f2ef' : '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', font: "400 12px/1 'Inter',sans-serif", color: '#40454a', cursor: 'pointer' }}>Yes</button>
+      <button type="button" aria-pressed={answer === 'no'} onClick={() => recordAnswer('no')} style={{ padding: '6px 12px', border: 0, borderRadius: 8, background: answer === 'no' ? '#f4f2ef' : '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', font: "400 12px/1 'Inter',sans-serif", color: '#40454a', cursor: 'pointer' }}>Not really</button>
+    </div>
   );
+}
+
+export function PrintButton() {
+  return <button type="button" onClick={() => window.print()} style={{ padding: '7px 10px', border: 0, borderRadius: 8, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "500 11.5px/1 'Inter',sans-serif", cursor: 'pointer' }}>Print</button>;
 }

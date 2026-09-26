@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/navigation/AppNavLink';
 import { useState, type RefObject } from 'react';
 import { Button, type ButtonVariant } from '@/components/ui';
 import { DURATION } from '@/lib/design/motion';
@@ -59,7 +59,7 @@ export default function ExportMenu({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-[var(--uo-route-action-primary)]"
+        className="focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-[#9f4f08]"
       >
         {triggerLabel}
       </Button>
@@ -69,11 +69,11 @@ export default function ExportMenu({
           aria-hidden={phase === 'exiting' ? true : undefined}
           className="absolute right-0 z-20 mt-1 min-w-[220px] rounded-md border py-1 shadow-lg"
           style={{
-            borderColor: 'var(--uo-route-border-default)',
-            background: 'var(--uo-route-surface-primary)',
+            borderColor: '#e4e3e0',
+            background: '#fff',
             opacity: isOpen ? 1 : 0,
             transform: `translateY(${isOpen ? 0 : 2}px)`,
-            transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--uo-route-ease-standard), transform ${DURATION.fast}ms var(--uo-route-ease-standard)` : 'none',
+            transition: motionAllowed ? `opacity ${DURATION.fast}ms ease, transform ${DURATION.fast}ms ease` : 'none',
             pointerEvents: phase === 'exiting' ? 'none' : undefined,
           }}
         >
@@ -82,19 +82,19 @@ export default function ExportMenu({
               <Link
                 role="menuitem"
                 href={reportsHref}
-                className="ua-text-dense block px-3 py-2 hover:bg-[var(--uo-route-surface-secondary)]"
-                style={{ color: 'var(--uo-route-text-primary)' }}
+                className="text-[12px] leading-[1.45] text-[#40454a] block px-3 py-2 hover:bg-[#f4f3f1]"
+                style={{ color: '#1c1f23' }}
                 onClick={() => setOpen(false)}
               >
                 Open full reports
                 <span className="ml-1 opacity-60">- complete reporting workspace</span>
               </Link>
-              <div className="my-1 border-t" style={{ borderColor: 'var(--uo-route-border-default)' }} />
+              <div className="my-1 border-t" style={{ borderColor: '#e4e3e0' }} />
             </>
           ) : null}
           <p
-            className="px-3 pb-1 pt-1.5 text-[length:var(--uo-route-text-metadata-size)] font-bold"
-            style={{ color: 'var(--uo-route-text-tertiary)' }}
+            className="px-3 pb-1 pt-1.5 text-[length:10.5px] font-bold"
+            style={{ color: '#6f6a63' }}
           >
             Case reports
           </p>
@@ -102,8 +102,8 @@ export default function ExportMenu({
             <a
               role="menuitem"
               href={`/api/reports/claims?${exportParams.toString()}`}
-              className="ua-text-dense block px-3 py-2 hover:bg-[var(--uo-route-surface-primary)]"
-              style={{ color: 'var(--uo-route-text-primary)' }}
+              className="text-[12px] leading-[1.45] text-[#40454a] block px-3 py-2 hover:bg-[#fff]"
+              style={{ color: '#1c1f23' }}
               onClick={() => setOpen(false)}
             >
               {hasScopedMetric ? 'Selected metric CSV' : 'Financial bridge CSV'}
@@ -114,8 +114,8 @@ export default function ExportMenu({
             <a
               role="menuitem"
               href={`/api/reports/claims?${outcomesParams.toString()}`}
-              className="ua-text-dense block px-3 py-2 hover:bg-[var(--uo-route-surface-primary)]"
-              style={{ color: 'var(--uo-route-text-primary)' }}
+              className="text-[12px] leading-[1.45] text-[#40454a] block px-3 py-2 hover:bg-[#fff]"
+              style={{ color: '#1c1f23' }}
               onClick={() => setOpen(false)}
             >
               {hasScopedCategory ? 'Selected loss cause CSV' : 'Loss causes CSV'}
@@ -125,18 +125,18 @@ export default function ExportMenu({
           <a
             role="menuitem"
             href={`/api/reports/claims?${recordParams.toString()}`}
-            className="ua-text-dense block px-3 py-2 hover:bg-[var(--uo-route-surface-primary)]"
-            style={{ color: 'var(--uo-route-text-primary)' }}
+            className="text-[12px] leading-[1.45] text-[#40454a] block px-3 py-2 hover:bg-[#fff]"
+            style={{ color: '#1c1f23' }}
             onClick={() => setOpen(false)}
           >
             Supporting records CSV
             <span className="ml-1 opacity-60">- scoped rows, audited, maximum 10,000</span>
           </a>
 
-          <div className="my-1 border-t" style={{ borderColor: 'var(--uo-route-border-default)' }} />
+          <div className="my-1 border-t" style={{ borderColor: '#e4e3e0' }} />
           <p
-            className="px-3 pb-1 pt-0.5 text-[length:var(--uo-route-text-metadata-size)] font-bold"
-            style={{ color: 'var(--uo-route-text-tertiary)' }}
+            className="px-3 pb-1 pt-0.5 text-[length:10.5px] font-bold"
+            style={{ color: '#6f6a63' }}
           >
             Activity log
           </p>
@@ -144,8 +144,8 @@ export default function ExportMenu({
             role="menuitem"
             href="/api/audit-trail?format=csv&limit=200"
             prefetch={false}
-            className="ua-text-dense block px-3 py-2 hover:bg-[var(--uo-route-surface-primary)]"
-            style={{ color: 'var(--uo-route-text-primary)' }}
+            className="text-[12px] leading-[1.45] text-[#40454a] block px-3 py-2 hover:bg-[#fff]"
+            style={{ color: '#1c1f23' }}
             onClick={() => setOpen(false)}
           >
             Audit trail CSV

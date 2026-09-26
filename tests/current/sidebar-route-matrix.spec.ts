@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-/** Keep in sync with lib/navigation/appRoutes.ts sidebar registry. */
+/** Visible navigation follows the supplied pages; destinations stay canonical. */
 const SIDEBAR_ROUTES = [
   { href: '/overview', heading: 'Operating position' },
   { href: '/work', heading: 'Work' },
@@ -14,7 +14,9 @@ const SIDEBAR_ROUTES = [
   { href: '/controls/flows', heading: 'Flows' },
   { href: '/sources/connected', heading: 'Sources' },
   { href: '/sources/imports', heading: 'Imports' },
-  { href: '/settings/workspace/account', heading: 'Account' },
+  { href: '/notifications', heading: 'Inbox' },
+  { href: '/settings/product/platform', heading: 'Money and reporting' },
+  { href: '/help', heading: 'Help' },
 ] as const;
 
 test.describe('Sidebar route matrix', () => {

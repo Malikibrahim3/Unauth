@@ -26,7 +26,7 @@ export function SegmentedControl({ items, value, onValueChange, 'aria-label': ar
     <>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = cn('ua-segmented__item', active && 'ua-segmented__item--active', item.disabled && 'ua-segmented__item--disabled');
+        const classes = cn('inline-flex min-h-7 items-center justify-center whitespace-nowrap px-2.5 py-1 text-[10.5px] leading-none text-[#64686d] no-underline transition-colors hover:bg-white hover:text-[#1c1f23]', active && 'bg-white font-medium text-[#1c1f23] shadow-[0_1px_2px_rgba(28,27,25,.08)]', item.disabled && 'cursor-not-allowed opacity-45');
         const content = <>{item.label}</>;
         if (item.href) {
           return <Link key={item.value} href={item.disabled ? '#' : item.href} aria-current={active ? 'page' : undefined} aria-disabled={item.disabled || undefined} tabIndex={item.disabled ? -1 : undefined} className={classes} onClick={item.disabled ? (event) => event.preventDefault() : undefined}>{content}</Link>;
@@ -36,11 +36,11 @@ export function SegmentedControl({ items, value, onValueChange, 'aria-label': ar
     </>
   );
   return isRouteNavigation ? (
-    <nav aria-label={ariaLabel} className={cn('ua-segmented', className)}>
+    <nav aria-label={ariaLabel} className={cn('inline-flex overflow-hidden rounded-lg border border-[#e4e3e0] bg-[#f4f3f1] p-0.5', className)}>
       {renderedItems}
     </nav>
   ) : (
-    <div role="group" aria-label={ariaLabel} className={cn('ua-segmented', className)}>
+    <div role="group" aria-label={ariaLabel} className={cn('inline-flex overflow-hidden rounded-lg border border-[#e4e3e0] bg-[#f4f3f1] p-0.5', className)}>
       {renderedItems}
     </div>
   );

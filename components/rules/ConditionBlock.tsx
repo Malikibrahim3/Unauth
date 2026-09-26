@@ -1,8 +1,8 @@
 'use client';
+import { MONETARY_RULE_FIELDS } from '@/lib/rules-engine';
 
-import { Trash2 } from 'lucide-react';
-import { Input, Select } from '@/components/ui';
 import { OPERATOR_LABELS, type RuleCondition } from '@/lib/rules-engine';
+import { normalizeRuleOperator } from '@/lib/rules-engine';
 import {
   CATEGORY_LABELS,
   FIELD_DEFS_BY_NAME,
@@ -11,7 +11,6 @@ import {
   type RuleFieldCategory,
   type RuleFieldDef,
 } from '@/lib/rules/fields';
-import styles from './AutomationControls.module.css';
 
 interface ConditionBlockProps {
   condition: RuleCondition;
@@ -51,6 +50,8 @@ function defaultValueFor(def: RuleFieldDef, operator: string): unknown {
 
 export function ConditionBlock({ condition, onChange, onRemove, disabled }: ConditionBlockProps) {
   const def = FIELD_DEFS_BY_NAME[condition.field];
+  const operator = normalizeRuleOperator(condition.operator);
+  const operatorSupported = Boolean(operator && def?.operators.includes(operator));
 
   const handleFieldChange = (field: string) => {
     const nextDef = FIELD_DEFS_BY_NAME[field]!;
@@ -73,18 +74,20 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
 
   const isMulti =
     def != null &&
-    ((def.type === 'enum' && (condition.operator === 'in' || condition.operator === 'not_in')) ||
-      (def.type === 'string_array' && condition.operator === 'contains_any'));
+    ((def.type === 'enum' && (operator === 'in' || operator === 'not_in')) ||
+      (def.type === 'string_array' && operator === 'contains_any'));
 
   return (
-    <div className={styles.conditionBlock}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(150px, .7fr) minmax(180px, 1fr) 32px', gap: 8, alignItems: 'start', padding: 10, border: '1px solid #e4e3e0', borderRadius: 10, background: '#ffffff' }}>
           {/* Field */}
-          <Select
+          <select
             aria-label="Condition field"
             value={condition.field}
             disabled={disabled}
             onChange={(e) => handleFieldChange(e.target.value)}
+            style={controlStyle}
           >
+            {!def ? <option value={condition.field} disabled>Unsupported field: {condition.field}</option> : null}
             {CATEGORY_ORDER.map((category) => {
               const fields = RULE_FIELDS.filter(
                 (f) =>
@@ -108,31 +111,37 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
                 <option value={condition.field}>{FIELD_LABELS[condition.field] ?? condition.field}</option>
               </optgroup>
             )}
-          </Select>
+          </select>
 
           {/* Operator */}
-          <Select
+          <select
             aria-label="Condition operator"
-            value={condition.operator}
+            value={operatorSupported ? operator! : condition.operator}
             disabled={disabled || !def}
             onChange={(e) => handleOperatorChange(e.target.value)}
+            style={controlStyle}
           >
+            {!operatorSupported ? <option value={condition.operator} disabled>Unsupported: {condition.operator || "missing operator"}</option> : null}
             {(def?.operators ?? []).map((op) => (
               <option key={op} value={op}>
                 {OPERATOR_LABELS[op] ?? op}
               </option>
             ))}
-          </Select>
+          </select>
         <div>{renderValueInput()}</div>
         <button
           type="button"
           onClick={onRemove}
           disabled={disabled}
           aria-label="Remove condition"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--uo-route-radius-control)] text-[var(--uo-route-text-tertiary)] hover:bg-[var(--uo-route-surface-hover)] hover:text-[var(--uo-route-risk-high)]"
+          style={{ width: 32, height: 32, flex: 'none', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 0, borderRadius: 8, background: 'transparent', color: '#6f6a63', cursor: disabled ? 'default' : 'pointer' }}
         >
-          <Trash2 className="h-4 w-4" />
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><path d="M2.8 4h8.4M5 4V2.6h4V4M4.2 4l.5 7.2h4.6l.5-7.2M5.9 6v3.2M8.1 6v3.2" /></svg>
         </button>
+          {MONETARY_RULE_FIELDS.has(condition.field) ? <label style={{ gridColumn: '1 / -1', color: '#40454a', fontSize: 12 }}>Threshold currency (explicit confirmation)
+        <input aria-label="Threshold currency" placeholder="ISO code, e.g. GBP" value={condition.currency ?? ''} disabled={disabled} maxLength={3} onChange={event => onChange({ ...condition, currency: event.target.value.toUpperCase() || null })} style={{ ...controlStyle, marginLeft: 8, width: 160 }} />
+        {!condition.currency ? <span> Legacy currency is unknown; monetary comparisons remain inconclusive.</span> : null}
+      </label> : null}
     </div>
   );
 
@@ -142,7 +151,7 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
     if (isMulti) {
       const selected = Array.isArray(condition.value) ? (condition.value as string[]) : [];
       return (
-        <div className={styles.choiceList}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {(def.options ?? []).map((opt) => {
             const active = selected.includes(opt.value);
             return (
@@ -151,28 +160,30 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
                 type="button"
                 disabled={disabled}
                 onClick={() => toggleMulti(opt.value)}
-                className={styles.choice}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 30, padding: '0 9px', border: '1px solid #ddd8d1', borderRadius: 8, background: selected ? '#fff3e9' : '#fff', color: selected ? '#7a5310' : '#40454a', fontSize: 11 }}
                 data-active={active}
               >
                 {opt.label}
               </button>
             );
           })}
-        </div>
+
+    </div>
       );
     }
 
     if (def.type === 'boolean') {
       return (
-        <Select
+        <select
           aria-label="Condition value"
           value={condition.value === true ? 'true' : 'false'}
           disabled={disabled}
           onChange={(e) => onChange({ ...condition, value: e.target.value === 'true' })}
+          style={controlStyle}
         >
           <option value="true">Yes</option>
           <option value="false">No</option>
-        </Select>
+        </select>
       );
     }
 
@@ -180,11 +191,12 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
       // single-select (eq/neq, or contains/not_contains for claim_types)
       const value = typeof condition.value === 'string' ? condition.value : '';
       return (
-        <Select
+        <select
           aria-label="Condition value"
           value={value}
           disabled={disabled}
           onChange={(e) => onChange({ ...condition, value: e.target.value })}
+          style={controlStyle}
         >
           <option value="" disabled>
             Select a value…
@@ -194,14 +206,14 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
               {opt.label}
             </option>
           ))}
-        </Select>
+        </select>
       );
     }
 
     // numeric
     const numericValue = typeof condition.value === 'number' ? condition.value : '';
     return (
-      <Input
+      <input
         type="number"
         aria-label="Condition value"
         inputMode={def.type === 'integer' ? 'numeric' : 'decimal'}
@@ -213,7 +225,10 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
           const raw = e.target.value;
           onChange({ ...condition, value: raw === '' ? null : Number(raw) });
         }}
+        style={controlStyle}
       />
     );
   }
 }
+
+const controlStyle = { boxSizing: 'border-box', width: '100%', minWidth: 0, height: 34, padding: '0 9px', border: 0, borderRadius: 8, outline: 'none', background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.13)', color: '#1c1f23', font: "400 11.5px/1 'Inter',sans-serif" } as const;

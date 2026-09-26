@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react';
-import { cn } from '@/lib/utils';
 import { label, type LabelFamily } from '@/lib/ui/labels';
 
 /**
@@ -11,15 +9,13 @@ export type StatusTone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 export type SystemTone = StatusTone;
 
 const TONE_STYLE: Record<StatusTone, { bg: string; fg: string; bd: string }> = {
-  neutral: { bg: 'var(--uo-route-surface-muted)', fg: 'var(--uo-route-text-secondary)', bd: 'var(--uo-route-border-default)' },
-  info: { bg: 'var(--uo-route-info-bg)', fg: 'var(--uo-route-info)', bd: 'var(--uo-route-info-border)' },
-  warning: { bg: 'var(--uo-route-warning-bg)', fg: 'var(--uo-route-warning)', bd: 'var(--uo-route-warning-border)' },
-  success: { bg: 'var(--uo-route-success-bg)', fg: 'var(--uo-route-success)', bd: 'var(--uo-route-success-border)' },
-  // NOTE: danger intentionally stays on the risk-critical-* family, not
-  // --uo-route-critical* — --uo-route-critical and --uo-route-risk-critical (etc.) are equal in
-  // light mode but diverge in dark mode; forcing this onto --uo-route-critical*
-  // would be a real dark-mode colour regression, not a no-op alias swap.
-  danger: { bg: 'var(--uo-route-risk-critical-bg)', fg: 'var(--uo-route-risk-critical)', bd: 'var(--uo-route-risk-critical-border)' },
+  neutral: { bg: '#f4f3f1', fg: '#64686d', bd: '#e4e3e0' },
+  info: { bg: '#edf6f8', fg: '#247388', bd: '#c4dfe5' },
+  warning: { bg: '#fff3e9', fg: '#7a5310', bd: '#ead8b6' },
+  success: { bg: '#eaf5ef', fg: '#1a6b43', bd: '#bfdecf' },
+  // NOTE: danger intentionally stays on the risk-critical-* family so the
+  // meaning remains distinct from ordinary warning and success states.
+  danger: { bg: '#fdf0e6', fg: '#b0431a', bd: '#edc6b5' },
 };
 
 /**
@@ -164,53 +160,57 @@ interface ToneStyle {
 
 /** A flat colour token expressed as fg, with bg/border derived via colour-mix — never a hex literal. */
 function axisToneStyle(colorVar: string): ToneStyle {
-  const fg = `var(${colorVar})`;
+  const fg = colorVar.includes('recovered') || colorVar.includes('verified') || colorVar.includes('connected') ? '#1a6b43'
+    : colorVar.includes('realised') || colorVar.includes('breached') || colorVar.includes('error') ? '#b0431a'
+      : colorVar.includes('approaching') || colorVar.includes('stale') || colorVar.includes('partial') ? '#7a5310'
+        : colorVar.includes('prevented') || colorVar.includes('observed') ? '#247388'
+          : '#64686d';
   return {
     fg,
-    bg: `color-mix(in srgb, ${fg} 12%, var(--uo-route-surface-primary))`,
-    bd: `color-mix(in srgb, ${fg} 32%, var(--uo-route-surface-primary))`,
+    bg: `color-mix(in srgb, ${fg} 12%, #fff)`,
+    bd: `color-mix(in srgb, ${fg} 32%, #fff)`,
   };
 }
 
 const OUTCOME_TONE_STYLE: Record<OutcomeTone, ToneStyle> = {
-  prevented: axisToneStyle('--uo-route-outcome-prevented'),
-  recovered: axisToneStyle('--uo-route-outcome-recovered'),
-  realised: axisToneStyle('--uo-route-outcome-realised'),
-  open: axisToneStyle('--uo-route-outcome-open'),
-  identified: axisToneStyle('--uo-route-outcome-identified'),
+  prevented: axisToneStyle('--authority-outcome-prevented'),
+  recovered: axisToneStyle('--authority-outcome-recovered'),
+  realised: axisToneStyle('--authority-outcome-realised'),
+  open: axisToneStyle('--authority-outcome-open'),
+  identified: axisToneStyle('--authority-outcome-identified'),
 };
 
 const WORKFLOW_TONE_STYLE: Record<WorkflowTone, ToneStyle> = {
-  ready: { fg: 'var(--uo-route-workflow-ready)', bg: 'var(--uo-route-workflow-ready-bg)', bd: 'var(--uo-route-workflow-ready-border)' },
-  active: { fg: 'var(--uo-route-workflow-active)', bg: 'var(--uo-route-workflow-active-bg)', bd: 'var(--uo-route-workflow-active-border)' },
-  waiting: { fg: 'var(--uo-route-workflow-waiting)', bg: 'var(--uo-route-workflow-waiting-bg)', bd: 'var(--uo-route-workflow-waiting-border)' },
-  escalated: { fg: 'var(--uo-route-workflow-escalated)', bg: 'var(--uo-route-workflow-escalated-bg)', bd: 'var(--uo-route-workflow-escalated-border)' },
-  blocked: { fg: 'var(--uo-route-workflow-blocked)', bg: 'var(--uo-route-workflow-blocked-bg)', bd: 'var(--uo-route-workflow-blocked-border)' },
-  closed: { fg: 'var(--uo-route-workflow-closed)', bg: 'var(--uo-route-workflow-closed-bg)', bd: 'var(--uo-route-workflow-closed-border)' },
+  ready: { fg: '#1a6b43', bg: '#f4f3f1', bd: '#e4e3e0' },
+  active: { fg: '#40454a', bg: '#f4f3f1', bd: '#e4e3e0' },
+  waiting: { fg: '#40454a', bg: '#f4f3f1', bd: '#e4e3e0' },
+  escalated: { fg: '#40454a', bg: '#f4f3f1', bd: '#e4e3e0' },
+  blocked: { fg: '#40454a', bg: '#f4f3f1', bd: '#e4e3e0' },
+  closed: { fg: '#40454a', bg: '#f4f3f1', bd: '#e4e3e0' },
 };
 
 const URGENCY_TONE_STYLE: Record<UrgencyTone, ToneStyle> = {
-  breached: axisToneStyle('--uo-route-urgency-breached'),
-  approaching: axisToneStyle('--uo-route-urgency-approaching'),
-  none: axisToneStyle('--uo-route-urgency-none'),
+  breached: axisToneStyle('--authority-urgency-breached'),
+  approaching: axisToneStyle('--authority-urgency-approaching'),
+  none: axisToneStyle('--authority-urgency-none'),
 };
 
 const TRUST_TONE_STYLE: Record<TrustTone, ToneStyle> = {
-  verified: axisToneStyle('--uo-route-trust-verified'),
-  partial: axisToneStyle('--uo-route-trust-partial'),
-  stale: axisToneStyle('--uo-route-trust-stale'),
-  unavailable: axisToneStyle('--uo-route-trust-unavailable'),
-  unknown: axisToneStyle('--uo-route-trust-unknown'),
-  withheld: axisToneStyle('--uo-route-trust-withheld'),
-  mixed: axisToneStyle('--uo-route-trust-mixed'),
+  verified: axisToneStyle('--authority-trust-verified'),
+  partial: axisToneStyle('--authority-trust-partial'),
+  stale: axisToneStyle('--authority-trust-stale'),
+  unavailable: axisToneStyle('--authority-trust-unavailable'),
+  unknown: axisToneStyle('--authority-trust-unknown'),
+  withheld: axisToneStyle('--authority-trust-withheld'),
+  mixed: axisToneStyle('--authority-trust-mixed'),
 };
 
 const SOURCE_TONE_STYLE: Record<SourceTone, ToneStyle> = {
-  connected: axisToneStyle('--uo-route-source-connected'),
-  degraded: axisToneStyle('--uo-route-source-degraded'),
-  error: axisToneStyle('--uo-route-source-error'),
-  'not-configured': axisToneStyle('--uo-route-source-not-configured'),
-  observed: axisToneStyle('--uo-route-source-observed'),
+  connected: axisToneStyle('--authority-source-connected'),
+  degraded: axisToneStyle('--authority-source-degraded'),
+  error: axisToneStyle('--authority-source-error'),
+  'not-configured': axisToneStyle('--authority-source-not-configured'),
+  observed: axisToneStyle('--authority-source-observed'),
 };
 
 function resolveToneStyle(axis: StatusFamily, tone: AnyStatusTone): ToneStyle {
@@ -274,7 +274,7 @@ interface StatusBadgeProps {
  * Label resolves via the WS0.2 layer; colour via the value's axis (or an
  * explicit `axis`/`tone` override).
  */
-export function StatusBadge({ family, value, axis, tone, size = 'md', className }: StatusBadgeProps) {
+export function StatusBadge({ family, value, axis, tone, size = 'md', className: _className }: StatusBadgeProps) {
   if (!value) return null;
   // An explicit `tone` (with no `axis`) is a legacy-shaped override — it
   // always paired with the flat system tones, so it resolves against
@@ -295,15 +295,21 @@ export function StatusBadge({ family, value, axis, tone, size = 'md', className 
   const t = resolveToneStyle(resolvedAxis, resolvedTone);
   return (
     <span
-      className={cn('ua-status-badge', `ua-status-badge--${size}`, className)}
       data-axis={resolvedAxis}
       style={{
-        '--uo-route-status-bg': t.bg,
-        '--uo-route-status-fg': t.fg,
-        '--uo-route-status-border': t.bd,
-      } as CSSProperties}
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        borderRadius: 6,
+        padding: size === 'sm' ? '3px 7px' : '4px 8px',
+        fontSize: 10,
+        fontWeight: 600,
+        background: t.bg,
+        color: t.fg,
+        border: `1px solid ${t.bd}`,
+      }}
     >
-      <span className="ua-status-badge__dot" aria-hidden="true" />
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: t.fg }} aria-hidden="true" />
       {label(family, value)}
     </span>
   );
@@ -326,7 +332,7 @@ export function PriorityChip({
     return <StatusBadge family="workPriority" value={value} axis="system" tone={value === 'urgent' ? 'danger' : 'warning'} size={size} />;
   }
   return (
-    <span className={size === 'sm' ? 'ua-priority-text ua-priority-text--sm' : 'ua-priority-text'}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 6, background: '#f4f3f1', padding: size === 'sm' ? '3px 7px' : '4px 8px', color: '#40454a', fontSize: 10, fontWeight: 600 }}>
       {label('workPriority', value)}
     </span>
   );

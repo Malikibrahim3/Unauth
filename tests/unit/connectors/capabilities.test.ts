@@ -1,4 +1,4 @@
-import { capability, FORBIDDEN_MVP_CAPABILITIES } from '@/lib/connectors/capabilities';
+import { capability, UNRELEASED_ACTION_CAPABILITIES } from '@/lib/connectors/capabilities';
 
 describe('connector capability model', () => {
   it('defaults support to supported and enabledByDefault to true', () => {
@@ -13,8 +13,8 @@ describe('connector capability model', () => {
     expect(capability('something.act', 'act').risk).toBe('high');
   });
 
-  it('structurally forces forbidden MVP+ capabilities to unsupported/disabled', () => {
-    for (const id of FORBIDDEN_MVP_CAPABILITIES) {
+  it('structurally keeps unreleased external actions unsupported and disabled', () => {
+    for (const id of UNRELEASED_ACTION_CAPABILITIES) {
       const c = capability(id, 'act', { support: 'supported', enabledByDefault: true });
       expect(c.support).toBe('unsupported');
       expect(c.enabledByDefault).toBe(false);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/server';
+import { ACTIVE_MERCHANT_COOKIE } from '@/lib/permissions';
 import {
   isE2eTestAuthEnabled,
   validateE2eAuthRequest,
@@ -8,14 +9,14 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-async function resolveMerchantOwnerEmail(merchantId: string): Promise<string | null> {
+async function resolveMerchantMemberEmail(merchantId: string, memberRole: 'owner' | 'admin' | 'analyst' | 'viewer'): Promise<string | null> {
   const admin = createAdminClient();
   const { data: member } = await admin
     .from('merchant_users')
     .select('user_id,invited_email')
     .eq('merchant_id', merchantId)
     .eq('invite_status', 'active')
-    .eq('role', 'owner')
+    .eq('role', memberRole)
     .limit(1)
     .maybeSingle();
 
@@ -41,21 +42,22 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const secret = searchParams.get('secret');
   const merchantId = searchParams.get('merchant_id');
+  const requestedRole = searchParams.get('member_role') ?? 'owner';
   const redirectTo = searchParams.get('redirect') ?? '/cases';
 
-  if (!merchantId || !validateE2eAuthRequest({ secret, merchantId })) {
+  if (!merchantId || !['owner', 'admin', 'analyst', 'viewer'].includes(requestedRole) || !validateE2eAuthRequest({ secret, merchantId })) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const ownerEmail = await resolveMerchantOwnerEmail(merchantId);
-  if (!ownerEmail) {
-    return NextResponse.json({ error: 'merchant_owner_not_found' }, { status: 404 });
+  const memberEmail = await resolveMerchantMemberEmail(merchantId, requestedRole as 'owner' | 'admin' | 'analyst' | 'viewer');
+  if (!memberEmail) {
+    return NextResponse.json({ error: 'merchant_member_not_found' }, { status: 404 });
   }
 
   const admin = createAdminClient();
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: 'magiclink',
-    email: ownerEmail,
+    email: memberEmail,
     options: {
       redirectTo: new URL(redirectTo, request.nextUrl.origin).toString(),
     },
@@ -105,5 +107,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Bootstrap the requested fixture workspace as well as its user. A stale
+  // workspace cookie otherwise sends a valid test session to another fixture's
+  // onboarding route. This local-only route retains its secret/tenant/role gates.
+  response.cookies.set(ACTIVE_MERCHANT_COOKIE, merchantId, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: request.nextUrl.protocol === 'https:',
+    path: '/',
+  });
   return response;
 }

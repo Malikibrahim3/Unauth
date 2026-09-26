@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Surface } from '@/components/ui/Surface';
 
 /**
- * Canonical Instrument Grade builder / configuration shell.
+ * Canonical Evidence Operations builder / configuration shell.
  *
  * Rules and Flows both grew the same layout by copy-paste: a header card
  * (status badge + version + readable summary + simulate/edit/publish actions)
@@ -50,22 +50,22 @@ export function BuilderShell({
   className,
 }: BuilderShellProps) {
   return (
-    <div className={cn('ua-builder', className)}>
-      <Surface structure="working" pad="dense" as="header" className="ua-builder__header">
-        <div className="ua-builder__header-lead">
+    <div className={cn('flex flex-col gap-4', className)}>
+      <Surface structure="working" pad="dense" as="header" className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
           {statusBadge}
-          <div className="ua-builder__header-identity">
-            <div className="ua-builder__header-title">{title}</div>
-            {meta ? <div className="ua-builder__header-meta">{meta}</div> : null}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">{title}</div>
+            {meta ? <div className="flex items-center gap-3">{meta}</div> : null}
           </div>
         </div>
-        {actions ? <div className="ua-builder__header-actions">{actions}</div> : null}
+        {actions ? <div className="flex items-center gap-3">{actions}</div> : null}
       </Surface>
       {validation}
-      <div className="ua-builder__grid">
-        <div className="ua-builder__main">{children}</div>
+      <div className={cn('grid gap-4', preview && 'lg:grid-cols-[minmax(0,1fr)_340px]')}>
+        <div className="min-w-0">{children}</div>
         {preview ? (
-          <aside className="ua-builder__aside" aria-label="Live preview">
+          <aside className="min-w-0 rounded-xl border border-[#e4e3e0] bg-[#ffffff] p-4" aria-label="Live preview">
             {preview}
           </aside>
         ) : null}
@@ -99,16 +99,17 @@ export function BuilderValidationSummary({
   return (
     <div
       className={cn(
-        'ua-builder__validation',
-        tone === 'blocking' && 'ua-builder__validation--blocking',
-        tone === 'ready' && 'ua-builder__validation--ready',
+        'rounded-lg border px-4 py-3 text-[11px]',
+        tone === 'neutral' && 'border-[#e4e3e0] bg-[#f4f3f1] text-[#64686d]',
+        tone === 'blocking' && 'border-[#efc8b6] bg-[#fdf0e6] text-[#b0431a]',
+        tone === 'ready' && 'border-[#bedac9] bg-[#eaf5ef] text-[#1a6b43]',
         className,
       )}
       role={tone === 'blocking' ? 'alert' : 'status'}
     >
-      <p className="ua-builder__validation-title">{title}</p>
+      <p className="font-semibold text-[#1c1f23]">{title}</p>
       {items && items.length > 0 ? (
-        <ul className="ua-builder__validation-list">
+        <ul className="flex flex-col gap-3">
           {items.map((item, index) => (
             <li key={index}>{item}</li>
           ))}
@@ -128,7 +129,7 @@ export interface BuilderSequenceProps {
  * labels carry the meaning, and the list order carries the sequence. */
 export function BuilderSequence({ children, 'aria-label': ariaLabel, className }: BuilderSequenceProps) {
   return (
-    <ol className={cn('ua-builder__sequence', className)} aria-label={ariaLabel}>
+    <ol className={cn('m-0 flex list-none flex-col gap-3', className)} aria-label={ariaLabel}>
       {children}
     </ol>
   );
@@ -143,11 +144,11 @@ export interface BuilderStepProps {
 
 export function BuilderStep({ label, detail, children }: BuilderStepProps) {
   return (
-    <li className="ua-builder__step">
-      <span className="ua-builder__step-marker" aria-hidden="true" />
-      <div className="ua-builder__step-body">
-        <p className="ua-builder__step-label">{label}</p>
-        {detail ? <p className="ua-builder__step-detail">{detail}</p> : null}
+    <li className="relative grid grid-cols-[24px_minmax(0,1fr)] gap-3 before:absolute before:bottom-full before:left-3 before:h-3 before:w-px before:bg-[#d8d4cf] first:before:hidden">
+      <span className="relative grid h-6 w-6 place-items-center rounded-full bg-[#1c1f23] text-[10px] text-white" aria-hidden="true" />
+      <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-[#e4e3e0] bg-white p-3">
+        <p className="text-[11px] leading-[1.45] text-[#64686d]">{label}</p>
+        {detail ? <p className="text-[11px] leading-[1.45] text-[#64686d]">{detail}</p> : null}
         {children}
       </div>
     </li>

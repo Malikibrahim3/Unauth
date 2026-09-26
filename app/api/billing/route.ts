@@ -5,17 +5,19 @@ import { gracePeriodDaysRemaining } from '@/lib/billing/subscriptionAccess';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { loadLatestSubscriptionIntent } from '@/lib/billing/subscriptionIntent';
+import { TABLES } from '@/lib/supabase/tables';
+import { deriveCreditBurnForecast } from '@/lib/capabilities/derived';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const supabase = createClient();
-  const { data: authData } = await supabase.auth.getUser();
-  const user = authData?.user ?? null;
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { data: authData, error: authError } = await supabase.auth.getClaims();
+  const userId = typeof authData?.claims?.sub === 'string' ? authData.claims.sub : null;
+  if (authError || !userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const service = createServiceClient();
-  const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
+  const { denied, ctx } = await requirePermission(service, userId, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
   return buildBillingResponse(service, ctx.merchantId);
 }
@@ -36,6 +38,18 @@ async function buildBillingResponse(service: ReturnType<typeof createServiceClie
   const graceDays = gracePeriodDaysRemaining(state.subscription.gracePeriodEndsAt);
   const intentRead = await loadLatestSubscriptionIntent(service, merchantId);
   const intent = intentRead.intent;
+  const usageWindowStart = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const usageEvents = await service
+    .from(TABLES.CONTEXT_CREDIT_EVENTS)
+    .select('occurred_at,credits_spent,refunded_credits,status')
+    .eq('merchant_id', merchantId)
+    .gte('occurred_at', usageWindowStart)
+    .order('occurred_at', { ascending: true })
+    .limit(1_000);
+  const creditBurnForecast = deriveCreditBurnForecast(
+    (usageEvents.data ?? []) as Array<{ occurred_at: string | null; credits_spent: number | null; refunded_credits: number | null; status: string | null }>,
+    state.totalRemaining,
+  );
 
   return NextResponse.json({
     planId: state.subscription.planId,
@@ -47,6 +61,12 @@ async function buildBillingResponse(service: ReturnType<typeof createServiceClie
     monthlyAllowance: state.monthlyAllowance,
     totalRemaining: state.totalRemaining,
     usedThisCycle: state.usedThisCycle,
+    creditBurnForecast: {
+      ...creditBurnForecast,
+      observationWindowStart: usageWindowStart,
+      observationWindowEnd: new Date().toISOString(),
+      sourceState: usageEvents.error ? 'unavailable' : creditBurnForecast.state,
+    },
     cycleResetAt: state.credits.cycleResetAt,
     currentPeriodStart: state.subscription.currentPeriodStart,
     currentPeriodEnd: state.subscription.currentPeriodEnd,
@@ -63,6 +83,7 @@ async function buildBillingResponse(service: ReturnType<typeof createServiceClie
       ? {
           planId: intent.requestedPlanId,
           planName: PLANS[intent.requestedPlanId].name,
+          billingInterval: intent.billingInterval,
           status: intent.status,
           updatedAt: intent.updatedAt,
         }

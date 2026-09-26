@@ -15,9 +15,11 @@
 import {
   FIELD_LABELS,
   OPERATOR_LABELS,
+  normalizeRuleOperator,
   type RuleAction,
   type RuleCondition,
 } from '@/lib/rules-engine';
+import { normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { CANONICAL_CLAIM_TYPES, CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
 import {
   ATTRIBUTION_CONFIDENCES,
@@ -265,8 +267,10 @@ export function validateConditions(conditions: unknown): ConditionValidationErro
       errors.push({ index, message: `Unknown field "${String(c.field)}"` });
       return;
     }
+    if (c.currency != null && !normaliseCurrencyOrNull(c.currency)) errors.push({ index, message: 'Threshold currency must be a supported ISO currency code' });
     const def = FIELD_DEFS_BY_NAME[c.field]!;
-    if (typeof c.operator !== 'string' || !def.operators.includes(c.operator)) {
+    const operator = typeof c.operator === 'string' ? normalizeRuleOperator(c.operator) : null;
+    if (!operator || !def.operators.includes(operator)) {
       errors.push({ index, message: `Operator "${String(c.operator)}" is not valid for ${c.field}` });
       return;
     }
@@ -274,7 +278,7 @@ export function validateConditions(conditions: unknown): ConditionValidationErro
       errors.push({ index, message: `${c.field} requires a value` });
       return;
     }
-    const typeError = valueMatchesType(def, c.operator, c.value);
+    const typeError = valueMatchesType(def, operator, c.value);
     if (typeError) errors.push({ index, message: typeError });
   });
   return errors;

@@ -1,6 +1,5 @@
 import Link from '@/components/navigation/AppNavLink';
 import type { ReactNode } from 'react';
-import styles from './DecisionLedger.module.css';
 
 export type LedgerBridgeItem = {
   key: string;
@@ -13,25 +12,24 @@ export type LedgerBridgeItem = {
 
 export function LedgerBridge({ items, label }: { items: LedgerBridgeItem[]; label: string }) {
   return (
-    <div className={styles.bridgeViewport}>
+    <div style={{ minWidth: 0, overflowX: 'auto' }}>
       <ol
-        className={styles.bridge}
-        style={{ gridTemplateColumns: `repeat(${Math.max(1, items.length)}, minmax(0, 1fr))` }}
+        style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, items.length)}, minmax(0, 1fr))`, gap: 1, overflow: 'hidden', borderRadius: 10, background: '#eae8e5' }}
         aria-label={label}
       >
         {items.map((item, index) => {
           const content = (
             <>
-              <span className={styles.bridgeNode} data-state={item.state ?? 'known'} aria-hidden="true" />
-              <span className={styles.bridgeLabel}>{item.label}</span>
-              <span className={styles.bridgeValue}>{item.value}</span>
-              {item.definition ? <span className={styles.bridgeDefinition}>{item.definition}</span> : null}
+              <span data-state={item.state ?? 'known'} aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: item.state === 'unavailable' ? '#d4cfc8' : item.state === 'partial' ? '#7a5310' : '#1a6b43' }} />
+              <span style={{ color: '#6f6a63', font: "400 9.5px/1.3 'IBM Plex Mono',monospace", textTransform: 'uppercase' }}>{item.label}</span>
+              <span style={{ color: '#1c1f23', font: "500 12px/1.35 'Inter',sans-serif" }}>{item.value}</span>
+              {item.definition ? <span style={{ color: '#64686d', font: "400 10.5px/1.45 'Inter',sans-serif" }}>{item.definition}</span> : null}
               {index < items.length - 1 ? <span className="sr-only">then</span> : null}
             </>
           );
           return (
-            <li key={item.key} className={styles.bridgeItem}>
-              {item.href ? <Link href={item.href} className={styles.bridgeLink}>{content}</Link> : content}
+            <li key={item.key} style={{ minWidth: 150, padding: '12px 13px', display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', alignItems: 'center', gap: '6px 8px', background: '#fff' }}>
+              {item.href ? <Link href={item.href} style={{ display: 'contents', color: 'inherit', textDecoration: 'none' }}>{content}</Link> : content}
             </li>
           );
         })}

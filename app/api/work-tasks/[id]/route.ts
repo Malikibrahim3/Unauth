@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { normalizeApiIdempotencyKey } from '@/lib/api/v1/ingest/requestIdempotency';
 
@@ -42,6 +43,25 @@ export async function PATCH(
   const { id } = await params;
   if (parsed.data.action === 'snooze' && new Date(parsed.data.until).getTime() <= Date.now()) {
     return NextResponse.json({ error: 'Snooze time must be in the future' }, { status: 400 });
+  }
+
+  // Reject a known stale request before PostgREST retries a serialization error.
+  // The RPC still checks the version under its row lock for concurrent updates.
+  const task = await service.from(TABLES.WORK_TASKS).select('owner_user_id,state_version')
+    .eq('merchant_id', ctx.merchantId).eq('id', id).maybeSingle();
+  if (task.error) return NextResponse.json({ error: 'Task state is unavailable. Refresh before retrying.' }, { status: 503 });
+  if (!task.data) return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+  if (task.data.state_version !== parsed.data.expectedVersion) {
+    const prior = await service.from(TABLES.DOMAIN_EVENTS).select('aggregate_id,event_type')
+      .eq('merchant_id', ctx.merchantId).eq('idempotency_key', idempotencyKey).maybeSingle();
+    if (prior.error) return NextResponse.json({ error: 'The previous action result is unavailable. Keep this action identity when retrying.' }, { status: 503 });
+    if (prior.data?.aggregate_id !== id || prior.data?.event_type !== `work_task.${parsed.data.action}`) {
+      return NextResponse.json({ error: 'This task changed. Refresh the queue before retrying.' }, { status: 409 });
+    }
+  }
+  if (parsed.data.action === 'snooze' && !['owner', 'admin'].includes(ctx.role)
+    && task.data.owner_user_id && task.data.owner_user_id !== user.id) {
+    return NextResponse.json({ error: 'This task belongs to another operator.' }, { status: 403 });
   }
 
   const { data, error } = await service.rpc('transition_work_task_v1', {

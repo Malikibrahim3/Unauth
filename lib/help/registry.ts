@@ -1,3 +1,47 @@
+import {
+  annualDiscountPercent,
+  annualFreeMonths,
+  annualMonthlyEquivalentMinor,
+  annualSavingGbp,
+  BILLABLE_EVENTS,
+  PLANS,
+  PUBLIC_PLAN_IDS,
+  TOP_UP_CREDITS,
+  TOP_UP_PRICE_GBP,
+} from '@/lib/billing/plans';
+import { formatMoney } from '@/lib/utils/format';
+
+function currentPlanSummary(planId: (typeof PUBLIC_PLAN_IDS)[number]) {
+  const plan = PLANS[planId];
+  const planMoney = (pounds: number) => {
+    const formatted = formatMoney(pounds * 100, plan.currency);
+    return Number.isInteger(pounds) ? formatted.replace(/\.00$/, '') : formatted;
+  };
+  const monthly = plan.priceGbp === 'custom'
+    ? 'custom monthly pricing'
+    : `${planMoney(plan.priceGbp)}/month`;
+  const saving = annualSavingGbp(plan);
+  const effectiveMonthlyMinor = annualMonthlyEquivalentMinor(plan);
+  const annual = typeof plan.annualPriceGbp === 'number'
+    ? `${planMoney(plan.annualPriceGbp)} paid annually (${effectiveMonthlyMinor == null ? 'custom' : formatMoney(effectiveMonthlyMinor, plan.currency)}/month effective${saving == null ? '' : `, saving ${planMoney(saving)}`})`
+    : 'custom annual terms';
+  const incidents = typeof plan.limits.incidentsPerMonth === 'number'
+    ? `${plan.limits.incidentsPerMonth} new incidents/month`
+    : 'agreed incident volume';
+  const stores = typeof plan.limits.connectedStores === 'number'
+    ? `${plan.limits.connectedStores} connected store${plan.limits.connectedStores === 1 ? '' : 's'}`
+    : 'agreed connected stores';
+  return `${plan.name}: ${monthly}; ${annual}; ${incidents}; ${stores}. Complete core workflow included.`;
+}
+
+const annualDiscountSummary = [PLANS.core, PLANS.scale_2026].map((plan) => {
+  const discount = annualDiscountPercent(plan);
+  const freeMonths = annualFreeMonths(plan);
+  return discount == null || freeMonths == null
+    ? `${plan.name} annual terms are agreed.`
+    : `${plan.name} annual price includes a ${discount}% discount, equivalent to ${freeMonths} months free.`;
+}).join(' ');
+
 export type HelpArticleSection = {
   id: string;
   title: string;
@@ -21,6 +65,8 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
   {
     slug: 'activation', category: 'Activate', title: 'Complete workspace activation', summary: 'Move from workspace access to verified sources and real import progress.', lead: 'Activation is complete only when the selected source stack is configured, verified, imported, and ready for operational evidence. A saved profile alone is not readiness.', appliesTo: 'Onboarding, source setup, and first import', keywords: ['onboarding', 'activate', 'setup', 'import', 'ready'],
     sections: [
+      { id: 'plans', title: 'Plans and capacity', paragraphs: [...PUBLIC_PLAN_IDS.map(currentPlanSummary), `Prices are in GBP and exclude VAT. ${annualDiscountSummary} Enterprise terms are agreed. There is no Free plan.`] },
+      { id: 'credits', title: 'Existing credit-based subscriptions', paragraphs: [...Object.values(BILLABLE_EVENTS).map(event => `${event.label}: ${event.credits} credits. ${event.chargingRule}`), `These credit charges and the ${TOP_UP_CREDITS}-credit £${TOP_UP_PRICE_GBP} top-up remain relevant to existing legacy subscription records. Current Core and Scale offers use the incident capacity shown above. No automatic overage or lifetime case credit is promised; payment changes require confirmation.`] },
       { id: 'sequence', title: 'Use the activation sequence', paragraphs: ['Work through the states in order so a configured credential is never mistaken for usable evidence.'], steps: ['Complete the workspace profile and applicability questions.', 'Connect the selected commerce and support sources.', 'Open Sources and confirm each required object family is verified, not merely configured.', 'Start the initial import and follow its real job progress.', 'Resolve failed rows or a stale connection before relying on Cases or financial totals.'] },
       { id: 'ready', title: 'Know what ready means', paragraphs: ['Workspace access, profile completion, configured sources, verified sources, import completion, evidence readiness, and operational readiness are separate states. The product keeps a later state unavailable when an earlier dependency is missing.'] },
       { id: 'blocked', title: 'If activation is blocked', paragraphs: ['Open the affected source rather than repeating onboarding. Preserve the provider error and failed object family when contacting support; do not send customer contact data or ticket bodies by email.'] },
@@ -48,7 +94,7 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       { id: 'read', title: 'Read the file in order', paragraphs: ['Confirm the case identity and back path, then inspect evidence, investigation activity, decision context, and recovery or financial history. Missing or conflicting evidence must remain visible.'] },
       { id: 'investigate', title: 'Request missing evidence', paragraphs: ['Create an investigation only for a named evidence gap. Select the real target and channel, review the request snapshot, then send only when the UI presents an authorised dispatcher. A sent request is immutable; later responses are appended.'] },
       { id: 'decide', title: 'Record merchant authority', paragraphs: ['State the decision, amount and currency where applicable, reason, and whether the recommendation was followed. Recording authorisation does not issue a refund, deny a claim, or change a provider system.'] },
-    ], related: [{ label: 'Open Cases', href: '/cases' }, { label: 'Open evidence-gap queue', href: '/cases?queue=evidence' }, { label: 'Use an external handoff', href: '/help/external-handoff' }],
+    ], related: [{ label: 'Open Cases', href: '/cases' }, { label: 'Open evidence-gap queue', href: '/cases?queue=needs_evidence' }, { label: 'Use an external handoff', href: '/help/external-handoff' }],
   },
   {
     slug: 'external-handoff', category: 'Operate', title: 'Record an external handoff', summary: 'Move an authorised action to a provider without pretending Unauth performed it.', lead: 'Where no controlled write connector exists, Unauth prepares an exact handoff. The merchant performs the provider action and records a receipt; a later source observation remains independent.', appliesTo: 'Case action rail and Work', keywords: ['handoff', 'external', 'provider', 'receipt', 'attempt'],
@@ -67,12 +113,14 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     ], related: [{ label: 'Open recovery board', href: '/financials/recovery' }, { label: 'Open Work', href: '/work' }, { label: 'Reconcile a credit', href: '/help/credit-reconciliation' }],
   },
   {
-    slug: 'credit-reconciliation', category: 'Recover', title: 'Match and reconcile a provider credit', summary: 'Keep approval, received credit, matching, and reconciliation separate.', lead: 'Money is received only from a source-observed or receipt-backed credit event. Matching links it to the case; reconciliation is a later authorised confirmation.', appliesTo: 'Reconciliation, recovery, and reports', keywords: ['credit', 'reconciliation', 'money', 'match', 'received', 'approval'],
+    slug: 'credit-reconciliation', category: 'Recover', title: 'Approved, received, matched, reconciled', summary: 'Keep approval, received credit, matching, and reconciliation separate.', lead: 'These four words describe four different amounts of money, and treating any two of them as the same is the fastest way to report a number you cannot defend. This is the article to read before your first month end.', appliesTo: 'Recovery board, reconciliation, reports and period close', keywords: ['credit', 'reconciliation', 'money', 'match', 'received', 'approval'],
     sections: [
-      { id: 'find', title: 'Find the credit', paragraphs: ['Open Reconciliation and filter by status, source, currency, or search. Totals and pages are server-backed. Mixed currencies remain separate and incomplete money remains unavailable rather than zero.'] },
-      { id: 'match', title: 'Review and match', paragraphs: ['Compare provider, external reference, amount, currency, occurred time, recovery, case, and source evidence. Choose match only when the relationship is supported; otherwise dismiss with a reason or leave it unresolved.'] },
-      { id: 'reconcile', title: 'Confirm reconciliation', paragraphs: ['An authorised user confirms the received credit against the recovery after matching. Corrections and reversals append events; they never rewrite the earlier observation. Reports then derive from the same canonical entries.'] },
-    ], related: [{ label: 'Open reconciliation', href: '/financials/reconciliation' }, { label: 'Open recovery board', href: '/financials/recovery' }, { label: 'Open supporting records', href: '/financials/reports/records' }],
+      { id: 'approved', title: 'Approved', paragraphs: ['A carrier, a 3PL or a card network has said it will pay. That is all. It is a sentence in an email or a status in a portal, and Unauth records it as a status event with whoever observed it. It is not money, it has no date on your bank statement, and about one approval in fourteen never turns into a payment at all.'] },
+      { id: 'received', title: 'Received', paragraphs: ['A payment has appeared in a settlement file. It has an amount, a date and a reference. Received is the first of the four that is real money, and it is the earliest point at which Unauth will let a figure count towards recovery.'] },
+      { id: 'matched', title: 'Matched', paragraphs: ['The received payment has been tied to the claim it pays. Carriers pay in batches, net of adjustments, often weeks late and rarely with the reference you filed under. A payment sitting unmatched is money you have that you cannot yet attribute — which is why the reconciliation workspace exists and why it is usually the busiest surface at month end.'] },
+      { id: 'reconciled', title: 'Reconciled', paragraphs: ['The match has been accepted, the loss entry has been closed against it, and the difference between what was sought and what arrived has been explained. Only reconciled money is safe to report to finance without a footnote.'] },
+      { id: 'why', title: 'Why the product is stubborn about this', paragraphs: ['It would be easy to show one recovery number, and every dashboard you have used probably does. The problem appears three months later, when someone asks why the recovery figure fell. The honest answer is that it never rose — an approval was counted as a receipt, and the receipt never came.'] },
+    ], related: [{ label: 'Recovery board', href: '/financials/recovery' }, { label: 'Reconciliation', href: '/financials/reconciliation' }, { label: 'Reports', href: '/financials/reports' }, { label: 'Period close', href: '/financials/reconciliation?action=close' }],
   },
   {
     slug: 'roles-permissions', category: 'Administer', title: 'Manage roles and workspace access', summary: 'Invite exact roles, transfer ownership, change access, and remove members safely.', lead: 'Displayed roles and server enforcement use the same four-role model: Owner, Administrator, Analyst, and Viewer. Only the owner can transfer ownership or delete the workspace.', appliesTo: 'People and roles', keywords: ['role', 'owner', 'administrator', 'analyst', 'viewer', 'invite', 'transfer'],
@@ -83,15 +131,15 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     ], related: [{ label: 'Open People and roles', href: '/settings/workspace/team' }, { label: 'Open audit trail', href: '/settings/governance/audit-trail' }, { label: 'Open data privacy', href: '/settings/legal/data-privacy' }],
   },
   {
-    slug: 'privacy-requests', category: 'Administer', title: 'Handle subject access, erasure, and workspace deletion', summary: 'Use the scoped export, erasure receipt, and resumable owner-only deletion job.', lead: 'Subject access and erasure use a canonical customer UUID and remain merchant-scoped. Workspace deletion is a separate owner-only job and does not delete the owner’s authentication identity.', appliesTo: 'Data privacy', keywords: ['privacy', 'access', 'erasure', 'delete', 'receipt', 'export'],
+    slug: 'privacy-requests', category: 'Administer', title: 'Handle subject access, erasure, and workspace deletion', summary: 'Use the scoped export, erasure receipt, and resumable owner-only deletion job.', lead: 'Subject access and existing erasure receipts use a canonical customer ID and remain merchant-scoped. Customer erasure is blocked while a verified preview is unavailable. Workspace deletion is a separate owner-only job and does not delete the owner’s authentication identity.', appliesTo: 'Data privacy', keywords: ['privacy', 'access', 'erasure', 'delete', 'receipt', 'export'],
     sections: [
-      { id: 'access', title: 'Download subject access JSON', paragraphs: ['Enter the canonical merchant-customer or source-customer UUID and download the versioned JSON contract. It includes linked customer, order, ticket, case, loss, and recovery records; it is not a workspace-wide export. The response is not retained as a server-side export file.'] },
-      { id: 'erase', title: 'Erase a subject', paragraphs: ['Review the removal and lawful-record boundary, type ERASE, and confirm. Supported identifiers and controlled files are redacted or removed; financial and audit envelopes remain reconcilable and the operation creates a durable receipt. Failed file cleanup remains queued and observable.'] },
+      { id: 'access', title: 'Download subject access JSON', paragraphs: ['Enter the canonical customer ID shown in Customers and download the versioned JSON contract. It includes linked customer, order, ticket, case, loss, and recovery records; it is not a workspace-wide export. The response is not retained as a server-side export file.'] },
+      { id: 'erase', title: 'Review an existing erasure receipt', paragraphs: ['Erasure preview is unavailable. Customer erasure cannot be confirmed here until a verified scope can be reviewed. Use Check status with the canonical customer ID to inspect an existing receipt and its storage-cleanup state. Queued cleanup and unavailable backup-cycle status must not be treated as completion.'] },
       { id: 'workspace', title: 'Delete a workspace', paragraphs: ['Only the owner can start the job. Export the chosen audit or supporting records first, transfer ownership instead if the workspace should continue, then type the workspace-specific phrase. A paused storage, database, or verification stage can resume by job ID without repeating completed stages. Completion creates an immutable receipt and retains the user sign-in identity.'] },
     ], related: [{ label: 'Open data privacy', href: '/settings/legal/data-privacy' }, { label: 'Export audit trail', href: '/settings/governance/audit-trail' }, { label: 'Manage ownership', href: '/settings/workspace/team' }],
   },
   {
-    slug: 'api-access', category: 'Administer', title: 'Use scoped machine API access', summary: 'Create an entitled key, choose scopes and rate, and handle server denials.', lead: 'Machine API access is available only to an active or grace-period Scale subscription. The server checks entitlement, explicit key scope, revocation, merchant scope, and per-key rate on every request.', appliesTo: 'API access and /api/v1', keywords: ['api', 'key', 'scope', 'rate limit', '401', '403', '429'],
+    slug: 'api-access', category: 'Administer', title: 'Use scoped machine API access', summary: 'Create an entitled key, choose scopes and rate, and handle server denials.', lead: `Machine API access requires an entitled active or grace-period ${PLANS.scale.name} subscription (legacy internal ID: scale). The server checks entitlement, explicit key scope, revocation, merchant scope, and per-key rate on every request.`, appliesTo: 'API access and /api/v1', keywords: ['api', 'key', 'scope', 'rate limit', '401', '403', '429'],
     sections: [
       { id: 'create', title: 'Create a least-privilege key', paragraphs: ['Open API access, name the integration, select only the required scopes, and choose 15, 30, 60, or 120 requests per minute. Copy the secret once; only its prefix and hash remain available afterwards.'] },
       { id: 'authenticate', title: 'Authenticate and choose a scope', paragraphs: ['Send the key as Authorization: Bearer <key>. Read families require customers:read, cases:read, evidence:read, imports:read, or lookup:read. Write families require cases:write, evidence:write, or imports:write. Empty-scope historical keys have no machine access.'] },

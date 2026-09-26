@@ -10,15 +10,15 @@ export function EvidencePackageFormIntro({ showIntro }: EvidencePackageFormIntro
   if (showIntro) {
     return (
       <>
-        <h2 className="ua-text-section-title mb-1">Package scope</h2>
-        <p className="text-body-sm mb-2" style={{ color: 'var(--uo-route-text-secondary)' }}>
+        <h2 className="font-semibold text-[14px] leading-5 text-[#1c1f23] mb-1">Package scope</h2>
+        <p className="text-body-sm mb-2" style={{ color: '#64686d' }}>
           Organises identity signal data from your records that may be relevant when preparing a chargeback
           response. Unauth surfaces the signal history - your payment processor or acquirer determines what
           qualifies as valid dispute evidence.
         </p>
         <p
-          className="text-caption mb-3 rounded-[var(--uo-route-radius-control)] border px-3 py-2"
-          style={{ color: 'var(--uo-route-text-tertiary)', borderColor: 'var(--uo-route-border-subtle)', background: 'var(--uo-route-surface-secondary)' }}
+          className="text-caption mb-3 rounded-[8px] border px-3 py-2"
+          style={{ color: '#6f6a63', borderColor: '#eae8e5', background: '#f4f3f1' }}
         >
           This export presents identity match data for your review. How you use it in a dispute is at your
           discretion - follow your acquirer or processor guidelines.
@@ -28,7 +28,7 @@ export function EvidencePackageFormIntro({ showIntro }: EvidencePackageFormIntro
   }
 
   return (
-    <p className="text-body-sm mb-4" style={{ color: 'var(--uo-route-text-secondary)' }}>
+    <p className="text-body-sm mb-4" style={{ color: '#64686d' }}>
       Select the disputed order and optional notes. Unauth compiles identity signal data for your review.
     </p>
   );
@@ -47,11 +47,11 @@ export function EvidencePackageFormLoadingState({ loadingOrders }: EvidencePacka
       role="status"
       aria-busy="true"
       aria-label="Loading order history"
-      className="rounded-[var(--uo-route-radius-control)] p-5 text-center"
-      style={{ background: 'var(--uo-route-surface-secondary)', border: '1px solid var(--uo-route-border-subtle)' }}
+      className="rounded-[8px] p-5 text-center"
+      style={{ background: '#f4f3f1', border: '1px solid #eae8e5' }}
     >
       <Spinner size="lg" delayMs={0} label="Loading order history" className="mb-3" />
-      <p className="text-body-sm" style={{ color: 'var(--uo-route-text-secondary)' }}>
+      <p className="text-body-sm" style={{ color: '#64686d' }}>
         Loading order history…
       </p>
     </div>
@@ -76,21 +76,21 @@ export function EvidencePackageFormEmptyOrders({
   return (
     <div
       data-state-id="evidence-package-no-orders"
-      className="rounded-[var(--uo-route-radius-control)] p-5 text-center"
-      style={{ background: 'var(--uo-route-surface-secondary)', border: '1px solid var(--uo-route-border-subtle)' }}
+      className="rounded-[8px] p-5 text-center"
+      style={{ background: '#f4f3f1', border: '1px solid #eae8e5' }}
     >
-      <p className="text-heading-sm mb-2" style={{ color: 'var(--uo-route-text-primary)' }}>
+      <p className="text-heading-sm mb-2" style={{ color: '#1c1f23' }}>
         No orders found
       </p>
-      <p className="text-body-sm mb-4" style={{ color: 'var(--uo-route-text-secondary)' }}>
+      <p className="text-body-sm mb-4" style={{ color: '#64686d' }}>
         This customer has no order history in the current dataset. Evidence packages require at least one order.
       </p>
       {onCancel ? (
-        <button type="button" onClick={onCancel} className="ua-text-label hover:underline" style={{ color: 'var(--uo-route-action-primary)' }}>
+        <button type="button" onClick={onCancel} className="text-[11px] font-medium leading-4 text-[#64686d] hover:underline" style={{ color: '#9f4f08' }}>
           Close
         </button>
       ) : (
-        <Link href={`/customers/${profileId}`} className="ua-text-label hover:underline" style={{ color: 'var(--uo-route-action-primary)' }}>
+        <Link href={`/customers/${profileId}`} className="text-[11px] font-medium leading-4 text-[#64686d] hover:underline" style={{ color: '#9f4f08' }}>
           Return to profile
         </Link>
       )}
@@ -114,15 +114,15 @@ export function EvidencePackageFormNoClaimsBanner({
   return (
     <div
       data-state-id="evidence-package-no-qualifying-cases"
-      className="mb-3 flex items-start gap-3 rounded-[var(--uo-route-radius-control)] p-3"
-      style={{ background: 'var(--uo-route-warning-bg)', border: '1px solid var(--uo-route-warning-border)' }}
+      className="mb-3 flex items-start gap-3 rounded-[8px] p-3"
+      style={{ background: '#fff3e9', border: '1px solid #ead8b6' }}
     >
-      <TriangleAlert size={16} className="mt-0.5 shrink-0 text-[var(--uo-route-warning)]" aria-hidden="true" />
+      <TriangleAlert size={16} className="mt-0.5 shrink-0 text-[#7a5310]" aria-hidden="true" />
       <div>
-        <p className="ua-text-working-title mb-0.5" style={{ color: 'var(--uo-route-text-primary)' }}>
+        <p className="font-medium text-[13px] leading-5 text-[#1c1f23] mb-0.5" style={{ color: '#1c1f23' }}>
           No refund claims or chargebacks on record
         </p>
-        <p className="text-caption" style={{ color: 'var(--uo-route-text-secondary)' }}>
+        <p className="text-caption" style={{ color: '#64686d' }}>
           Signal data is most complete when a refund claim is on record. You can still compile a signal report for
           any order.
         </p>

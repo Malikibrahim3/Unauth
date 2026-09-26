@@ -1,11 +1,15 @@
 'use client';
 
-import Link from 'next/link';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useState, type CSSProperties, type ReactElement } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AuthProductContext } from '@/app/(auth)/AuthShell';
-import { LOSS_CONCERN_OPTIONS, ORDER_VOLUME_OPTIONS } from '@/lib/constants/merchantProfile';
-import { formatNumber } from '@/lib/utils/format';
+import OnboardingStoreVisual from '@/components/visual-authority/generated/Onboarding-Store-Clean';
+import OnboardingCommerceVisual from '@/components/visual-authority/generated/Onboarding-Commerce-Clean';
+import OnboardingHelpdeskVisual from '@/components/visual-authority/generated/Onboarding-Helpdesk-Clean';
+import OnboardingReadyVisual from '@/components/visual-authority/generated/Onboarding-Ready-Clean';
+import { bindSuppliedTree, type SuppliedTreeElement } from '@/components/visual-authority/bindSuppliedTree';
+import { replaceHistoryUrlIfChanged } from '@/lib/navigation/history';
+import { createClient } from '@/lib/supabase/client';
+import { formatNumber, formatTimeInTimeZone } from '@/lib/utils/format';
 
 export type OnboardingConnectorView = {
   id: string;
@@ -18,7 +22,16 @@ export type OnboardingConnectorView = {
   connectEnabled: boolean;
 };
 
+type LatestImportView = {
+  status: string;
+  failedRows: number | null;
+  totalRows: number | null;
+  processedRows: number | null;
+  startedAt: string | null;
+};
+
 interface OnboardingClientProps {
+  acceptanceScenarioId?: string | null;
   userId: string;
   initialStoreName?: string;
   initialPlatform?: string;
@@ -32,100 +45,145 @@ interface OnboardingClientProps {
   helpdeskConnected?: boolean;
   helpdeskProvider?: 'gorgias' | 'zendesk' | 'freshdesk' | null;
   workspaceHref?: string;
+  nextAction?: { label: string; href: string; detail?: string };
   requestedPlan?: string;
   requestedCredits?: string;
   requestedPlanUnavailableReason?: string;
   initialConnectors?: OnboardingConnectorView[];
+  shopifyError?: string | null;
+  reportingCurrency?: string;
+  reportingTimezone?: string;
+  latestImport?: LatestImportView | null;
 }
 
-type View = 'profile' | 'connect' | 'verified';
-type ConnectorTone = 'ok' | 'partial' | 'planned';
-type ProfileField = 'storeName' | 'platform' | 'annualVolume' | 'primaryConcern';
+type Step = 'store' | 'commerce' | 'helpdesk' | 'ready';
+type Helpdesk = 'gorgias' | 'zendesk' | 'freshdesk';
+type ProfileState = {
+  storeName: string;
+  platform: string;
+  annualVolume: string;
+  primaryConcern: string;
+  operatingLayers: string;
+};
 
+const STEPS: ReadonlyArray<{ id: Step; title: string; detail: string }> = [
+  { id: 'store', title: 'Your store', detail: 'who you are and what you sell' },
+  { id: 'commerce', title: 'Commerce', detail: 'orders, refunds, customers' },
+  { id: 'helpdesk', title: 'Helpdesk', detail: 'what the customer actually said' },
+  { id: 'ready', title: 'Ready', detail: 'what happens next' },
+];
 const CONNECTED_STATUSES = new Set(['connected', 'active', 'import_complete', 'syncing', 'importing']);
+const OPTION_VALUE: ReadonlyMap<string, readonly [keyof ProfileState, string]> = new Map([
+  ['Shopify', ['platform', 'shopify']],
+  ['WooCommerce', ['platform', 'woocommerce']],
+  ['BigCommerce', ['platform', 'bigcommerce']],
+  ['Amazon', ['platform', 'amazon']],
+  ['Something else', ['platform', 'other']],
+  ['Under 1,000', ['annualVolume', 'under_1000']],
+  ['1,000 – 8,000', ['annualVolume', '1000_8000']],
+  ['8,000 – 15,000', ['annualVolume', '8000_15000']],
+  ['More', ['annualVolume', 'over_15000']],
+  ['Delivery disputes', ['primaryConcern', 'delivery_disputes']],
+  ['Returns', ['primaryConcern', 'returns']],
+  ['Damage', ['primaryConcern', 'damage']],
+  ['Chargebacks', ['primaryConcern', 'chargebacks']],
+  ['Not sure yet', ['primaryConcern', 'all']],
+  ['3PL only', ['operatingLayers', '3pl']],
+  ['Returns platform only', ['operatingLayers', 'returns']],
+  ['Both', ['operatingLayers', 'both']],
+  ['Neither', ['operatingLayers', 'neither']],
+] as const);
 
-function connectorMonogram(id: string) {
-  if (id === 'shopify') return 'SHO';
-  if (id === 'stripe') return 'PAY';
-  if (id === 'shipbob') return 'SHP';
-  if (id === 'royal_mail') return 'RM';
-  if (id === 'csv_import') return 'DOC';
-  return 'TKT';
+function initialOperatingLayers(wms: string | undefined, returns: string | undefined) {
+  if (wms === 'yes' && returns === 'yes') return 'both';
+  if (wms === 'yes') return '3pl';
+  if (returns === 'yes') return 'returns';
+  if (wms === 'no' && returns === 'no') return 'neither';
+  return '';
+}
+
+function formatClock(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : formatTimeInTimeZone(date, 'Europe/London');
+}
+
+function shopifyErrorCopy(code: string | null | undefined) {
+  if (!code) return null;
+  if (code === 'forbidden' || code === 'unauthorized') return 'The account used for authorisation does not have the required Shopify permissions. Ask an account owner to authorise, or sign in as one. Nothing was connected and nothing was read.';
+  if (code === 'misconfigured') return 'Shopify authorisation is not configured in this environment. Nothing was connected and nothing was read.';
+  return 'Shopify did not complete the authorisation. Nothing was connected and nothing was read; try again or ask an account owner to authorise.';
+}
+
+function sourceForStep(step: Step): ReactElement {
+  if (step === 'store') return OnboardingStoreVisual();
+  if (step === 'commerce') return OnboardingCommerceVisual();
+  if (step === 'helpdesk') return OnboardingHelpdeskVisual();
+  return OnboardingReadyVisual();
+}
+
+function actionElement(element: SuppliedTreeElement, children: React.ReactNode, onClick: () => void, disabled = false) {
+  return <button data-reference-tag={typeof element.type === 'string' ? element.type : 'div'} type="button" disabled={disabled} onClick={onClick} style={element.props.style as CSSProperties}>{children}</button>;
 }
 
 export default function OnboardingClient(props: OnboardingClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedStep = searchParams.get('step');
-  const [view, setViewState] = useState<View>(() => {
-    if (requestedStep === 'profile') return 'profile';
-    if (!props.initialProfileComplete) return 'profile';
-    if (requestedStep === 'verified' || requestedStep === 'first') return 'verified';
-    return 'connect';
+  const requestedStep = searchParams.get('step') as Step | null;
+  const connectors = useMemo(() => new Map((props.initialConnectors ?? []).map((connector) => [connector.id, connector])), [props.initialConnectors]);
+  const shopify = connectors.get('shopify');
+  const initialHelpdeskId: Helpdesk = props.helpdeskProvider ?? 'gorgias';
+  const initialHelpdesk = connectors.get(initialHelpdeskId);
+  const shopifyIsConnected = props.shopifyConnected === true || Boolean(shopify && CONNECTED_STATUSES.has(shopify.status));
+  const helpdeskIsConnected = props.helpdeskConnected === true || Boolean(initialHelpdesk && CONNECTED_STATUSES.has(initialHelpdesk.status));
+  const [step, setStepState] = useState<Step>(() => {
+    if (requestedStep && STEPS.some((item) => item.id === requestedStep)) return requestedStep;
+    if (!props.initialProfileComplete) return 'store';
+    if (!shopifyIsConnected) return 'commerce';
+    return 'ready';
   });
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<ProfileState>({
     storeName: props.initialStoreName ?? '',
-    platform: props.initialPlatform ?? '',
+    platform: props.initialPlatform || 'shopify',
     annualVolume: props.initialAnnualVolume ?? '',
     primaryConcern: props.initialPrimaryConcern ?? '',
-    usesWms3pl: props.initialUsesWms3pl ?? '',
-    usesReturnsPlatform: props.initialUsesReturnsPlatform ?? '',
+    operatingLayers: initialOperatingLayers(props.initialUsesWms3pl, props.initialUsesReturnsPlatform),
   });
-  const [profileSaved, setProfileSaved] = useState(Boolean(props.initialProfileComplete));
-  const [setupVerified, setSetupVerified] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<ProfileField, string>>>({});
-  const [busy, setBusy] = useState<'profile' | 'complete' | 'defer' | null>(null);
+  const [shopDomain, setShopDomain] = useState(props.shopifyShopDomain ?? '');
+  const [selectedHelpdesk, setSelectedHelpdesk] = useState<Helpdesk>(initialHelpdeskId);
+  const [busy, setBusy] = useState<'profile' | 'finish' | 'defer' | 'signout' | null>(null);
   const [error, setError] = useState('');
-  const {
-    shopifyConnected = false,
-    shopifyShopDomain = '',
-    helpdeskConnected = false,
-    helpdeskProvider = null,
-    workspaceHref = '/overview',
-    initialConnectors = [],
-  } = props;
+  const workspaceHref = props.workspaceHref ?? '/overview';
+  const reportingCurrency = props.reportingCurrency ?? 'GBP';
+  const reportingTimezone = props.reportingTimezone ?? 'Europe/London';
+  const currentHelpdesk = connectors.get(selectedHelpdesk);
 
-  const connectorById = useMemo(
-    () => new Map(initialConnectors.map((connector) => [connector.id, connector])),
-    [initialConnectors],
-  );
-  const shopify = connectorById.get('shopify');
-  const stripe = connectorById.get('stripe');
-  const shipbob = connectorById.get('shipbob');
-  const helpdeskId = helpdeskProvider ?? 'gorgias';
-  const helpdesk = connectorById.get(helpdeskId);
-  const csv = connectorById.get('csv_import');
-  const shopifyIsConnected = shopifyConnected || Boolean(shopify && CONNECTED_STATUSES.has(shopify.status));
-  const helpdeskIsConnected = helpdeskConnected || Boolean(helpdesk && CONNECTED_STATUSES.has(helpdesk.status));
-  const shipbobIsConnected = Boolean(shipbob && CONNECTED_STATUSES.has(shipbob.status));
-  const warehouseRequired = profile.usesWms3pl === 'yes';
-  const requiredTotal = warehouseRequired ? 3 : 2;
-  const coreRequiredConnected = Number(shopifyIsConnected) + Number(helpdeskIsConnected) + Number(warehouseRequired && shipbobIsConnected);
-  const setupPercent = Math.round(coreRequiredConnected / requiredTotal * 100);
-
-  function setView(next: View) {
+  function setStep(next: Step) {
     const params = new URLSearchParams(searchParams.toString());
     params.set('step', next);
-    window.history.replaceState(null, '', `/onboarding?${params.toString()}`);
-    setViewState(next);
+    replaceHistoryUrlIfChanged(`/onboarding?${params}`);
+    setStepState(next);
     setError('');
   }
 
-  function setProfileField(field: keyof typeof profile, value: string) {
-    setProfile((current) => ({ ...current, [field]: value }));
-    if (field in fieldErrors) setFieldErrors((current) => ({ ...current, [field]: undefined }));
-    setError('');
+  useEffect(() => {
+    function handleShopifyOAuth(event: MessageEvent) {
+      if (event.origin === window.location.origin && event.data && typeof event.data === 'object' && event.data.type === 'shopify_oauth_complete') router.refresh();
+    }
+    window.addEventListener('message', handleShopifyOAuth);
+    return () => window.removeEventListener('message', handleShopifyOAuth);
+  }, [router]);
+
+  async function signOut() {
+    setBusy('signout');
+    await createClient().auth.signOut();
+    router.push('/login');
+    router.refresh();
   }
 
-  async function saveProfileAndContinue() {
-    const nextErrors: Partial<Record<ProfileField, string>> = {};
-    if (!profile.storeName.trim()) nextErrors.storeName = 'Enter your store name.';
-    if (!profile.platform) nextErrors.platform = 'Choose your platform.';
-    if (!profile.annualVolume) nextErrors.annualVolume = 'Choose a monthly order volume.';
-    if (!profile.primaryConcern) nextErrors.primaryConcern = 'Choose a primary concern.';
-    if (Object.keys(nextErrors).length) {
-      setFieldErrors(nextErrors);
-      setError('Review the highlighted fields before continuing.');
+  async function saveProfile() {
+    if (!profile.storeName.trim() || !profile.platform || !profile.annualVolume || !profile.primaryConcern || !profile.operatingLayers) {
+      setError('Complete all four answers before continuing.');
       return;
     }
     setBusy('profile');
@@ -138,8 +196,8 @@ export default function OnboardingClient(props: OnboardingClientProps) {
         platform: profile.platform,
         monthlyOrderVolume: profile.annualVolume,
         primaryLossConcern: profile.primaryConcern,
-        usesWms3pl: profile.usesWms3pl ? profile.usesWms3pl === 'yes' : undefined,
-        usesReturnsPlatform: profile.usesReturnsPlatform ? profile.usesReturnsPlatform === 'yes' : undefined,
+        usesWms3pl: profile.operatingLayers === '3pl' || profile.operatingLayers === 'both',
+        usesReturnsPlatform: profile.operatingLayers === 'returns' || profile.operatingLayers === 'both',
         profileComplete: true,
         setupComplete: false,
       }),
@@ -150,288 +208,148 @@ export default function OnboardingClient(props: OnboardingClientProps) {
       setError(payload.error ?? 'Could not save your store details.');
       return;
     }
-    setProfileSaved(true);
-    setView('connect');
+    setStep('commerce');
     router.refresh();
   }
 
-  useEffect(() => {
-    function handleShopifyOAuth(event: MessageEvent) {
-      if (event.origin === window.location.origin && event.data && typeof event.data === 'object' && event.data.type === 'shopify_oauth_complete') {
-        router.refresh();
-      }
-    }
-    window.addEventListener('message', handleShopifyOAuth);
-    return () => window.removeEventListener('message', handleShopifyOAuth);
-  }, [router]);
-
-  async function completeSetup() {
-    if (!shopifyIsConnected || !helpdeskIsConnected || (warehouseRequired && !shipbobIsConnected)) {
-      setError('Connect every required source, or choose Finish setup later. Optional and unavailable sources do not block deferral.');
+  function openShopifySetup() {
+    if (shopifyIsConnected) {
+      setStep('helpdesk');
       return;
     }
-    setBusy('complete');
+    const shop = shopDomain.trim();
+    router.push(`/sources/setup/shopify?returnTo=${encodeURIComponent('/onboarding?step=commerce')}${shop ? `&shop=${encodeURIComponent(shop)}` : ''}`);
+  }
+
+  function openHelpdeskSetup() {
+    if (helpdeskIsConnected && selectedHelpdesk === initialHelpdeskId) {
+      setStep('ready');
+      return;
+    }
+    router.push(`/sources/setup/${selectedHelpdesk}?returnTo=${encodeURIComponent('/onboarding?step=helpdesk')}`);
+  }
+
+  async function enterWorkspace(destination = workspaceHref) {
+    setBusy(shopifyIsConnected && helpdeskIsConnected ? 'finish' : 'defer');
     setError('');
     const response = await fetch('/api/account/setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ setupComplete: true }),
+      body: JSON.stringify(shopifyIsConnected && helpdeskIsConnected ? { setupComplete: true } : { deferOnboarding: true }),
     });
     const payload = await response.json().catch(() => ({}));
-    setBusy(null);
-    if (!response.ok || payload.setupComplete !== true) {
-      setError(payload.error ?? 'Could not verify the connected sources.');
+    if (!response.ok) {
+      setBusy(null);
+      setError(payload.error ?? 'Could not open the workspace.');
       return;
     }
-    setView('verified');
-    setSetupVerified(true);
+    router.push(destination);
     router.refresh();
   }
 
-  async function deferOnboarding() {
-    setBusy('defer');
-    setError('');
-    try {
-      const response = await fetch('/api/account/setup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deferOnboarding: true }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok || payload.onboardingDeferred !== true) throw new Error('defer_failed');
-      router.push(workspaceHref);
-      router.refresh();
-    } catch {
-      setBusy(null);
-      setError('We could not defer setup. Try again, or continue setup here.');
-    }
-  }
+  const importedOrderCount = shopify?.importedRecordsKnown ? shopify.importedRecords : null;
+  const volumeMaximum: Record<string, number | null> = { under_1000: 999, '1000_8000': 8000, '8000_15000': 15000, over_15000: null };
+  const maximum = volumeMaximum[profile.annualVolume];
+  const implausibleVolume = (importedOrderCount != null && maximum != null && importedOrderCount > maximum);
+  const authError = shopifyErrorCopy(props.shopifyError);
+  const failedRows = props.latestImport?.failedRows ?? null;
+  const helpdeskName = selectedHelpdesk === 'zendesk' ? 'Zendesk' : selectedHelpdesk === 'freshdesk' ? 'Freshdesk' : 'Gorgias';
+  const helpdeskImported = currentHelpdesk?.importedRecordsKnown ? currentHelpdesk.importedRecords : null;
+  const connectedCount = Number(shopifyIsConnected) + Number(helpdeskIsConnected);
+  const clock = formatClock(props.latestImport?.startedAt);
+  const bannerError = error || authError || '';
+  const stepIndex = STEPS.findIndex((item) => item.id === step);
+  const exactText = new Map<string, React.ReactNode>([
+    ['Asterlane Ltd', profile.storeName || props.initialStoreName || 'Your store'],
+    ['reporting currency will be GBP · Europe/London · changeable in settings', `reporting currency will be ${reportingCurrency} · ${reportingTimezone} · changeable in settings`],
+    ['You said under 1,000, but the Shopify account you are about to connect shipped 1,204 orders last month. Unauth will use what it imports, not what you type — this only affects the warnings it shows you.', error || (importedOrderCount == null ? 'The imported order count is not available yet. Unauth will use what it imports, not what you type — this answer only affects warnings.' : `You selected this range, but the connected Shopify source exposes ${formatNumber(importedOrderCount)} imported records. Unauth will use what it imports, not what you type — this only affects the warnings it shows you.`)],
+    ['Shopify declined the authorisation', shopifyIsConnected ? 'Shopify is connected' : 'Shopify declined the authorisation'],
+    ['The account you signed in with is a staff account without the read_orders scope. Ask an account owner to authorise, or sign in as one. Nothing was connected and nothing was read.', shopifyIsConnected ? (props.shopifyShopDomain || shopify?.account || 'The order source returned data and is available to the workspace.') : bannerError],
+    ['asterlane.myshopify.com', shopDomain || 'store.myshopify.com'],
+    ['Gorgias has 2,104 tickets and a 90-day retention', helpdeskImported == null ? `${helpdeskName} history has not been measured yet` : `${helpdeskName} has ${formatNumber(helpdeskImported)} tickets visible`],
+    ['Anything older than 3 June is already gone from the source, so Unauth will never see it. That is a Gorgias setting, not a limit here.', helpdeskImported == null ? 'Unauth will report the visible ticket count and retention boundary after the connection returns data.' : 'Unauth can use only the history the provider returns. Older records no longer in the source remain unavailable here.'],
+    ['Two sources connected and verified. The first import runs now and takes about four minutes for a year of history — you do not have to wait for it.', `${connectedCount} of 2 recommended sources connected. ${props.latestImport ? `Latest import: ${props.latestImport.status.replaceAll('_', ' ')}.` : 'No import has been recorded yet.'} You can open the workspace; missing evidence remains visibly unavailable.`],
+    ['The first import found 16 rows it cannot post', error ? 'The workspace could not open' : failedRows == null ? 'The held-row count is unavailable' : `The first import found ${formatNumber(failedRows)} rows it cannot post`],
+    ['A currency column is unmapped. The workspace still opens and everything else imports — those 16 rows stay out of every figure until you map it.', error || (failedRows == null ? 'The workspace still opens, but Unauth will not claim every imported row posted until the import reports its outcome.' : failedRows > 0 ? `The workspace still opens and everything else imports — those ${formatNumber(failedRows)} rows stay out of every figure until their issue is resolved.` : 'The import reported zero failed rows. Source freshness and downstream evidence readiness are still shown separately.')],
+    ['Asterlane Ltd · GBP · Europe/London', `${profile.storeName || props.initialStoreName || 'Workspace'} · ${reportingCurrency} · ${reportingTimezone}`],
+    ['asterlane.myshopify.com · 4 read scopes verified', shopifyIsConnected ? `${props.shopifyShopDomain || shopify?.account || 'account connected'} · configuration recorded; review scope in Sources` : 'Not connected — order evidence remains unavailable'],
+    ['2,104 tickets visible · attachments readable', helpdeskIsConnected ? `${helpdeskImported == null ? 'ticket count unavailable' : `${formatNumber(helpdeskImported)} tickets visible`} · connection recorded` : 'Not connected — customer messages remain unavailable'],
+    ['import started 09:41 · 12 months of history · you will be told when it finishes', props.nextAction?.detail ?? `${clock ? `import started ${clock} · ` : ''}${props.latestImport?.totalRows == null ? 'import scope unavailable' : `${formatNumber(props.latestImport.totalRows)} rows in scope`} · check source details for progress`],
+  ]);
 
-  function sourceDetail(connector: OnboardingConnectorView | undefined, fallback: string) {
-    if (!connector) return fallback;
-    if (connector.importedRecordsKnown) return `${formatNumber(connector.importedRecords)} records read`;
-    if (connector.account) return connector.account;
-    return fallback;
-  }
-
-  const helpdeskName = helpdesk?.name ?? (helpdeskProvider === 'zendesk' ? 'Zendesk' : helpdeskProvider === 'freshdesk' ? 'Freshdesk' : 'Gorgias');
-  const connectors: Array<{
-    id: string;
-    name: string;
-    state: string;
-    tone: ConnectorTone;
-    detail: string;
-    action: string;
-    href: string;
-    primary: boolean;
-  }> = [
-    {
-      id: 'shopify',
-      name: 'Shopify',
-      state: shopifyIsConnected ? 'Connected' : 'Not connected',
-      tone: shopifyIsConnected ? 'ok' : 'planned',
-      detail: shopifyIsConnected ? `Orders, refunds and discounts · ${sourceDetail(shopify, shopifyShopDomain || 'data received')}` : 'Orders, refunds and discounts · required for the operating position',
-      action: shopifyIsConnected ? 'Manage' : 'Connect',
-      href: shopifyIsConnected ? '/sources/shopify' : '/sources/setup/shopify?returnTo=%2Fonboarding%3Fstep%3Dconnect',
-      primary: !shopifyIsConnected,
+  const boundTree = bindSuppliedTree(sourceForStep(step), {
+    text: exactText,
+    transform: (element, compactText, children) => {
+      if (element.type === 'a' && compactText === 'Sign out') return actionElement(element, busy === 'signout' ? 'Signing out…' : children, () => void signOut(), busy !== null);
+      const targetStep = STEPS.find((item) => compactText === `${item.title} ${item.detail}`);
+      if (targetStep && element.props.style?.padding === '11px 12px') {
+        const targetIndex = STEPS.findIndex((item) => item.id === targetStep.id);
+        return actionElement(element, children, () => setStep(targetStep.id), targetIndex > stepIndex);
+      }
+      const option = OPTION_VALUE.get(compactText);
+      if (step === 'store' && option && element.type === 'span' && element.props.style?.padding === '7px 12px') {
+        const [field, value] = option;
+        if (field === 'platform' && value !== 'shopify') return null;
+        const selected = profile[field] === value;
+        const optionStyle: CSSProperties = {
+          ...(element.props.style as CSSProperties),
+          color: selected ? '#fff' : '#40454a',
+          font: `${selected ? 500 : 400} 12.5px/1 'Inter',sans-serif`,
+        };
+        if (selected) {
+          optionStyle.background = '#1c1f23';
+          delete optionStyle.boxShadow;
+        } else {
+          delete optionStyle.background;
+          optionStyle.boxShadow = 'inset 0 0 0 1px rgba(28,27,25,.12)';
+        }
+        return <button data-reference-tag="span" type="button" aria-pressed={selected} onClick={() => setProfile((current) => ({ ...current, [field]: value }))} style={optionStyle}>{children}</button>;
+      }
+      if (step === 'store' && element.type === 'span' && compactText === 'Asterlane Ltd') {
+        return <input data-reference-tag="span" aria-label="Store or business name" value={profile.storeName} onChange={(event) => setProfile((current) => ({ ...current, storeName: event.target.value }))} style={element.props.style as CSSProperties} />;
+      }
+      if (step === 'store' && element.props.style?.background === '#fff3e9' && compactText.includes('Orders a month looks low')) {
+        return error || implausibleVolume ? cloneElement(element, { role: error ? 'alert' : 'status' }, children) : null;
+      }
+      if (step === 'store' && compactText === 'Continue' && element.props.style?.background === '#1c1f23') return actionElement(element, busy === 'profile' ? 'Saving…' : children, () => void saveProfile(), busy !== null);
+      if (step === 'commerce' && element.props.style?.background === '#fdf0e6' && compactText.includes('Shopify declined')) {
+        return bannerError || shopifyIsConnected ? cloneElement(element, { role: bannerError ? 'alert' : 'status', style: shopifyIsConnected ? { ...element.props.style, background: '#eef6f1' } : element.props.style }, children) : null;
+      }
+      if (step === 'commerce' && element.type === 'span' && compactText === 'asterlane.myshopify.com') {
+        return <input data-reference-tag="span" aria-label="Your Shopify admin address" value={shopDomain} onChange={(event) => setShopDomain(event.target.value)} placeholder="store.myshopify.com" style={element.props.style as CSSProperties} />;
+      }
+      if (step === 'commerce' && compactText === 'Authorise in Shopify' && element.props.style?.background === '#1c1f23') return actionElement(element, shopifyIsConnected ? 'Continue' : children, openShopifySetup);
+      if ((step === 'commerce' || step === 'helpdesk') && compactText === 'Back' && element.props.style?.padding === '9px 15px') return actionElement(element, children, () => setStep(step === 'commerce' ? 'store' : 'commerce'));
+      if (step === 'helpdesk' && ['Gorgias', 'Zendesk', 'Freshdesk'].some((name) => compactText.startsWith(name)) && element.props.style?.padding === '15px 16px') {
+        const provider: Helpdesk = compactText.startsWith('Zendesk') ? 'zendesk' : compactText.startsWith('Freshdesk') ? 'freshdesk' : 'gorgias';
+        const selected = provider === selectedHelpdesk;
+        return <button data-reference-tag="div" type="button" aria-pressed={selected} onClick={() => setSelectedHelpdesk(provider)} style={{ ...(element.props.style as CSSProperties), boxShadow: selected ? '0 1px 2px rgba(28,27,25,.05),0 0 0 2px rgba(242,118,26,.5)' : '0 1px 2px rgba(28,27,25,.05),0 0 0 1px rgba(28,27,25,.07)' }}>{children}</button>;
+      }
+      if (step === 'helpdesk' && compactText === 'Skip for now') return actionElement(element, busy === 'defer' ? 'Opening…' : children, () => void enterWorkspace('/overview'), busy !== null);
+      if (step === 'helpdesk' && compactText === 'Connect Gorgias' && element.props.style?.background === '#1c1f23') return actionElement(element, helpdeskIsConnected && selectedHelpdesk === initialHelpdeskId ? 'Continue' : `Connect ${helpdeskName}`, openHelpdeskSetup);
+      if (step === 'ready' && compactText === 'See the empty workspace') return null;
+      if (step === 'ready' && compactText === 'Enter the workspace') return actionElement(element, busy ? 'Opening…' : props.nextAction?.label ?? 'Review source availability', () => void enterWorkspace(props.nextAction?.href ?? '/sources'), busy !== null);
+      if (step === 'ready' && element.props.style?.padding === '13px 15px') {
+        const item = compactText.startsWith('Shopify ') ? { ready: shopifyIsConnected } : compactText.startsWith(`${helpdeskName} `) || compactText.startsWith('Gorgias ') ? { ready: helpdeskIsConnected } : null;
+        if (item && !item.ready) {
+          const rowChildren = Children.toArray(children);
+          const status = rowChildren[0];
+          if (status && typeof status === 'object' && 'props' in status) {
+            const statusElement = status as ReactElement<{ style?: CSSProperties; children?: React.ReactNode }>;
+            rowChildren[0] = cloneElement(statusElement, { style: { ...statusElement.props.style, background: '#fff', boxShadow: 'inset 0 0 0 1.5px #ddd8d1' } }, null);
+          }
+          return cloneElement(element, {}, rowChildren);
+        }
+      }
+      return undefined;
     },
-    {
-      id: 'stripe',
-      name: 'Stripe',
-      state: stripe?.stage === 'planned' ? 'Not available' : CONNECTED_STATUSES.has(stripe?.status ?? '') ? 'Connected' : 'Not connected',
-      tone: CONNECTED_STATUSES.has(stripe?.status ?? '') ? 'ok' : 'planned',
-      detail: stripe?.stage === 'planned' ? 'Payments, disputes and payouts · connector not implemented' : `Payments, disputes and payouts · ${sourceDetail(stripe, 'no records returned')}`,
-      action: 'View',
-      href: '/sources/stripe',
-      primary: false,
-    },
-    {
-      id: 'shipbob',
-      name: 'ShipBob',
-      state: shipbobIsConnected ? 'Connected' : shipbob?.status === 'attention_required' ? 'Needs permission' : 'Not connected',
-      tone: shipbobIsConnected ? 'ok' : shipbob?.status === 'attention_required' ? 'partial' : 'planned',
-      detail: shipbobIsConnected ? `Fulfilment and shipping fees · ${sourceDetail(shipbob, 'data received')}` : 'Fulfilment and shipping fees · needed for fee reconciliation',
-      action: shipbobIsConnected ? 'Manage' : 'Connect',
-      href: shipbobIsConnected ? '/sources/shipbob' : '/sources/setup/shipbob?returnTo=%2Fonboarding%3Fstep%3Dconnect',
-      primary: !shipbobIsConnected,
-    },
-    {
-      id: 'royal_mail',
-      name: 'Royal Mail',
-      state: 'Not available',
-      tone: 'planned',
-      detail: 'Carrier tracking · no implemented connector is available',
-      action: 'View',
-      href: '/sources/browse',
-      primary: false,
-    },
-    {
-      id: helpdeskId,
-      name: helpdeskName,
-      state: helpdeskIsConnected ? 'Connected' : 'Not connected',
-      tone: helpdeskIsConnected ? 'ok' : 'planned',
-      detail: helpdeskIsConnected ? `Support tickets · ${sourceDetail(helpdesk, 'data received')}` : 'Support tickets · required for case evidence',
-      action: helpdeskIsConnected ? 'Manage' : 'Connect',
-      href: helpdeskIsConnected ? `/sources/${helpdeskId}` : `/sources/setup/${helpdeskId}?returnTo=%2Fonboarding%3Fstep%3Dconnect`,
-      primary: !helpdeskIsConnected,
-    },
-    {
-      id: 'csv_import',
-      name: 'CSV import',
-      state: 'Optional',
-      tone: 'planned',
-      detail: csv?.importedRecordsKnown ? `Returns and adjustments · ${formatNumber(csv.importedRecords)} records read` : 'Returns and adjustments you keep outside a platform',
-      action: 'Upload',
-      href: '/sources/imports',
-      primary: false,
-    },
-  ];
-
-  const setupSummary = [
-    { name: 'Store profile', state: profileSaved ? 'Completed' : 'Needs attention', detail: profileSaved ? 'Merchant context saved' : 'Required before source setup' },
-    { name: 'Shopify', state: shopifyIsConnected ? 'Completed' : 'Needs attention', detail: shopifyIsConnected ? sourceDetail(shopify, shopifyShopDomain || 'Connection recorded') : 'Required order evidence source' },
-    { name: helpdeskName, state: helpdeskIsConnected ? 'Completed' : 'Needs attention', detail: helpdeskIsConnected ? sourceDetail(helpdesk, 'Connection recorded') : 'Required support evidence source' },
-    { name: 'ShipBob', state: shipbobIsConnected ? 'Completed' : warehouseRequired ? 'Needs attention' : 'Deferred', detail: shipbobIsConnected ? sourceDetail(shipbob, 'Connection recorded') : warehouseRequired ? 'Required because WMS / 3PL use was selected' : 'Optional for this workspace profile' },
-    { name: 'Stripe', state: 'Unavailable', detail: 'Connector is not implemented' },
-  ];
-
-  return (
-    <main className="uo-entry ua-auth-surface ua-onboarding-handoff" data-unauth-ui="evidence-operations-v1" data-screen-label="Auth and onboarding" data-surface-id="workspace-onboarding" data-state-id={`onboarding-${view}`} data-archetype="P3">
-      <div className="ua-onboarding-handoff__frame">
-        <AuthProductContext />
-        <section className="ua-onboarding-handoff__workspace">
-          <header className="ua-onboarding-handoff__topbar">
-            <nav aria-label="Account setup progress">
-              <Link href="/login">Sign in</Link>
-              <button type="button" data-active={view === 'profile' ? 'true' : undefined} onClick={() => setView('profile')}>Store profile</button>
-              <button type="button" data-active={view === 'connect' ? 'true' : undefined} disabled={!profileSaved} onClick={() => setView('connect')}>Connect sources</button>
-              <button type="button" data-active={view === 'verified' ? 'true' : undefined} disabled={!profileSaved} onClick={() => setView('verified')}>Setup summary</button>
-            </nav>
-            <span>{view === 'profile' ? 'Step 1 of 3 · required' : view === 'connect' ? `${coreRequiredConnected} of ${requiredTotal} required sources connected` : 'Step 3 of 3 · review and handoff'}</span>
-          </header>
-
-          {props.requestedPlan ? (
-            <div className="border-b border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-secondary)] px-5 py-3 text-sm text-[var(--uo-route-text-secondary)]" role="status">
-              Requested plan: <strong className="text-[var(--uo-route-text-primary)]">{props.requestedPlan}</strong>
-              {props.requestedCredits ? ` · ${props.requestedCredits}` : ''}. This is pending; Billing changes only after provider confirmation.
-            </div>
-          ) : props.requestedPlanUnavailableReason ? (
-            <div className="border-b border-[var(--uo-route-warning-border)] bg-[var(--uo-route-warning-bg)] px-5 py-3 text-sm text-[var(--uo-route-text-secondary)]" role="status">
-              Requested plan unavailable. {props.requestedPlanUnavailableReason}
-            </div>
-          ) : null}
-
-          {view === 'profile' ? (
-            <div className="ua-onboarding-handoff__body">
-              <div className="ua-onboarding-handoff__intro">
-                <div><h1>Tell us about this workspace</h1><p>These required details set the source checklist and keep setup relevant to the way this merchant fulfils orders and handles returns.</p></div>
-                <div className="ua-onboarding-handoff__coverage"><span>Setup progress</span><strong>1 / 3</strong></div>
-              </div>
-              <section className="ua-onboarding-handoff__card" aria-labelledby="workspace-profile-title" data-state-id="workspace-onboarding-store-profile">
-                <header className="ua-onboarding-handoff__card-header"><div><h2 id="workspace-profile-title">Store profile</h2><p>Required fields are marked. You can revise optional operating details later.</p></div><span>Required</span></header>
-                <div className="ua-onboarding-handoff__profile-grid">
-                  <ProfileField label="Store name" error={fieldErrors.storeName} required>
-                    <input value={profile.storeName} onChange={(event) => setProfileField('storeName', event.target.value)} placeholder="Asterlane" autoComplete="organization" />
-                  </ProfileField>
-                  <ProfileField label="Commerce platform" error={fieldErrors.platform} required>
-                    <select value={profile.platform} onChange={(event) => setProfileField('platform', event.target.value)}>
-                      <option value="">Select platform…</option><option value="shopify">Shopify</option><option value="woocommerce" disabled>WooCommerce (not available yet)</option><option value="bigcommerce" disabled>BigCommerce (not available yet)</option><option value="magento">Magento</option><option value="custom">Custom</option><option value="other">Other</option>
-                    </select>
-                  </ProfileField>
-                  <ProfileField label="Monthly order volume" error={fieldErrors.annualVolume} required>
-                    <select value={profile.annualVolume} onChange={(event) => setProfileField('annualVolume', event.target.value)}><option value="">Select range…</option>{ORDER_VOLUME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-                  </ProfileField>
-                  <ProfileField label="Primary post-purchase concern" error={fieldErrors.primaryConcern} required>
-                    <select value={profile.primaryConcern} onChange={(event) => setProfileField('primaryConcern', event.target.value)}><option value="">Select concern…</option>{LOSS_CONCERN_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-                  </ProfileField>
-                  <ProfileField label="Do you use a WMS or 3PL?" help="This makes fulfilment evidence part of the required setup checklist.">
-                    <select value={profile.usesWms3pl} onChange={(event) => setProfileField('usesWms3pl', event.target.value)}><option value="">Select…</option><option value="yes">Yes, warehouse software or a 3PL</option><option value="no">No, fulfilled in-house</option></select>
-                  </ProfileField>
-                  <ProfileField label="Do you use a returns platform?" help="This keeps return evidence requirements explicit without blocking setup.">
-                    <select value={profile.usesReturnsPlatform} onChange={(event) => setProfileField('usesReturnsPlatform', event.target.value)}><option value="">Select…</option><option value="yes">Yes, a dedicated returns platform</option><option value="no">No, returns are handled elsewhere</option></select>
-                  </ProfileField>
-                </div>
-              </section>
-              <footer className="ua-onboarding-handoff__actions">
-                <button type="button" className="is-primary" onClick={() => void saveProfileAndContinue()} disabled={busy !== null}>{busy === 'profile' ? 'Saving profile…' : profileSaved ? 'Save and review sources' : 'Save and continue'}</button>
-                <button type="button" aria-label="Skip for now — finish setup later" onClick={deferOnboarding} disabled={busy !== null}>{busy === 'defer' ? 'Saving…' : 'Finish setup later'}</button>
-                <span>Setup is recommended. Your profile changes guidance only; it does not connect a provider or publish a decision.</span>
-              </footer>
-              <p className="ua-onboarding-handoff__error" role={error ? 'alert' : undefined}>{error}</p>
-            </div>
-          ) : view === 'connect' ? (
-            <div className="ua-onboarding-handoff__body">
-              <div className="ua-onboarding-handoff__intro">
-                <div><h1>Connect your sources</h1><p>Unauth states a position only from source-backed records. Connect what you have — coverage is shown honestly at every step.</p></div>
-                <div className="ua-onboarding-handoff__coverage"><span>Setup coverage</span><strong>{setupPercent}%</strong></div>
-              </div>
-              <div className="ua-onboarding-handoff__progress" aria-label={`${setupPercent}% setup coverage`}><i style={{ width: `${setupPercent}%` }} /></div>
-
-              <div className="ua-onboarding-handoff__connect-grid">
-                <section className="ua-onboarding-handoff__connectors" aria-label="Source connections">
-                  {connectors.map((connector) => (
-                    <div className="ua-onboarding-handoff__connector" key={connector.id} data-state-id={connector.id === 'shopify' ? 'workspace-onboarding-shopify-connection' : connector.id === helpdeskId ? 'workspace-onboarding-helpdesk-connection' : undefined}>
-                      <span className="ua-onboarding-handoff__monogram">{connectorMonogram(connector.id)}</span>
-                      <div><div><strong>{connector.name}</strong><em data-tone={connector.tone}>{connector.state}</em></div><p>{connector.detail}</p></div>
-                      <Link className={connector.primary ? 'is-primary' : undefined} href={connector.href}>{connector.action}</Link>
-                    </div>
-                  ))}
-                  <footer><i /><p>A source is only ever shown as connected once it has returned data. Nothing here is marked healthy on the strength of a plan.</p></footer>
-                </section>
-
-                <div className="ua-onboarding-handoff__side-stack">
-                  <section className="ua-onboarding-handoff__unlock-card">
-                    <h2>What you unlock</h2>
-                    {[
-                      ['Operating position', 'Needs orders and payments.', shopifyIsConnected],
-                      ['Case decisioning with evidence', 'Needs support tickets.', helpdeskIsConnected],
-                      ['Delivery evidence and carrier claims', 'Needs an implemented carrier connection.', false],
-                      ['Fulfilment fee reconciliation', 'Needs ShipBob records.', shipbobIsConnected],
-                    ].map(([title, body, ready]) => <div key={String(title)}><span data-ready={ready ? 'true' : undefined}>{ready ? '✓' : '·'}</span><div><strong>{title}</strong><p>{body} {ready ? 'Ready now.' : 'Unavailable.'}</p></div></div>)}
-                  </section>
-                  <section className="ua-onboarding-handoff__demo-card"><h2>Demonstration data</h2><p>Explore the product with a synthetic Northwind Supply workspace. Every figure is labelled as demonstration data and is never mixed with your own.</p><Link href="/demo">Open demonstration workspace</Link></section>
-                </div>
-              </div>
-
-              <footer className="ua-onboarding-handoff__actions">
-                <button type="button" className="is-primary" onClick={() => void completeSetup()} disabled={busy !== null}>{busy === 'complete' ? 'Verifying setup…' : coreRequiredConnected === requiredTotal ? 'Verify setup' : `Review ${requiredTotal - coreRequiredConnected} required source${requiredTotal - coreRequiredConnected === 1 ? '' : 's'}`}</button>
-                <button type="button" aria-label="Skip for now — finish setup later" onClick={deferOnboarding} disabled={busy !== null}>{busy === 'defer' ? 'Saving…' : 'Finish setup later'}</button>
-                <span>Shopify and one supported helpdesk are required. ShipBob is required only when this profile uses a WMS or 3PL. Everything else remains optional or unavailable.</span>
-              </footer>
-              <p className="ua-onboarding-handoff__error" role={error ? 'alert' : undefined}>{error}</p>
-            </div>
-          ) : (
-            <div className="ua-onboarding-handoff__body">
-              <div className="ua-onboarding-handoff__intro"><div><h1>Review setup</h1><p>Completed, deferred, unavailable, and attention-needed work stay separate. This summary does not imply that authorization returned records or that a connected source is healthy.</p></div></div>
-              <section className="ua-onboarding-handoff__first-run" aria-label="Workspace setup summary" data-state-id="workspace-onboarding-setup-verified">
-                {setupSummary.map((item) => <div key={item.name}><i data-state={item.state === 'Completed' ? 'done' : 'blocked'} /><div><div><strong>{item.name}</strong><span>{item.detail}</span><em>{item.state}</em></div></div></div>)}
-                <footer><span>Any missing or unavailable source leaves dependent figures unavailable. It never produces a verified zero.</span></footer>
-              </section>
-              <section className="ua-onboarding-handoff__pending">
-                <div><span>Required setup</span><strong>{coreRequiredConnected === requiredTotal ? 'Ready' : 'Needs attention'}</strong><p>{coreRequiredConnected} of {requiredTotal} required sources connected</p></div>
-                <div><span>Optional work</span><strong>{!warehouseRequired && !shipbobIsConnected ? 'Deferred' : 'Reviewed'}</strong><p>can be completed later from Sources</p></div>
-                <div><span>Unavailable providers</span><strong>Kept separate</strong><p>no health, freshness, or record count is asserted</p></div>
-              </section>
-              <footer className="ua-onboarding-handoff__actions">
-                <button type="button" className="is-primary" onClick={() => setupVerified ? router.push(workspaceHref) : void deferOnboarding()} disabled={busy !== null}>{busy === 'defer' ? 'Opening workspace…' : 'Continue to workspace'}</button>
-                <button type="button" onClick={() => setView('connect')}>Review connections</button>
-                <span>The workspace opens with any missing-source limitations still visible.</span>
-              </footer>
-              <p className="ua-onboarding-handoff__error" role={error ? 'alert' : undefined}>{error}</p>
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
-  );
-}
-
-function ProfileField({ label, error, help, required = false, children }: { label: string; error?: string; help?: string; required?: boolean; children: ReactNode }) {
-  return (
-    <label className="ua-onboarding-handoff__profile-field">
-      <span>{label}{required ? <em>Required</em> : <em>Optional</em>}</span>
-      {children}
-      {error ? <small role="alert">{error}</small> : help ? <small>{help}</small> : null}
-    </label>
-  );
+  });
+  if (!isValidElement(boundTree)) return boundTree;
+  const stateId = props.acceptanceScenarioId?.startsWith('workspace-onboarding-')
+    ? props.acceptanceScenarioId
+    : undefined;
+  return cloneElement(boundTree as ReactElement<Record<string, unknown>>, {
+    'data-surface-id': 'workspace-onboarding',
+    'data-state-id': stateId,
+  });
 }

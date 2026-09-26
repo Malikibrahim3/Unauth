@@ -78,9 +78,9 @@ test('UX9-6 settings and governance stay task-first, truthful, and error-free', 
 
   await page.context().addCookies([{ name: 'unauth.auth-theme', value: 'dark', url: new URL(page.url()).origin }]);
   await ready(page, '/settings/workspace/account', 'Account');
-  await expect(page.locator('.uo-product.ua-desktop-boundary')).toHaveAttribute('data-auth-theme', 'dark');
+  await expect(page.locator('[data-unauth-ui="supplied-package"]')).not.toHaveAttribute('data-auth-theme', /.+/);
   await verifyFrame(page);
-  await capture(page, 'account', 'dark');
+  await capture(page, 'account-legacy-cookie', 'light');
 
   await page.setViewportSize({ width: 1024, height: 768 });
   await ready(page, '/settings/governance/audit-trail', 'Audit trail');

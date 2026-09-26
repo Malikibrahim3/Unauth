@@ -83,8 +83,8 @@ export function CustomersFilterSheetInner({
   const activeFilterCount = Number(Boolean(searchParams.get('risk'))) + Number(Boolean(searchParams.get('status')));
 
   return (
-    <div className="uo-customer-filter-shell">
-      <div className="uo-customer-filter-bar">
+    <div>
+      <div className="relative">
       <input
         key={searchParams.get('search') ?? searchParams.get('q')}
         type="search"
@@ -92,10 +92,10 @@ export function CustomersFilterSheetInner({
         placeholder={`Search by ${labelFor('email').toLowerCase()}, ${labelFor('name').toLowerCase()}, or order reference…`}
         defaultValue={searchParams.get('search') ?? searchParams.get('q') ?? ''}
         onChange={(e) => makeDebounced('search', 2)(e.target.value)}
-        className="h-9 min-w-[280px] rounded-md px-3 text-[length:var(--uo-route-text-dense-size)] focus:outline-none"
-        style={{ background: 'var(--uo-route-surface-primary)', border: '1px solid var(--uo-route-border-default)', color: 'var(--uo-route-text-primary)' }}
-        onFocus={(e) => { e.target.style.borderColor = 'var(--uo-route-border-strong)'; e.target.style.outline = '2px solid var(--uo-route-border-focus)'; e.target.style.outlineOffset = '2px'; }}
-        onBlur={(e) => { e.target.style.borderColor = 'var(--uo-route-border-default)'; e.target.style.outline = 'none'; }}
+        className="h-9 min-w-[280px] rounded-md px-3 text-[length:12px] focus:outline-none"
+        style={{ background: '#fff', border: '1px solid #e4e3e0', color: '#1c1f23' }}
+        onFocus={(e) => { e.target.style.borderColor = '#d8d4cf'; e.target.style.outline = '2px solid #9f4f08'; e.target.style.outlineOffset = '2px'; }}
+        onBlur={(e) => { e.target.style.borderColor = '#e4e3e0'; e.target.style.outline = 'none'; }}
       />
 
       <Select
@@ -120,7 +120,7 @@ export function CustomersFilterSheetInner({
       </div>
 
       {(searchParams.get('risk') || searchParams.get('status')) ? (
-        <div className="uo-customer-applied-filters" role="status" aria-label="Applied customer filters">
+        <div role="status" aria-label="Applied customer filters">
           <span>Applied</span>
           {searchParams.get('risk') ? <button type="button" onClick={() => updateParam('risk', '')}>{RISK_OPTIONS.find((option) => option.value === searchParams.get('risk'))?.label ?? searchParams.get('risk')} <X size={11} aria-hidden="true" /></button> : null}
           {searchParams.get('status') ? <button type="button" onClick={() => updateParam('status', '')}>{STATUS_OPTIONS.find((option) => option.value === searchParams.get('status'))?.label ?? searchParams.get('status')} <X size={11} aria-hidden="true" /></button> : null}
@@ -128,7 +128,7 @@ export function CustomersFilterSheetInner({
       ) : null}
 
       <Drawer open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filter customers by operational context" width="min(420px, 100vw)" overlayId="customer-filter-drawer">
-        <div className="uo-customer-filter-drawer">
+        <div className="rounded-xl border border-[#e4e3e0] bg-white shadow-xl">
           <section>
             <div><h3>Which records matter?</h3><p>Case signals describe recorded history; they do not assign responsibility.</p></div>
             <Select aria-label="Filter customers by case signal" value={searchParams.get('risk') ?? ''} onChange={(event) => updateParam('risk', event.target.value)}>
@@ -141,7 +141,7 @@ export function CustomersFilterSheetInner({
               {STATUS_OPTIONS.map(({ value, label }) => <option key={value || 'all'} value={value}>{label}</option>)}
             </Select>
           </section>
-          <div className="uo-customer-filter-drawer__actions">
+          <div className="flex items-center gap-3">
             {activeFilterCount ? <Button type="button" variant="secondary" onClick={handleClearAll}>Clear filters</Button> : null}
             <Button type="button" onClick={() => setFiltersOpen(false)}>Show customers</Button>
           </div>

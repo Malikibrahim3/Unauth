@@ -1,5 +1,1 @@
-import { ReportsLoadingFrame } from '@/components/reports/ReportsLoadingFrame';
-
-export default function ReportRecordsLoading() {
-  return <ReportsLoadingFrame view="records" />;
-}
+export { default } from "@/components/visual-authority/SuppliedAuthenticatedRouteLoading";

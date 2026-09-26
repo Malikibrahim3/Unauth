@@ -161,7 +161,7 @@ export function InvestigationResponseDialog({
       size="lg"
       closeOnBackdrop={!busy}
       footer={(
-        <div className="flex w-full justify-end gap-2">
+        <div style={{ display: 'flex', width: '100%', justifyContent: 'flex-end', gap: 8 }}>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
           <Button
             onClick={() => void submit()}
@@ -173,16 +173,16 @@ export function InvestigationResponseDialog({
         </div>
       )}
     >
-      <div className="space-y-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {error ? (
-          <div role="alert" className="ua-text-body rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3 text-[var(--uo-route-risk-critical)]">
+          <div role="alert" style={{ border: '1px solid #edc6b5', borderRadius: 6, background: '#fdf0e6', padding: 12, color: '#b0431a', fontSize: 13, lineHeight: '20px' }}>
             {error}
           </div>
         ) : null}
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Outcome
           <Select
-            className="mt-1"
+            style={{ marginTop: 4 }}
             value={outcome}
             onChange={(event) => setOutcome(
               event.target.value as Exclude<InvestigationResponseOutcome, 'no_response'>,
@@ -194,64 +194,64 @@ export function InvestigationResponseDialog({
           </Select>
         </label>
         {outcome === 'no_issue_found' ? (
-          <p className="ua-text-body rounded-md border border-[var(--uo-route-warning-border)] bg-[var(--uo-route-warning-bg)] p-3 text-[var(--uo-route-warning)]">
+          <p style={{ margin: 0, border: '1px solid #ead8b6', borderRadius: 6, background: '#fff3e9', padding: 12, color: '#7a5310', fontSize: 13, lineHeight: '20px' }}>
             “No issue found” is neutral. It does not prove another party or the customer caused the issue.
           </p>
         ) : null}
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Response summary
           <Textarea
-            className="mt-1 min-h-24"
+            style={{ minHeight: 96, marginTop: 4 }}
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
             required
           />
         </label>
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Full response (optional)
           <Textarea
-            className="mt-1 min-h-40"
+            style={{ minHeight: 160, marginTop: 4 }}
             value={body}
             onChange={(event) => setBody(event.target.value)}
           />
         </label>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="ua-text-body font-medium">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }}>
+          <label style={{ color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             Responder name
             <Input
-              className="mt-1"
+              style={{ marginTop: 4 }}
               value={responderName}
               onChange={(event) => setResponderName(event.target.value)}
             />
           </label>
-          <label className="ua-text-body font-medium">
+          <label style={{ color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             External reference
             <Input
-              className="mt-1"
+              style={{ marginTop: 4 }}
               value={externalReference}
               onChange={(event) => setExternalReference(event.target.value)}
             />
           </label>
         </div>
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Public HTTPS evidence link (optional)
           <Input
-            className="mt-1"
+            style={{ marginTop: 4 }}
             type="url"
             value={externalUrl}
             onChange={(event) => setExternalUrl(event.target.value)}
             placeholder="https://partner.test/evidence/reference"
           />
         </label>
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Evidence file (optional, 10 MB maximum)
           <Input
-            className="mt-1 h-auto py-2"
+            style={{ height: 'auto', marginTop: 4, paddingTop: 8, paddingBottom: 8 }}
             type="file"
             accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
-          <span className="ua-text-caption-role mt-1 block">
+          <span style={{ display: 'block', marginTop: 4, color: '#64686d', fontSize: 11.5, lineHeight: 1.45 }}>
             Files are stored privately in quarantine and cannot influence a decision until a safety scan marks them clean.
           </span>
         </label>

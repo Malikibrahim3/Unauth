@@ -128,13 +128,13 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
   return (
     <section
       className="rounded-md border p-5 space-y-5"
-      style={{ borderColor: "var(--uo-route-border-default)", background: "var(--uo-route-surface-primary)" }}
+      style={{ borderColor: "#e4e3e0", background: "#fff" }}
     >
       <div>
-        <h2 className="ua-text-working-title" style={{ color: "var(--uo-route-text-primary)" }}>
+        <h2 className="font-medium text-[13px] leading-5 text-[#1c1f23]" style={{ color: "#1c1f23" }}>
           Zendesk ticket history sync
         </h2>
-        <p className="ua-text-body mt-1" style={{ color: "var(--uo-route-text-secondary)" }}>
+        <p className="text-[13px] leading-5 text-[#40454a] mt-1" style={{ color: "#64686d" }}>
           Connect Zendesk with an API token so Unauth can import past support
           tickets and link them to Shopify orders and customer profiles.
         </p>
@@ -148,34 +148,34 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
       )}
 
       {loading ? (
-        <p className="ua-text-body" style={{ color: "var(--uo-route-text-secondary)" }}>
+        <p className="text-[13px] leading-5 text-[#40454a]" style={{ color: "#64686d" }}>
           Loading connection…
         </p>
       ) : (
         <>
           {apiConfigured && connection ? (
             <div
-              className="ua-text-dense rounded-md border px-3 py-2 space-y-1"
-              style={{ borderColor: "var(--uo-route-border-default)" }}
+              className="text-[12px] leading-[1.45] text-[#40454a] rounded-md border px-3 py-2 space-y-1"
+              style={{ borderColor: "#e4e3e0" }}
             >
-              <p style={{ color: "var(--uo-route-text-primary)" }}>
+              <p style={{ color: "#1c1f23" }}>
                 Connected: <strong>{connection.provider_account_id}</strong>
                 {connection.provider_account_name
                   ? ` (${connection.provider_account_name})`
                   : null}
               </p>
               {connection.last_sync_at ? (
-                <p style={{ color: "var(--uo-route-text-secondary)" }}>
+                <p style={{ color: "#64686d" }}>
                   Last sync:{" "}
                   {formatDateTime(connection.last_sync_at)}
                 </p>
               ) : (
-                <p style={{ color: "var(--uo-route-text-secondary)" }}>
+                <p style={{ color: "#64686d" }}>
                   No ticket sync completed yet.
                 </p>
               )}
               {connection.last_error ? (
-                <p style={{ color: "var(--uo-route-critical)" }} role="alert">
+                <p style={{ color: "#b0431a" }} role="alert">
                   {connection.last_error}
                 </p>
               ) : null}
@@ -186,8 +186,8 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
             onSubmit={(e) => void saveConnection(e)}
             className="space-y-3 max-w-md"
           >
-            <label className="ua-text-body block">
-              <span style={{ color: "var(--uo-route-text-secondary)" }}>
+            <label className="text-[13px] leading-5 text-[#40454a] block">
+              <span style={{ color: "#64686d" }}>
                 Zendesk subdomain
               </span>
               <input
@@ -197,12 +197,12 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
                 placeholder="yourbrand"
                 value={subdomain}
                 onChange={(e) => setSubdomain(e.target.value)}
-                className="ua-text-body mt-1 w-full rounded-md border px-3 py-2"
-                style={{ borderColor: "var(--uo-route-border-default)", color: "var(--uo-route-text-primary)" }}
+                className="text-[13px] leading-5 text-[#40454a] mt-1 w-full rounded-md border px-3 py-2"
+                style={{ borderColor: "#e4e3e0", color: "#1c1f23" }}
               />
             </label>
-            <label className="ua-text-body block">
-              <span style={{ color: "var(--uo-route-text-secondary)" }}>
+            <label className="text-[13px] leading-5 text-[#40454a] block">
+              <span style={{ color: "#64686d" }}>
                 Display name (optional)
               </span>
               <input
@@ -210,12 +210,12 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
                 disabled={!canManage || busy}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="ua-text-body mt-1 w-full rounded-md border px-3 py-2"
-                style={{ borderColor: "var(--uo-route-border-default)", color: "var(--uo-route-text-primary)" }}
+                className="text-[13px] leading-5 text-[#40454a] mt-1 w-full rounded-md border px-3 py-2"
+                style={{ borderColor: "#e4e3e0", color: "#1c1f23" }}
               />
             </label>
-            <label className="ua-text-body block">
-              <span style={{ color: "var(--uo-route-text-secondary)" }}>
+            <label className="text-[13px] leading-5 text-[#40454a] block">
+              <span style={{ color: "#64686d" }}>
                 Agent email
               </span>
               <input
@@ -225,12 +225,12 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
                 placeholder="agent@yourbrand.com"
                 value={agentEmail}
                 onChange={(e) => setAgentEmail(e.target.value)}
-                className="ua-text-body mt-1 w-full rounded-md border px-3 py-2"
-                style={{ borderColor: "var(--uo-route-border-default)", color: "var(--uo-route-text-primary)" }}
+                className="text-[13px] leading-5 text-[#40454a] mt-1 w-full rounded-md border px-3 py-2"
+                style={{ borderColor: "#e4e3e0", color: "#1c1f23" }}
               />
             </label>
-            <label className="ua-text-body block">
-              <span style={{ color: "var(--uo-route-text-secondary)" }}>API token</span>
+            <label className="text-[13px] leading-5 text-[#40454a] block">
+              <span style={{ color: "#64686d" }}>API token</span>
               <input
                 type="password"
                 required
@@ -238,11 +238,11 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
                 disabled={!canManage || busy}
                 value={apiToken}
                 onChange={(e) => setApiToken(e.target.value)}
-                className="ua-text-body mt-1 w-full rounded-md border px-3 py-2"
-                style={{ borderColor: "var(--uo-route-border-default)", color: "var(--uo-route-text-primary)" }}
+                className="text-[13px] leading-5 text-[#40454a] mt-1 w-full rounded-md border px-3 py-2"
+                style={{ borderColor: "#e4e3e0", color: "#1c1f23" }}
               />
             </label>
-            <p className="ua-text-caption-role" style={{ color: "var(--uo-route-text-secondary)" }}>
+            <p className="text-[11.5px] leading-[1.45] text-[#64686d]" style={{ color: "#64686d" }}>
               Create a token in Zendesk Admin, then open Apps and integrations,
               then APIs and Zendesk API. Use an admin or agent account with ticket read
               access.
@@ -251,8 +251,8 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
               <button
                 type="submit"
                 disabled={!canManage || busy}
-                className="ua-text-label rounded-md px-3 py-2 font-medium disabled:opacity-60"
-                style={{ background: "var(--uo-route-action-primary)", color: "var(--uo-route-text-inverse)" }}
+                className="text-[11px] font-medium leading-4 text-[#64686d] rounded-md px-3 py-2 font-medium disabled:opacity-60"
+                style={{ background: "#9f4f08", color: "#fff" }}
               >
                 {busy
                   ? "Saving…"
@@ -265,8 +265,8 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
                   type="button"
                   disabled={!canManage || syncing}
                   onClick={() => void syncNow()}
-                  className="ua-text-label rounded-md border px-3 py-2 font-medium disabled:opacity-60"
-                  style={{ borderColor: "var(--uo-route-border-default)", color: "var(--uo-route-text-primary)" }}
+                  className="text-[11px] font-medium leading-4 text-[#64686d] rounded-md border px-3 py-2 font-medium disabled:opacity-60"
+                  style={{ borderColor: "#e4e3e0", color: "#1c1f23" }}
                 >
                   {syncing ? "Syncing…" : "Sync tickets now"}
                 </button>

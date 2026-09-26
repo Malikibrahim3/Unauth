@@ -19,7 +19,7 @@ type PlannedEntry = {
   suffix: string;
 };
 
-const APPROVAL_ACTIONS = new Set(['approved', 'partial_refund', 'full_refund', 'refund', 'reship', 'replacement']);
+const APPROVAL_ACTIONS = new Set(['approved', 'partial_refund', 'full_refund', 'refund', 'reship', 'replacement', 'same_item_replacement']);
 const PAYOUT_ACTIONS = new Set(['refund', 'partial_refund', 'full_refund', 'reship', 'replacement', 'store_credit', 'discount']);
 const RECOVERY_ACTIONS = new Set(['recovery', 'recovered', 'credit_received', 'chargeback_won']);
 

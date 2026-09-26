@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { replaceHistoryUrlIfChanged } from '@/lib/navigation/history';
 
 const SHOPIFY_ERROR_MESSAGES: Record<string, string> = {
   public_domain:
@@ -21,19 +22,19 @@ const SHOPIFY_ERROR_MESSAGES: Record<string, string> = {
 
 const BANNER_VARIANT_STYLES = {
   success: {
-    background: 'var(--uo-route-success-bg)',
-    color: 'var(--uo-route-success)',
-    border: 'var(--uo-route-success-border)',
+    background: '#eaf5ef',
+    color: '#1a6b43',
+    border: '#bfdecf',
   },
   warning: {
-    background: 'var(--uo-route-warning-bg)',
-    color: 'var(--uo-route-warning)',
-    border: 'var(--uo-route-warning-border)',
+    background: '#fff3e9',
+    color: '#7a5310',
+    border: '#ead8b6',
   },
   error: {
-    background: 'var(--uo-route-critical-bg)',
-    color: 'var(--uo-route-critical)',
-    border: 'var(--uo-route-critical-border)',
+    background: '#fdf0e6',
+    color: '#b0431a',
+    border: '#edc6b5',
   },
 } as const;
 
@@ -78,7 +79,7 @@ export function ShopifyIntegrationBannerInner({ search }: { search: string }) {
     url.searchParams.delete('shopify_error');
     url.searchParams.delete('shopify_warning');
     const next = url.pathname + (url.search || '');
-    window.history.replaceState(window.history.state, '', next);
+    replaceHistoryUrlIfChanged(next);
   }, [banner]);
 
   if (!banner) return null;

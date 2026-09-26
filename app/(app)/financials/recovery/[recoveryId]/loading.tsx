@@ -1,5 +1,1 @@
-import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
-
-export default function Loading() {
-  return <OperationalRouteSkeleton title="Loading recovery case" detail detailVariant="recovery" />;
-}
+export { default } from "@/components/visual-authority/SuppliedAuthenticatedRouteLoading";

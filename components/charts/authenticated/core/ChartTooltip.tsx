@@ -1,5 +1,3 @@
-import styles from '../AuthenticatedCharts.module.css';
-
 export type ChartTooltipSeriesRow = {
   label: string;
   value: string;
@@ -18,18 +16,18 @@ export type ChartTooltipProps = {
 /** T10 tooltip card. Shared by Recharts `content` renderers and CSS-chart hover wrappers. */
 export function ChartTooltip({ value, caption, series }: ChartTooltipProps) {
   return (
-    <div className={styles.tooltipCard} role="status">
-      {value ? <span className={styles.tooltipValue}>{value}</span> : null}
+    <div role="status" style={{ minWidth: 150, display: 'grid', gap: 7, padding: '10px 11px', border: '1px solid #e4e3e0', borderRadius: 9, background: '#fff', boxShadow: '0 8px 24px rgba(28,22,14,.12)', color: '#1c1f23', fontSize: 11 }}>
+      {value ? <span style={{ font: "600 14px/1.3 'IBM Plex Mono',monospace" }}>{value}</span> : null}
       {series?.length
         ? series.map((row) => (
-            <div key={row.label} className={styles.tooltipSeriesRow}>
-              <i style={{ background: row.colour }} aria-hidden="true" />
+            <div key={row.label} style={{ display: 'grid', gridTemplateColumns: '7px minmax(0,1fr) auto', gap: 7, alignItems: 'center' }}>
+              <i style={{ width: 7, height: 7, borderRadius: '50%', background: row.colour }} aria-hidden="true" />
               <span>{row.label}</span>
-              <span className={styles.mono}>{row.value}</span>
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace" }}>{row.value}</span>
             </div>
           ))
         : null}
-      {caption ? <span className={styles.tooltipCaption}>{caption}</span> : null}
+      {caption ? <span style={{ color: '#6f6a63', fontSize: 10 }}>{caption}</span> : null}
     </div>
   );
 }

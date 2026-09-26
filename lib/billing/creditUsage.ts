@@ -1,9 +1,9 @@
 import type { ContextCreditSnapshot, ContextUnlockType } from '@/lib/billing/contextCredits';
-import { canSelfServeTopUp, TOP_UP_CREDITS, TOP_UP_PRICE_GBP, type PlanId } from '@/lib/billing/plans';
+import { canSelfServeTopUp, CREDIT_USAGE_WARNING_RATIO, TOP_UP_CREDITS, TOP_UP_PRICE_GBP, type PlanId } from '@/lib/billing/plans';
 import type { Tier } from '@/lib/billing/tiers';
 
 /** Warn in widget / app when this share of the monthly allowance is consumed. */
-export const CREDIT_USAGE_WARNING_RATIO = 0.8;
+export { CREDIT_USAGE_WARNING_RATIO } from '@/lib/billing/plans';
 
 export type CreditUsageBand = 'normal' | 'warning' | 'exhausted';
 
@@ -39,7 +39,11 @@ export function getCreditUsageBand(snapshot: ContextCreditSnapshot): CreditUsage
 }
 
 export function getContextCreditTopUpOffer(tier: Tier): ContextCreditTopUpOffer | null {
-  const planId = tier as PlanId;
+  const planId: PlanId = tier === 'enterprise'
+    ? 'scale'
+    : tier === 'core_2026'
+      ? 'core'
+      : tier;
   if (!canSelfServeTopUp(planId)) return null;
   return {
     ...PRO_CONTEXT_CREDIT_TOP_UP,
@@ -71,7 +75,7 @@ export function buildCreditUsageWidgetFields(
     const consumed = (snapshot.allowance ?? 0) - snapshot.monthlyRemaining;
     const pct = Math.round((consumed / Math.max(totalPool, 1)) * 100);
     return {
-      credit_usage_banner: `You've used ${pct}% of your monthly checks. Top up or upgrade to avoid interruption.`,
+      credit_usage_banner: `You've used ${pct}% of your context credits. Review Billing for the current allowance and operation costs.`,
       credit_topup_label: topUpLabel,
       credit_topup_url: topUpUrl,
       credit_usage_dismissible: true,
@@ -80,7 +84,7 @@ export function buildCreditUsageWidgetFields(
 
   return {
     credit_usage_banner:
-      'Monthly network checks used up. Store Checks still available. Top up credits or upgrade plan to restore network context.',
+      'Context credits used up. Store checks can continue under the soft cap; reports require sufficient credits. Network and API context remain subject to entitlement and availability.',
     credit_topup_label: topUpLabel,
     credit_topup_url: topUpUrl,
     credit_usage_dismissible: false,

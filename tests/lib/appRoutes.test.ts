@@ -63,7 +63,6 @@ describe("app route registry", () => {
     );
     expect(labels).toMatchInlineSnapshot(`
 [
-  "Overview",
   "Work",
   "Cases",
   "Customers",
@@ -73,10 +72,10 @@ describe("app route registry", () => {
   "Reports",
   "Payout rules",
   "Flows",
-  "Connected",
+  "Connected sources",
   "Imports",
-  "Settings",
   "Notifications",
+  "Settings",
   "Help",
 ]
 `);

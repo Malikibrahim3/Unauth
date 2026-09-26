@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/navigation/AppNavLink';
 import { DataTable, MoneyValue, OperationalState, StatusBadge } from '@/components/ui';
 import { SourceBadge } from '@/components/sources/SourceBadge';
 import { FreshnessIndicator, type FreshnessState } from '@/components/sources/FreshnessIndicator';
@@ -30,6 +30,7 @@ export type LossLedgerRow = {
   currency: string | null;
   source: string | null;
   freshness: FreshnessState;
+  effectiveAt?: string | null;
   updatedAt?: string | null;
   detailHref?: string;
   derived?: boolean;
@@ -37,7 +38,7 @@ export type LossLedgerRow = {
 
 function sourceCell(row: LossLedgerRow) {
   if (row.source) return <SourceBadge source={row.source} />;
-  return <span className="text-[length:var(--uo-route-text-caption-size)] text-[var(--uo-route-text-tertiary)]">Source details unavailable</span>;
+  return <span className="text-[length:11.5px] text-[#6f6a63]">Source details unavailable</span>;
 }
 
 export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
@@ -47,12 +48,12 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
       header: 'Loss',
       render: (row: LossLedgerRow) => (
         <span className="flex min-w-0 flex-col gap-1">
-          <span className="font-medium text-[var(--uo-route-text-primary)]">
+          <span className="font-medium text-[#1c1f23]">
             {label('lossCategory', row.category)}
-            {row.derived ? <span className="ml-2 text-[length:var(--uo-route-text-caption-size)] font-normal text-[var(--uo-route-text-tertiary)]">Reconciliation pending</span> : null}
+            {row.derived ? <span className="ml-2 text-[length:11.5px] font-normal text-[#6f6a63]">Reconciliation pending</span> : null}
           </span>
           <span className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="text-[length:var(--uo-route-text-caption-size)] text-[var(--uo-route-text-secondary)]">
+            <span className="text-[length:11.5px] text-[#64686d]">
               {row.attribution ? label('attribution', row.attribution) : 'Attribution not yet assigned'}
             </span>
             {sourceCell(row)}
@@ -77,7 +78,7 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
       render: (row: LossLedgerRow) => (
         <span className="flex flex-col items-end gap-0.5 tabular-nums">
           <MoneyValue minorUnits={row.realisedLossMinor ?? row.estimatedLossMinor} currency={row.currency} reason="No verified confirmed or estimated loss is available" />
-          {row.realisedLossMinor == null && row.estimatedLossMinor != null ? <span className="text-[length:var(--uo-route-text-caption-size)] text-[var(--uo-route-text-tertiary)]">Estimated</span> : null}
+          {row.realisedLossMinor == null && row.estimatedLossMinor != null ? <span className="text-[length:11.5px] text-[#6f6a63]">Estimated</span> : null}
         </span>
       ),
     },
@@ -98,7 +99,7 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
       header: 'Updated',
       render: (row: LossLedgerRow) => (
         <span className="flex flex-col gap-1">
-          <span className="text-[var(--uo-route-text-secondary)]">{row.updatedAt ? formatDateMode(row.updatedAt, 'recent') : 'Date unavailable'}</span>
+          <span className="text-[#64686d]">{row.updatedAt ? formatDateMode(row.updatedAt, 'recent') : 'Date unavailable'}</span>
           <FreshnessIndicator state={row.freshness} label={row.freshness === 'stale' ? 'Stale' : row.freshness === 'current' ? 'Current' : 'Freshness unknown'} />
         </span>
       ),
@@ -122,7 +123,7 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
               kind="filtered-empty"
               title="No loss records match this scope"
               description="Change the range or clear source, status, and search controls. Unavailable financial stages have not been replaced with zero."
-              action={<Link href="/financials/losses?range=all" className="ua-text-working-title text-[var(--uo-route-action-primary)] underline underline-offset-2">Open the all-time ledger</Link>}
+              action={<Link href="/financials/losses?range=all" className="font-medium text-[13px] leading-5 text-[#1c1f23] text-[#9f4f08] underline underline-offset-2">Open the all-time ledger</Link>}
             />
           </div>
         }

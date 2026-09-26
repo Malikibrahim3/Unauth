@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Surface } from '@/components/ui/Surface';
 
 /**
- * Canonical Instrument Grade registry surface.
+ * Canonical Evidence Operations registry surface.
  *
  * §8.3 rule 1: "Toolbar, result count, table, bulk action, and pagination
  * belong to one surface." Before this primitive, registries stacked a bordered
@@ -71,27 +71,27 @@ export function RegistrySurface({
     <Surface
       structure="working"
       as="section"
-      className={cn('ua-registry-surface', className)}
+      className={cn('rounded-xl border border-[#e4e3e0] bg-white', className)}
       aria-label={ariaLabel}
     >
       {hasToolbar ? (
-        <div className="ua-registry-surface__toolbar">
-          {lead != null ? <div className="ua-registry-surface__toolbar-lead">{lead}</div> : null}
+        <div className="flex items-center gap-3">
+          {lead != null ? <div className="flex items-center gap-3">{lead}</div> : null}
           {resultCount != null ? (
-            <div className="ua-registry-surface__result-count" role="status" aria-live="polite">
+            <div className="rounded-xl border border-[#e4e3e0] bg-white" role="status" aria-live="polite">
               {resultCount}
             </div>
           ) : null}
         </div>
       ) : null}
       {appliedSummary != null ? (
-        <div className="ua-registry-surface__applied-summary" role="status" aria-label="Applied filters and scope">
+        <div className="rounded-xl border border-[#e4e3e0] bg-white" role="status" aria-label="Applied filters and scope">
           {appliedSummary}
         </div>
       ) : null}
-      <div className={cn('ua-registry-surface__body', persistentTable && 'ua-registry-surface__body--persistent-table')}>{children}</div>
+      <div className={cn('flex flex-col gap-3', persistentTable && 'w-full border-collapse text-[11.5px]')}>{children}</div>
       {pagination != null ? (
-        <div className="ua-registry-surface__pagination">{pagination}</div>
+        <div className="rounded-xl border border-[#e4e3e0] bg-white">{pagination}</div>
       ) : null}
     </Surface>
   );

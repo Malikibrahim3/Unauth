@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Json } from '@/lib/supabase/types';
 import { TABLES } from '@/lib/supabase/tables';
+import { parsePlatformSettings } from '@/lib/settings/platform';
 
 export type MerchantSettingsProfile = {
   platform: string | null;
@@ -16,6 +17,8 @@ export type MerchantProfile = {
   name: string;
   /** Read here so callers do not need a second `merchants` round trip. */
   is_demo: boolean;
+  reportingCurrency: string;
+  timezone: string;
 } & MerchantSettingsProfile;
 
 export function parseMerchantSettings(settings: unknown): MerchantSettingsProfile {
@@ -84,10 +87,13 @@ export async function getMerchantProfileById(
   if (!data) return null;
 
   const row = data as { id: string; name: string; settings: unknown; is_demo: boolean | null };
+  const platformSettings = parsePlatformSettings(row.settings);
   return {
     id: row.id,
     name: row.name,
     is_demo: row.is_demo === true,
+    reportingCurrency: platformSettings.reportingCurrency,
+    timezone: platformSettings.timezone,
     ...parseMerchantSettings(row.settings),
   };
 }

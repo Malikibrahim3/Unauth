@@ -206,11 +206,11 @@ export function InvestigationRequestDialog({
       size="lg"
       closeOnBackdrop={!busy}
       footer={(
-        <div className="flex w-full flex-wrap items-center justify-between gap-2">
-          <p className="ua-text-caption-role">
+        <div style={{ display: 'flex', width: '100%', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <p style={{ margin: 0, color: '#64686d', fontSize: 11.5, lineHeight: 1.45 }}>
             The customer decision remains independent from this deadline.
           </p>
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: 8 }}>
             <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
               Cancel
             </Button>
@@ -221,17 +221,17 @@ export function InvestigationRequestDialog({
         </div>
       )}
     >
-      <div className="space-y-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {error ? (
-          <div role="alert" className="ua-text-body rounded-md border border-[var(--uo-route-risk-critical-border)] bg-[var(--uo-route-risk-critical-bg)] p-3 text-[var(--uo-route-risk-critical)]">
+          <div role="alert" style={{ border: '1px solid #edc6b5', borderRadius: 6, background: '#fdf0e6', padding: 12, color: '#b0431a', fontSize: 13, lineHeight: '20px' }}>
             {error}
           </div>
         ) : null}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="ua-text-body font-medium">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }}>
+          <label style={{ color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             Target
             <Select
-              className="mt-1"
+              style={{ marginTop: 4 }}
               value={targetType}
               onChange={(event) => setTargetType(event.target.value as InvestigationTarget)}
             >
@@ -240,10 +240,10 @@ export function InvestigationRequestDialog({
               ))}
             </Select>
           </label>
-          <label className="ua-text-body font-medium">
+          <label style={{ color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             Partner
             <Select
-              className="mt-1"
+              style={{ marginTop: 4 }}
               value={partnerId}
               onChange={(event) => selectPartner(event.target.value)}
             >
@@ -253,10 +253,10 @@ export function InvestigationRequestDialog({
               ))}
             </Select>
           </label>
-          <label className="ua-text-body font-medium">
+          <label style={{ color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             Channel
             <Select
-              className="mt-1"
+              style={{ marginTop: 4 }}
               value={channel}
               onChange={(event) => setChannel(event.target.value as typeof channel)}
             >
@@ -266,80 +266,80 @@ export function InvestigationRequestDialog({
               <option value="api">External API reference</option>
             </Select>
           </label>
-          <label className="ua-text-body font-medium">
+          <label style={{ color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             Response due
             <Input
-              className="mt-1"
+              style={{ marginTop: 4 }}
               type="datetime-local"
               value={dueAt}
               onChange={(event) => setDueAt(event.target.value)}
             />
           </label>
         </div>
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Material evidence gap
           <Textarea
-            className="mt-1 min-h-20"
+            style={{ minHeight: 80, marginTop: 4 }}
             value={evidenceGap}
             onChange={(event) => setEvidenceGap(event.target.value)}
             required
           />
         </label>
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Requested evidence
           <Input
-            className="mt-1"
+            style={{ marginTop: 4 }}
             value={requestedEvidence}
             onChange={(event) => setRequestedEvidence(event.target.value)}
             placeholder="delivery photo, scan history, final parcel weight"
           />
-          <span className="ua-text-caption-role mt-1 block">
+          <span style={{ display: 'block', marginTop: 4, color: '#64686d', fontSize: 11.5, lineHeight: 1.45 }}>
             Separate items with commas.
           </span>
         </label>
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Request summary
           <Input
-            className="mt-1"
+            style={{ marginTop: 4 }}
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
             required
           />
         </label>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="ua-text-body font-medium">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }}>
+          <label style={{ color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             Recipient
             <Input
-              className="mt-1"
+              style={{ marginTop: 4 }}
               value={recipient}
               onChange={(event) => setRecipient(event.target.value)}
               placeholder="ops@partner.test"
             />
           </label>
-          <label className="ua-text-body font-medium">
+          <label style={{ color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             Subject
             <Input
-              className="mt-1"
+              style={{ marginTop: 4 }}
               value={subject}
               onChange={(event) => setSubject(event.target.value)}
               required
             />
           </label>
         </div>
-        <label className="ua-text-body block font-medium">
+        <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
           Request body
           <Textarea
-            className="mt-1 min-h-56 font-mono text-xs leading-relaxed"
+            style={{ minHeight: 224, marginTop: 4, font: "400 12px/1.625 'IBM Plex Mono', monospace" }}
             value={body}
             onChange={(event) => setBody(event.target.value)}
             required
           />
         </label>
         {overridesRecommendation ? (
-          <label className="ua-text-body block font-medium">
+          <label style={{ display: 'block', color: '#40454a', fontSize: 13, fontWeight: 500, lineHeight: '20px' }}>
             Override rationale
             <Textarea
-              className="mt-1 min-h-20 border-[var(--uo-route-warning-border)] bg-[var(--uo-route-warning-bg)]"
+              style={{ minHeight: 80, marginTop: 4, borderColor: '#ead8b6', background: '#fff3e9' }}
               value={overrideRationale}
               onChange={(event) => setOverrideRationale(event.target.value)}
               placeholder="Explain why this target or question is more appropriate."
@@ -348,8 +348,8 @@ export function InvestigationRequestDialog({
           </label>
         ) : null}
         {selectedPartner?.contact_instructions ? (
-          <div className="ua-text-caption-role rounded-md border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-muted)] p-3">
-            <span className="font-semibold text-[var(--uo-route-text-primary)]">Partner instructions: </span>
+          <div style={{ border: '1px solid #e4e3e0', borderRadius: 6, background: '#f4f3f1', padding: 12, color: '#64686d', fontSize: 11.5, lineHeight: 1.45 }}>
+            <span style={{ color: '#1c1f23', fontWeight: 600 }}>Partner instructions: </span>
             {selectedPartner.contact_instructions}
           </div>
         ) : null}

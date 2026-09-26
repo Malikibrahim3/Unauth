@@ -5,11 +5,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import nextEnv from '@next/env';
 import { createClient } from '@supabase/supabase-js';
+import { visualFixtureNamespace, visualFixtureId, visualFixtureEmail } from './acceptance/visual-fixture-namespace.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 
-const FIXTURE_TAG = 'distinctive-capture-fixture-v1';
+const FIXTURE_TAG = visualFixtureNamespace ? `distinctive-${visualFixtureNamespace}` : 'distinctive-capture-fixture-v1';
+const RELEASE_FIXTURE_TAG = 'release-e2e-local';
 const DISPLAY_REFS = Object.freeze({
   orderExternal: '10482',
   orderNumber: '#10482',
@@ -23,9 +25,34 @@ const DISPLAY_REFS = Object.freeze({
   importJob: 'Orders evidence import · August 2026',
 });
 const RELEASE_MERCHANT_ID = 'a1000000-0000-4000-8000-000000000010';
-const ONBOARDING_MERCHANT_ID = 'd1300000-0000-4000-8000-000000000100';
-const ONBOARDING_MEMBER_ID = 'd1300000-0000-4000-8000-000000000101';
-const ONBOARDING_OWNER_EMAIL = 'distinctive-onboarding@example.invalid';
+const RELEASE_MEMBER_ID = 'a1000000-0000-4000-8000-000000000020';
+const RELEASE_OWNER_EMAIL = 'stage-h-owner@example.invalid';
+const ONBOARDING_MERCHANT_ID = visualFixtureId('d1300000-0000-4000-8000-000000000100');
+const ONBOARDING_MEMBER_ID = visualFixtureId('d1300000-0000-4000-8000-000000000101');
+const ONBOARDING_OWNER_EMAIL = visualFixtureEmail('distinctive-onboarding@example.invalid', 'visual-onboarding');
+const VISUAL_MERCHANT_ID = visualFixtureId('4f5a8c25-6dcb-4b90-9e16-3a91c27d8f44');
+const VISUAL_ANALYST_MEMBER_ID = visualFixtureId('e2000000-0000-4000-8000-000000000001');
+const VISUAL_ANALYST_EMAIL = visualFixtureEmail('rahul@asterlane.co', 'visual-analyst');
+const VISUAL_IMPORT_JOB_ID = visualFixtureId('e2000000-0000-4000-8000-000000000010');
+const VISUAL_DISPUTE_ID = visualFixtureId('e2000000-0000-4000-8000-000000000011');
+const VISUAL_WORKFLOW_DEFINITION_ID = visualFixtureId('e2000000-0000-4000-8000-000000000012');
+const VISUAL_DOMAIN_EVENT_ID = visualFixtureId('e2000000-0000-4000-8000-000000000013');
+const VISUAL_WORKFLOW_RUN_ID = visualFixtureId('e2000000-0000-4000-8000-000000000014');
+const VISUAL_EXCEPTION_IDS = [
+  'e2000000-0000-4000-8000-000000000020',
+  'e2000000-0000-4000-8000-000000000021',
+  'e2000000-0000-4000-8000-000000000022',
+  'e2000000-0000-4000-8000-000000000023',
+].map(visualFixtureId);
+const VISUAL_PERMISSION_GRANTS = [
+  'view_dashboard', 'view_audit', 'view_customers', 'view_lookup', 'view_watchlist',
+  'view_chargebacks', 'view_inbox', 'view_saved', 'view_team', 'view_settings',
+  'view_audit_trail', 'manage_work_views', 'export_audit', 'lookup_customer',
+  'update_customer_status', 'add_customer_note', 'delete_customer_note',
+  'manage_watchlist', 'generate_evidence', 'submit_fraud_feedback',
+  'submit_payout_decisions', 'manage_work', 'dismiss_transaction', 'hide_job',
+  'bulk_delete', 'manage_team', 'manage_settings',
+];
 const IDS = Object.freeze({
   customer: 'd1300000-0000-4000-8000-000000000000',
   order: 'd1300000-0000-4000-8000-000000000001',
@@ -113,22 +140,26 @@ async function insertIfMissing(client, table, payload) {
   if (error) throw new Error(`${table} fixture insert failed: ${error.message}`);
 }
 
-async function resolveOnboardingOwner(client) {
+async function resolveFixtureOwner(client, email, fixtureTag, setupComplete, allowLegacyUntagged = false, extraMetadata = {}) {
   const { data: users, error: usersError } = await client.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (usersError) throw usersError;
-  const existing = users.users.find((user) => user.email === ONBOARDING_OWNER_EMAIL);
+  const existing = users.users.find((user) => user.email === email);
   if (existing) {
-    if (existing.user_metadata?.fixture !== FIXTURE_TAG) {
-      throw new Error(`Refused existing untagged onboarding owner ${ONBOARDING_OWNER_EMAIL}`);
+    if (existing.user_metadata?.fixture !== fixtureTag && !allowLegacyUntagged) {
+      throw new Error(`Refused existing untagged fixture owner ${email}`);
     }
-    return existing;
+    const { data, error } = await client.auth.admin.updateUserById(existing.id, {
+      user_metadata: { ...existing.user_metadata, ...extraMetadata, fixture: fixtureTag, setup_complete: setupComplete },
+    });
+    if (error || !data.user) throw error ?? new Error(`Fixture owner reset failed for ${email}`);
+    return data.user;
   }
   const { data, error } = await client.auth.admin.createUser({
-    email: ONBOARDING_OWNER_EMAIL,
+    email,
     email_confirm: true,
-    user_metadata: { fixture: FIXTURE_TAG, setup_complete: false },
+    user_metadata: { ...extraMetadata, fixture: fixtureTag, setup_complete: setupComplete },
   });
-  if (error || !data.user) throw error ?? new Error('Onboarding fixture owner creation failed');
+  if (error || !data.user) throw error ?? new Error(`Fixture owner creation failed for ${email}`);
   return data.user;
 }
 
@@ -178,6 +209,10 @@ if (
   throw new Error('Synthetic release tenant is missing or not marked is_demo + is_internal + release-e2e-local');
 }
 
+// Isolated parity consumes existing release records read-only. Only its new
+// namespaced visual/onboarding tenants are written in this mode.
+let releaseOwner;
+if (!visualFixtureNamespace) {
 await Promise.all([
   assertUnclaimed(supabase, 'merchant_customers', IDS.customer, (row) => safeJsonObject(row.raw_metadata).fixture === FIXTURE_TAG),
   assertUnclaimed(supabase, 'source_orders', IDS.order, (row) => String(row.note ?? '').includes(FIXTURE_TAG) || row.order_number === DISPLAY_REFS.orderNumber),
@@ -420,14 +455,246 @@ await Promise.all([
   }),
 ]);
 
-const onboardingOwner = await resolveOnboardingOwner(supabase);
+const { data: activeReleaseOwners, error: activeReleaseOwnersError } = await supabase
+  .from('merchant_users')
+  .select('id,merchant_id,invited_email')
+  .eq('merchant_id', RELEASE_MERCHANT_ID)
+  .eq('role', 'owner')
+  .eq('invite_status', 'active');
+if (activeReleaseOwnersError) throw activeReleaseOwnersError;
+if (activeReleaseOwners?.some((member) => member.id !== RELEASE_MEMBER_ID)) {
+  throw new Error(`Refused unexpected active owner for release fixture ${RELEASE_MERCHANT_ID}`);
+}
+const existingReleaseMember = await one(supabase, 'merchant_users', RELEASE_MEMBER_ID);
+if (
+  existingReleaseMember
+  && (
+    existingReleaseMember.merchant_id !== RELEASE_MERCHANT_ID
+    || existingReleaseMember.invited_email !== RELEASE_OWNER_EMAIL
+  )
+) {
+  throw new Error(`Refused non-fixture release membership ${RELEASE_MEMBER_ID}`);
+}
+releaseOwner = await resolveFixtureOwner(
+  supabase,
+  RELEASE_OWNER_EMAIL,
+  RELEASE_FIXTURE_TAG,
+  true,
+  true,
+);
+await upsert(supabase, 'merchant_users', {
+  id: RELEASE_MEMBER_ID,
+  merchant_id: RELEASE_MERCHANT_ID,
+  user_id: releaseOwner.id,
+  invited_email: RELEASE_OWNER_EMAIL,
+  role: 'owner',
+  invite_status: 'active',
+  accepted_at: FIXED_AT.event,
+});
+
+}
+
+const visualMerchant = await one(supabase, 'merchants', VISUAL_MERCHANT_ID);
+if (
+  !visualMerchant
+  || visualMerchant.is_demo !== true
+  || safeJsonObject(visualMerchant.settings).synthetic_fixture?.dataset_id !== 'asterlane-august-2026-loss-desk'
+) {
+  throw new Error('Canonical local Asterlane visual fixture is missing or is not marked synthetic');
+}
+const { error: visualMerchantNameError } = await supabase
+  .from('merchants')
+  .update({ name: 'Asterlane' })
+  .eq('id', VISUAL_MERCHANT_ID);
+if (visualMerchantNameError) throw new Error(`Canonical visual workspace name update failed: ${visualMerchantNameError.message}`);
+await upsert(supabase, 'sync_jobs', {
+  id: VISUAL_IMPORT_JOB_ID,
+  merchant_id: VISUAL_MERCHANT_ID,
+  job_kind: 'csv_import',
+  source: 'manual',
+  status: 'completed',
+  label: 'Orders evidence import · August 2026',
+  file_hash: crypto.createHash('sha256').update(`${FIXTURE_TAG}:asterlane-import`).digest('hex'),
+  column_map: { order_number: 'order_number', amount: 'amount', currency: 'currency' },
+  total_rows: 218,
+  processed_rows: 202,
+  failed_rows: 16,
+  error_log: [{ row: 17, code: 'missing_currency', field: 'currency' }],
+  hidden: false,
+  created_at: FIXED_AT.event,
+  started_at: FIXED_AT.event,
+  completed_at: FIXED_AT.completed,
+  updated_at: FIXED_AT.completed,
+});
+const { data: visualOrder, error: visualOrderError } = await supabase
+  .from('source_orders')
+  .select('id,currency,total_price')
+  .eq('merchant_id', VISUAL_MERCHANT_ID)
+  .order('placed_at')
+  .limit(1)
+  .maybeSingle();
+if (visualOrderError || !visualOrder?.id) throw visualOrderError ?? new Error('Canonical visual fixture has no source order');
+await upsert(supabase, 'source_disputes', {
+  id: VISUAL_DISPUTE_ID,
+  merchant_id: VISUAL_MERCHANT_ID,
+  source_order_id: visualOrder.id,
+  external_id: 'DSP-88214',
+  dispute_type: 'chargeback',
+  reason: 'Product not received',
+  amount: Number(visualOrder.total_price ?? 0),
+  currency: visualOrder.currency ?? 'GBP',
+  status: 'under_review',
+  initiated_at: FIXED_AT.dispute,
+  ingested_at: FIXED_AT.dispute,
+});
+const { data: visualRefund, error: visualRefundError } = await supabase
+  .from('source_refunds')
+  .select('id,currency,amount')
+  .eq('merchant_id', VISUAL_MERCHANT_ID)
+  .order('ingested_at')
+  .limit(1)
+  .maybeSingle();
+if (visualRefundError || !visualRefund?.id) throw visualRefundError ?? new Error('Canonical visual fixture has no source refund');
+await upsert(supabase, 'workflow_definitions', {
+  id: VISUAL_WORKFLOW_DEFINITION_ID,
+  merchant_id: VISUAL_MERCHANT_ID,
+  name: 'Refund evidence request',
+  description: 'Collect refund and return evidence, then create a bounded review task for the merchant team.',
+  trigger_event_type: 'source.refund.ingested',
+  conditions: [{ field: 'refund.currency', operator: 'eq', value: 'GBP' }],
+  outputs: [
+    { type: 'request_evidence', evidenceType: 'return_inspection', title: 'Collect refund receipt and return inspection' },
+    { type: 'create_task', title: 'Verify refund settlement', dueInHours: 24 },
+  ],
+  active: true,
+  status: 'published',
+  version: 1,
+  published_at: FIXED_AT.event,
+  created_at: FIXED_AT.placed,
+  updated_at: FIXED_AT.event,
+});
+await insertIfMissing(supabase, 'domain_events', {
+  id: VISUAL_DOMAIN_EVENT_ID,
+  merchant_id: VISUAL_MERCHANT_ID,
+  event_type: 'source.refund.ingested',
+  aggregate_type: 'refund',
+  aggregate_id: visualRefund.id,
+  actor_type: 'system',
+  idempotency_key: `${FIXTURE_TAG}:asterlane-domain-event:001`,
+  occurred_at: FIXED_AT.event,
+  recorded_at: FIXED_AT.event,
+  payload: {
+    refund_id: visualRefund.id,
+    amount: Number(visualRefund.amount ?? 0),
+    currency: visualRefund.currency ?? 'GBP',
+    completeness: 'known',
+  },
+  created_at: FIXED_AT.event,
+});
+await upsert(supabase, 'workflow_runs', {
+  id: VISUAL_WORKFLOW_RUN_ID,
+  merchant_id: VISUAL_MERCHANT_ID,
+  workflow_definition_id: VISUAL_WORKFLOW_DEFINITION_ID,
+  domain_event_id: VISUAL_DOMAIN_EVENT_ID,
+  status: 'completed',
+  error: null,
+  started_at: FIXED_AT.event,
+  completed_at: FIXED_AT.completed,
+});
+const { data: visualCases, error: visualCasesError } = await supabase
+  .from('support_payout_cases')
+  .select('id')
+  .eq('merchant_id', VISUAL_MERCHANT_ID)
+  .order('created_at')
+  .limit(VISUAL_EXCEPTION_IDS.length);
+if (visualCasesError || (visualCases?.length ?? 0) !== VISUAL_EXCEPTION_IDS.length) {
+  throw visualCasesError ?? new Error('Canonical visual fixture has insufficient cases for reconciliation exceptions');
+}
+const visualExceptionTitles = [
+  'Evri paid short on a damage claim',
+  'UPS capped at declared value',
+  'UPS claim unpaid, still inside its window',
+  'Held import rows, never posted',
+];
+for (let index = 0; index < VISUAL_EXCEPTION_IDS.length; index += 1) {
+  await upsert(supabase, 'case_exceptions', {
+    id: VISUAL_EXCEPTION_IDS[index],
+    merchant_id: VISUAL_MERCHANT_ID,
+    support_payout_case_id: visualCases[index].id,
+    exception_type: 'match_uncertainty',
+    confidence: 'probable',
+    status: 'open',
+    title: visualExceptionTitles[index],
+    detail: 'Synthetic August 2026 visual-authority reconciliation fixture.',
+    context: { synthetic: true, seed: FIXTURE_TAG, period: '2026-08' },
+    subject_entity_type: 'support_payout_case',
+    subject_entity_id: visualCases[index].id,
+    source_system: 'visual_authority_fixture',
+    dedup_key: `${FIXTURE_TAG}:asterlane-reconciliation:${index + 1}`,
+    created_at: FIXED_AT.event,
+    updated_at: FIXED_AT.event,
+  });
+}
+const visualAnalyst = await resolveFixtureOwner(
+  supabase,
+  VISUAL_ANALYST_EMAIL,
+  FIXTURE_TAG,
+  true,
+  false,
+  { full_name: 'Rahul Mehta', role: 'analyst', persona: 'supplied-visual-authority' },
+);
+await upsert(supabase, 'merchant_users', {
+  id: VISUAL_ANALYST_MEMBER_ID,
+  merchant_id: VISUAL_MERCHANT_ID,
+  user_id: visualAnalyst.id,
+  invited_email: VISUAL_ANALYST_EMAIL,
+  role: 'analyst',
+  invite_status: 'active',
+  accepted_at: FIXED_AT.event,
+});
+for (const permission of VISUAL_PERMISSION_GRANTS) {
+  const { error } = await supabase.from('user_permission_grants').upsert({
+    merchant_id: VISUAL_MERCHANT_ID,
+    grantee_user_id: visualAnalyst.id,
+    permission,
+    revoked: false,
+    revoked_at: null,
+  }, { onConflict: 'merchant_id,grantee_user_id,permission' });
+  if (error) throw new Error(`visual analyst permission fixture write failed: ${error.message}`);
+}
+const verifiedVisualMember = await one(supabase, 'merchant_users', VISUAL_ANALYST_MEMBER_ID);
+if (!verifiedVisualMember || verifiedVisualMember.user_id !== visualAnalyst.id || verifiedVisualMember.role !== 'analyst') {
+  throw new Error('Canonical visual analyst membership failed persisted read-back verification');
+}
+const verifiedReleaseMember = await one(supabase, 'merchant_users', RELEASE_MEMBER_ID);
+if (
+  !verifiedReleaseMember
+  || verifiedReleaseMember.merchant_id !== RELEASE_MERCHANT_ID
+  || (!visualFixtureNamespace && verifiedReleaseMember.user_id !== releaseOwner.id)
+  || verifiedReleaseMember.invited_email !== RELEASE_OWNER_EMAIL
+  || verifiedReleaseMember.role !== 'owner'
+  || verifiedReleaseMember.invite_status !== 'active'
+) {
+  throw new Error('Synthetic release owner membership failed persisted read-back verification');
+}
+const { data: verifiedReleaseOwner, error: verifiedReleaseOwnerError } = await supabase.auth.admin.getUserById(verifiedReleaseMember.user_id);
+if (verifiedReleaseOwnerError || verifiedReleaseOwner.user?.email !== RELEASE_OWNER_EMAIL) {
+  throw verifiedReleaseOwnerError ?? new Error('Synthetic release owner auth identity failed persisted read-back verification');
+}
+
+const onboardingOwner = await resolveFixtureOwner(
+  supabase,
+  ONBOARDING_OWNER_EMAIL,
+  FIXTURE_TAG,
+  false,
+);
 const existingOnboarding = await one(supabase, 'merchants', ONBOARDING_MERCHANT_ID);
 if (existingOnboarding && safeJsonObject(existingOnboarding.settings).fixture !== FIXTURE_TAG) {
   throw new Error(`Refused untagged onboarding merchant ${ONBOARDING_MERCHANT_ID}`);
 }
 await upsert(supabase, 'merchants', {
   id: ONBOARDING_MERCHANT_ID,
-  name: 'Signal Ledger Setup Preview',
+  name: 'Evidence Operations Setup Preview',
   is_demo: true,
   is_internal: true,
   settings: { fixture: FIXTURE_TAG, setup_complete: false, timezone: 'Europe/London' },
@@ -464,8 +731,12 @@ const fixtureManifest = {
   localOnly: true,
   supabaseOrigin: new URL(supabaseUrl).origin,
   merchantId: RELEASE_MERCHANT_ID,
+  releaseOwnerEmail: RELEASE_OWNER_EMAIL,
   onboardingMerchantId: ONBOARDING_MERCHANT_ID,
   onboardingOwnerEmail: ONBOARDING_OWNER_EMAIL,
+  visualMerchantId: VISUAL_MERCHANT_ID,
+  visualMemberRole: 'analyst',
+  visualMemberEmail: VISUAL_ANALYST_EMAIL,
   records: IDS,
   routes: {
     order: `/orders/${IDS.order}`,

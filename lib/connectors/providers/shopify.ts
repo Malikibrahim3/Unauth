@@ -44,8 +44,8 @@ export const shopifyConnector: ConnectorAdapter = {
       // the pilot grant, so dispute ingestion remains a documented limitation.
       capability('disputes.read', 'read', { requiredScopes: ['read_shopify_payments_disputes'], description: 'Read payment disputes' }),
       capability('orders.subscribe', 'subscribe', { description: 'Order webhooks' }),
-      // MVP+ boundary: automatic refund issuance stays unsupported.
-      capability('refund.issue', 'act', { support: 'unsupported', description: 'Issue refund (forbidden in MVP+)' }),
+      // Target MVP action; unavailable until its Shopify contract and proof pass.
+      capability('refund.issue', 'act', { support: 'unsupported', description: 'Issue refund (not released)' }),
     ],
   },
 

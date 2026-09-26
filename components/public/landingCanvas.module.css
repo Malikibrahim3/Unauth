@@ -1,0 +1,153 @@
+/* Landing body (design canvas v4). Inline styles carry the 1440 composition;
+   this module owns interaction and the responsive reflow.
+   CSS Modules hash ID selectors, so section hooks use [id="…"] attribute selectors. */
+.page { color: #1c1f23; font-variant-numeric: tabular-nums; overflow-x: clip; }
+.page a[data-btn] svg { transition: transform .5s cubic-bezier(.16, 1, .3, 1); }
+.page a[data-btn="primary"]:hover { background: #ff985e !important; }
+.page a[data-btn="primary"]:hover svg[data-icon="forward"] { transform: translateX(2px); }
+.page a[data-btn="secondary"]:hover { background: #eae8e5 !important; }
+.page a[data-btn="secondary"]:hover svg[data-icon="down"] { transform: translateY(2px); }
+.page a[data-link]:hover { text-decoration: underline !important; text-underline-offset: 4px; }
+.page :is(a, summary, button):focus-visible { outline: 3px solid #1c1f23; outline-offset: 4px; }
+.page details > summary { list-style: none; }
+.page details > summary::-webkit-details-marker { display: none; }
+.page details > summary > span[aria-hidden] svg { transition: transform .4s cubic-bezier(.16, 1, .3, 1); }
+.page details[open] > summary > span[aria-hidden] svg { transform: rotate(180deg); }
+.page details > summary:hover > span[aria-hidden] { border-color: #1c1f23 !important; }
+.recoveryTimelineMobile { display: none; }
+/* Case titles align across the three cards (balanced text keeps them to two lines). */
+.page [data-case-title] { min-height: 58px; }
+/* Source-column titles only reserve two lines where a column is narrow enough to wrap. */
+@media (max-width: 1279px) { .page [data-source-title] { min-height: 48px; } }
+@media (max-width: 1023px) { .page [data-case-title] { min-height: 0; } }
+
+/* Stripe-measured card hover: the card grows 4–6px a side, the corner button fills orange */
+@media (hover: hover) and (pointer: fine) {
+  .page [data-card] { transition: transform .8s cubic-bezier(.165, .84, .44, 1); }
+  .page [data-card="wide"]:hover { transform: scale(1.008); }
+  .page [data-card="half"]:hover { transform: scale(1.014); }
+  .page [data-card="third"]:hover { transform: scale(1.018); }
+  .page [data-card] button[data-arrow] { transition: background-color .6s cubic-bezier(.16, 1, .3, 1), border-color .6s cubic-bezier(.16, 1, .3, 1); }
+  .page [data-card] button[data-arrow] svg { transition: transform .6s cubic-bezier(.16, 1, .3, 1); }
+  .page [data-card]:hover button[data-arrow] { background: #ff7a30 !important; border-color: #ff7a30 !important; }
+  .page [data-card]:hover button[data-arrow] svg { transform: translate(2px, -2px); }
+}
+.page [data-card]:focus-within button[data-arrow] { background: #ff7a30 !important; border-color: #ff7a30 !important; }
+@media (prefers-reduced-motion: reduce) {
+  .page [data-card], .page [data-card] button[data-arrow], .page [data-card] button[data-arrow] svg, .page a[data-btn] svg, .page details > summary > span[aria-hidden] svg { transition: none; }
+  .page [data-card]:hover { transform: none !important; }
+}
+
+/* ---------- Reflow: the 1440 composition down to phones ---------- */
+.page [data-flow-chip] { white-space: nowrap; }
+@media (max-width: 1320px) {
+  .page [data-lr="policy"] { grid-template-columns: minmax(0, 1fr) 400px !important; }
+}
+@media (max-width: 1250px) {
+  .page [data-lr="policy"] { grid-template-columns: minmax(0, 1fr) !important; gap: 36px !important; }
+  .page [data-lr="policy"] > :last-child { max-width: 560px; }
+}
+@media (max-width: 1279px) {
+  .page [data-lr="container"] { padding: 0 48px !important; }
+  .page [id="top"] figure > div { padding: 48px 72px 0 !important; }
+  .page [id="top"] figure > div > [data-hero-card] { left: 28px !important; bottom: 28px !important; }
+  /* Narrower two-up cards: the owner moves under the task, the status stays top right */
+  .page [data-lr="table"][data-cols="work"] { grid-template-columns: minmax(0, 1fr) auto !important; row-gap: 6px !important; padding-top: 12px !important; padding-bottom: 12px !important; }
+  .page [data-lr="table"][data-cols="work"] > :nth-child(2) { grid-row: 2; }
+  .page [data-lr="table"][data-cols="work"] > :nth-child(3) { grid-row: 1; grid-column: 2; align-self: start; }
+  /* The third row becomes two cards plus a full-width history */
+  .page [data-lr="trio"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .page [data-lr="trio"] > :last-child { grid-column: 1 / -1; }
+}
+
+/* Evidence sheet: four sources become two pairs, then one column on phones */
+@media (max-width: 1100px) {
+  .page [data-lr="split"] { grid-template-columns: minmax(0, 1fr) !important; gap: 20px !important; }
+  .page [data-lr="sources"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .page [data-lr="sources"] > :nth-child(odd) { border-left: 0 !important; }
+  .page [data-lr="sources"] > :nth-child(n + 3) { border-top: 1px solid #e4e3e0; }
+  .page [data-lr="conds"] { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+/* Six recovery stages need ~70px each; below that they read as a two-by-three grid */
+@media (max-width: 1150px) {
+  .page .recoveryTimelineDesktop { display: none; }
+  .recoveryTimelineMobile {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid #e4e3e0;
+    border-radius: 8px;
+  }
+  .recoveryTimelineStage {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr);
+    column-gap: 8px;
+    padding: 10px 11px;
+    border-bottom: 1px solid #f0efec;
+  }
+  .recoveryTimelineStage:nth-child(odd) { border-right: 1px solid #f0efec; }
+  .recoveryTimelineStage:nth-last-child(-n + 2) { border-bottom: 0; }
+  .recoveryTimelineStage > span {
+    grid-row: 1 / span 2;
+    align-self: center;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #1c1f23;
+  }
+  .recoveryTimelineStage[data-state="approved"] > span {
+    background: #ffffff;
+    box-shadow: inset 0 0 0 2px #1c1f23;
+  }
+  .recoveryTimelineStage[data-state="money"] > span { background: #2f8f5b; }
+  .recoveryTimelineStage > strong { font: 500 11px/15px Inter, sans-serif; }
+  .recoveryTimelineStage > small { font: 400 10.5px/15px Inter, sans-serif; color: #64686d; }
+}
+
+/* Tablet: paired and tripled layouts stack; tables keep their columns */
+@media (max-width: 1023px) {
+  .page [data-lr="container"] { padding: 0 32px !important; }
+  .page :is([data-lr="verdict"], [data-lr="pair"], [data-lr="duo"], [data-lr="trio"], [data-lr="cases"]) { grid-template-columns: minmax(0, 1fr) !important; }
+  .page [data-lr="verdict"] > * + * { border-left: 0 !important; border-top: 1px solid #e4e3e0; }
+  .page [id="top"] figure > div { padding: 40px 40px 0 !important; }
+  .page [id="top"] figure > div > [data-hero-card] { position: relative !important; left: auto !important; bottom: auto !important; width: auto !important; max-width: 440px; margin: 24px auto 32px; }
+}
+
+@media (max-width: 767px) {
+  .page [data-lr="container"] { padding: 0 16px !important; }
+  .page section { margin-top: 64px !important; }
+  .page section[id="start"] { padding-bottom: 64px !important; }
+  .page h1 { font-size: clamp(36px, 9.74vw, 40px) !important; line-height: 42px !important; }
+  .page h2 { font-size: 32px !important; line-height: 35px !important; }
+  .page h4 { font-size: 24px !important; line-height: 30px !important; }
+  .page [id="top"] figure > div { padding: 20px 16px 0 !important; }
+  .page [id="top"] figure > div > [data-hero-card] { margin: 16px 0 20px; max-width: none; }
+  .page [id="top"] [data-hero-actions] { flex-wrap: wrap; }
+  .page [data-card] > div { padding-left: 20px !important; padding-right: 20px !important; }
+  .page [data-lr="sources"], .page [data-lr="conds"], .page [data-lr="evidence"] { grid-template-columns: minmax(0, 1fr) !important; }
+  .page [data-lr="sources"] > * { border-left: 0 !important; }
+  .page [data-lr="sources"] > * + * { border-top: 1px solid #e4e3e0; }
+  .page [data-lr="sources"] h5[data-source-title] { min-height: 0; }
+  .page [data-lr="chips"] { gap: 6px !important; }
+  .page [data-flow] { gap: 14px !important; }
+  .page [data-flow] > [data-flow-rail] { display: none; }
+  .page [data-flow-row] { flex-wrap: wrap; row-gap: 6px !important; padding-left: 0 !important; min-height: 0 !important; }
+  .page [data-flow-row] > [data-flow-tick] { display: none; }
+  .page [data-flow-row] [data-flow-chip] { white-space: normal; min-height: 34px !important; padding-top: 6px !important; padding-bottom: 6px !important; font-size: 14px !important; line-height: 19px !important; }
+  .page [data-flow-row] [data-flow-result] { flex-basis: 100%; margin-left: 0 !important; }
+  .page [data-flow-cursor] { display: none !important; }
+  .page [data-gate-row] { flex-wrap: wrap; row-gap: 6px; padding-top: 10px !important; padding-bottom: 10px !important; }
+  .page [data-gate-row] > [data-gate-condition] { flex: 1 1 calc(100% - 30px) !important; }
+  .page [data-gate-row] > [data-gate-route] { margin-left: 26px; }
+  .page [data-stack-phone] { flex-direction: column; align-items: flex-start !important; }
+  .page [data-hero-card] > :first-child { flex-wrap: wrap; row-gap: 2px; padding-top: 10px !important; padding-bottom: 10px !important; }
+  .page [data-lr="table"][data-cols="work"] { grid-template-columns: minmax(0, 1fr) auto !important; row-gap: 6px !important; padding-top: 12px !important; padding-bottom: 12px !important; }
+  .page [data-lr="table"][data-cols="work"] > :nth-child(2) { grid-row: 2; }
+  .page [data-lr="table"][data-cols="work"] > :nth-child(3) { grid-row: 1; grid-column: 2; align-self: start; }
+  .page [data-lr="table"][data-cols="preview"] { grid-template-columns: minmax(0, 1fr) 70px 100px !important; padding: 0 16px !important; }
+  .page [data-lr="table"][data-cols="stats"] > * { padding-left: 16px !important; padding-right: 12px !important; }
+  .page [data-lr="table"][data-cols="history"] { grid-template-columns: 86px minmax(0, 1fr) !important; }
+  .page [data-hide-phone] { display: none !important; }
+  .page :is(div, section)[style*="justify-content: space-between"] { flex-wrap: wrap; }
+}

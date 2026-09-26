@@ -1,35 +1,17 @@
 import Link from 'next/link';
-import { UnauthLogo } from '@/components/ui/UnauthLogo';
-import styles from './legalDocument.module.css';
 
-const LEGAL_LINKS = [
-  { href: '/legal/data-handling', label: 'Data handling' },
-  { href: '/legal/dpa', label: 'DPA' },
-  { href: '/legal/pilot-terms', label: 'Pilot terms' },
-  { href: '/legal/privacy', label: 'Privacy' },
-] as const;
-
-export function LegalHeader({ currentPath }: { currentPath: string }) {
+export function LegalHeader({ currentPath: _currentPath }: { currentPath: string }) {
   return (
     <>
-      <a className={styles.skipLink} href="#main-content">Skip to document</a>
-      <header className={styles.header}>
-      <div className={styles.headerInner}>
-        <Link href="/landing" aria-label="Unauth home" className={styles.brand}>
-          <UnauthLogo kind="lockup" tone="graphite" height={22} alt="" decorative />
+      <a href="#main-content" style={{ position: 'absolute', left: -9999, top: 8, zIndex: 100 }}>Skip to document</a>
+      <header style={{ height: 62, flex: 'none', display: 'flex', alignItems: 'center', gap: 'clamp(14px,4vw,26px)', padding: '0 clamp(18px,4vw,40px)', borderBottom: '1px solid #eae8e5', background: '#fff' }}>
+        <Link href="/landing" aria-label="Unauth home" style={{ display: 'flex', alignItems: 'center', gap: 9, color: '#1c1f23', textDecoration: 'none' }}>
+          <span aria-hidden="true" style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', borderRadius: 8, background: '#1c1f23', color: '#fff', font: "500 12px/1 'IBM Plex Mono',monospace" }}>∅</span>
+          <span style={{ font: "500 14px/1 'Inter',sans-serif", letterSpacing: '-.01em' }}>Unauth</span>
         </Link>
-        <nav aria-label="Legal documents" className={styles.headerNav}>
-          {LEGAL_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-        <div className={styles.headerActions}>
-          <Link href="/landing">Home</Link>
-          <Link href="/login">Sign in</Link>
-        </div>
-      </div>
+        <span style={{ flex: 1 }} />
+        <Link href="/pricing" style={{ color: '#40454a', font: "400 13px/1 'Inter',sans-serif", textDecoration: 'none' }}>Pricing</Link>
+        <Link href="/login" style={{ color: '#40454a', font: "400 13px/1 'Inter',sans-serif", textDecoration: 'none' }}>Sign in</Link>
       </header>
     </>
   );

@@ -167,7 +167,7 @@ export class FinancialInvariantViolation extends Error {
 
 function withinRange(position: CaseFinancialPosition, scope: ReconciliationScope): boolean {
   const at = Date.parse(position.occurredAt);
-  return at >= Date.parse(scope.from) && at <= Date.parse(scope.to);
+  return at >= Date.parse(scope.from) && at < Date.parse(scope.to);
 }
 
 /**

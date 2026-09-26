@@ -99,7 +99,7 @@ for (const [objectKind, expectedCount] of Object.entries(expectedCounts)) {
 
 assertEqual(
   sql(`select string_agg(id || ':' || public::text || ':' || coalesce(file_size_limit::text, '-') || ':' || coalesce(array_to_string(allowed_mime_types, ','), '-'), ';' order by id) from storage.buckets where id in ('merchant-csv-uploads-2','evidence-packages','integration-documents','pack-confirmation-photos','investigation-evidence')`),
-  'evidence-packages:false:104857600:application/pdf;integration-documents:false:-:-;investigation-evidence:false:10485760:application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/jpeg,image/png,image/webp;merchant-csv-uploads-2:false:524288000:text/csv,application/csv,text/plain;pack-confirmation-photos:false:-:-',
+  'evidence-packages:false:52428800:application/pdf,application/zip;integration-documents:false:52428800:-;investigation-evidence:false:10485760:application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/jpeg,image/png,image/webp;merchant-csv-uploads-2:false:20971520:text/csv,application/csv,text/plain;pack-confirmation-photos:false:52428800:-',
   'storage bucket supplement',
 );
 assertEqual(

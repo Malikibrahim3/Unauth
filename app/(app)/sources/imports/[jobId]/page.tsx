@@ -4,15 +4,18 @@ import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { ImportJobDetail, type ImportJobRecord } from "@/components/imports/ImportJobDetail";
+import { delayForAcceptanceScenario, throwForAcceptanceScenario } from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = "force-dynamic";
 
-export default async function ImportJobPage({ params }: { params: Promise<{ jobId: string }> }) {
+export default async function ImportJobPage({ params, searchParams }: { params: Promise<{ jobId: string }>; searchParams?: Promise<{ step?: string }> }) {
   const user = await getRequestUser();
   if (!user) redirect("/login");
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied || !ctx) redirect("/sources/connected");
+  await delayForAcceptanceScenario('import-job-loading', 5_000);
+  await throwForAcceptanceScenario('import-job-error');
   const { jobId } = await params;
   const { data, error } = await service
     .from(TABLES.PROCESSING_JOBS)
@@ -23,5 +26,6 @@ export default async function ImportJobPage({ params }: { params: Promise<{ jobI
     .maybeSingle();
   if (error) throw new Error(`import_job_failed: ${error.message}`);
   if (!data) notFound();
-  return <ImportJobDetail job={data as ImportJobRecord} />;
+  const resolvedSearch = await (searchParams ?? Promise.resolve<{ step?: string }>({}));
+  return <ImportJobDetail job={data as ImportJobRecord} mappingOpen={resolvedSearch.step === 'mapping'} />;
 }

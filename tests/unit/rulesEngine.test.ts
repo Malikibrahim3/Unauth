@@ -94,7 +94,7 @@ describe('evaluateRules', () => {
       ],
     });
     expect(evaluateRules(signals({ merchant_claim_count: 1 }), [r]).recommendation).toBe('deny');
-    expect(evaluateRules(signals(), [r]).recommendation).toBe('no_match');
+    expect(evaluateRules(signals(), [r])).toMatchObject({ recommendation: 'manual_review', certainty: 'insufficient_evidence', rule_id: null });
   });
 
   it('treats a rule with no conditions as always matching', () => {
@@ -121,7 +121,7 @@ describe('evaluateRules', () => {
       action: 'approve',
       conditions: [{ id: 'a', field: 'days_since_last_claim', operator: 'lte', value: 30 }],
     });
-    expect(evaluateRules(signals({ days_since_last_claim: null }), [r]).recommendation).toBe('no_match');
+    expect(evaluateRules(signals({ days_since_last_claim: null }), [r])).toMatchObject({ recommendation: 'manual_review', certainty: 'insufficient_evidence', rule_id: null });
   });
 
   it('builds justification lines for the matched conditions', () => {

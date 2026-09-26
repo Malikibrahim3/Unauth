@@ -12,7 +12,7 @@ import { scoreIdentityFromSignals } from '@/lib/scorer';
 // MVP_STEERING §19), so that phrasing is allowed. What stays banned is Unauth
 // itself deciding the claim — auto-deny/auto-reject and approve/reject-claim
 // CTAs (MVP_STEERING §24: merchant rules recommend, Unauth never decides).
-// Challenge6's Case Detail authority deliberately includes "Deny claim" inside
+// The Case Detail authority deliberately includes "Deny claim" inside
 // the named Merchant decision section. That is a person-recorded choice, not an
 // automated recommendation, so it is not forbidden here.
 const FORBIDDEN_UI_PHRASES = [

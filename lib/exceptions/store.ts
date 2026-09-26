@@ -52,6 +52,9 @@ export type ReconciliationPageResult = {
   stableOrder: 'created_at_desc_id_desc';
   contract: 'canonical' | 'compatibility';
   limitation: string | null;
+  from: string | null;
+  to: string | null;
+  earlierOutstandingCount: number | null;
 };
 
 export const raiseExceptionSchema = z.object({
@@ -160,6 +163,8 @@ export async function listReconciliationPage(
     search?: string | null;
     page?: number;
     pageSize?: number;
+    from?: string | null;
+    to?: string | null;
   } = {},
 ): Promise<ReconciliationPageResult> {
   const status = input.status ?? 'open';
@@ -171,7 +176,7 @@ export async function listReconciliationPage(
   const rpcClient = client as unknown as {
     rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
   };
-  const rpc = await rpcClient.rpc('reconciliation_page_v1', {
+  const rpc = await rpcClient.rpc('reconciliation_page_v2', {
     p_merchant_id: merchantId,
     p_status: status,
     p_source: input.source?.trim() || null,
@@ -179,6 +184,8 @@ export async function listReconciliationPage(
     p_search: input.search?.trim() || null,
     p_page: page,
     p_page_size: pageSize,
+    p_from: input.from ?? null,
+    p_to: input.to ?? null,
   });
   if (!rpc.error && rpc.data && typeof rpc.data === 'object') {
     const payload = rpc.data as Record<string, unknown>;
@@ -194,9 +201,12 @@ export async function listReconciliationPage(
       stableOrder: 'created_at_desc_id_desc',
       contract: 'canonical',
       limitation: null,
+      from: typeof payload.from === 'string' ? payload.from : input.from ?? null,
+      to: typeof payload.to === 'string' ? payload.to : input.to ?? null,
+      earlierOutstandingCount: Number(payload.earlier_outstanding_count) || 0,
     };
   }
-  if (!rpc.error || !/reconciliation_page_v1|schema cache|function .* does not exist/i.test(rpc.error.message)) {
+  if (!rpc.error || !/reconciliation_page_v2|schema cache|function .* does not exist/i.test(rpc.error.message)) {
     throw new Error(`reconciliation_page_failed: ${rpc.error?.message ?? 'invalid response'}`);
   }
 
@@ -206,6 +216,8 @@ export async function listReconciliationPage(
     .select('id,support_payout_case_id,exception_type,confidence,status,title,detail,context,source_system,assigned_to,assigned_at,priority,due_at,deadline_kind,state_version,created_at,resolved_at', { count: 'exact' })
     .eq('merchant_id', merchantId);
   if (status !== 'all') query = query.eq('status', status);
+  if (input.from) query = query.gte('created_at', input.from);
+  if (input.to) query = query.lt('created_at', input.to);
   if (input.source?.trim()) query = query.eq('source_system', input.source.trim());
   if (input.search?.trim()) {
     const term = input.search.trim().replace(/[,%()]/g, '');
@@ -227,6 +239,13 @@ export async function listReconciliationPage(
     })
     : raw;
   const totalCount = fallback.count ?? raw.length;
+  const earlier = input.from
+    ? await client.from(TABLES.CASE_EXCEPTIONS)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId)
+      .eq('status', 'open')
+      .lt('created_at', input.from)
+    : null;
   return {
     rows,
     page,
@@ -239,8 +258,11 @@ export async function listReconciliationPage(
     stableOrder: 'created_at_desc_id_desc',
     contract: 'compatibility',
     limitation: currency
-      ? 'Currency filtering is page-local until the MR4 forward migration is installed; totals are withheld.'
-      : 'MR4 canonical reconciliation paging is pending on this database.',
+      ? 'Currency filtering is page-local until the P02 financial-scope migration is installed; totals are withheld.'
+      : 'P02 canonical reconciliation period paging is pending on this database.',
+    from: input.from ?? null,
+    to: input.to ?? null,
+    earlierOutstandingCount: earlier?.error ? null : earlier?.count ?? 0,
   };
 }
 

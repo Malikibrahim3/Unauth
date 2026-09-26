@@ -2,6 +2,8 @@
 
 Status: current MR0 implementation projection, 23 August 2026. This document records evidence strength; it does not claim a current merchant connection.
 
+The 23 September 2026 `PRODUCT.md` vision targets a paid-ready authenticated MVP with controlled customer actions, one live recovery submission route and verified financial outcomes. The table below remains the observed supervised baseline. The target has not changed the current provider or action availability, and the landing page is outside the current implementation request. `MERCHANT_CLARITY_IMPLEMENTATION.md#authenticated-mvp-direction--23-september-2026` tracks the MVP-01–08 deltas and test gates.
+
 ## Selected provider stack
 
 | Provider | Code maturity | Derived product stage | Selected role | Current proof boundary |
@@ -33,9 +35,9 @@ The product stage above is derived by `deriveProviderDisplayStage`. The signed-i
 |---|---|
 | Read selected source facts | Merchant-specific; available only when configured and healthy |
 | Bounded write | Gated per connector and merchant permission; never inferred from read health |
-| `refund.issue` | Unsupported by MVP+ |
-| `request.deny` | Unsupported by MVP+ |
-| `claim.submit` | Unsupported by MVP+ |
+| `refund.issue` | Unreleased; selected-provider MVP action contract and proof required |
+| `request.deny` | Unreleased; automatic customer denial is outside the initial MVP |
+| `claim.submit` | Unreleased; selected recovery channel and claimant rights required |
 
 ## Environment switches
 

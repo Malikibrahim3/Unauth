@@ -279,7 +279,7 @@ export function buildMetadata(metaRows: MetaRow[]) {
 }
 
 export function draftPatchFromClaim(claim: ClaimRecord, orderOptions: OrderOption[]): Partial<ClaimReviewState> {
-  const patch: Partial<ClaimReviewState> = {};
+  const patch: Partial<ClaimReviewState> = { resolution: '' };
   if (claim.claim_type) patch.claimType = claim.claim_type as ClaimType;
   if (claim.customer_claim_reason) patch.customerReason = claim.customer_claim_reason;
   if (claim.normalized_reason) patch.notes = claim.normalized_reason;

@@ -5,14 +5,11 @@ import { getRequestUser } from '@/lib/auth/requestContext';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { formatDateTime, formatNumber } from '@/lib/utils/format';
-import {
-  ButtonLink,
-  EmptyState,
-  PageFrame,
-  Pagination,
-} from '@/components/ui';
 import { hashId } from '@/lib/ui/displayRef';
-import styles from '@/components/rules/AutomationControls.module.css';
+import {
+  acceptanceScenarioFromHeaders,
+  throwForAcceptanceScenario,
+} from '@/lib/testing/acceptanceStateInjector';
 
 type WorkflowRunRow = {
   id: string;
@@ -67,6 +64,8 @@ function percent(part: number, whole: number) {
 }
 
 export default async function Runs({ searchParams }: { searchParams: Promise<RunSearchParams> }) {
+  await throwForAcceptanceScenario('flow-runs-error');
+  const acceptanceScenario = await acceptanceScenarioFromHeaders();
   const user = await getRequestUser();
   if (!user) redirect('/login');
   const svc = createServiceClient();
@@ -132,7 +131,15 @@ export default async function Runs({ searchParams }: { searchParams: Promise<Run
     runs = (result.data ?? []) as WorkflowRunRow[];
   }
 
-  const hasFilters = Boolean(workflow || state || needle || range !== '30d');
+  if (acceptanceScenario === 'flow-runs-empty') {
+    runs = [];
+    total = 0;
+    resolvedPage = 1;
+  }
+
+  const hasFilters = acceptanceScenario === 'flow-runs-empty'
+    ? false
+    : Boolean(workflow || state || needle || range !== '30d');
   const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const [summaryResult, eventsResult] = await Promise.all([
     svc
@@ -189,40 +196,33 @@ export default async function Runs({ searchParams }: { searchParams: Promise<Run
   }
 
   return (
-    <PageFrame
-      title="Flow runs"
-      subtitle="Historical execution records for previously published flows, with the state each run reached and why it stopped. Pilot live execution is unavailable."
-      breadcrumbs={[{ label: 'Controls', href: '/controls/rules' }, { label: 'Flows', href: '/controls/flows' }, { label: 'Runs' }]}
-      showCurrentBreadcrumb
-      actions={<><a className="ua-button ua-button--secondary ua-button--sm" download="flow-runs.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`}>Export runs</a><ButtonLink href="/controls/flows" size="sm">Open flows</ButtonLink></>}
-      surfaceId="flow-runs-registry"
-      archetype="P5"
-    >
-      <div className={styles.flowRunKpis} aria-label="Flow runs in the last 7 days" data-operations-surface="flow-runs">
+    <section data-screen-label="Flow runs" data-visual-world="supplied-package" data-surface-id="flow-runs-registry" data-archetype="P5" style={{ width: '100%', maxWidth: '100%', height: '100%', minWidth: 0, minHeight: 0, contain: 'inline-size', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', color: '#1c1f23' }}>
+      <div style={{ height: 54, flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', borderBottom: '1px solid #eae8e5' }}><h1 style={{ margin: 0, color: '#1c1f23', fontSize: 13, lineHeight: 1, fontWeight: 500 }}>Flow runs</h1><span style={{ color: '#6f6a63', fontSize: 12 }}>Flows › Runs</span><span style={{ flex: 1 }} /><a style={{ padding: '6px 10px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }} download="flow-runs.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`}>Export runs</a><Link href="/controls/flows" style={{ padding: '6px 11px', borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Open flows</Link></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,minmax(0,1fr))', borderBottom: '1px solid #eae8e5' }} aria-label="Flow runs in the last 7 days" data-operations-surface="flow-runs">
         {[
           ['Runs, last 7 days', summaryRuns.length, '', 'default'],
           ['Complete', summary.complete, percent(summary.complete, summaryRuns.length), 'green'],
           ['Failed', summary.failed, percent(summary.failed, summaryRuns.length), 'red'],
           ['Held for a person', summary.held, percent(summary.held, summaryRuns.length), 'amber'],
           ['Skipped or cancelled', summary.skipped, percent(summary.skipped, summaryRuns.length), 'grey'],
-        ].map(([label, value, detail, tone]) => <section key={String(label)} data-tone={tone}><span>{label}</span><strong>{formatNumber(Number(value))}</strong><small>{detail || '\u00a0'}</small></section>)}
+        ].map(([label, value, detail, tone]) => <section key={String(label)} data-tone={tone} style={{ display: 'grid', gap: 4, padding: '12px 16px', borderRight: '1px solid #eae8e5' }}><span style={{ color: '#6f6a63', fontSize: 10.5 }}>{label}</span><strong style={{ color: tone === 'red' ? '#b0431a' : tone === 'amber' ? '#7a5310' : '#1c1f23', font: "400 17px/1.2 'IBM Plex Mono',monospace" }}>{formatNumber(Number(value))}</strong><small style={{ color: '#6f6a63', fontSize: 9.5 }}>{detail || '\u00a0'}</small></section>)}
       </div>
-      <section className={styles.flowRunsCard} aria-labelledby="flow-runs-heading">
-        <div className={styles.flowRunsHeading}><h2 id="flow-runs-heading">Executions</h2><p>Newest first. A held run is waiting for a person, not broken.</p></div>
-        <form method="get" className={styles.flowRunsToolbar}>
-          <label className={styles.searchWrap}><span className="sr-only">Search flow runs</span><input name="search" className={styles.searchInput} defaultValue={sp.search} placeholder="Search run ID, flow or object" /></label>
-          <label><span className="sr-only">Filter by flow</span><select name="workflow" className={styles.filterSelect} defaultValue={workflow}><option value="">Flow · all</option>{definitions.map((definition) => <option key={definition.id} value={definition.id}>{definition.name}</option>)}</select></label>
-          <label><span className="sr-only">Filter by state</span><select name="state" className={styles.filterSelect} defaultValue={state}><option value="">State · all</option><option value="completed">Complete</option><option value="failed">Failed</option><option value="held">Held</option><option value="skipped">Skipped</option><option value="cancelled">Cancelled</option></select></label>
-          <label><span className="sr-only">Filter by date range</span><select name="range" className={styles.filterSelect} defaultValue={range}><option value="24h">Last 24 hours</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="all">All history</option></select></label>
-          <button className="ua-button ua-button--secondary ua-button--sm" type="submit">Apply</button>
-          <span>{formatNumber(total)} runs · Europe/London</span>
+      <section aria-labelledby="flow-runs-heading" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', margin: '16px 22px 20px', overflow: 'hidden', borderRadius: 11, boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #eae8e5' }}><h2 id="flow-runs-heading" style={{ margin: 0, fontSize: 14 }}>Executions</h2><p style={{ margin: '3px 0 0', color: '#6f6a63', fontSize: 11 }}>Newest first. A held run is waiting for a person, not broken.</p></div>
+        <form method="get" style={{ boxSizing: 'border-box', width: '100%', maxWidth: '100%', minWidth: 0, contain: 'inline-size', display: 'flex', gap: 8, alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #eae8e5', background: '#ffffff', overflowX: 'auto' }}>
+          <label style={{ minWidth: 240, flex: 1 }}><input aria-label="Search flow runs" name="search" style={inputStyle} defaultValue={sp.search} placeholder="Search run ID, flow or object" /></label>
+          <label><select aria-label="Filter by flow" name="workflow" style={selectStyle} defaultValue={workflow}><option value="">Flow · all</option>{definitions.map((definition) => <option key={definition.id} value={definition.id}>{definition.name}</option>)}</select></label>
+          <label><select aria-label="Filter by state" name="state" style={selectStyle} defaultValue={state}><option value="">State · all</option><option value="completed">Complete</option><option value="failed">Failed</option><option value="held">Held</option><option value="skipped">Skipped</option><option value="cancelled">Cancelled</option></select></label>
+          <label><select aria-label="Filter by date range" name="range" style={selectStyle} defaultValue={range}><option value="24h">Last 24 hours</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option><option value="all">All history</option></select></label>
+          <button style={{ height: 34, padding: '0 10px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 11.5px/1 'Inter',sans-serif", cursor: 'pointer' }} type="submit">Apply</button>
+          <span style={{ whiteSpace: 'nowrap' }}>{formatNumber(total)} runs · Europe/London</span>
         </form>
-        {searchCapped ? <p className={styles.message} role="status">Search covers the newest {formatNumber(SEARCH_SCOPE_LIMIT)} runs in this scope. The loaded match count is partial, not a complete total.</p> : null}
+        {searchCapped ? <p style={{ margin: 0, padding: '9px 14px', background: '#fff3e9', color: '#7a5310', fontSize: 11 }} role="status">Search covers the newest {formatNumber(SEARCH_SCOPE_LIMIT)} runs in this scope. The loaded match count is partial, not a complete total.</p> : null}
         {runs.length ? (
-          <div className={styles.flowRunTableScroll}>
-            <div role="table" aria-label="Flow run records" className={styles.flowRunTable}>
+          <div style={{ width: '100%', maxWidth: '100%', flex: 1, minWidth: 0, minHeight: 0, contain: 'inline-size', overflow: 'auto' }}>
+            <div role="table" aria-label="Flow run records" style={{ minWidth: 1060 }}>
               <div role="rowgroup">
-                <div role="row" className={`${styles.flowRunGrid} ${styles.flowRunHeader}`}>
+                <div role="row" style={{ ...runGridStyle, minHeight: 34, color: '#6f6a63', fontSize: 10 }}>
                   {['Run', 'Flow', 'Trigger', 'State', 'Outcome or reason', 'Started', 'Completed', 'Duration'].map((label) => (
                     <span role="columnheader" key={label}>{label}</span>
                   ))}
@@ -232,11 +232,11 @@ export default async function Runs({ searchParams }: { searchParams: Promise<Run
                 {runs.map((run) => {
                   const stateDisplay = runState(run);
                   return (
-                    <Link role="row" href={`/controls/flows/runs/${run.id}`} className={`${styles.flowRunGrid} ${styles.flowRunRow}`} key={run.id}>
-                      <span role="cell" className={styles.flowRunId}>RUN-{hashId(run.id)}</span>
+                    <Link role="row" href={`/controls/flows/runs/${run.id}`} style={{ ...runGridStyle, minHeight: 44, color: '#40454a', fontSize: 11, textDecoration: 'none' }} key={run.id}>
+                      <span role="cell" style={{ color: '#9f4f08', fontFamily: "'IBM Plex Mono',monospace" }}>RUN-{hashId(run.id)}</span>
                       <span role="cell" title={names.get(run.workflow_definition_id) ?? 'Flow unavailable'}>{names.get(run.workflow_definition_id) ?? 'Flow unavailable'}</span>
                       <span role="cell" title={triggerNames.get(run.domain_event_id) ?? 'Trigger unavailable'}>{triggerNames.get(run.domain_event_id) ?? 'Trigger unavailable'}</span>
-                      <span role="cell"><i className={styles.flowRunState} data-tone={stateDisplay.tone}>{stateDisplay.label}</i></span>
+                      <span role="cell"><i data-tone={stateDisplay.tone} style={{ padding: '3px 6px', borderRadius: 5, background: stateDisplay.tone === 'red' ? '#fdf0e6' : stateDisplay.tone === 'amber' ? '#fff3e9' : stateDisplay.tone === 'green' ? '#eaf5ef' : '#f2f0ed', color: stateDisplay.tone === 'red' ? '#b0431a' : stateDisplay.tone === 'amber' ? '#7a5310' : stateDisplay.tone === 'green' ? '#1a6b43' : '#40454a', fontSize: 9.5 }}>{stateDisplay.label}</i></span>
                       <span role="cell" title={outcomeReason(run)}>{outcomeReason(run)}</span>
                       <span role="cell">{formatDateTime(run.started_at)}</span>
                       <span role="cell">{run.completed_at ? formatDateTime(run.completed_at) : '— Still open'}</span>
@@ -247,19 +247,14 @@ export default async function Runs({ searchParams }: { searchParams: Promise<Run
               </div>
             </div>
           </div>
-        ) : <div data-state-id="flow-runs-empty"><EmptyState title={hasFilters ? 'No runs match this scope' : 'No historical flow runs'} description={hasFilters ? 'Clear a filter or expand the time range to inspect other historical executions.' : 'Draft sample tests do not create run-history records. Publication and live execution are unavailable in the pilot.'} action={hasFilters ? <ButtonLink href="/controls/flows/runs" variant="secondary">Clear filters</ButtonLink> : <ButtonLink href="/controls/flows" variant="secondary">Open flow drafts</ButtonLink>} /></div>}
-        <div className={styles.flowRunsPagination}><span>Showing {total ? formatNumber((resolvedPage - 1) * PAGE_SIZE + 1) : '0'} – {formatNumber(Math.min(resolvedPage * PAGE_SIZE, total))} of {formatNumber(total)}</span><Pagination page={resolvedPage} pageSize={PAGE_SIZE} total={total} previousHref={resolvedPage > 1 ? pageHref(resolvedPage - 1) : undefined} nextHref={resolvedPage * PAGE_SIZE < total ? pageHref(resolvedPage + 1) : undefined} /></div>
+        ) : <div data-state-id="flow-runs-empty" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}><strong style={{ font: "500 13px/1.35 'Inter',sans-serif" }}>{hasFilters ? 'No runs match this scope' : 'No historical flow runs'}</strong><span style={{ maxWidth: 460, color: '#64686d', textAlign: 'center', font: "400 11.5px/1.5 'Inter',sans-serif" }}>{hasFilters ? 'Clear a filter or expand the time range to inspect other historical executions.' : 'Draft sample tests do not create run-history records. Publication and live execution are unavailable in the pilot.'}</span><Link href={hasFilters ? '/controls/flows/runs' : '/controls/flows'} style={{ padding: '6px 10px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 11.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>{hasFilters ? 'Clear filters' : 'Open flow drafts'}</Link></div>}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', borderTop: '1px solid #eae8e5', color: '#6f6a63', fontSize: 10.5 }}><span>Showing {total ? formatNumber((resolvedPage - 1) * PAGE_SIZE + 1) : '0'} – {formatNumber(Math.min(resolvedPage * PAGE_SIZE, total))} of {formatNumber(total)}</span><div style={{ display: 'flex', gap: 7 }}>{resolvedPage > 1 ? <Link href={pageHref(resolvedPage - 1)} style={paginationStyle}>Previous</Link> : <span aria-disabled="true" style={{ ...paginationStyle, color: '#a7abad' }}>Previous</span>}<span style={{ padding: '5px 4px', font: "400 10.5px/1 'IBM Plex Mono',monospace" }}>{resolvedPage} / {Math.max(1, Math.ceil(total / PAGE_SIZE))}</span>{resolvedPage * PAGE_SIZE < total ? <Link href={pageHref(resolvedPage + 1)} style={paginationStyle}>Next</Link> : <span aria-disabled="true" style={{ ...paginationStyle, color: '#a7abad' }}>Next</span>}</div></div>
       </section>
-      <section className={styles.flowRunGlossary}>
-        <div><h2>What a state means</h2><p>States describe the automation, never a merchant decision.</p></div>
-        <div>{[
-          ['Complete', 'Every step ran and produced its recorded result.'],
-          ['Failed', 'A step could not run. Nothing after it was attempted.'],
-          ['Held', 'The flow reached a human-decision boundary and stopped there by design.'],
-          ['Skipped', 'Conditions no longer matched when the flow re-checked them.'],
-          ['Cancelled', 'A person stopped the run before it finished.'],
-        ].map(([label, copy]) => <div key={label}><strong>{label}</strong><p>{copy}</p></div>)}</div>
-      </section>
-    </PageFrame>
+    </section>
   );
 }
+
+const inputStyle = { width: '100%', height: 34, padding: '0 10px', border: '1px solid #ddd8d1', borderRadius: 9, background: '#fff', color: '#1c1f23', fontSize: 12 } as const;
+const selectStyle = { height: 34, padding: '0 26px 0 9px', border: '1px solid #ddd8d1', borderRadius: 9, background: '#fff', color: '#40454a', fontSize: 11.5 } as const;
+const runGridStyle = { display: 'grid', gridTemplateColumns: '100px 130px 125px 90px minmax(220px,1fr) 130px 130px 74px', gap: 12, alignItems: 'center', padding: '0 14px', borderBottom: '1px solid #f4f2ef' } as const;
+const paginationStyle = { padding: '5px 9px', borderRadius: 7, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.09)', color: '#40454a', font: "400 11.5px/1 'Inter',sans-serif", textDecoration: 'none' } as const;

@@ -7,7 +7,7 @@ describe('UX9-6 settings and governance structure', () => {
   it('groups existing settings destinations by owner task without changing permission gates', () => {
     const nav = read('components/settings/HandoffSettingsNav.tsx');
 
-    for (const group of ['Workspace', 'Product', 'Governance', 'Legal and data', 'Developer', 'Billing']) {
+    for (const group of ['Workspace', 'Governance', 'Developers', 'Billing']) {
       expect(nav).toContain(`label: '${group}'`);
     }
     for (const permission of ['view_settings', 'view_team', 'view_inbox', 'view_audit_trail', 'manage_settings']) {
@@ -34,7 +34,16 @@ describe('UX9-6 settings and governance structure', () => {
       'app/(app)/settings/legal/agreements/AgreementsSettingsPage.tsx',
       'components/billing/BillingSettingsClient.tsx',
     ];
-    for (const owner of routeOwners) expect(read(owner)).toContain('truth=');
+    const truthOwners = [
+      routeOwners[0],
+      routeOwners[3],
+      routeOwners[6],
+      routeOwners[8],
+    ];
+    for (const owner of truthOwners) expect(read(owner)).toContain('truth=');
+    for (const owner of [routeOwners[1], routeOwners[2], routeOwners[4], routeOwners[5], routeOwners[7]]) {
+      expect(read(owner)).not.toContain('truth=');
+    }
   });
 
   it('keeps settings loading inside the local navigation and truth geometry', () => {
@@ -55,7 +64,7 @@ describe('UX9-6 settings and governance structure', () => {
       'app/(app)/settings/legal/agreements/loading.tsx',
       'app/(app)/settings/billing/loading.tsx',
     ];
-    for (const owner of settingsLoadingOwners) expect(read(owner)).toContain('SettingsRouteLoading');
+    for (const owner of settingsLoadingOwners) expect(read(owner)).toContain('SuppliedAuthenticatedRouteLoading');
   });
 
   it('keeps destructive and high-impact overlays open while pending and after failure', () => {
@@ -66,7 +75,7 @@ describe('UX9-6 settings and governance structure', () => {
     const billingAction = billing.slice(billing.indexOf('const runAction'), billing.indexOf('useEffect(() => {', billing.indexOf('const runAction')));
 
     expect(api.indexOf('closeRevokeModal();')).toBeGreaterThan(api.indexOf('if (!res.ok) throw'));
-    expect(api).toContain('setRevokeError(err instanceof Error');
+    expect(api).toContain('const message = caught instanceof Error ? caught.message');
     expect(apiCreate).toContain('closeOnBackdrop={!state.createdSecret && !state.creating}');
     expect(agreement).not.toContain("setRule({ status: 'error', message: error instanceof Error ? error.message : 'Agreement terms could not be approved.' });\n      setPendingRule(null);");
     expect(billingAction.indexOf('setPending(null);')).toBeLessThan(billingAction.indexOf('} catch (error)'));
@@ -82,6 +91,16 @@ describe('UX9-6 settings and governance structure', () => {
     }
     expect(source).toContain('there is no master switch and email delivery is unavailable');
     expect(source).toContain('email_enabled: false');
+  });
+
+  it('exposes only the working light appearance and separates inbox from preferences', () => {
+    const account = read('app/(app)/settings/workspace/account/AccountSettingsPage.tsx');
+    const nav = read('components/settings/HandoffSettingsNav.tsx');
+    expect(account).toContain('Light appearance · supported');
+    expect(account).toContain('Dark and system-matched appearances are not available.');
+    expect(account).not.toContain("localStorage.setItem('unauth:appearance'");
+    expect(nav).toContain("href: '/notifications', label: 'Inbox'");
+    expect(nav).toContain("href: '/settings/product/notifications', label: 'Notification preferences'");
   });
 
   it('leads audit with the registry and does not publish an unapproved retention period', () => {

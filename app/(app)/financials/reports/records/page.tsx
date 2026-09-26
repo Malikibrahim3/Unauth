@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from '@/components/navigation/AppNavLink';
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getRequestUser } from "@/lib/auth/requestContext";
@@ -16,7 +16,7 @@ import {
   reportCutoff,
 } from "@/lib/reporting/intelligence";
 import { financialStageDefinition, label } from "@/lib/ui/labels";
-import { entityLabel, financialStageLabel as copyFinancialStageLabel } from "@/lib/ui/merchantCopy";
+import { entityLabel, financialStageLabel as copyFinancialStageLabel, TIME_RANGE_LABELS } from "@/lib/ui/merchantCopy";
 import { shortRef, hashId } from "@/lib/ui/displayRef";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import {
@@ -25,21 +25,11 @@ import {
   formatMinorCurrencyNullable,
   formatNumber,
 } from "@/lib/utils/format";
-import ExportMenu from "@/components/reports/ExportMenu";
-import { ReportsTabs } from "@/components/reports/ReportsChrome";
-import {
-  Button,
-  DataTableServer,
-  Input,
-  OperationalState,
-  PageFrame,
-  RegistrySurface,
-  RegistryToolbar,
-  Select,
-} from "@/components/ui";
-import { MoneyValue, UnavailableValue } from "@/components/ui/ProductValue";
+import { ReportRecordActions } from '@/components/reports/ReportRecordActions';
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 import { resolveAnalyticsScope } from "@/lib/analytics/server/scope";
 import { getFinancialAnalyticsRecords } from "@/lib/analytics/server/rpc";
+import { delayForAcceptanceScenario, throwForAcceptanceScenario } from "@/lib/testing/acceptanceStateInjector";
 export const dynamic = "force-dynamic";
 
 type ReportRecordRow = {
@@ -55,6 +45,23 @@ type ReportRecordRow = {
   recoveryId?: string | null;
   reversalOf?: string | null;
 };
+
+const sans = "'Inter',sans-serif";
+const mono = "'IBM Plex Mono',monospace";
+const line = '1px solid #eae8e5';
+const shadow = '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)';
+
+function stateStyle(value: string | null) {
+  const normalized = value?.toLowerCase() ?? 'unavailable';
+  if (/(confirm|recover|paid|complete|matched|settled|approved)/.test(normalized)) return { background: '#eef6f1', color: '#1a6b43' };
+  if (/(fail|reject|cancel|error)/.test(normalized)) return { background: '#fdf0e6', color: '#b0431a' };
+  if (/(written|closed|unavailable)/.test(normalized)) return { background: '#f4f3f1', color: '#40454a' };
+  return { background: '#fff3e9', color: '#7a5310' };
+}
+
+function displayState(value: string | null) {
+  return value ? value.replaceAll('_', ' ').toUpperCase() : 'UNAVAILABLE';
+}
 
 export default async function ReportRecords({
   searchParams,
@@ -73,6 +80,8 @@ export default async function ReportRecords({
   if (denied) redirect(await resolveDefaultAppPath(svc, user.id));
   if (!(await merchantHasEntitlement(svc, ctx.merchantId, "REPORTS_ADVANCED")))
     redirect("/settings/billing?required=REPORTS_ADVANCED");
+  await delayForAcceptanceScenario("reports-and-records-loading");
+  await throwForAcceptanceScenario("report-records-error");
   const reportDefinition = REPORT_DEFINITIONS.find((definition) => definition.id === sp.reportId) ?? null;
   const reportId = reportDefinition?.id ?? null;
   const exactLedgerDrilldown = sp.kind === "financial-entry";
@@ -334,167 +343,42 @@ export default async function ReportRecords({
   const recordHref = (row: ReportRecordRow) => exactLedgerDrilldown
     ? row.caseId ? `/cases/${row.caseId}` : row.recoveryId ? `/financials/recovery/${row.recoveryId}` : row.lossId ? `/financials/losses/${row.lossId}` : null
     : kind === "recovery" ? `/financials/recovery/${row.id}` : `/cases/${row.id}`;
-  const scopedExport = !exactLedgerDrilldown && (dimension === "financial" || dimension === "category") ? (
-    <ExportMenu
-      range={range}
-      timezone={timezone}
-      currency={sp.currency?.toUpperCase() ?? null}
-      metric={dimension === "financial" ? metric : null}
-      category={dimension === "category" ? value : null}
-      triggerLabel="Export this scope"
-      triggerVariant="primary"
-    />
-  ) : null;
+  const exportParams = new URLSearchParams({ range, timezone, view: 'records' });
+  if (sp.currency) exportParams.set('currency', sp.currency.toUpperCase());
+  if (dimension === 'financial') exportParams.set('metric', metric);
+  if (dimension === 'category') exportParams.set('category', value);
+  const exportHref = !exactLedgerDrilldown && (dimension === 'financial' || dimension === 'category')
+    ? `/api/reports/claims?${exportParams.toString()}`
+    : null;
+  const displayedMetric = exactLedgerDrilldown && exactSignedTotalMinor != null
+    ? formatMinorCurrencyNullable(exactSignedTotalMinor, sp.currency?.toUpperCase())
+    : titleValue;
+  const periodLabel = exactScope
+    ? `${formatDateTime(exactScope.start)} – ${formatDateTime(exactScope.end)}`
+    : TIME_RANGE_LABELS[range];
+  const currencyLabel = sp.currency?.toUpperCase() ? `${sp.currency.toUpperCase()} only` : 'Currencies separated';
 
-  return (
-    <PageFrame
-      title="Supporting records"
-      surfaceId="report-records"
-      archetype="P5"
-      subtitle="The immutable records behind the selected report metric. Export carries this exact scope."
-      actions={scopedExport}
-      breadcrumbs={[
-        { label: "Financials", href: "/financials/losses" },
-        { label: "Reports", href: reportHref },
-        { label: "Supporting records" },
-      ]}
-      showCurrentBreadcrumb
-      headerCapabilityId="operations-reports"
-      tabs={<ReportsTabs view="records" query={{ range, timezone, currency: sp.currency?.toUpperCase() ?? null, compare: 'none', report: reportId }} />}
-      toolbar={
-        <div className="grid min-w-0 gap-1 text-[length:var(--uo-route-text-metadata-size)]">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><Link className="ua-text-metadata text-[var(--uo-route-action-primary)]" href={reportHref}>Back to report</Link><span className="text-[var(--uo-route-text-secondary)]">{exactLedgerDrilldown ? "Ledger state" : dimension === "financial" ? "Financial metric" : dimension === "category" ? "Loss category" : "Workflow state"}: {titleValue}</span></div>
-          <p className="max-w-[80ch] text-[var(--uo-route-text-tertiary)]">{metricDefinition} {exactLedgerDrilldown ? 'Pagination is applied by the governed ledger RPC before display; this page does not re-filter or re-sort the exact cell result.' : 'Rows are immutable report evidence for the displayed scope; opening a row does not change it. Search applies to each loaded page; amount/date ordering is source-backed for registries and page-local for governed financial record functions.'}</p>
-        </div>
-      }
-      footer={<p>These records are append-only. A correction adds a reversing record; it never edits or removes the row above.</p>}
-    >
-      <RegistrySurface
-        aria-label="Matching report records"
-        persistentTable
-        toolbar={(
-          <RegistryToolbar
-            label="Supporting record controls"
-            search={exactLedgerDrilldown ? undefined : (
-              <form method="get" action="/financials/reports/records" className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                {controlEntries.map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
-                <input type="hidden" name="sort" value={sort} />
-                <input type="hidden" name="pageSize" value={pageSize} />
-                <Input name="search" defaultValue={search} aria-label="Search supporting records" placeholder="Search record, state, type, or currency" />
-                <Button type="submit" variant="secondary" size="sm">Search</Button>
-              </form>
-            )}
-            viewControls={exactLedgerDrilldown ? undefined : (
-              <form method="get" action="/financials/reports/records" className="grid w-[360px] max-w-full grid-cols-[minmax(0,1fr)_112px_auto] items-center gap-2">
-                {controlEntries.map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
-                {search ? <input type="hidden" name="search" value={search} /> : null}
-                <Select name="sort" defaultValue={sort} aria-label="Sort supporting records"><option value="updated_desc">Newest updated</option><option value="updated_asc">Oldest updated</option><option value="amount_desc">Highest amount</option><option value="amount_asc">Lowest amount</option></Select>
-                <Select name="pageSize" defaultValue={String(pageSize)} aria-label="Supporting records per page"><option value="25">25 rows</option><option value="50">50 rows</option><option value="100">100 rows</option></Select>
-                <Button type="submit" variant="secondary" size="sm">Apply</Button>
-              </form>
-            )}
-          />
-        )}
-        resultCount={loadFailed ? "Records unavailable" : scopedResultCount}
-        pagination={
-          !loadFailed ? (
-            <nav aria-label="Matching records pages" className="flex min-h-10 items-center justify-between gap-3">
-              {page > 1 ? (
-                <Link
-                  className="ua-text-label rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--uo-route-surface-hover)]"
-                  href={recordsHref(page - 1)}
-                >
-                  Previous
-                </Link>
-              ) : <span />}
-              {from + rows.length < total ? (
-                <Link
-                  className="ua-text-label rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--uo-route-surface-hover)]"
-                  href={recordsHref(page + 1)}
-                >
-                  Next
-                </Link>
-              ) : null}
-            </nav>
-          ) : undefined
-        }
-      >
-        {loadFailed ? (
-          <div data-state-id="report-records-error"><OperationalState
-              kind="error"
-              title="These report records could not be loaded"
-              description={exactScopeUnavailable ? "This chart cell does not carry a complete state, currency, effective-time interval and as-of boundary. No broader record set has been substituted." : "The summary value has not been changed. Retry this same report scope."}
-              action={<Link className="ua-text-label text-[var(--uo-route-action-primary)]" href={recordsHref(page)}>Retry records</Link>}
-            /></div>
-        ) : (
-          <DataTableServer<ReportRecordRow>
-            flush
-            persistentHeader
-            density="metadata"
-            aria-label="Matching report records"
-            rows={rows}
-            getRowKey={(row) => row.id}
-            emptyState={
-              <div data-state-id="report-records-empty"><OperationalState
-                  kind="filtered-empty"
-                  title={exactLedgerDrilldown ? "No immutable entries match this chart cell" : "No records match this report slice"}
-                  description={exactLedgerDrilldown ? 'The ledger has no entry for this exact state, currency, effective-time interval and recorded-at boundary. The chart observation remains missing rather than being presented as zero.' : search ? 'No matching supporting row was loaded on this page. Clear search or continue through the scoped pages; Unauth has not claimed a global zero.' : 'Choose another report range or return to the report to inspect a different metric.'}
-                  action={<Link className="ua-text-label text-[var(--uo-route-action-primary)]" href={reportHref}>Back to report</Link>}
-                /></div>
-            }
-            columns={[
-              {
-                key: "record",
-                header: "Record",
-                render: (row) => (
-                  recordHref(row) ? <Link
-                    className="ua-text-working-title font-mono text-[var(--uo-route-text-primary)] hover:text-[var(--uo-route-action-primary)]"
-                    href={recordHref(row)!}
-                  >
-                    {exactLedgerDrilldown ? `Entry ${hashId(row.id)}` : kind === "recovery" ? `Recovery ${hashId(row.id)}` : shortRef(null, row.id)}
-                  </Link> : <span className="ua-text-working-title font-mono text-[var(--uo-route-text-primary)]">Entry {hashId(row.id)}</span>
-                ),
-              },
-              {
-                key: "type",
-                header: "Type",
-                render: (row) => (
-                  <span className="text-[var(--uo-route-text-secondary)]">
-                    {exactLedgerDrilldown
-                      ? row.reversalOf ? 'Reversal entry' : 'Ledger entry'
-                      : kind === "recovery"
-                      ? label("attribution", row.recordType)
-                      : dimension === "reason"
-                        ? row.recordType
-                        : label("claimType", row.recordType)}
-                  </span>
-                ),
-              },
-              {
-                key: "state",
-                header: "State",
-                render: (row) => exactLedgerDrilldown ? copyFinancialStageLabel(row.status ?? 'unknown') : label(kind === "recovery" ? "recoveryStatus" : "caseStatus", row.status),
-              },
-              {
-                key: "amount",
-                header: "Amount",
-                kind: "currency",
-                render: (row) => row.amountMinor != null
-                  ? <MoneyValue minorUnits={row.amountMinor} currency={row.currency} />
-                  : row.amountMajor != null
-                    ? formatCurrencyNullable(row.amountMajor, row.currency)
-                    : <UnavailableValue reason="The record has no verified amount" />,
-              },
-              {
-                key: "updated",
-                header: exactLedgerDrilldown ? "Effective" : "Updated",
-                kind: "date",
-                render: (row) => row.updatedAt ? formatDateTime(row.updatedAt) : <UnavailableValue reason={exactLedgerDrilldown ? "The ledger entry has no effective time" : "The source did not provide an update time"} />,
-              },
-            ]}
-          />
-        )}
-      </RegistrySurface>
-    </PageFrame>
-  );
+  return <section data-screen-label="Report records" data-visual-world="supplied-package" data-surface-id="report-supporting-records" data-archetype="P5" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', color: '#1c1f23' }}>
+    <SetBreadcrumbLabel label="Supporting records" detail={`metric: ${titleValue} · ${periodLabel} · ${currencyLabel} · ${formatNumber(total)} rows`} />
+    <div style={{ height: 54, flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', borderBottom: line }}><span style={{ color: '#64686d', font: `400 12.5px/1.5 ${sans}` }}>Every row behind <strong style={{ color: '#1c1f23', font: `400 13px/1.4 ${mono}` }}>{displayedMetric}</strong> — {loadFailed ? 'record read unavailable' : `${formatNumber(total)} immutable ${total === 1 ? 'entry' : 'entries'}`}, ordered by effective date.</span><span style={{ flex: 1 }}/><ReportRecordActions controlEntries={controlEntries} search={search} sort={sort} pageSize={pageSize} metricDefinition={metricDefinition} exportHref={exportHref} exportLabel={`Export these ${formatNumber(total)} rows`} filterDisabled={exactLedgerDrilldown}/></div>
+    <div style={{ flex: 1, minHeight: 0, padding: '16px 22px 20px', display: 'flex', gap: 14 }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 20, borderRadius: 12, padding: '13px 16px', background: '#f4f3f1' }}><div style={{ flex: 1 }}><span style={{ display: 'block', marginBottom: 7, color: '#64686d', letterSpacing: '.09em', font: `600 9.5px/1 ${sans}` }}>METRIC</span><strong style={{ color: '#1c1f23', font: `500 13px/1.3 ${sans}` }}>{titleValue}</strong></div><div style={{ flex: 2, minWidth: 0 }}><span style={{ display: 'block', marginBottom: 7, color: '#64686d', letterSpacing: '.09em', font: `600 9.5px/1 ${sans}` }}>HOW IT IS DERIVED</span><span style={{ color: '#40454a', font: `400 11.5px/1.5 ${mono}` }}>{metricDefinition}</span></div><div style={{ flex: 'none' }}><span style={{ display: 'block', marginBottom: 7, color: '#64686d', letterSpacing: '.09em', font: `600 9.5px/1 ${sans}` }}>ROWS</span><span style={{ color: '#1c1f23', font: `400 13px/1.3 ${mono}` }}>{loadFailed ? '—' : formatNumber(total)}</span></div><div style={{ flex: 'none' }}><span style={{ display: 'block', marginBottom: 7, color: '#64686d', letterSpacing: '.09em', font: `600 9.5px/1 ${sans}` }}>EXCLUDED</span><span style={{ color: '#b0431a', font: `400 13px/1.3 ${mono}` }}>unavailable</span></div></section>
+        <section aria-label="Matching report records" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', borderRadius: 10, padding: '12px 16px 0', background: '#fff', boxShadow: shadow }}>
+          <header style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 8 }}><span style={{ width: 96, flex: 'none', color: '#64686d', letterSpacing: '.06em', font: `400 9.5px/1 ${sans}` }}>RECORD</span><span style={{ width: 96, flex: 'none', color: '#64686d', letterSpacing: '.06em', font: `400 9.5px/1 ${sans}` }}>TYPE</span><span style={{ flex: 1, color: '#64686d', letterSpacing: '.06em', font: `400 9.5px/1 ${sans}` }}>CAUSE</span><span style={{ width: 80, flex: 'none', color: '#64686d', letterSpacing: '.06em', font: `400 9.5px/1 ${sans}` }}>{exactLedgerDrilldown ? 'EFFECTIVE' : 'UPDATED'}</span><span style={{ width: 92, flex: 'none', textAlign: 'right', color: '#64686d', letterSpacing: '.06em', font: `400 9.5px/1 ${sans}` }}>AMOUNT</span><span style={{ width: 104, flex: 'none', textAlign: 'right', color: '#64686d', letterSpacing: '.06em', font: `400 9.5px/1 ${sans}` }}>STATE</span></header>
+          <div style={{ minHeight: 0, overflowY: 'auto' }}>{loadFailed ? <div data-state-id="report-records-error" style={{ display: 'grid', minHeight: 180, placeItems: 'center', borderTop: '1px solid #f4f2ef', textAlign: 'center' }}><div><strong style={{ display: 'block', font: `500 13px/1.4 ${sans}` }}>These report records could not be loaded</strong><span style={{ display: 'block', maxWidth: 520, marginTop: 6, color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>{exactScopeUnavailable ? 'This chart cell does not carry a complete state, currency, effective-time interval and as-of boundary. No broader set has been substituted.' : 'The summary value has not been changed. Retry this same report scope.'}</span><Link href={recordsHref(page)} style={{ display: 'inline-block', marginTop: 9, color: '#9b470d', font: `500 11px/1.5 ${sans}` }}>Retry records</Link></div></div> : rows.length === 0 ? <div data-state-id="report-records-empty" style={{ display: 'grid', minHeight: 180, placeItems: 'center', borderTop: '1px solid #f4f2ef', textAlign: 'center' }}><div><strong style={{ display: 'block', font: `500 13px/1.4 ${sans}` }}>{exactLedgerDrilldown ? 'No immutable entries match this chart cell' : 'No records match this report slice'}</strong><span style={{ display: 'block', maxWidth: 520, marginTop: 6, color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>{search ? 'No matching supporting row was loaded on this page. Clear search or continue through the scoped pages; this is not presented as a global zero.' : 'Choose another report range or return to the report to inspect a different metric.'}</span><Link href={reportHref} style={{ display: 'inline-block', marginTop: 9, color: '#9b470d', font: `500 11px/1.5 ${sans}` }}>Back to report</Link></div></div> : rows.map((row) => {
+            const href = recordHref(row);
+            const recordLabel = exactLedgerDrilldown ? `ENTRY-${hashId(row.id)}` : kind === 'recovery' ? `REC-${hashId(row.id)}` : shortRef(null, row.id);
+            const type = exactLedgerDrilldown ? row.reversalOf ? 'Reversal entry' : 'Ledger entry' : kind === 'recovery' ? label('attribution', row.recordType) : dimension === 'reason' ? row.recordType ?? '—' : label('claimType', row.recordType);
+            const state = exactLedgerDrilldown ? copyFinancialStageLabel(row.status ?? 'unknown') : label(kind === 'recovery' ? 'recoveryStatus' : 'caseStatus', row.status);
+            const stateTone = stateStyle(row.status);
+            const amount = row.amountMinor != null ? formatMinorCurrencyNullable(row.amountMinor, row.currency) : row.amountMajor != null ? formatCurrencyNullable(row.amountMajor, row.currency) : '—';
+            return <div key={row.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderTop: '1px solid #f4f2ef' }}>{href ? <Link href={href} style={{ width: 96, flex: 'none', color: '#9b470d', textDecoration: 'none', font: `400 11.5px/1.4 ${mono}` }}>{recordLabel}</Link> : <span style={{ width: 96, flex: 'none', color: '#1c1f23', font: `400 11.5px/1.4 ${mono}` }}>{recordLabel}</span>}<span style={{ width: 96, flex: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#64686d', font: `400 11.5px/1.4 ${sans}` }}>{type}</span><span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1c1f23', font: `400 12px/1.4 ${sans}` }}>{row.recordType ? label(dimension === 'reason' ? 'lossCategory' : 'claimType', row.recordType) : type}</span><span style={{ width: 80, flex: 'none', color: '#64686d', font: `400 11.5px/1.4 ${mono}` }}>{row.updatedAt ? formatDateTime(row.updatedAt) : '—'}</span><span style={{ width: 92, flex: 'none', textAlign: 'right', color: amount === '—' ? '#64686d' : '#1c1f23', font: `400 12px/1.4 ${mono}` }}>{amount}</span><span style={{ width: 104, flex: 'none', textAlign: 'right' }}><span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 5, background: stateTone.background, color: stateTone.color, font: `500 10px/1.5 ${sans}` }}>{displayState(state)}</span></span></div>;
+          })}</div>
+          <footer style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6, padding: '11px 0', borderTop: line }}><span style={{ color: '#64686d', font: `400 11px/1.5 ${mono}` }}>{loadFailed ? 'rows unavailable' : `${scopedResultCount} · showing ${rows.length ? from + 1 : 0}–${from + rows.length}`}</span><span style={{ flex: 1 }}/>{page > 1 ? <Link href={recordsHref(page - 1)} style={{ padding: '5px 9px', borderRadius: 7, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.09)', color: '#40454a', textDecoration: 'none', font: `400 11.5px/1 ${sans}` }}>Previous</Link> : <span style={{ padding: '5px 9px', borderRadius: 7, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.09)', color: '#a7abad', font: `400 11.5px/1 ${sans}` }}>Previous</span>}{!loadFailed && from + rows.length < total ? <Link href={recordsHref(page + 1)} style={{ padding: '5px 9px', borderRadius: 7, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.09)', color: '#40454a', textDecoration: 'none', font: `400 11.5px/1 ${sans}` }}>Next</Link> : null}</footer>
+        </section>
+      </div>
+      <aside aria-label="Report scope and export" tabIndex={0} style={{ width: 300, flex: '0 0 300px', minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 11, borderRadius: 13, padding: '12px 13px', background: '#f4f3f1' }}><strong style={{ color: '#64686d', letterSpacing: '.09em', font: `600 10.5px/1 ${sans}` }}>WHAT THIS LIST PROVES</strong><section style={{ padding: '12px 13px', borderRadius: 10, background: '#fff', boxShadow: shadow, color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>The report total is not a stored number. It is the sum of these rows, recomputed each time, and any row can be opened to its own history.</section><strong style={{ color: '#64686d', letterSpacing: '.09em', font: `600 10.5px/1 ${sans}` }}>SCOPE</strong><section style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 13px', borderRadius: 10, background: '#fff', boxShadow: shadow }}>{[['Period',periodLabel],['Timezone',timezone],['Currency',currencyLabel],['Mixed currency rows','held, not converted'],['Includes written off','yes'],['Includes held rows','no']].map(([key,value]) => <div key={key} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ flex: 1, color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>{key}</span><span style={{ color: key === 'Includes held rows' ? '#b0431a' : key === 'Mixed currency rows' ? '#7a5310' : '#1c1f23', textAlign: 'right', font: `400 11.5px/1.5 ${mono}` }}>{value}</span></div>)}</section><strong style={{ color: '#64686d', letterSpacing: '.09em', font: `600 10.5px/1 ${sans}` }}>EXPORT</strong><section style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '12px 13px', borderRadius: 10, background: '#fff', boxShadow: shadow }}><span style={{ color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>{exportHref ? `CSV of all ${formatNumber(total)} rows, with the metric definition and exclusion scope so the file can be reconciled on its own.` : 'A governed CSV export is unavailable for this record scope. No broader export has been substituted.'}</span><div style={{ display: 'flex', alignItems: 'baseline', gap: 8, paddingTop: 9, borderTop: '1px solid #f4f2ef' }}><span style={{ flex: 1, color: '#64686d', font: `400 11.5px/1.5 ${sans}` }}>Last export</span><span style={{ color: '#64686d', font: `400 11.5px/1.5 ${mono}` }}>unavailable</span></div></section><span style={{ flex: 1 }}/><p style={{ margin: 0, paddingTop: 10, borderTop: '1px solid #e4e3e0', color: '#64686d', font: `400 11px/1.5 ${sans}` }}>Exports are logged. <Link href="/settings/governance/audit-trail" style={{ color: '#9b470d', textDecoration: 'none' }}>See who exported what</Link></p></aside>
+    </div>
+  </section>;
 }

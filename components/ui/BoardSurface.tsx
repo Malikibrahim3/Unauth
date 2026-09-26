@@ -15,10 +15,10 @@ export function BoardSurface({
     <Surface
       structure="working"
       as="section"
-      className={cn('ua-board-surface', className)}
+      className={cn('rounded-xl border border-[#e4e3e0] bg-white', className)}
       aria-label={label}
     >
-      <div className="ua-board">{children}</div>
+      <div className="grid gap-3 lg:grid-cols-[repeat(auto-fit,minmax(230px,1fr))]">{children}</div>
     </Surface>
   );
 }
@@ -35,12 +35,12 @@ export function BoardColumn({
   className?: string;
 }) {
   return (
-    <section className={cn('ua-board__column', className)}>
-      <header className="ua-board__column-header">
-        <h2 className="ua-board__column-title">{title}</h2>
-        {count != null ? <span className="ua-board__count">{count}</span> : null}
+    <section className={cn('min-w-0 rounded-xl bg-[#f4f3f1] p-3', className)}>
+      <header className="mb-3 flex items-center gap-3">
+        <h2 className="m-0 flex-1 text-[11px] font-semibold uppercase tracking-[.06em] text-[#40454a]">{title}</h2>
+        {count != null ? <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[10px] text-[#64686d]">{count}</span> : null}
       </header>
-      <div className="ua-board__column-body">{children}</div>
+      <div className="flex flex-col gap-3">{children}</div>
     </section>
   );
 }

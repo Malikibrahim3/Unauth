@@ -13,13 +13,14 @@ import {
 } from '@/lib/permissions';
 import { setCategoryApplicability } from '@/lib/integrations/applicability';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { isMonthlyOrderVolume } from '@/lib/constants/merchantProfile';
 import { TABLES } from '@/lib/supabase/tables';
 
 interface SetupBody {
   bootstrapOnly?: boolean;
   storeName?: string;
   platform?: string;
-  monthlyOrderVolume?: string;
+  monthlyOrderVolume?: string | null;
   primaryLossConcern?: string;
   primaryFraudConcern?: string;
   usesWms3pl?: boolean;
@@ -77,6 +78,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Workspace administration permission is required.' }, { status: 403 });
     }
 
+    if (body.monthlyOrderVolume !== undefined && body.monthlyOrderVolume !== null
+      && !isMonthlyOrderVolume(body.monthlyOrderVolume)) {
+      return NextResponse.json({ error: 'Select a supported monthly order-volume range or clear the saved value.' }, { status: 400 });
+    }
+
     const email = user.email?.toLowerCase() ?? '';
     const domain = email.split('@')[1] ?? '';
     const isDemo = Boolean((user.user_metadata as Record<string, unknown> | undefined)?.is_demo);
@@ -105,9 +111,8 @@ export async function POST(request: NextRequest) {
         ?? (isBootstrap ? email.split('@')[0] || 'New workspace' : null),
       platform: body.platform ?? (user.user_metadata?.platform as string | undefined) ?? null,
       monthlyOrderVolume:
-        body.monthlyOrderVolume ??
-        (user.user_metadata?.monthly_order_volume as string | undefined) ??
-        null,
+        body.monthlyOrderVolume !== undefined ? body.monthlyOrderVolume
+          : existingContext ? undefined : (user.user_metadata?.monthly_order_volume as string | undefined),
       primaryFraudConcern:
         body.primaryLossConcern ??
         body.primaryFraudConcern ??

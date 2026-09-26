@@ -17,12 +17,17 @@ export interface FilterChipProps {
   'aria-label'?: string;
 }
 
-const chipClass = (active: boolean, disabled: boolean, className?: string) => cn('ua-filter-chip', active && 'ua-filter-chip--active', disabled && 'ua-filter-chip--disabled', className);
+const chipClass = (active: boolean, disabled: boolean, className?: string) => cn(
+  'inline-flex min-h-8 items-center gap-2 rounded-lg border px-3 text-[11px] font-medium no-underline transition-colors',
+  active ? 'border-[#1c1f23] bg-[#1c1f23] text-white' : 'border-[#d8d4cf] bg-white text-[#40454a] hover:bg-[#f4f3f1]',
+  disabled && 'cursor-not-allowed opacity-45',
+  className,
+);
 
 /** Interactive dataset filter. Its selected state is neutral, never semantic. */
 export function FilterChip({ children, active = false, count, href, disabled = false, disabledReason, onClick, className, 'aria-label': ariaLabel }: FilterChipProps) {
   // F-41: a disabled chip renders no value — never a "· —" filler.
-  const content = <>{children}{!disabled && count != null ? <span className="tabular-nums text-[length:var(--uo-route-text-caption-size)]">{count}</span> : null}</>;
+  const content = <>{children}{!disabled && count != null ? <span className="tabular-nums text-[length:11.5px]">{count}</span> : null}</>;
   const title = disabled ? disabledReason : undefined;
   if (href) {
     return (

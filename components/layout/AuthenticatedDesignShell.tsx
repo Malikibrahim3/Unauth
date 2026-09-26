@@ -1,134 +1,54 @@
 'use client';
 
-import { Bell, Search } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import type { ReactNode } from 'react';
 import type { Permission } from '@/lib/permissions';
-import { useFetchJson } from '@/lib/react/useFetchJson';
-import CommandPalette from './CommandPalette';
-import { AuthenticatedSidebar } from '@/components/navigation/AuthenticatedSidebar';
-import AppNavLink from '@/components/navigation/AppNavLink';
-import shellStyles from './authenticatedDesignShell.module.css';
 import type { WorkspaceOption } from './WorkspaceSwitcher';
+import { ExactAuthenticatedShell } from './ExactAuthenticatedShell';
+import { useAuthenticatedShellPresentationOverride } from './BreadcrumbOverrideContext';
+import RouteErrorSource from '@/components/visual-authority/generated/Route-Error-Clean';
+import NotFoundSource from '@/components/visual-authority/generated/Not-Found-Clean';
+import LoadingRegistrySource from '@/components/visual-authority/generated/Loading-Registry-Clean';
+import LoadingDetailSource from '@/components/visual-authority/generated/Loading-Detail-Clean';
+import WriteOffSource from '@/components/visual-authority/generated/Write-Off-Clean';
+import FileClaimSource from '@/components/visual-authority/generated/File-Claim-Clean';
+import ReportRecordsSource from '@/components/visual-authority/generated/Report-Records-Clean';
+import PeriodCloseSource from '@/components/visual-authority/generated/Period-Close-Clean';
+import RuleEditorSource from '@/components/visual-authority/generated/Rule-Editor-Clean';
+import SourceRepairSource from '@/components/visual-authority/generated/Source-Repair-Clean';
+import MappingRepairSource from '@/components/visual-authority/generated/Mapping-Repair-Clean';
+import FirstRunSource from '@/components/visual-authority/generated/First-Run-Clean';
 
-type SourceTone = 'green' | 'amber' | 'red' | 'neutral';
-
-type AuthenticatedDesignShellProps = {
+type Props = {
   children: ReactNode;
   workspaceName: string | null;
+  reportingCurrency?: string | null;
+  timezone?: string | null;
   workspaces: WorkspaceOption[];
   activeMerchantId: string | null;
   userName: string | null;
   userEmail: string;
   userRole: string;
   permissions: Permission[];
-  sourceTone: SourceTone;
+  sourceTone: 'green' | 'amber' | 'red' | 'neutral';
   sourceLabel: string;
+  screenshotMode?: boolean;
   workCount?: number;
+  caseCount?: number;
+  reconciliationCount?: number;
+  acceptanceScenarioId?: string | null;
 };
 
-function activeHref(pathname: string) {
-  if (/^\/(orders|refunds|returns|shipments|tickets|disputes)\//.test(pathname)) {
-    return '/cases';
-  }
-
-  const routes = [
-    '/overview',
-    '/work',
-    '/cases',
-    '/customers',
-    '/financials/losses',
-    '/financials/recovery',
-    '/financials/reconciliation',
-    '/financials/reports',
-    '/controls/rules',
-    '/controls/flows',
-    '/sources/connected',
-    '/sources/imports',
-    '/notifications',
-    '/help',
-    '/settings/workspace/account',
-  ];
-  const matched = routes.find((route) => pathname === route || pathname.startsWith(`${route}/`));
-  if (matched) return matched;
-  if (pathname.startsWith('/settings')) return '/settings/workspace/account';
-  if (pathname.startsWith('/sources')) return '/sources/connected';
-  if (pathname === '/controls' || pathname.startsWith('/controls/rules')) return '/controls/rules';
-  if (pathname.startsWith('/controls/flows')) return '/controls/flows';
-  if (pathname === '/financials') return '/financials/losses';
-  return '';
-}
-
-function initials(name: string | null, email: string) {
-  const source = name?.trim() || email.split('@')[0] || 'Account';
-  const words = source.split(/\s+/).filter(Boolean);
-  return (words.length > 1 ? `${words[0][0]}${words[1][0]}` : source.slice(0, 2)).toUpperCase();
-}
-
-function AuthenticatedTopbar({
-  workspaceName,
-  userName,
-  userEmail,
-  permissions,
-  sourceTone,
-  sourceLabel,
-}: Pick<AuthenticatedDesignShellProps, 'workspaceName' | 'userName' | 'userEmail' | 'permissions' | 'sourceTone' | 'sourceLabel'>) {
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const { data } = useFetchJson<{ unreadCount?: number }>('/api/notifications/unread-count', {
-    blocksReadiness: false,
-  });
-  const unreadCount = data?.unreadCount ?? 0;
-  const openPalette = useCallback(() => setPaletteOpen(true), []);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setPaletteOpen((open) => !open);
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
-
-  return (
-    <>
-      <div className={shellStyles.topbar}>
-        <button type="button" className={shellStyles.commandTrigger} onClick={openPalette} aria-label="Search and navigate">
-          <Search size={13} aria-hidden="true" />
-          <span>Search cases, customers, orders…</span>
-          <kbd>⌘K</kbd>
-        </button>
-        <div className={shellStyles.topbarSpacer} />
-        <AppNavLink href="/sources/connected" className={shellStyles.trustChip} aria-label="Open source health">
-          <i data-tone={sourceTone} />
-          {sourceLabel}
-        </AppNavLink>
-        <AppNavLink
-          href="/notifications"
-          className={shellStyles.headerIcon}
-          aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
-        >
-          <Bell size={14} aria-hidden="true" />
-          {unreadCount > 0 ? <span aria-hidden="true" /> : null}
-        </AppNavLink>
-        <AppNavLink href="/settings/workspace/account" className={shellStyles.headerAvatar} aria-label="Open account settings">
-          {initials(userName, userEmail)}
-        </AppNavLink>
-      </div>
-      <CommandPalette
-        isOpen={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        permissions={permissions}
-        workspaceName={workspaceName}
-      />
-    </>
-  );
-}
-
+/**
+ * Project the authenticated chrome from the supplied page assigned to the
+ * current canonical route. Runtime truth only replaces values and handlers
+ * inside that source markup.
+ */
 export default function AuthenticatedDesignShell({
   children,
   workspaceName,
+  reportingCurrency,
+  timezone,
   workspaces,
   activeMerchantId,
   userName,
@@ -137,41 +57,64 @@ export default function AuthenticatedDesignShell({
   permissions,
   sourceTone,
   sourceLabel,
+  screenshotMode,
   workCount,
-}: AuthenticatedDesignShellProps) {
+  caseCount,
+  reconciliationCount,
+  acceptanceScenarioId = null,
+}: Props) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const presentation = useAuthenticatedShellPresentationOverride();
+  const presentationSource = presentation?.kind === 'first-run'
+    ? FirstRunSource
+    : presentation?.kind === 'route-error'
+    ? RouteErrorSource
+    : presentation?.kind === 'not-found'
+      ? NotFoundSource
+      : presentation?.kind === 'loading-registry'
+        ? LoadingRegistrySource
+        : presentation?.kind === 'loading-detail'
+          ? LoadingDetailSource
+          : undefined;
+  const stateSource = pathname === '/financials/recovery/new'
+    ? FileClaimSource
+    : pathname === '/financials/reports/records'
+      ? ReportRecordsSource
+      : pathname.startsWith('/controls/rules/') && pathname !== '/controls/rules/recovery'
+        ? RuleEditorSource
+        : pathname.startsWith('/financials/losses/') && searchParams.get('action') === 'write-off'
+          ? WriteOffSource
+          : pathname === '/financials/reconciliation' && searchParams.get('action') === 'close'
+            ? PeriodCloseSource
+            : /^\/sources\/[^/]+$/.test(pathname) && searchParams.get('tab') === 'repair'
+              ? SourceRepairSource
+              : /^\/sources\/imports\/[^/]+$/.test(pathname) && searchParams.get('step') === 'mapping'
+                ? MappingRepairSource
+                : undefined;
+  const sourcePageOverride = presentationSource ?? stateSource;
   return (
-    <>
-      <div
-        className={shellStyles.shell}
-        data-reference-shell="true"
-        data-unauth-ui="evidence-operations-v1"
-      >
-        <div className={shellStyles.frame}>
-          <AuthenticatedSidebar
-            activeHref={activeHref(pathname)}
-            workspaceName={workspaceName}
-            workspaces={workspaces}
-            activeMerchantId={activeMerchantId}
-            userName={userName}
-            userRole={userRole}
-            sourceTone={sourceTone}
-            permissions={permissions}
-            workCount={workCount}
-          />
-          <div className={shellStyles.workspace}>
-            <AuthenticatedTopbar
-              workspaceName={workspaceName}
-              userName={userName}
-              userEmail={userEmail}
-              permissions={permissions}
-              sourceTone={sourceTone}
-              sourceLabel={sourceLabel}
-            />
-            {children}
-          </div>
-        </div>
-      </div>
-    </>
+    <ExactAuthenticatedShell
+      pathname={pathname}
+      workspaceName={workspaceName}
+      reportingCurrency={reportingCurrency}
+      timezone={timezone}
+      workspaces={workspaces}
+      activeMerchantId={activeMerchantId}
+      userName={userName}
+      userEmail={userEmail}
+      userRole={userRole}
+      permissions={permissions}
+      sourceTone={sourceTone}
+      sourceLabel={sourceLabel}
+      screenshotMode={screenshotMode}
+      workCount={workCount}
+      caseCount={caseCount}
+      reconciliationCount={reconciliationCount}
+      sourcePageOverride={sourcePageOverride}
+      acceptanceScenarioId={acceptanceScenarioId}
+    >
+      {children}
+    </ExactAuthenticatedShell>
   );
 }

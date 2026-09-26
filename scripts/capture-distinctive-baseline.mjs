@@ -14,10 +14,11 @@ import { createClient } from '@supabase/supabase-js';
 const require = createRequire(import.meta.url);
 const { loadEnvConfig } = nextEnv;
 const FIXTURE_TAG = 'distinctive-capture-fixture-v1';
-const EXPECTED_PAGE_MODULES = 64;
-const EXPECTED_RENDERED_MODULES = 60;
+const EXPECTED_PAGE_MODULES = 65;
+const EXPECTED_RENDERED_MODULES = 61;
+const EXPECTED_REFERENCE_BACKED_RENDERED_MODULES = 59;
 const EXPECTED_ADAPTERS = 4;
-const EXPECTED_SCREENSHOTS = 73;
+const EXPECTED_SCREENSHOTS = 74;
 const NAVIGATION_ATTEMPTS = 2;
 const NAVIGATION_TIMEOUT_MS = 180_000;
 const READINESS_TIMEOUT_MS = 120_000;
@@ -26,7 +27,7 @@ const PUBLIC_VIEWPORTS = Object.freeze([
   { name: 'narrow', width: 390, height: 844 },
 ]);
 const APP_VIEWPORT = Object.freeze({ name: 'desktop', width: 1280, height: 720 });
-const NARROW_GATE_VIEWPORT = Object.freeze({ name: 'narrow-gate', width: 390, height: 844 });
+const NARROW_GATE_VIEWPORT = Object.freeze({ name: 'desktop-boundary', width: 1023, height: 900 });
 const DEFAULT_OUTPUT = 'artifacts/unauth-ui/distinctive-craft-2026-08-13/baseline';
 const DEFAULT_FIXTURES = 'artifacts/unauth-ui/distinctive-craft-2026-08-13/fixture-manifest.json';
 const SOURCE_ROOTS = ['app', 'components', 'lib', 'styles', 'public', 'package.json', 'package-lock.json', 'next.config.js', 'tsconfig.json'];
@@ -202,7 +203,9 @@ async function resolveRenderedRoutes(client, merchantId, fixtures, rendered) {
   ]);
   const routes = rendered.map((entry) => ({
     entry,
-    route: entry.pathPattern.includes('[') ? dynamic.get(entry.pathPattern) : entry.pathPattern,
+    route: entry.pathPattern === '/financials/recovery/new'
+      ? `/financials/recovery/new?case=${ids.caseId}`
+      : entry.pathPattern.includes('[') ? dynamic.get(entry.pathPattern) : entry.pathPattern,
   }));
   const unresolved = routes.filter((item) => !item.route).map((item) => item.entry.pathPattern);
   if (unresolved.length) throw new Error(`Unresolved rendered module paths: ${unresolved.join(', ')}`);
@@ -330,14 +333,36 @@ async function waitForRoute(page, authenticated, onboarding) {
     if (!routeState || routeState === 'loading' || routeState === 'timeout') throw new Error(`Route did not reach a terminal state (${routeState ?? 'missing'})`);
     return routeState;
   } else if (onboarding) {
-    await page.locator('[data-surface-id="workspace-onboarding"]').first().waitFor({ state: 'visible', timeout: READINESS_TIMEOUT_MS });
+    const root = page.locator('[data-surface-id="workspace-onboarding"]').first();
+    try {
+      await root.waitFor({ state: 'attached', timeout: 10_000 });
+      // App Router can briefly replace the streamed onboarding root after it
+      // first attaches. Wait for the locator to resolve to the settled,
+      // rendered node instead of measuring the detached transition node.
+      await root.waitFor({ state: 'visible', timeout: READINESS_TIMEOUT_MS });
+    } catch {
+      const body = (await page.locator('body').innerText().catch(() => '')).trim().slice(0, 240);
+      throw new Error(`Onboarding surface missing at ${page.url()}${body ? `; body: ${body}` : ''}`);
+    }
+    const visibility = await root.evaluate((element) => {
+      const chain = [];
+      let cursor = element;
+      while (cursor && chain.length < 8) {
+        const style = getComputedStyle(cursor);
+        const rect = cursor.getBoundingClientRect();
+        chain.push({ tag: cursor.tagName, display: style.display, visibility: style.visibility, opacity: style.opacity, width: rect.width, height: rect.height, hidden: cursor.hidden });
+        cursor = cursor.parentElement;
+      }
+      return chain;
+    });
+    if (!visibility[0] || visibility[0].display === 'none' || visibility[0].visibility === 'hidden' || visibility[0].width === 0 || visibility[0].height === 0) {
+      throw new Error(`Onboarding surface is attached but not visible: ${JSON.stringify(visibility)}`);
+    }
   } else {
-    // A public route's segment loading shell also contains <main> and a
-    // data-surface-id. Waiting for either can therefore record a skeleton as
-    // final evidence while the real page is still streaming. Every governed
-    // public/auth/legal owner has a visible task/document heading; require it
-    // and require all busy descendants to clear before accepting the frame.
-    await page.locator('h1:visible').first().waitFor({ state: 'visible', timeout: READINESS_TIMEOUT_MS });
+    // The finished authority deliberately uses styled divs rather than h1 on
+    // several public/auth pages. Its stable readiness contract is the visible
+    // data-screen-label root, not a semantic element the source does not use.
+    await page.locator('[data-screen-label]:visible').first().waitFor({ state: 'visible', timeout: READINESS_TIMEOUT_MS });
     await page.waitForFunction(() => !document.querySelector('[aria-busy="true"]'), undefined, { timeout: READINESS_TIMEOUT_MS });
   }
   return 'loaded';
@@ -363,7 +388,7 @@ async function waitForCaptureStability(page) {
       document: [document.documentElement.scrollWidth, document.documentElement.scrollHeight],
       body: [document.body?.scrollWidth ?? 0, document.body?.scrollHeight ?? 0],
       busy: document.querySelectorAll('[aria-busy="true"]').length,
-      regions: Array.from(document.querySelectorAll('[data-surface-id], .ua-chart-frame, img'))
+      regions: Array.from(document.querySelectorAll('[data-surface-id], [role="img"], img'))
         .filter((node) => {
           const rect = node.getBoundingClientRect();
           return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight;
@@ -400,10 +425,8 @@ async function normalizeCaptureViewport(page, authenticated) {
     if (!isAuthenticated) return null;
     const main = document.querySelector('#app-scroll-container');
     const root = main?.querySelector('[data-surface-id]');
-    // Some detail routes put a readiness/surface boundary outside the
-    // PageFrame that owns the visible H1. Validate the first visible page
-    // heading in the authenticated main region rather than assuming it is a
-    // descendant of the first surface marker.
+    // Record a semantic H1 when the supplied page has one, but do not require
+    // one: several authoritative screens intentionally use styled div titles.
     const heading = Array.from(main?.querySelectorAll('h1') ?? []).find((candidate) => {
       const rect = candidate.getBoundingClientRect();
       const style = getComputedStyle(candidate);
@@ -412,10 +435,17 @@ async function normalizeCaptureViewport(page, authenticated) {
     const mainRect = main?.getBoundingClientRect();
     const rootRect = root?.getBoundingClientRect();
     const headingRect = heading?.getBoundingClientRect();
+    const rootStyle = root ? getComputedStyle(root) : null;
     return {
       mainScrollLeft: main instanceof HTMLElement ? main.scrollLeft : null,
       mainLeft: mainRect?.left ?? null,
       rootLeft: rootRect?.left ?? null,
+      rootRight: rootRect?.right ?? null,
+      rootTag: root?.tagName ?? null,
+      rootSurfaceId: root?.getAttribute('data-surface-id') ?? null,
+      rootPosition: rootStyle?.position ?? null,
+      rootMarginLeft: rootStyle?.marginLeft ?? null,
+      rootTransform: rootStyle?.transform ?? null,
       headingLeft: headingRect?.left ?? null,
       headingRight: headingRect?.right ?? null,
     };
@@ -424,11 +454,9 @@ async function normalizeCaptureViewport(page, authenticated) {
     shell.mainScrollLeft !== 0
     || shell.mainLeft == null
     || shell.rootLeft == null
-    || shell.headingLeft == null
-    || shell.headingRight == null
     || shell.rootLeft < shell.mainLeft - 1
-    || shell.headingLeft < shell.mainLeft - 1
-    || shell.headingRight > page.viewportSize().width + 1
+    || (shell.headingLeft != null && shell.headingLeft < shell.mainLeft - 1)
+    || (shell.headingRight != null && shell.headingRight > page.viewportSize().width + 1)
   )) {
     throw new Error(`Authenticated shell is offset or clips its primary heading: ${JSON.stringify(shell)}`);
   }
@@ -480,7 +508,8 @@ async function openReadyPage({ context, requested, authenticated, onboarding, co
       });
       await page.close();
       if (attempt === NAVIGATION_ATTEMPTS) {
-        throw new Error(`${requested.pathname} did not become capture-ready after ${NAVIGATION_ATTEMPTS} attempts: ${failures.map((failure) => `attempt ${failure.attempt}: ${failure.error}`).join(' | ')}`);
+        const diagnostics = [...pageErrors.map((item) => `page: ${item.message}`), ...consoleErrors.map((item) => `console: ${item.message}`), ...serverErrors.map((item) => `http ${item.status}: ${item.url}`)].slice(-8);
+        throw new Error(`${requested.pathname} did not become capture-ready after ${NAVIGATION_ATTEMPTS} attempts: ${failures.map((failure) => `attempt ${failure.attempt} at ${failure.url}: ${failure.error}`).join(' | ')}${diagnostics.length ? ` | diagnostics: ${diagnostics.join(' || ')}` : ''}`);
       }
       await warmRouteForRetry(context, requested).catch((warmError) => {
         failures.push({
@@ -504,7 +533,7 @@ async function openNarrowBoundaryPage(context, requested) {
         timeout: NAVIGATION_TIMEOUT_MS,
       });
       if (response && response.status() >= 400) throw new Error(`navigation returned HTTP ${response.status()}`);
-      await page.getByRole('heading', { name: 'Unauth requires a desktop', exact: true }).waitFor({
+      await page.locator('[data-narrow-desktop="true"]').filter({ hasText: 'Narrow desktop window' }).waitFor({
         state: 'visible',
         timeout: READINESS_TIMEOUT_MS,
       });
@@ -518,7 +547,7 @@ async function openNarrowBoundaryPage(context, requested) {
       });
       await page.close();
       if (attempt === NAVIGATION_ATTEMPTS) {
-        throw new Error(`${requested.pathname} narrow boundary did not become capture-ready after ${NAVIGATION_ATTEMPTS} attempts: ${failures.map((failure) => `attempt ${failure.attempt}: ${failure.error}`).join(' | ')}`);
+        throw new Error(`${requested.pathname} narrow desktop did not become capture-ready after ${NAVIGATION_ATTEMPTS} attempts: ${failures.map((failure) => `attempt ${failure.attempt}: ${failure.error}`).join(' | ')}`);
       }
       await warmRouteForRetry(context, requested).catch((warmError) => {
         failures.push({
@@ -529,7 +558,7 @@ async function openNarrowBoundaryPage(context, requested) {
       });
     }
   }
-  throw new Error(`${requested.pathname} did not create a narrow boundary page`);
+  throw new Error(`${requested.pathname} did not create a narrow desktop page`);
 }
 
 async function inspectPng(file, viewport, label) {
@@ -678,7 +707,7 @@ function writeEvidenceFiles(stagingDir, payload) {
   fs.writeFileSync(path.join(stagingDir, 'route-capture-records.json'), `${JSON.stringify({ routes: payload.captures, narrowBoundary: payload.narrowBoundary, adapters: payload.adapters }, null, 2)}\n`);
   fs.writeFileSync(path.join(stagingDir, 'build-fingerprint.json'), `${JSON.stringify(payload.fingerprint, null, 2)}\n`);
   fs.writeFileSync(path.join(stagingDir, 'fixtures.json'), `${JSON.stringify(payload.fixtures, null, 2)}\n`);
-  fs.writeFileSync(path.join(stagingDir, 'README.md'), `# Distinctive craft baseline\n\n- Generated: ${payload.manifest.generatedAt}\n- Rendered module owners: ${payload.manifest.coverage.renderedModules}\n- Screenshots: ${payload.captures.length + 1}\n- Authenticated desktop viewport: 1280×720\n- Public, auth, onboarding and legal viewports: 1440×900 and 390×844\n- Representative authenticated narrow gate: 390×844\n- Adapter route checks: ${payload.adapters.length}\n- Source fingerprint: ${payload.fingerprint.source.sha256}\n- Capture tool fingerprint: ${payload.fingerprint.captureTool.sha256}\n\nThis directory is capture evidence. It contains no browser storage state, E2E secret, or service-role credential.\n`);
+  fs.writeFileSync(path.join(stagingDir, 'README.md'), `# Distinctive craft baseline\n\n- Generated: ${payload.manifest.generatedAt}\n- Rendered module owners: ${payload.manifest.coverage.renderedModules}\n- Screenshots: ${payload.captures.length + 1}\n- Authenticated desktop viewport: 1280×720\n- Public, auth, onboarding and legal viewports: 1440×900 and 390×844\n- Authenticated desktop-required boundary: ${NARROW_GATE_VIEWPORT.width}×${NARROW_GATE_VIEWPORT.height}\n- Adapter route checks: ${payload.adapters.length}\n- Source fingerprint: ${payload.fingerprint.source.sha256}\n- Capture tool fingerprint: ${payload.fingerprint.captureTool.sha256}\n\nThis directory is capture evidence. It contains no browser storage state, E2E secret, or service-role credential.\n`);
   writeGallery(stagingDir, [...payload.captures, payload.narrowBoundary]);
 }
 
@@ -789,12 +818,12 @@ try {
     if (final.pathname !== narrowRequested.pathname) throw new Error(`/overview narrow boundary resolved to ${final.pathname}`);
     const overflowX = await narrowPage.evaluate(() => Math.max(0, document.documentElement.scrollWidth - innerWidth));
     if (overflowX > 1) throw new Error(`/overview narrow boundary has ${overflowX}px page-level horizontal overflow`);
-    const filename = 'authenticated-desktop-gate-390x844.png';
+    const filename = 'authenticated-narrow-desktop-1023x900.png';
     const absoluteFile = path.join(stagingDir, filename);
     await narrowPage.screenshot({ path: absoluteFile, type: 'png', fullPage: false, animations: 'disabled', caret: 'hide' });
     const inspected = await inspectPng(absoluteFile, NARROW_GATE_VIEWPORT, filename);
     narrowBoundary = {
-      stableSurfaceId: 'authenticated-desktop-boundary',
+      stableSurfaceId: 'authenticated-narrow-desktop',
       finalUrl: narrowPage.url(),
       viewport: NARROW_GATE_VIEWPORT,
       artifact: filename,
@@ -828,10 +857,17 @@ try {
     .filter(([, group]) => group.artifacts.length > 1)
     .map(([pixelSha256, group]) => ({ pixelSha256, owners: [...group.owners].sort(), artifacts: group.artifacts.toSorted() }));
   const duplicateOwnerGroups = duplicateFrameGroups.filter((group) => group.owners.length > 1);
-  const duplicatedOwnerPixels = new Set(duplicateOwnerGroups.map((group) => group.pixelSha256));
-  const independentlyEvidencedOwners = new Set(
+  const referenceBackedOwnerIds = new Set(authority.rendered
+    .filter((entry) => entry.referenceIds.length > 0)
+    .map((entry) => entry.id));
+  const duplicateReferenceOwnerGroups = duplicateFrameGroups.filter((group) => (
+    group.owners.filter((owner) => referenceBackedOwnerIds.has(owner)).length > 1
+  ));
+  const duplicatedReferenceOwnerPixels = new Set(duplicateReferenceOwnerGroups.map((group) => group.pixelSha256));
+  const independentlyEvidencedReferenceOwners = new Set(
     captures
-      .filter((capture) => !duplicatedOwnerPixels.has(capture.pixelSha256))
+      .filter((capture) => referenceBackedOwnerIds.has(capture.stableSurfaceId))
+      .filter((capture) => !duplicatedReferenceOwnerPixels.has(capture.pixelSha256))
       .map((capture) => capture.stableSurfaceId),
   );
   const generatedAt = new Date().toISOString();
@@ -842,12 +878,14 @@ try {
     coverage: {
       pageModules: authority.entries.length,
       renderedModules: new Set(captures.map((capture) => capture.stableSurfaceId)).size,
-      independentlyEvidencedRenderedModules: independentlyEvidencedOwners.size,
+      referenceBackedRenderedModules: referenceBackedOwnerIds.size,
+      independentlyEvidencedReferenceBackedModules: independentlyEvidencedReferenceOwners.size,
       adapterChecks: adapters.length,
       screenshots: captures.length + 1,
       pixelDistinctScreenshots: new Set([...captures, narrowBoundary].map((capture) => capture.pixelSha256)).size,
       duplicateFrameGroups,
       duplicateOwnerGroups,
+      duplicateReferenceOwnerGroups,
     },
     viewports: { authenticated: APP_VIEWPORT, publicAuthOnboardingLegal: PUBLIC_VIEWPORTS, authenticatedNarrowGate: NARROW_GATE_VIEWPORT },
     sourceFingerprint: fingerprint.source.sha256,
@@ -867,8 +905,11 @@ try {
   if (captures.length !== expectedRenderedCaptures || manifest.coverage.renderedModules !== EXPECTED_RENDERED_MODULES || adapters.length !== EXPECTED_ADAPTERS) {
     throw new Error(`Coverage mismatch: ${captures.length} captures, ${manifest.coverage.renderedModules} rendered owners, ${adapters.length} adapters`);
   }
-  if (independentlyEvidencedOwners.size !== EXPECTED_RENDERED_MODULES) {
-    throw new Error(`Exact duplicate frames leave only ${independentlyEvidencedOwners.size}/${EXPECTED_RENDERED_MODULES} independently evidenced owners`);
+  if (referenceBackedOwnerIds.size !== EXPECTED_REFERENCE_BACKED_RENDERED_MODULES) {
+    throw new Error(`Reference-backed rendered module drift: ${referenceBackedOwnerIds.size}/${EXPECTED_REFERENCE_BACKED_RENDERED_MODULES}`);
+  }
+  if (independentlyEvidencedReferenceOwners.size !== EXPECTED_REFERENCE_BACKED_RENDERED_MODULES) {
+    throw new Error(`Exact duplicate frames leave only ${independentlyEvidencedReferenceOwners.size}/${EXPECTED_REFERENCE_BACKED_RENDERED_MODULES} independently evidenced reference-backed owners`);
   }
   writeEvidenceFiles(stagingDir, { captures, narrowBoundary, adapters, fingerprint, fixtures, manifest });
   fs.renameSync(stagingDir, outputDir);

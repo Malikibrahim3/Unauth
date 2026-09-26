@@ -5,7 +5,7 @@ Status: implementation complete; formal acceptance remains blocked, 26 August 20
 The current application includes the UX9 shared shell, route states, responsive
 entry/onboarding surfaces, evidence-aware case and recovery workflows, settings
 and navigation work, and the landing/public route updates. The executable
-manifest currently covers 64 page modules, 119 audited surfaces, and 222
+manifest currently covers 65 page modules, 120 audited surfaces, and 223
 scenario contracts (218 visual and four adapters).
 
 This is an implementation status, not an acceptance claim. UX9 acceptance still

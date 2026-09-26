@@ -1,9 +1,19 @@
 import { TABLES } from "@/lib/supabase/tables";
+import { productImageFromMetadata } from '@/lib/commerce/productImage';
 import {
   deriveSourceLink,
   loadSourceLinkContext,
   type SourceLinkRow,
 } from "@/lib/relationships/sourceLinking";
+import {
+  deriveCustodyLegs,
+  deriveDisputeCountdown,
+  deriveLineItemMargin,
+  deriveTicketResponseTimes,
+  type CustodyLeg,
+  type DisputeCountdown,
+  type TicketResponseSummary,
+} from '@/lib/capabilities/derived';
 
 export const CONNECTED_OBJECT_TYPES = [
   "order",
@@ -80,10 +90,17 @@ export type ObjectTimelineEvent = {
 export type ObjectItem = {
   id: string;
   title: string;
+  imageUrl?: string | null;
   sku: string | null;
   quantity: number | null;
   amount: number | null;
   currency: string | null;
+  costMinor?: number | null;
+  unitPriceMinor?: number | null;
+  state?: string | null;
+  marginMinor?: number | null;
+  marginRatePercent?: number | null;
+  marginState?: 'available' | 'unavailable';
 };
 export type ObjectEvidence = {
   id: string;
@@ -116,6 +133,13 @@ export type ObjectProvenance = {
   connectorVersion: string | null;
   payloadHash: string | null;
 };
+export type RecordSectionCoverage = {
+  state: 'retained' | 'verified_empty' | 'not_imported' | 'not_retained' | 'unsupported' | 'unavailable';
+  retainedCount: number;
+  sourceCount: number | null;
+  explanation: string;
+  repairHref: string | null;
+};
 export type ObjectSummary = {
   id: string;
   type: ConnectedObjectType;
@@ -127,6 +151,7 @@ export type ObjectSummary = {
   amount: number | null;
   currency: string | null;
   sourceOrderId: string | null;
+  destinationLabel?: string | null;
   customer: ObjectLink | null;
   connected: ObjectLink[];
   facts: ObjectFact[];
@@ -136,7 +161,31 @@ export type ObjectSummary = {
   evidence: ObjectEvidence[];
   payoutCases: ObjectLink[];
   provenance: ObjectProvenance | null;
+  custodyLegs?: CustodyLeg[];
+  responseTimes?: TicketResponseSummary;
+  disputeCountdown?: DisputeCountdown;
+  sectionCoverage?: {
+    items: RecordSectionCoverage;
+    conversation: RecordSectionCoverage;
+    custody: RecordSectionCoverage;
+    evidence: RecordSectionCoverage;
+  };
 };
+
+export function deriveRecordSectionCoverage(input: {
+  supported: boolean;
+  retainedCount: number;
+  sourceCount?: number | null;
+  provenance: ObjectProvenance | null;
+  label: string;
+}): RecordSectionCoverage {
+  const sourceCount = input.sourceCount ?? null;
+  if (!input.supported) return { state: 'unsupported', retainedCount: 0, sourceCount, explanation: `${input.label} is not supported for this record type.`, repairHref: null };
+  if (input.retainedCount > 0 && (sourceCount == null || input.retainedCount >= sourceCount)) return { state: 'retained', retainedCount: input.retainedCount, sourceCount, explanation: `${input.retainedCount} retained ${input.label.toLowerCase()} record${input.retainedCount === 1 ? '' : 's'} are shown.`, repairHref: null };
+  if (sourceCount != null && sourceCount > input.retainedCount) return { state: 'not_retained', retainedCount: input.retainedCount, sourceCount, explanation: `The source reports ${sourceCount}, but only ${input.retainedCount} ${input.label.toLowerCase()} record${input.retainedCount === 1 ? '' : 's'} are retained here.`, repairHref: '/sources/connected' };
+  if (!input.provenance) return { state: 'not_imported', retainedCount: input.retainedCount, sourceCount, explanation: `${input.label} has not been imported for this record.`, repairHref: '/sources/connected' };
+  return { state: 'verified_empty', retainedCount: 0, sourceCount, explanation: `The retained source read completed with no ${input.label.toLowerCase()} records.`, repairHref: input.provenance.sourceUrl ?? '/sources/connected' };
+}
 
 function text(row: Record<string, unknown>, key: string): string | null {
   const value = row[key];
@@ -214,7 +263,7 @@ async function loadItems(
   if (!orderId) return [];
   const result = await client
     .from(TABLES.SOURCE_ORDER_LINES)
-    .select("id,title,sku,quantity,total_minor,currency")
+    .select("id,title,sku,quantity,total_minor,unit_price_minor,cost_minor,currency,raw_metadata")
     .eq("merchant_id", merchantId)
     .eq("source_order_id", orderId)
     .limit(50);
@@ -223,10 +272,27 @@ async function loadItems(
   return ((result.data as Record<string, unknown>[] | null) ?? []).map((item) => ({
     id: text(item, "id")!,
     title: text(item, "title") ?? text(item, "sku") ?? "Order item",
+    imageUrl: productImageFromMetadata(item.raw_metadata),
     sku: text(item, "sku"),
     quantity: numberValue(item, "quantity"),
     amount: lineAmount(item),
     currency: text(item, "currency"),
+    costMinor: numberValue(item, 'cost_minor'),
+    unitPriceMinor: numberValue(item, 'unit_price_minor'),
+    state: item.raw_metadata && typeof item.raw_metadata === 'object' && !Array.isArray(item.raw_metadata)
+      ? text(item.raw_metadata as Record<string, unknown>, 'fulfillment_status') : null,
+    ...(() => {
+      const margin = deriveLineItemMargin({
+        totalMinor: numberValue(item, 'total_minor'),
+        costMinor: numberValue(item, 'cost_minor'),
+        currency: text(item, 'currency'),
+      });
+      return {
+        marginMinor: margin.marginMinor,
+        marginRatePercent: margin.marginRatePercent,
+        marginState: margin.state,
+      };
+    })(),
   }));
 }
 
@@ -478,6 +544,18 @@ export async function getObjectSummary(
     throw new Error(`connected_object_read_failed:${type}:${error.message}`);
   const row = data as Record<string, unknown> | null;
   if (!row) return null;
+  let destinationLabel: string | null = null;
+  const shippingAddressId = type === 'order' ? text(row, 'shipping_address_id') : null;
+  if (shippingAddressId) {
+    const address = await client.from(TABLES.SOURCE_ADDRESSES).select('city,postal_code,country')
+      .eq('merchant_id', merchantId).eq('id', shippingAddressId).maybeSingle();
+    if (!address.error && address.data) {
+      const location = address.data as Record<string, unknown>;
+      const postalCode = text(location, 'postal_code');
+      const uk = /^(GB|UK|United Kingdom)$/i.test(text(location, 'country') ?? '');
+      destinationLabel = [text(location, 'city'), uk ? postalCode?.split(/\s+/)[0] : postalCode].filter(Boolean).join(' ') || null;
+    }
+  }
   const sourceLinkContext = await loadSourceLinkContext(client, merchantId);
   const orderId = type === "order" ? id : text(row, "source_order_id");
   let order: Record<string, unknown> | null = type === "order" ? row : null;
@@ -726,6 +804,7 @@ export async function getObjectSummary(
 
   const sourceRecord = await loadSourceRecord(client, merchantId, type, id, row);
   let timeline = timelineFor(type, row);
+  let custodyLegs: CustodyLeg[] = [];
   if (type === "shipment") {
     const trackingResult = await client
       .from(TABLES.SOURCE_TRACKING_EVENTS)
@@ -738,9 +817,17 @@ export async function getObjectSummary(
       throw new Error(
         `connected_object_tracking_events_failed:${trackingResult.error.message}`,
       );
-    const trackingEvents = (
-      (trackingResult.data as Record<string, unknown>[] | null) ?? []
-    ).map((tracking) =>
+    const trackingRows = (trackingResult.data as Record<string, unknown>[] | null) ?? [];
+    custodyLegs = deriveCustodyLegs(trackingRows.map((tracking) => ({
+      id: text(tracking, 'id'),
+      locationText: text(tracking, 'location_text'),
+      status: text(tracking, 'status'),
+      sourceStatus: text(tracking, 'source_status'),
+      eventAt: text(tracking, 'event_at'),
+      sourceEventAt: text(tracking, 'source_event_at'),
+      sourceRecordId: text(tracking, 'source_record_id'),
+    })));
+    const trackingEvents = trackingRows.map((tracking) =>
       event(
         "Carrier update",
         text(tracking, "source_event_at") ?? text(tracking, "event_at"),
@@ -757,6 +844,7 @@ export async function getObjectSummary(
       .sort((left, right) => Date.parse(left.at!) - Date.parse(right.at!));
   }
   let conversation: ObjectConversationEntry[] = [];
+  let responseTimes: TicketResponseSummary | undefined;
   if (type === "ticket") {
     const [messagesResult, activityResult] = await Promise.all([
       client
@@ -801,7 +889,17 @@ export async function getObjectSummary(
       if (!right.at) return -1;
       return Date.parse(left.at) - Date.parse(right.at);
     });
+    responseTimes = deriveTicketResponseTimes(conversation);
   }
+  const disputeCountdown = type === 'dispute'
+    ? deriveDisputeCountdown({
+      initiatedAt: text(row, 'initiated_at'),
+      // Some providers include a deadline in raw metadata even though the
+      // canonical table does not. Use it only when explicitly present.
+      deadlineAt: text(row, 'deadline_at') ?? (row.raw_metadata && typeof row.raw_metadata === 'object' && !Array.isArray(row.raw_metadata) ? text(row.raw_metadata as Record<string, unknown>, 'deadline_at') : null),
+      periodEndAt: null,
+    })
+    : undefined;
   const items = await loadItems(client, merchantId, type, id, orderId);
   const firstShipment = connected.find((item) => item.type === "shipment");
   const mainSourceLink = deriveSourceLink({
@@ -845,6 +943,13 @@ export async function getObjectSummary(
           payloadHash: null,
         }
       : null;
+  const retainedMessages = conversation.filter((entry) => entry.kind === 'message').length;
+  const sectionCoverageState: ObjectSummary['sectionCoverage'] = {
+    items: deriveRecordSectionCoverage({ supported: isCommerceObject(type), retainedCount: items.length, sourceCount: type === 'order' ? numberValue(row, 'line_items_count') : null, provenance, label: 'Line items' }),
+    conversation: deriveRecordSectionCoverage({ supported: type === 'ticket', retainedCount: retainedMessages, sourceCount: type === 'ticket' ? numberValue(row, 'message_count') : null, provenance, label: 'Messages' }),
+    custody: deriveRecordSectionCoverage({ supported: type === 'shipment', retainedCount: custodyLegs.length, provenance, label: 'Tracking scans' }),
+    evidence: deriveRecordSectionCoverage({ supported: type === 'dispute', retainedCount: evidence.length, provenance, label: 'Dispute evidence' }),
+  };
 
   return {
     id,
@@ -862,6 +967,7 @@ export async function getObjectSummary(
     amount: config.amount ? numberValue(row, config.amount) : null,
     currency: text(row, "currency"),
     sourceOrderId: orderId,
+    destinationLabel,
     customer,
     connected,
     facts: factsFor(type, row),
@@ -871,5 +977,9 @@ export async function getObjectSummary(
     evidence,
     payoutCases,
     provenance,
+    custodyLegs,
+    responseTimes,
+    disputeCountdown,
+    sectionCoverage: sectionCoverageState,
   };
 }

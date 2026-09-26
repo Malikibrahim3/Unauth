@@ -8,7 +8,7 @@ type RechartsCursorProps = {
 };
 
 /**
- * T10 crosshair — 1px dashed vertical line in --uo-route-border-strong, snapping to the nearest
+ * T10 crosshair — 1px dashed vertical line in --authority-border-strong, snapping to the nearest
  * data position. Pass as the `cursor` prop on Recharts <Tooltip> for line/combo/matrix charts.
  * Bars and cells are their own hit targets and must not use this (they lift on hover instead).
  */
@@ -23,7 +23,7 @@ export function ChartCursor({ points, height }: RechartsCursorProps) {
       x2={x}
       y1={top}
       y2={top + h}
-      stroke="var(--uo-route-border-strong)"
+      stroke="#d8d4cf"
       strokeWidth={CURSOR_WIDTH}
       strokeDasharray={CURSOR_DASH.join(' ')}
       pointerEvents="none"
@@ -38,10 +38,10 @@ export function ChartAxisPill({ children }: { children: ReactNode }) {
       style={{
         display: 'inline-block',
         padding: '2px 6px',
-        borderRadius: 'var(--uo-route-radius-control)',
-        background: 'var(--uo-route-surface-inverse)',
-        color: 'var(--uo-route-text-inverse)',
-        font: '10px/1.3 var(--uo-route-font-sans)',
+        borderRadius: '8px',
+        background: '#f4f3f1',
+        color: '#fff',
+        font: '10px/1.3 Inter,ui-sans-serif,system-ui,sans-serif',
         fontVariantNumeric: 'tabular-nums',
       }}
     >

@@ -1,19 +1,3 @@
-import type { LucideIcon } from 'lucide-react';
-import {
-  Home,
-  Users,
-  HelpCircle,
-  Settings,
-  BarChart3,
-  FileWarning,
-  GitBranch,
-  Repeat2,
-  SlidersHorizontal,
-  ListChecks,
-  TrendingDown,
-  Plug,
-  Bell,
-} from 'lucide-react';
 import { PERMISSIONS, type Permission } from '@/lib/permissions/constants';
 import type { ProductTier } from '@/lib/product/tiers';
 import { ROUTE_ALIASES } from './aliases';
@@ -44,7 +28,6 @@ export type AppRoute = {
   sectionPrefix?: string;
   permission?: Permission;
   aliases?: string[];
-  icon?: LucideIcon;
   /** Included in primary sidebar navigation */
   sidebar?: boolean;
   /** Included in command palette quick nav */
@@ -68,7 +51,6 @@ export const APP_ROUTES = {
     sectionPrefix: '/overview',
     permission: PERMISSIONS.VIEW_DASHBOARD,
     aliases: ['/dashboard'],
-    icon: Home,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Customer concessions, reconciled recovery, and net unrecovered loss',
@@ -80,7 +62,6 @@ export const APP_ROUTES = {
     pageTitle: 'Work',
     sectionPrefix: '/work',
     permission: PERMISSIONS.VIEW_INBOX,
-    icon: ListChecks,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Open tasks across cases, evidence, outcomes, and recoveries',
@@ -94,7 +75,6 @@ export const APP_ROUTES = {
     permission: PERMISSIONS.VIEW_CUSTOMERS,
     tier: 'pro',
     tierLabel: 'Context',
-    icon: Users,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Customer context for case reconciliation',
@@ -109,7 +89,6 @@ export const APP_ROUTES = {
     aliases: ['/claims', '/inbox'],
     tier: 'pro',
     tierLabel: 'Cases',
-    icon: FileWarning,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Reconcile claims, evidence, customer actions, responsibility, and recovery work',
@@ -125,7 +104,6 @@ export const APP_ROUTES = {
     aliases: ['/losses'],
     tier: 'pro',
     tierLabel: 'Losses',
-    icon: TrendingDown,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Canonical loss ledger: confirmed, estimated, recoverable, prevented, written off',
@@ -140,7 +118,6 @@ export const APP_ROUTES = {
     aliases: ['/recoveries'],
     tier: 'pro',
     tierLabel: 'Recovery',
-    icon: Repeat2,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Track source-backed losses, evidence gaps, correspondence, and synced recovery outcomes',
@@ -152,7 +129,6 @@ export const APP_ROUTES = {
     pageTitle: 'Reconciliation',
     sectionPrefix: '/financials/reconciliation',
     permission: PERMISSIONS.VIEW_INBOX,
-    icon: SlidersHorizontal,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Resolve source-to-ledger exceptions without inferring missing values',
@@ -166,18 +142,16 @@ export const APP_ROUTES = {
     permission: PERMISSIONS.VIEW_AUDIT,
     aliases: ['/reports'],
     tier: 'pro',
-    icon: BarChart3,
     sidebar: true,
   },
   integrations: {
     key: 'integrations',
     href: '/sources/connected',
-    label: 'Connected',
+    label: 'Connected sources',
     pageTitle: 'Sources',
     sectionPrefix: '/sources/connected',
     permission: PERMISSIONS.VIEW_SETTINGS,
     aliases: ['/integrations', '/settings/integrations'],
-    icon: Plug,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Connect commerce, helpdesk, carrier, and payment sources',
@@ -189,7 +163,6 @@ export const APP_ROUTES = {
     pageTitle: 'Imports',
     sectionPrefix: '/sources/imports',
     permission: PERMISSIONS.MANAGE_SETTINGS,
-    icon: Plug,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Upload and inspect source-backed import jobs',
@@ -202,7 +175,6 @@ export const APP_ROUTES = {
     sectionPrefix: '/settings',
     permission: PERMISSIONS.VIEW_SETTINGS,
     aliases: ['/settings'],
-    icon: Settings,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Account and team settings',
@@ -213,7 +185,6 @@ export const APP_ROUTES = {
     label: 'Notifications',
     pageTitle: 'Notifications',
     sectionPrefix: '/notifications',
-    icon: Bell,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Workspace notifications and source health updates',
@@ -223,7 +194,6 @@ export const APP_ROUTES = {
     href: '/help',
     label: 'Help',
     pageTitle: 'Help',
-    icon: HelpCircle,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Guidance for working with evidence and ledger states',
@@ -238,7 +208,6 @@ export const APP_ROUTES = {
     aliases: ['/rules'],
     tier: 'pro',
     tierLabel: 'Rules',
-    icon: SlidersHorizontal,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Configure merchant-owned customer and recovery rules',
@@ -253,7 +222,6 @@ export const APP_ROUTES = {
     aliases: ['/flows'],
     tier: 'pro',
     tierLabel: 'Flows',
-    icon: GitBranch,
     sidebar: true,
     commandPalette: true,
     commandDescription: 'Configure bounded operational workflows and inspect runs',
@@ -275,11 +243,10 @@ export const COMMAND_PALETTE_FILTERS = [
 ] as const;
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
-  { label: 'Act on work', routeKeys: ['dashboard', 'work', 'claims', 'customers'] },
+  { label: 'Act on work', routeKeys: ['work', 'claims', 'customers'] },
   { label: 'Trace money', routeKeys: ['losses', 'recoveries', 'reconciliation', 'reports'] },
-  { label: 'Configure decisions', routeKeys: ['rules', 'flows'] },
-  { label: 'Connect evidence', routeKeys: ['integrations', 'imports'] },
-  { label: 'Workspace', routeKeys: ['settings', 'notifications', 'help'] },
+  { label: 'Configure & connect', routeKeys: ['rules', 'flows', 'integrations', 'imports'] },
+  { label: 'Workspace', routeKeys: ['notifications', 'settings', 'help'] },
 ];
 
 export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array<{ label: string; items: AppRoute[] }> {

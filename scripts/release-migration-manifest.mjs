@@ -38,6 +38,15 @@ export const ACTIVE_MIGRATIONS = Object.freeze([
   '20260823130000_mr3_work_and_external_actions.sql',
   '20260823160000_mr4_recovery_money_truth.sql',
   '20260823190000_mr5_merchant_administration.sql',
+  '20260902120000_loss_desk_durable_capabilities.sql',
+  '20260906120000_merchant_clarity_p02_financial_scope.sql',
+  '20260906170000_merchant_clarity_p05_manual_replacement.sql',
+  '20260906173000_merchant_clarity_p05_replacement_corroboration_repair.sql',
+  '20260906174000_merchant_clarity_p05_replacement_source_identity_repair.sql',
+  '20260906180000_merchant_clarity_p02_close_snapshot_repair.sql',
+  '20260906190000_merchant_clarity_p07_claim_pack_zip.sql',
+  '20260906200000_merchant_clarity_p08_policy_preview.sql',
+  '20260907220000_new_main_free_tier_security.sql',
 ]);
 
 export const ACTIVE_MIGRATION_VERSIONS = Object.freeze(
@@ -46,20 +55,20 @@ export const ACTIVE_MIGRATION_VERSIONS = Object.freeze(
 
 // Canonical hash of a clean replay of the active migration set.
 export const EXPECTED_SCHEMA_HASH =
-  '0dfb4b880981fad7fcee185bd2d77533f4546256d97622ef6622ebac30ac3479';
+  '52d749b3e3aa3c81ca5c4ace345ddf9ae052f8bf17dc505f10030a9691a67952';
 
 export const EXPECTED_CANONICAL_COUNTS = Object.freeze({
-  tables: '150',
+  tables: '155',
   views: '2',
   sequences: '2',
   enums: '45',
-  columns: '2269',
-  not_null_columns: '1268',
-  constraints: '877',
-  indexes: '570',
-  functions: '126',
-  triggers: '112',
-  policies: '166',
+  columns: '2325',
+  not_null_columns: '1315',
+  constraints: '916',
+  indexes: '585',
+  functions: '140',
+  triggers: '134',
+  policies: '170',
 });
 
 export function assertActiveMigrationLayout(actualMigrations) {

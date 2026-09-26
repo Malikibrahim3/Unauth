@@ -6,8 +6,15 @@
  * in `planStripeIds.ts`; a URL parameter never changes a subscription.
  */
 
-export type PlanId = 'free' | 'pro' | 'growth' | 'scale';
-export type Tier = 'free' | 'pro' | 'growth' | 'enterprise';
+/** Old IDs remain valid for stored subscriptions; new public offers have distinct IDs. */
+export type PlanId =
+  | 'free' | 'pro' | 'growth' | 'scale'
+  | 'core' | 'scale_2026' | 'enterprise_2026';
+export type Tier =
+  | 'free' | 'pro' | 'growth' | 'enterprise'
+  | 'core_2026' | 'scale_2026' | 'enterprise_2026';
+export type BillingInterval = 'monthly' | 'annual';
+export type PlanLimit = number | 'unlimited' | 'agreed';
 
 export type SubscriptionStatus =
   | 'active'
@@ -39,10 +46,11 @@ export type FeatureKey =
 
 export interface TierLimits {
   contextCreditsPerMonth: number | 'custom';
-  connectedStores: number | 'unlimited';
-  seats: number | 'unlimited';
-  historyDays: number | 'unlimited';
-  apiCallsPerMonth: number | 'unlimited';
+  connectedStores: PlanLimit;
+  seats: PlanLimit;
+  historyDays: PlanLimit;
+  apiCallsPerMonth: PlanLimit;
+  incidentsPerMonth?: number | 'custom' | null;
 }
 
 export interface PlanDefinition {
@@ -50,7 +58,10 @@ export interface PlanDefinition {
   tier: Tier;
   name: string;
   description: string;
+  /** Monthly GBP price. */
   priceGbp: number | 'custom';
+  /** Annual upfront GBP price when one is offered. */
+  annualPriceGbp?: number | 'custom' | null;
   creditsMonthly: number | 'custom';
   currency: 'GBP';
   stripePriceId: null;
@@ -78,6 +89,92 @@ const CORE_FEATURES = {
 
 /** Canonical plan catalogue. Prices are monthly GBP amounts excluding VAT. */
 export const PLANS: Record<PlanId, PlanDefinition> = {
+  core: {
+    planId: 'core',
+    tier: 'core_2026',
+    name: 'Core',
+    description: 'The complete core workflow for one connected store.',
+    priceGbp: 499,
+    annualPriceGbp: 4_990,
+    creditsMonthly: 'custom',
+    currency: 'GBP',
+    stripePriceId: null,
+    featured: true,
+    ctaLabel: 'Request Core',
+    entitlements: { ...CORE_FEATURES },
+    limits: {
+      contextCreditsPerMonth: 'custom',
+      incidentsPerMonth: 250,
+      connectedStores: 1,
+      seats: 'agreed',
+      historyDays: 'agreed',
+      apiCallsPerMonth: 'agreed',
+    },
+    publicFeatures: [
+      'Complete core workflow',
+      '250 new incidents each month',
+      '1 connected store',
+    ],
+    publicExclusions: [],
+  },
+  scale_2026: {
+    planId: 'scale_2026',
+    tier: 'scale_2026',
+    name: 'Scale',
+    description: 'The complete core workflow for growing multi-store operations.',
+    priceGbp: 999,
+    annualPriceGbp: 9_990,
+    creditsMonthly: 'custom',
+    currency: 'GBP',
+    stripePriceId: null,
+    featured: false,
+    ctaLabel: 'Request Scale',
+    entitlements: { ...CORE_FEATURES, multi_store: true },
+    limits: {
+      contextCreditsPerMonth: 'custom',
+      incidentsPerMonth: 1_000,
+      connectedStores: 3,
+      seats: 'agreed',
+      historyDays: 'agreed',
+      apiCallsPerMonth: 'agreed',
+    },
+    publicFeatures: [
+      'Complete core workflow',
+      '1,000 new incidents each month',
+      '3 connected stores',
+    ],
+    publicExclusions: [],
+  },
+  enterprise_2026: {
+    planId: 'enterprise_2026',
+    tier: 'enterprise_2026',
+    name: 'Enterprise',
+    description: 'The complete core workflow with volume and store coverage agreed for your operation.',
+    priceGbp: 'custom',
+    annualPriceGbp: 'custom',
+    creditsMonthly: 'custom',
+    currency: 'GBP',
+    stripePriceId: null,
+    featured: false,
+    ctaLabel: 'Request Enterprise terms',
+    entitlements: { ...CORE_FEATURES, multi_store: true },
+    limits: {
+      contextCreditsPerMonth: 'custom',
+      incidentsPerMonth: 'custom',
+      connectedStores: 'agreed',
+      seats: 'agreed',
+      historyDays: 'agreed',
+      apiCallsPerMonth: 'agreed',
+    },
+    publicFeatures: [
+      'Complete core workflow',
+      'Agreed incident volume',
+      'Agreed connected stores',
+    ],
+    publicExclusions: [],
+  },
+  // These definitions preserve the meaning of already stored plan IDs only.
+  // New signups and the public pricing page use the offers above.
   free: {
     planId: 'free',
     tier: 'free',
@@ -183,7 +280,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     currency: 'GBP',
     stripePriceId: null,
     featured: false,
-    ctaLabel: 'Contact the account team',
+    ctaLabel: 'Choose Enterprise',
     entitlements: {
       ...CORE_FEATURES,
       evidence_export_raw: true,
@@ -214,15 +311,28 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   },
 };
 
-export const PUBLIC_PLAN_IDS: readonly PlanId[] = ['free', 'pro', 'growth', 'scale'];
+export const PUBLIC_PLAN_IDS: readonly PlanId[] = ['core', 'scale_2026', 'enterprise_2026'];
+/** Pre-revision IDs retained for existing account terms and billing history. */
+export const LEGACY_PLAN_IDS: readonly PlanId[] = ['free', 'pro', 'growth', 'scale'];
 
 /** Temporary inbound-link aliases only. New UI must emit canonical PlanIds. */
 export const PLAN_COMPATIBILITY_ALIASES: Readonly<Record<string, PlanId>> = {
+  core2026: 'core',
+  scale2026: 'scale_2026',
+  enterprise2026: 'enterprise_2026',
   unauth: 'free',
   starter: 'pro',
   operating: 'growth',
   ledger: 'scale',
   enterprise: 'scale',
+};
+
+/** Public URL aliases from the retired catalogue preserve Enterprise intent. */
+const REQUESTED_PLAN_ALIASES: Readonly<Record<string, PlanId>> = {
+  ...PLAN_COMPATIBILITY_ALIASES,
+  scale: 'enterprise_2026',
+  enterprise: 'enterprise_2026',
+  ledger: 'enterprise_2026',
 };
 
 export type BillableEventId =
@@ -280,12 +390,52 @@ export function parseRequestedPlanId(raw: string | null | undefined): PlanId | n
   if (!raw) return null;
   const normalized = raw.trim().toLowerCase();
   if (PUBLIC_PLAN_IDS.includes(normalized as PlanId)) return normalized as PlanId;
+  const alias = REQUESTED_PLAN_ALIASES[normalized] ?? null;
+  return alias && PUBLIC_PLAN_IDS.includes(alias) ? alias : null;
+}
+
+export function parseBillingInterval(raw: string | null | undefined): BillingInterval {
+  return raw?.trim().toLowerCase() === 'annual' ? 'annual' : 'monthly';
+}
+
+export function annualSavingGbp(plan: PlanDefinition): number | null {
+  return typeof plan.priceGbp === 'number' && typeof plan.annualPriceGbp === 'number'
+    ? plan.priceGbp * 12 - plan.annualPriceGbp
+    : null;
+}
+
+export function annualMonthlyEquivalentMinor(plan: PlanDefinition): number | null {
+  return typeof plan.annualPriceGbp === 'number'
+    ? Math.round(plan.annualPriceGbp * 100 / 12)
+    : null;
+}
+
+export function annualDiscountPercent(plan: PlanDefinition): number | null {
+  const saving = annualSavingGbp(plan);
+  return saving != null && typeof plan.priceGbp === 'number' && plan.priceGbp > 0
+    ? Math.round(saving / (plan.priceGbp * 12) * 1_000) / 10
+    : null;
+}
+
+export function annualFreeMonths(plan: PlanDefinition): number | null {
+  const saving = annualSavingGbp(plan);
+  return saving != null && typeof plan.priceGbp === 'number' && plan.priceGbp > 0
+    ? saving / plan.priceGbp
+    : null;
+}
+
+/** Parse stored and historical provider plan values without changing their meaning. */
+export function parseStoredPlanId(raw: string | null | undefined): PlanId | null {
+  if (!raw) return null;
+  const normalized = raw.trim().toLowerCase();
+  const allIds = Object.keys(PLANS) as PlanId[];
+  if (allIds.includes(normalized as PlanId)) return normalized as PlanId;
   return PLAN_COMPATIBILITY_ALIASES[normalized] ?? null;
 }
 
-/** Stored legacy values ratchet safely to Free when unknown. */
+/** Unknown stored values continue to fall back to the legacy lowest-access record. */
 export function normalizePlanId(raw: string): PlanId {
-  return parseRequestedPlanId(raw) ?? 'free';
+  return parseStoredPlanId(raw) ?? 'free';
 }
 
 export function getPlanCreditsMonthly(planId: PlanId, customAllowance?: number | null): number | null {
@@ -308,7 +458,9 @@ export function canSelfServeTopUp(planId: PlanId): boolean {
 }
 
 export function planTierOrder(planId: PlanId): number {
-  const order: Record<PlanId, number> = { free: 0, pro: 1, growth: 2, scale: 3 };
+  const order: Record<PlanId, number> = {
+    free: 0, pro: 1, core: 1, growth: 2, scale_2026: 2, scale: 3, enterprise_2026: 3,
+  };
   return order[planId];
 }
 

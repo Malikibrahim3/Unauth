@@ -1,6 +1,9 @@
 import type { Tier } from '@/lib/billing/tiers';
 
-const TIER_SET = new Set<string>(['free', 'pro', 'growth', 'enterprise']);
+const TIER_SET = new Set<string>([
+  'free', 'pro', 'growth', 'enterprise',
+  'core_2026', 'scale_2026', 'enterprise_2026',
+]);
 
 /**
  * Legacy / plan-layer strings → canonical billing tier.
@@ -11,6 +14,7 @@ const TIER_SET = new Set<string>(['free', 'pro', 'growth', 'enterprise']);
 const LEGACY_TIER_MAP: Record<string, Tier> = {
   advanced: 'growth',
   scale: 'enterprise',
+  core: 'core_2026',
 };
 
 /**

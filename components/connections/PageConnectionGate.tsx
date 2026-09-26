@@ -64,29 +64,29 @@ function GatePanel({ missing, pageName, pageDescription }: {
   return (
     <div className="mx-auto w-full max-w-[1500px] px-3 pb-6 pt-4 sm:px-5">
       <div
-        className="w-full space-y-3 rounded-[var(--uo-route-radius-surface)] border p-4"
+        className="w-full space-y-3 rounded-[12px] border p-4"
         style={{
-          background: 'var(--uo-route-surface-primary)',
-          borderColor: 'var(--uo-route-border-default)',
+          background: '#fff',
+          borderColor: '#e4e3e0',
         }}
       >
         <div
-          className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--uo-route-radius-control)]"
-          style={{ background: 'var(--uo-route-surface-primary)', border: '1px solid var(--uo-route-border-default)' }}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px]"
+          style={{ background: '#fff', border: '1px solid #e4e3e0' }}
         >
-          <Plug className="h-4 w-4" style={{ color: 'var(--uo-route-text-secondary)' }} />
+          <Plug className="h-4 w-4" style={{ color: '#64686d' }} />
         </div>
 
         <div className="space-y-2">
           <h2
-            className="ua-text-section-title leading-snug"
-            style={{ color: 'var(--uo-route-text-primary)', fontFamily: 'var(--uo-route-font-sans)' }}
+            className="font-semibold text-[14px] leading-5 text-[#1c1f23] leading-snug"
+            style={{ color: '#1c1f23', fontFamily: 'Inter,ui-sans-serif,system-ui,sans-serif' }}
           >
             {headline}
           </h2>
           <p
-            className="max-w-2xl text-[length:var(--uo-route-text-caption-size)] leading-5"
-            style={{ color: 'var(--uo-route-text-secondary)', fontFamily: 'var(--uo-route-font-sans)' }}
+            className="max-w-2xl text-[length:11.5px] leading-5"
+            style={{ color: '#64686d', fontFamily: 'Inter,ui-sans-serif,system-ui,sans-serif' }}
           >
             {body}
           </p>

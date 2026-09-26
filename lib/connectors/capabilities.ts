@@ -26,10 +26,11 @@ export type ConnectorCapability = {
 };
 
 /**
- * High-risk capabilities that must remain unsupported or merchant-disabled in
- * MVP+ (no automatic refund issuance, denial, or claim submission).
+ * External actions with no released provider/action contract. The authenticated
+ * MVP targets selected refunds and claim submissions, but target scope cannot
+ * make an unverified adapter available. Customer denial remains separate.
  */
-export const FORBIDDEN_MVP_CAPABILITIES: ReadonlySet<string> = new Set([
+export const UNRELEASED_ACTION_CAPABILITIES: ReadonlySet<string> = new Set([
   'refund.issue',
   'request.deny',
   'claim.submit',
@@ -54,9 +55,9 @@ export function capability(
   opts: Partial<Omit<ConnectorCapability, 'id' | 'level'>> = {},
 ): ConnectorCapability {
   const support = opts.support ?? 'supported';
-  // Enforce the MVP+ boundary structurally: a forbidden capability can never be
-  // declared as anything but unsupported.
-  const forced = FORBIDDEN_MVP_CAPABILITIES.has(id) ? 'unsupported' : support;
+  // Only a separately verified action-contract change may remove an ID from
+  // this guard; a manifest or merchant flag alone cannot enable it.
+  const forced = UNRELEASED_ACTION_CAPABILITIES.has(id) ? 'unsupported' : support;
   return {
     id,
     level,

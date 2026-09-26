@@ -27,14 +27,14 @@ describe('customer semantics deprecation', () => {
   });
 
   it('canonical customer controls offer open claims rather than watchlist', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/customers/CustomersOverviewPageView.tsx'),
-      'utf-8',
-    );
-    expect(content).toContain('?status=open_cases');
-    expect(content).toContain('With open cases');
-    expect(content).not.toContain('watchlisted');
-    expect(content).not.toContain('on_watchlist');
+    const page = fs.readFileSync(path.join(process.cwd(), 'app/(app)/customers/page.tsx'), 'utf-8');
+    const filters = fs.readFileSync(path.join(process.cwd(), 'components/customers/CustomersFilterSheetInner.tsx'), 'utf-8');
+    expect(page).toContain('statusFilter');
+    expect(page).toContain('open_cases');
+    expect(filters).toContain("value: 'open_cases'");
+    expect(filters).toContain('Open cases');
+    expect(filters).not.toContain('watchlisted');
+    expect(filters).not.toContain('on_watchlist');
   });
 
   it('customer API hardcodes retired watchlist fields', () => {
@@ -66,13 +66,11 @@ describe('customer semantics deprecation', () => {
   });
 
   it('customers overview exposes open payout case quick filter and saved view', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/customers/CustomersOverviewPageView.tsx'),
-      'utf-8',
-    );
-    expect(content).toContain('?status=open_cases');
-    expect(content).toContain('With open cases');
-    expect(content).not.toContain('watchlisted');
+    const page = fs.readFileSync(path.join(process.cwd(), 'app/(app)/customers/page.tsx'), 'utf-8');
+    const filters = fs.readFileSync(path.join(process.cwd(), 'components/customers/CustomersFilterSheetInner.tsx'), 'utf-8');
+    expect(page).toContain('open_cases');
+    expect(filters).toContain('Open cases');
+    expect(filters).not.toContain('watchlisted');
   });
 
   it('customers overview avoids high-risk verdict wording and preserves unavailable values', () => {

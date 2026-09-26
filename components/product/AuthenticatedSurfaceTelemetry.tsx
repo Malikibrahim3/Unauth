@@ -9,9 +9,7 @@ export function AuthenticatedSurfaceTelemetry() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const root = document.querySelector<HTMLElement>(
-      '.ua-app, .ua-auth-surface',
-    );
+    const root = document.querySelector<HTMLElement>('[data-ui-version]');
     if (!root) return;
 
     const family = getAuthenticatedSurfaceFamily(pathname);

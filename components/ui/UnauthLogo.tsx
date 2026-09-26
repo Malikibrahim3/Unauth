@@ -48,22 +48,11 @@ function legacyKind(variant: LegacyLogoVariant | undefined, compact: boolean, ki
 }
 
 function legacyTone(variant: LegacyLogoVariant | undefined, tone: UnauthLogoTone | undefined): UnauthLogoTone {
-  if (tone) return tone;
-  switch (variant) {
-    case 'auto':
-      return 'auto';
-    case 'dark':
-    case 'mono':
-    case 'mono-light':
-    case 'wordmark-dark':
-      return 'white';
-    case 'light':
-    case 'mono-dark':
-    case 'wordmark-light':
-      return 'graphite';
-    default:
-      return 'auto';
-  }
+  // Legacy variant names are accepted for source compatibility, but they no
+  // longer select a theme. The authenticated desk always renders one light
+  // logo; a graphite background is the only reason to use the white asset.
+  void variant;
+  return tone ?? 'auto';
 }
 
 export function UnauthLogo({
@@ -99,19 +88,16 @@ export function UnauthLogo({
         unoptimized
         priority={priority}
         aria-hidden={ariaHidden}
-        className={`ua-brand-logo__image${mode === 'fixed' ? '' : ` ua-brand-logo__${mode}`}`}
+        className={`${mode === 'fixed' ? '' : ` ${mode}`}`}
         style={{ width: imageWidth, height: px }}
       />
     );
   };
 
   return (
-    <span className={['ua-brand-logo', className].filter(Boolean).join(' ')} aria-hidden={ariaHidden}>
+    <span className={['', className].filter(Boolean).join(' ')} aria-hidden={ariaHidden}>
       {tone === 'auto' && background === 'transparent' ? (
-        <>
-          {renderAsset('graphite', 'light')}
-          {renderAsset('white', 'dark')}
-        </>
+        renderAsset('graphite', 'fixed')
       ) : (
         renderAsset(tone === 'auto' ? (background === 'graphite' ? 'white' : 'graphite') : tone, 'fixed')
       )}

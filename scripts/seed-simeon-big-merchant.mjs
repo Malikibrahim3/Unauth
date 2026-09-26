@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
+import { visualFixtureNamespace } from './acceptance/visual-fixture-namespace.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -70,8 +71,16 @@ if (!Number.isInteger(configuredCaseAmountScale) || configuredCaseAmountScale < 
 const CASE_AMOUNT_SCALE = configuredCaseAmountScale;
 const FEATURED_CASE_KEY = 'landing-hero-evidence-hold-0';
 const FEATURED_CASE_TAG = 'landing-hero-evidence-hold';
+const IS_ASTERLANE = SEED_TAG === 'asterlane-enterprise-demo'
+  || Boolean(visualFixtureNamespace && SEED_TAG === `asterlane-${visualFixtureNamespace}`);
+const ASTERLANE_AUGUST = IS_ASTERLANE
+  ? JSON.parse(fs.readFileSync(path.join(repoRoot, 'lib/product/asterlaneAugust2026.json'), 'utf8'))
+  : null;
 
-const ANCHOR = new Date();
+// The enterprise wrapper freezes this to the August 2026 certification
+// period. Keep the delegated high-volume seeder deterministic as well.
+const ANCHOR = new Date(process.env.SEED_ANCHOR ?? '2026-08-31T12:00:00.000Z');
+if (Number.isNaN(ANCHOR.getTime())) throw new Error('SEED_ANCHOR must be a valid ISO timestamp.');
 ANCHOR.setUTCMinutes(0, 0, 0);
 const TICKET_ID_BASE = 512000;
 
@@ -370,7 +379,13 @@ for (const archetype of ARCHETYPES) {
   }
 }
 
-const OVERVIEW_CURRENT_TOTALS_MINOR = {
+const OVERVIEW_CURRENT_TOTALS_MINOR = IS_ASTERLANE ? {
+  identified: ASTERLANE_AUGUST.grossExposureMinor,
+  open: 0,
+  prevented: 0,
+  recovered: ASTERLANE_AUGUST.recoveredAndMatchedMinor,
+  realised: ASTERLANE_AUGUST.absorbedMinor,
+} : {
   identified: 266_945_000,
   open: 90_352_000,
   prevented: 63_489_000,
@@ -481,13 +496,85 @@ function appendOverviewCohort(period, totals, shape, ageOffset) {
   }
 }
 
-appendOverviewCohort('current', OVERVIEW_CURRENT_TOTALS_MINOR, OVERVIEW_CURRENT_SHAPE, 0);
-appendOverviewCohort('previous', OVERVIEW_PREVIOUS_TOTALS_MINOR, OVERVIEW_PREVIOUS_SHAPE, 30);
+function appendAsterlaneAugustCohort() {
+  const rowCount = ASTERLANE_AUGUST.grossEntryCount - 1; // The featured case is the final August row.
+  const templates = [...CASE_PLANS];
+  const workAmounts = allocateOverviewTotal(
+    ASTERLANE_AUGUST.workQueue.amountMinor - 12_800,
+    Array(ASTERLANE_AUGUST.workQueue.itemCount - 1).fill(1),
+  );
+  const exposed = [
+    ...workAmounts,
+    ...allocateOverviewTotal(
+      ASTERLANE_AUGUST.grossExposureMinor - 12_800 - workAmounts.reduce((sum, amount) => sum + amount, 0),
+      Array(rowCount - workAmounts.length).fill(1),
+    ),
+  ];
+  const confirmed = allocateOverviewTotal(
+    ASTERLANE_AUGUST.grossExposureMinor - ASTERLANE_AUGUST.writtenOffMinor,
+    exposed,
+  );
+  const recovered = allocateOverviewTotal(ASTERLANE_AUGUST.recoveredAndMatchedMinor, confirmed);
+  const writtenOff = allocateOverviewTotal(ASTERLANE_AUGUST.writtenOffMinor, confirmed);
+
+  for (let index = 0; index < rowCount; index += 1) {
+    const template = templates[index % templates.length];
+    const amountMinor = exposed[index];
+    CASE_PLANS.push({
+      ...template,
+      key: `asterlane-august-${String(index + 1).padStart(3, '0')}`,
+      archetypeKey: 'asterlane-august-certified',
+      fixtureTags: ['sample_data', SEED_TAG, 'asterlane_august_2026'],
+      customer: customerForIndex(index).key,
+      status: 'resolved_refunded',
+      amount: money(amountMinor / 100),
+      unscaledAmount: money(amountMinor / 100),
+      caseAmountScale: 1,
+      orderDaysAgo: (index % 30) + 4,
+      ticketDaysAgo: index % 30,
+      subject: `Asterlane August loss review ${index + 1}`,
+      outcome: {
+        decision: 'approved',
+        outcome: 'loss',
+        amountRefunded: money(confirmed[index] / 100),
+        unscaledAmountRefunded: money(confirmed[index] / 100),
+        followed: true,
+      },
+      recoverability: 'recoverable',
+      recoveryOwner: 'carrier',
+      recovery: {
+        type: 'carrier_claim', owner: 'carrier', status: 'paid',
+        min: money(recovered[index] / 100), max: money(confirmed[index] / 100),
+        recovered: money(recovered[index] / 100),
+        unscaledMin: money(recovered[index] / 100), unscaledMax: money(confirmed[index] / 100),
+        unscaledRecovered: money(recovered[index] / 100),
+      },
+      asterlaneWorkQueue: index < ASTERLANE_AUGUST.workQueue.itemCount - 1,
+      manualReference: index === 0 ? 'CASE-4187' : `CASE-${4188 + index}`,
+      financialProfile: {
+        requestedMinor: exposed[index], exposedMinor: exposed[index], estimatedLossMinor: 0,
+        preventedMinor: 0, confirmedLossMinor: confirmed[index], recoverableMinor: confirmed[index],
+        recoveredMinor: recovered[index], writtenOffMinor: writtenOff[index],
+      },
+    });
+  }
+}
+
+if (IS_ASTERLANE) {
+  for (const plan of CASE_PLANS) {
+    plan.ticketDaysAgo += 91;
+    plan.orderDaysAgo += 91;
+  }
+  appendAsterlaneAugustCohort();
+} else {
+  appendOverviewCohort('current', OVERVIEW_CURRENT_TOTALS_MINOR, OVERVIEW_CURRENT_SHAPE, 0);
+}
+appendOverviewCohort('previous', OVERVIEW_PREVIOUS_TOTALS_MINOR, OVERVIEW_PREVIOUS_SHAPE, 31);
 
 // Append the landing proof after every generated cohort. This preserves every
 // existing fixture id, random choice and case assignment while giving the
 // public hero one coherent, deterministic decision moment.
-if (SEED_TAG === 'asterlane-enterprise-demo') CASE_PLANS.push({
+if (IS_ASTERLANE) CASE_PLANS.push({
   key: FEATURED_CASE_KEY,
   archetypeKey: FEATURED_CASE_TAG,
   fixtureTags: ['sample_data', SEED_TAG, FEATURED_CASE_TAG],
@@ -517,6 +604,8 @@ if (SEED_TAG === 'asterlane-enterprise-demo') CASE_PLANS.push({
   recommendedAction: 'ask_for_evidence',
   recommendedRuleId: EXISTING_RULES.missingDeliveryEvidence.id,
   recommendedRuleName: EXISTING_RULES.missingDeliveryEvidence.name,
+  asterlaneWorkQueue: true,
+  manualReference: 'CASE-4405',
   partnerId: uuid('partner:northline-parcel'),
   recovery: {
     type: 'carrier_claim',
@@ -816,7 +905,7 @@ function buildTicketRows() {
       merchant_id: MERCHANT_ID,
       provider: 'gorgias',
       connection_id: uuid('legacy:gorgias'),
-      external_id: c.ticketExternalId ?? ticketExternalId(index),
+      external_id: c.ticketExternalId ?? (IS_ASTERLANE ? `${SEED_PREFIX}-ticket-${c.key}` : ticketExternalId(index)),
       external_url: null,
       source_customer_id: uuid(`customer:${customer.key}`),
       subject: c.subject,
@@ -878,6 +967,7 @@ function buildCaseRows() {
         archetype: c.archetypeKey,
         ...(c.archetypeKey === FEATURED_CASE_TAG ? { fixture_tag: FEATURED_CASE_TAG } : {}),
       },
+      manual_reference: c.manualReference ?? null,
       reason_raw: c.reason,
       reason_normalized: c.reasonNormalized ?? c.reason,
       amount_at_risk: c.amount,
@@ -990,6 +1080,8 @@ function buildRecoveryRows() {
   return CASE_PLANS.filter((c) => c.recovery).map((c) => {
     const recovery = c.recovery;
     const missingEvidence = recovery.status === 'evidence_needed' ? c.requiredEvidence.slice(0, 2) : [];
+    const soughtMinor = Math.round(recovery.max * 100);
+    const projectedRecoveredMinor = Math.round((recovery.recovered ?? 0) * 100);
     return {
       id: uuid(`recovery:${c.key}`),
       merchant_id: MERCHANT_ID,
@@ -998,12 +1090,20 @@ function buildRecoveryRows() {
       partner_id: c.partnerId,
       recovery_type: recovery.type,
       owner_type: recovery.owner,
-      status: recovery.status,
+      status: IS_ASTERLANE && c.archetypeKey === 'asterlane-august-certified' ? 'approved' : recovery.status,
       merchant_loss_amount: c.amount,
       eligible_loss_amount: c.amount,
       estimated_recoverable_min: recovery.min,
       estimated_recoverable_max: recovery.max,
-      amount_recovered: recovery.recovered ?? null,
+      amount_recovered: IS_ASTERLANE && c.archetypeKey === 'asterlane-august-certified' ? 0 : recovery.recovered ?? null,
+      amount_sought_minor: soughtMinor,
+      amount_approved_minor: recovery.status === 'paid' ? soughtMinor : 0,
+      amount_recovered_minor: IS_ASTERLANE && c.archetypeKey === 'asterlane-august-certified' ? 0 : projectedRecoveredMinor,
+      amount_written_off_minor: c.financialProfile?.writtenOffMinor ?? 0,
+      provider_position: recovery.status === 'paid' ? 'accepted' : 'unknown',
+      provider_position_at: recovery.status === 'paid' ? daysAgoIso(2, 13) : null,
+      claim_readiness: recovery.status === 'paid' ? 'provider_position_recorded' : 'not_assessable',
+      provider_claim_stage: recovery.status === 'paid' ? 'approved' : 'prepared',
       currency: 'GBP',
       deadline_at: daysFromAnchorIso(recovery.status === 'chase_due' ? 1 : 14, 17),
       next_chase_at: recovery.status === 'chase_due' ? daysAgoIso(1, 9) : daysFromAnchorIso(4, 9),
@@ -1053,7 +1153,7 @@ function buildLossRows() {
 }
 
 function buildWorkTaskRows() {
-  return CASE_PLANS.filter((c) => !c.status.startsWith('resolved_')).map((c, index) => ({
+  return CASE_PLANS.filter((c) => IS_ASTERLANE ? c.asterlaneWorkQueue === true : !c.status.startsWith('resolved_')).map((c, index) => ({
     id: uuid(`task:${c.key}`), merchant_id: MERCHANT_ID, support_payout_case_id: uuid(`case:${c.key}`),
     loss_case_id: c.outcome || c.recovery ? uuid(`loss:${c.key}`) : null, recovery_case_id: c.recovery ? uuid(`recovery:${c.key}`) : null,
     title: c.nextAction, description: c.nextActionReason, status: 'open', priority: c.status === 'manual_review' || c.status === 'escalated' ? 'high' : index % 5 === 0 ? 'high' : 'medium',
@@ -1186,14 +1286,15 @@ function buildFinancialEntryRows() {
     };
 
     const addScaledEntries = (state, scaledAmountMinor, baseAmountMinor, options = {}) => {
-      // The enterprise demo is a verified presentation account. Record an
-      // explicit zero for every canonical state so downstream surfaces can
-      // distinguish a proven zero from an unavailable value.
-      const recordZero = SEED_TAG === 'asterlane-enterprise-demo'
+      // Both named demo fixtures define these values explicitly. Record their
+      // known zero states so reads distinguish verified zero from unavailable;
+      // retries append missing deterministic rows without rewriting history.
+      const recordZero = IS_ASTERLANE
+        || SEED_TAG === 'simeon-big-merchant'
         || c.explicitZeroStates?.includes(state) === true;
       addEntry(state, baseAmountMinor, { ...options, recordZero });
       const adjustment = scaledAmountMinor - baseAmountMinor;
-      if (caseAmountScale > 1 && adjustment > 0) {
+      if (adjustment > 0) {
         addEntry(state, adjustment, {
           ...options,
           idSuffix: `scale-${caseAmountScale}`,
@@ -1218,11 +1319,18 @@ function buildFinancialEntryRows() {
       valuationBasis: 'payout_value',
     });
     addScaledEntries('recoverable', recoverable, baseRecoverable);
-    addScaledEntries('recovered', recovered, baseRecovered, {
-      direction: 'credit',
-      ledgerKind: 'provider_recovery',
-    });
+    if (!(IS_ASTERLANE && c.archetypeKey === 'asterlane-august-certified')) {
+      addScaledEntries('recovered', recovered, baseRecovered, {
+        direction: 'credit',
+        ledgerKind: 'provider_recovery',
+      });
+    }
     addScaledEntries('prevented', prevented, basePrevented);
+    addScaledEntries('written_off', profile?.writtenOffMinor ?? 0, 0, {
+      direction: 'memo',
+      ledgerKind: 'merchant_write_off',
+      valuationBasis: 'merchant_decision',
+    });
   }
 
   return rows;
@@ -1250,7 +1358,11 @@ function buildFinancialSummaryRows() {
       recoverable_minor: recoverableMinor,
       recovered_minor: recoveredMinor,
       prevented_minor: profile?.preventedMinor ?? (c.recoverability === 'not_recoverable' && !c.outcome ? requested : 0),
-      written_off_minor: 0,
+      written_off_minor: profile?.writtenOffMinor ?? 0,
+      known_states: [
+        'requested', 'exposed', 'approved', 'paid', 'estimated_loss', 'confirmed_loss',
+        'recoverable', 'recovered', 'prevented', 'written_off',
+      ],
       last_event_id: null,
       updated_at: daysAgoIso(1, 16),
     };
@@ -1288,8 +1400,9 @@ async function recomputeFeaturedCaseFinancialSummary() {
     recovered_minor: states.get('recovered') ?? 0,
     prevented_minor: states.get('prevented') ?? 0,
     written_off_minor: states.get('written_off') ?? 0,
+    known_states: [...states.keys()].sort(),
     last_event_id: entries[0].id,
-    updated_at: new Date().toISOString(),
+    updated_at: daysAgoIso(0, 8),
   }]);
   console.log('Recomputed the featured case financial summary from canonical ledger entries.');
 }
@@ -1622,19 +1735,6 @@ function buildNotificationRows() {
       created_at: daysAgoIso(1 + i, 11),
     });
   });
-  rows.push({
-    id: uuid('notif:daily-summary'),
-    merchant_id: MERCHANT_ID,
-    recipient_user_id: RECIPIENT_USER_ID,
-    kind: 'daily_work_summary',
-    title: 'Your daily work summary is ready',
-    body: 'Review new payout cases, evidence deadlines, and recovery updates from the last 24 hours.',
-    target_href: '/work',
-    domain_event_id: null,
-    deduplication_key: `${SEED_PREFIX}:daily-summary`,
-    read_at: daysAgoIso(0, 8),
-    created_at: daysAgoIso(0, 7),
-  });
   return rows;
 }
 
@@ -1666,13 +1766,121 @@ async function upgradeBilling() {
   console.log('Upgraded billing to Growth plan with topped-up credits.');
 }
 
+async function retireSupersededAsterlaneRows() {
+  if (!IS_ASTERLANE) return;
+  const expectedCaseIds = new Set(CASE_PLANS.map((plan) => uuid(`case:${plan.key}`)));
+  const { data: existingCases, error: caseError } = await supabase
+    .from('support_payout_cases')
+    .select('id')
+    .eq('merchant_id', MERCHANT_ID)
+    .contains('detection_detail', { seed: SEED_TAG });
+  if (caseError) throw new Error(`superseded Asterlane case lookup failed: ${caseError.message}`);
+  const obsoleteCaseIds = (existingCases ?? []).map((row) => row.id).filter((id) => !expectedCaseIds.has(id));
+  for (let index = 0; index < obsoleteCaseIds.length; index += 500) {
+    await checked('support_payout_cases', 'retire superseded fixture rows', supabase
+      .from('support_payout_cases')
+      .update({ submitted_at: daysAgoIso(180, 9), updated_at: daysAgoIso(0, 7) })
+      .eq('merchant_id', MERCHANT_ID)
+      .in('id', obsoleteCaseIds.slice(index, index + 500)));
+  }
+
+  const expectedTaskIds = new Set(buildWorkTaskRows().map((row) => row.id));
+  const { data: existingTasks, error: taskError } = await supabase
+    .from('work_tasks')
+    .select('id')
+    .eq('merchant_id', MERCHANT_ID)
+    .contains('source_metadata', { seed: SEED_TAG });
+  if (taskError) throw new Error(`superseded Asterlane work lookup failed: ${taskError.message}`);
+  const obsoleteTaskIds = (existingTasks ?? []).map((row) => row.id).filter((id) => !expectedTaskIds.has(id));
+  for (let index = 0; index < obsoleteTaskIds.length; index += 500) {
+    await checked('work_tasks', 'retire superseded fixture rows', supabase
+      .from('work_tasks')
+      .update({ status: 'cancelled', updated_at: daysAgoIso(0, 7) })
+      .eq('merchant_id', MERCHANT_ID)
+      .in('id', obsoleteTaskIds.slice(index, index + 500)));
+  }
+}
+
+async function ensureAsterlaneProviderCredits() {
+  if (!IS_ASTERLANE) return;
+  // Existing immutable recovery rows can retain the older demo's deadline.
+  // Refresh only the featured fixture's operational date, never its money state.
+  await checked('featured recovery', 'deadline', supabase.from('recovery_cases')
+    .update({ deadline_at: daysFromAnchorIso(14, 17) })
+    .eq('merchant_id', MERCHANT_ID)
+    .eq('id', uuid(`recovery:${FEATURED_CASE_KEY}`)));
+  const plans = CASE_PLANS.filter((plan) => plan.archetypeKey === 'asterlane-august-certified');
+  const sourceRows = plans.map((plan, index) => ({
+    id: uuid(`provider-credit-source:${plan.key}`), merchant_id: MERCHANT_ID,
+    source_system: 'ups', source_entity_type: 'provider_credit',
+    external_id: `${SEED_PREFIX}-credit-${String(index + 1).padStart(3, '0')}`,
+    canonical_entity_type: 'recovery_case', canonical_entity_id: uuid(`recovery:${plan.key}`),
+    sync_state: 'current', freshness_state: 'fresh',
+    payload_hash: sha(`provider-credit:${plan.key}:${plan.financialProfile.recoveredMinor}`),
+    source_metadata: { seed: SEED_TAG, sample_data: true, synthetic: true, observation_authority: 'source_observed' },
+    source_created_at: daysAgoIso(index % 30, 12), source_updated_at: daysAgoIso(index % 30, 12),
+    ingested_at: daysAgoIso(0, 12), last_synced_at: daysAgoIso(0, 12), updated_at: daysAgoIso(0, 12),
+  }));
+  await upsertRows('source_records', sourceRows);
+  for (let offset = 0; offset < plans.length; offset += 20) {
+    await Promise.all(plans.slice(offset, offset + 20).map(async (plan, batchIndex) => {
+      const index = offset + batchIndex;
+      const recoveryCaseId = uuid(`recovery:${plan.key}`);
+      const caseId = uuid(`case:${plan.key}`);
+      const sourceRecordId = uuid(`provider-credit-source:${plan.key}`);
+      const externalCreditId = `${SEED_PREFIX}-credit-${String(index + 1).padStart(3, '0')}`;
+      const recorded = await checked('provider credit', 'record', supabase.rpc('record_provider_credit_v1', {
+        p_merchant_id: MERCHANT_ID,
+        p_provider: 'ups',
+        p_external_credit_id: externalCreditId,
+        p_external_claim_id: plan.manualReference,
+        p_external_order_ref: `${SEED_PREFIX}-order-${plan.key}`,
+        p_external_shipment_ref: null,
+        p_credit_type: 'credit',
+        p_amount_minor: plan.financialProfile.recoveredMinor,
+        p_currency: 'GBP',
+        p_occurred_at: daysAgoIso(index % 30, 12),
+        p_observed_at: daysAgoIso(index % 30, 13),
+        p_observation_authority: 'source_observed',
+        p_evidence_item_id: null,
+        p_source_record_id: sourceRecordId,
+        p_recovery_case_id: recoveryCaseId,
+        p_support_payout_case_id: caseId,
+        p_reverses_credit_id: null,
+        p_actor_user_id: null,
+        p_reason: 'Synthetic provider settlement observed in the connected source.',
+        p_metadata: { seed: SEED_TAG, sample_data: true, synthetic: true },
+        p_idempotency_key: `${SEED_PREFIX}:provider-credit:${plan.key}`,
+      }));
+      const credit = recorded?.credit;
+      if (!credit?.id) throw new Error(`Provider credit ${externalCreditId} returned no durable record.`);
+      await checked('provider credit', 'match', supabase.rpc('transition_provider_credit_v1', {
+        p_merchant_id: MERCHANT_ID,
+        p_recovery_case_id: recoveryCaseId,
+        p_provider_credit_record_id: credit.id,
+        p_action: 'matched',
+        p_expected_version: 1,
+        p_match_method: 'synthetic_case_and_claim_reference',
+        p_match_confidence: 1,
+        p_actor_user_id: null,
+        p_reason: 'Synthetic source credit matched to the certified recovery case.',
+        p_idempotency_key: `${SEED_PREFIX}:provider-credit-match:${plan.key}`,
+      }));
+    }));
+  }
+}
+
 async function seed() {
+  await retireSupersededAsterlaneRows();
+  if (!process.argv.includes('--resume-from-tickets') && !process.argv.includes('--resume-from-financials')) {
   await upsertRows('partners', buildPartnerRows());
   await upsertRows('partner_recovery_rules', buildPartnerRuleRows());
   await upsertRows('source_customers', buildCustomerRows());
   await upsertRows('source_orders', buildOrderRows());
   await upsertRows('source_fulfillments', buildFulfillmentRows());
   await upsertRows('source_refunds', buildRefundRows());
+  }
+  if (!process.argv.includes('--resume-from-financials')) {
   await upsertRows('source_tickets', buildTicketRows());
   await upsertRows('support_payout_cases', buildCaseRows());
   await upsertRows('evidence_items', buildFeaturedEvidenceRows());
@@ -1681,7 +1889,9 @@ async function seed() {
   await upsertRows('claim_outcomes', buildOutcomeRows());
   await insertImmutableRows('claim_events', buildClaimEventRows());
   await upsertRows('loss_cases', buildLossRows());
-  await upsertRows('recovery_cases', buildRecoveryRows());
+  if (IS_ASTERLANE) await insertImmutableRows('recovery_cases', buildRecoveryRows());
+  else await upsertRows('recovery_cases', buildRecoveryRows());
+  }
   await upsertRows('work_tasks', buildWorkTaskRows());
   await insertImmutableRows('case_decisions', buildCanonicalDecisionRows());
   await insertImmutableRows('case_outcomes', buildCanonicalOutcomeRows());
@@ -1693,6 +1903,28 @@ async function seed() {
   await upsertRows('source_shipments', buildShipmentRows());
   await upsertRows('notifications', buildNotificationRows());
   await upgradeBilling();
+  await reconcileRetainedOrders();
+  await ensureAsterlaneProviderCredits();
+}
+
+// Fixture revisions retain old connected records and append-only history.
+// Customer totals must include those orders as well as the current fixture.
+async function reconcileRetainedOrders() {
+  const orders = await readAll('source_orders', 'id,source_customer_id,total_price');
+  const totals = new Map();
+  for (const order of orders) {
+    const total = totals.get(order.source_customer_id) ?? { count: 0, minor: 0 };
+    total.count += 1;
+    total.minor += Math.round(Number(order.total_price) * 100);
+    totals.set(order.source_customer_id, total);
+  }
+  const changed = buildCustomerRows().flatMap((customer) => {
+    const total = totals.get(customer.id);
+    return total && (total.count !== customer.orders_count || total.minor !== Math.round(Number(customer.total_spent) * 100))
+      ? [{ ...customer, orders_count: total.count, total_spent: money(total.minor / 100) }]
+      : [];
+  });
+  await upsertRows('source_customers', changed);
 }
 
 async function readAll(table, columns, orderColumn = 'id') {
@@ -1733,7 +1965,7 @@ async function verifySeed() {
     return count ?? 0;
   };
 
-  const [customerCount, orderCount, refundCount, returnCount, ticketCount, caseCount, recoveryCount, shipmentCount, fulfillmentCount, evidenceCount, customers, cases, evidenceRows, claimEvents, financialEntries, financialSummaries, connections] = await Promise.all([
+  const [customerCount, orderCount, refundCount, returnCount, ticketCount, caseCount, recoveryCount, shipmentCount, fulfillmentCount, evidenceCount, customers, cases, evidenceRows, claimEvents, financialEntries, financialSummaries, ordersForLinks, shipmentsForLinks, recoveriesForLinks, connections] = await Promise.all([
     countFor('source_customers'),
     countFor('source_orders'),
     countFor('source_refunds'),
@@ -1745,12 +1977,15 @@ async function verifySeed() {
     countFor('source_fulfillments'),
     countFor('evidence_items'),
     readAll('source_customers', 'id,orders_count,total_spent'),
-    readAll('support_payout_cases', 'id,source_order_id,source_ticket_id,assigned_to'),
+    readAll('support_payout_cases', 'id,source_order_id,source_ticket_id,assigned_to,submitted_at,manual_reference,amount_at_risk,currency'),
     readAll('evidence_items', 'id,claim_id'),
     readAll('claim_events', 'id,claim_id,event_type'),
     readAll('case_financial_entries', 'id,support_payout_case_id,currency,state'),
-    readAll('case_financial_summaries', 'support_payout_case_id,requested_minor,exposed_minor,prevented_minor,recovered_minor,confirmed_loss_minor', 'support_payout_case_id'),
-    supabase.from('merchant_integrations').select('provider_id,status,imported_record_count,last_error_code,last_error_message,last_error').eq('merchant_id', MERCHANT_ID),
+    readAll('case_financial_summaries', 'support_payout_case_id,currency,requested_minor,exposed_minor,prevented_minor,recovered_minor,confirmed_loss_minor,written_off_minor,known_states', 'support_payout_case_id'),
+    readAll('source_orders', 'id,source_customer_id,total_price'),
+    readAll('source_shipments', 'id,source_order_id'),
+    readAll('recovery_cases', 'id,support_payout_case_id'),
+    supabase.from('merchant_integrations').select('provider_id,status,imported_record_count,last_sync_at,last_error_code,last_error_message,last_error').eq('merchant_id', MERCHANT_ID),
   ]);
   if (connections.error) throw new Error(`merchant_integrations verification failed: ${connections.error.message}`);
 
@@ -1767,15 +2002,32 @@ async function verifySeed() {
     evidence_items: buildFeaturedEvidenceRows().length + buildOperationalEvidenceRows().length,
   };
   const actualCounts = { source_customers: customerCount, source_orders: orderCount, source_refunds: refundCount, source_returns: returnCount, source_tickets: ticketCount, support_payout_cases: caseCount, recovery_cases: recoveryCount, source_shipments: shipmentCount, source_fulfillments: fulfillmentCount, evidence_items: evidenceCount };
+  const expectedRowBuilders = {
+    source_customers: buildCustomerRows, source_orders: buildOrderRows,
+    source_refunds: buildRefundRows, source_returns: buildReturnRows,
+    source_tickets: buildTicketRows, support_payout_cases: buildCaseRows,
+    recovery_cases: buildRecoveryRows, source_shipments: buildShipmentRows,
+    source_fulfillments: buildFulfillmentRows,
+    evidence_items: () => [...buildFeaturedEvidenceRows(), ...buildOperationalEvidenceRows()],
+  };
   for (const [table, expected] of Object.entries(expectedCounts)) {
     if (actualCounts[table] !== expected) {
-      throw new Error(`${table} count mismatch: expected ${expected}, got ${actualCounts[table]}`);
+      if (actualCounts[table] < expected) throw new Error(`${table} count mismatch: expected at least ${expected}, got ${actualCounts[table]}`);
+      const persistedIds = new Set((await readAll(table, 'id')).map((row) => row.id));
+      for (const row of expectedRowBuilders[table]()) {
+        if (!persistedIds.has(row.id)) throw new Error(`${table} is missing current fixture row ${row.id}.`);
+      }
+      console.log(`Verified ${expected} current ${table} rows; retained ${actualCounts[table] - expected} historical rows.`);
     }
   }
 
-  const expectedCustomersById = new Map(
-    CUSTOMERS.map((customer) => [uuid(`customer:${customer.key}`), ORDER_AGGREGATES.get(customer.key)]),
-  );
+  const expectedCustomersById = new Map(CUSTOMERS.map((customer) => [uuid(`customer:${customer.key}`), { count: 0, totalSpentMinor: 0 }]));
+  for (const order of ordersForLinks) {
+    const aggregate = expectedCustomersById.get(order.source_customer_id);
+    if (!aggregate) throw new Error(`Order ${order.id} has an unexpected customer.`);
+    aggregate.count += 1;
+    aggregate.totalSpentMinor += Math.round(Number(order.total_price) * 100);
+  }
   if (customers.length !== expectedCustomersById.size) {
     throw new Error(`Customer aggregate verification read ${customers.length} rows, expected ${expectedCustomersById.size}.`);
   }
@@ -1830,7 +2082,7 @@ async function verifySeed() {
 
   const expectedConnections = new Map([
     ['shopify', { status: 'connected', imported_record_count: TOTAL_ORDER_COUNT }],
-    ['gorgias', { status: 'connected', imported_record_count: CASE_PLANS.length }],
+    ['gorgias', { status: 'connected', imported_record_count: CASE_PLANS.length, stale: IS_ASTERLANE }],
     ['shipbob', { status: 'connected', imported_record_count: buildShipmentRows().length }],
     ['ups', { status: 'connected', imported_record_count: CASE_PLANS.length }],
   ]);
@@ -1840,13 +2092,67 @@ async function verifySeed() {
     if (!actual || actual.status !== expected.status || actual.imported_record_count !== expected.imported_record_count) {
       throw new Error(`Connection mismatch for ${provider}: expected ${JSON.stringify(expected)}.`);
     }
-    if (actual.last_error_code || actual.last_error_message || actual.last_error) {
+    if (expected.stale) {
+      if (actual.last_error_code !== 'stale_sync' || !actual.last_sync_at || new Date(actual.last_sync_at) >= new Date(daysAgoIso(2, 9))) {
+        throw new Error('Asterlane Gorgias source did not retain its explicit stale boundary.');
+      }
+    } else if (actual.last_error_code || actual.last_error_message || actual.last_error) {
       throw new Error(`Connection ${provider} retained a stale error after the demo reseed.`);
     }
   }
 
+  if (IS_ASTERLANE) {
+    const augustCaseIds = new Set(cases
+      .filter((row) => row.submitted_at >= '2026-07-31T23:00:00.000Z' && row.submitted_at < '2026-08-31T23:00:00.000Z')
+      .map((row) => row.id));
+    const totals = financialSummaries
+      .filter((row) => augustCaseIds.has(row.support_payout_case_id) && row.currency === 'GBP')
+      .reduce((sum, row) => ({
+        gross: sum.gross + Number(row.exposed_minor ?? 0),
+        recovered: sum.recovered + Number(row.recovered_minor ?? 0),
+        absorbed: sum.absorbed + Math.max(Number(row.confirmed_loss_minor ?? 0) - Number(row.recovered_minor ?? 0), 0) + Number(row.written_off_minor ?? 0),
+        writtenOff: sum.writtenOff + Number(row.written_off_minor ?? 0),
+        net: sum.net + Math.max(Number(row.confirmed_loss_minor ?? 0) - Number(row.recovered_minor ?? 0), 0),
+      }), { gross: 0, recovered: 0, absorbed: 0, writtenOff: 0, net: 0 });
+    const workRows = await readAll('work_tasks', 'id,support_payout_case_id,status');
+    const providerCredits = await readAll('provider_credit_records', 'id,amount_minor,currency,match_status,reconciliation_status,observation_authority');
+    const workCaseIds = new Set(workRows.filter((row) => row.status === 'open').map((row) => row.support_payout_case_id));
+    const workAmountMinor = cases.filter((row) => workCaseIds.has(row.id)).reduce((sum, row) => sum + Math.round(Number(row.amount_at_risk) * 100), 0);
+    const matchedCreditMinor = providerCredits
+      .filter((row) => row.currency === 'GBP' && row.match_status === 'matched' && row.observation_authority === 'source_observed')
+      .reduce((sum, row) => sum + Number(row.amount_minor), 0);
+    if (augustCaseIds.size !== ASTERLANE_AUGUST.grossEntryCount
+      || totals.gross !== ASTERLANE_AUGUST.grossExposureMinor
+      || totals.recovered !== ASTERLANE_AUGUST.recoveredAndMatchedMinor
+      || totals.absorbed !== ASTERLANE_AUGUST.absorbedMinor
+      || totals.writtenOff !== ASTERLANE_AUGUST.writtenOffMinor
+      || totals.net !== ASTERLANE_AUGUST.netUnrecoveredMinor
+      || matchedCreditMinor !== ASTERLANE_AUGUST.recoveredAndMatchedMinor
+      || workCaseIds.size !== ASTERLANE_AUGUST.workQueue.itemCount
+      || workAmountMinor !== ASTERLANE_AUGUST.workQueue.amountMinor) {
+      throw new Error(`Asterlane August persisted identities do not reconcile: ${JSON.stringify({ entryCount: augustCaseIds.size, ...totals, matchedCreditMinor, workItemCount: workCaseIds.size, workAmountMinor })}.`);
+    }
+    const named = cases.find((row) => row.manual_reference === 'CASE-4187');
+    const namedOrder = named?.source_order_id
+      ? ordersForLinks.find((row) => row.id === named.source_order_id)
+      : null;
+    const hasShipment = named?.source_order_id
+      ? shipmentsForLinks.some((row) => row.source_order_id === named.source_order_id)
+      : false;
+    const hasLoss = named
+      ? financialSummaries.some((row) => row.support_payout_case_id === named.id)
+      : false;
+    const hasRecovery = named
+      ? recoveriesForLinks.some((row) => row.support_payout_case_id === named.id)
+      : false;
+    if (!named?.source_order_id || !named.source_ticket_id || !namedOrder?.source_customer_id || !hasShipment || !hasLoss || !hasRecovery) {
+      throw new Error('CASE-4187 is not linked to its order, shipment, ticket, loss, recovery, and customer.');
+    }
+    console.log(`Verified Asterlane August identities: ${augustCaseIds.size} entries, GBP ${totals.gross} gross, GBP ${matchedCreditMinor} source-observed and matched, GBP ${totals.absorbed} absorbed, GBP ${totals.writtenOff} written off, GBP ${totals.net} net unrecovered, ${workCaseIds.size} work items / GBP ${workAmountMinor}.`);
+  }
+
   for (const [period, expected] of [
-    ['current', OVERVIEW_CURRENT_TOTALS_MINOR],
+    ...(IS_ASTERLANE ? [] : [['current', OVERVIEW_CURRENT_TOTALS_MINOR]]),
     ['previous', OVERVIEW_PREVIOUS_TOTALS_MINOR],
   ]) {
     const caseIds = new Set(
@@ -1939,16 +2245,39 @@ async function verifySeed() {
   console.log(`Verified reconciliation: ${customerCount} customers, ${orderCount} orders, GBP ${(TOTAL_GMV_MINOR / 100).toFixed(2)} merchandise value, ${refundCount} refunds, ${returnCount} returns, ${caseCount} owner-assigned cases with linked order, ticket, fulfilment, evidence, timeline and explicit financial states, both 30-day Overview profiles, ${connections.data?.length ?? 0} connected source rows.`);
 }
 
-(async () => {
+export const seedCompletion = (async () => {
   try {
-    const { data: merchant, error } = await supabase.from('merchants').select('id,name').eq('id', MERCHANT_ID).maybeSingle();
+    const { data: merchant, error } = await supabase.from('merchants').select('id,name,is_demo').eq('id', MERCHANT_ID).maybeSingle();
     if (error) throw error;
     if (!merchant) throw new Error(`Merchant ${MERCHANT_ID} not found`);
     console.log(`Target merchant: ${merchant.name} (${merchant.id})`);
 
+    if (process.argv.includes('--reconcile-retained-orders')) {
+      await reconcileRetainedOrders();
+      await verifySeed();
+      return;
+    }
     if (VERIFY_ONLY) {
       await verifySeed();
       console.log('Verification-only run complete.');
+      return;
+    }
+
+    if (process.argv.includes('--financial-zeros-only')) {
+      const expectedMerchant = SEED_TAG === 'simeon-big-merchant'
+        ? 'af070af9-df1a-46ba-89f8-29409926ef61'
+        : SEED_TAG === 'asterlane-enterprise-demo' ? '4f5a8c25-6dcb-4b90-9e16-3a91c27d8f44' : null;
+      if (!merchant.is_demo || merchant.id !== expectedMerchant) {
+        throw new Error('Zero-state repair is restricted to the two named demo fixtures.');
+      }
+      await insertImmutableRows('case_financial_entries', buildFinancialEntryRows().filter((row) => row.amount_minor === 0));
+      await verifySeed();
+      return;
+    }
+
+    if (process.argv.includes('--settlements-only')) {
+      await ensureAsterlaneProviderCredits();
+      await verifySeed();
       return;
     }
 

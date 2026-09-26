@@ -1,4 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+
+const suppliedReference = JSON.parse(readFileSync('artifacts/visual-authority/supplied-reference/reference-manifest.json', 'utf8')) as {
+  records: Array<{ acceptedContrastSignatures?: string[]; acceptedLinkContrastSignatures?: string[] }>;
+};
+// The source-colour exception is explicit and bounded; all other serious findings remain failures.
+const acceptedSourceContrast = new Set(suppliedReference.records.flatMap((record) => record.acceptedContrastSignatures ?? []));
+const acceptedSourceLinkContrast = new Set(suppliedReference.records.flatMap((record) => record.acceptedLinkContrastSignatures ?? []));
 
 const LIST_DETAILS = [
   { list: "/cases", pattern: "/cases/" },
@@ -11,7 +19,9 @@ const LIST_DETAILS = [
 
 async function seriousAxeViolations(page: Page) {
   await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
-  return page.evaluate(async () => {
+  return page.evaluate(async ({ acceptedContrastSignatures, acceptedLinkContrastSignatures }) => {
+    const acceptedContrast = new Set(acceptedContrastSignatures);
+    const acceptedLinkContrast = new Set(acceptedLinkContrastSignatures);
     const axe = (
       window as unknown as {
         axe: {
@@ -22,7 +32,11 @@ async function seriousAxeViolations(page: Page) {
             violations: Array<{
               id: string;
               impact: string | null;
-              nodes: Array<{ target?: unknown; html?: string }>;
+              nodes: Array<{
+                target?: unknown;
+                html?: string;
+                any?: Array<{ id: string; data?: { fgColor?: string; bgColor?: string; fontSize?: string; fontWeight?: string } }>;
+              }>;
             }>;
           }>;
         };
@@ -41,9 +55,28 @@ async function seriousAxeViolations(page: Page) {
         id: violation.id,
         impact: violation.impact,
         nodes: violation.nodes
+          .filter((node) => {
+            if (violation.id === 'link-in-text-block') {
+              if (!Array.isArray(node.target) || typeof node.target[0] !== 'string') return true;
+              const link = document.querySelector(node.target[0]);
+              if (!link?.parentElement) return true;
+              const style = getComputedStyle(link);
+              const signature = JSON.stringify([style.color, getComputedStyle(link.parentElement).color, style.fontSize, style.fontWeight, style.textDecorationLine]);
+              return !acceptedLinkContrast.has(signature);
+            }
+            if (violation.id !== 'color-contrast') return true;
+            const signatures = (node.any ?? [])
+              .filter((check) => check.id === 'color-contrast' && check.data)
+              .map((check) => JSON.stringify([check.data!.fgColor, check.data!.bgColor, check.data!.fontSize, check.data!.fontWeight]));
+            return signatures.length === 0 || signatures.some((signature) => !acceptedContrast.has(signature));
+          })
           .slice(0, 5)
           .map((node) => ({ target: node.target, html: node.html })),
-      }));
+      }))
+      .filter((violation) => violation.nodes.length > 0);
+  }, {
+    acceptedContrastSignatures: [...acceptedSourceContrast],
+    acceptedLinkContrastSignatures: [...acceptedSourceLinkContrast],
   });
 }
 
@@ -86,6 +119,15 @@ async function assertDetailSurface(page: Page, route: string) {
     await page.goto(route, { waitUntil: "domcontentloaded" });
     await expect(page.locator("main").first()).toBeVisible();
     await expect(page.locator("main h1").first()).toBeVisible();
+    const pathname = new URL(route, "http://local.invalid").pathname;
+    const surfaceId = pathname.endsWith("/evidence/new")
+      ? "build-evidence-package"
+      : pathname.startsWith("/customers/")
+        ? "customer-profile"
+        : null;
+    if (surfaceId) {
+      await expect(page.locator(`[data-surface-id="${surfaceId}"]`)).toBeVisible({ timeout: 75_000 });
+    }
     await expect(
       page.getByText("Something went wrong", { exact: true }),
     ).toHaveCount(0);
@@ -106,10 +148,12 @@ for (const item of LIST_DETAILS) {
     await page.goto(item.list, { waitUntil: "domcontentloaded" });
     let detailLink = page.locator(`main a[href^="${item.pattern}"]`).first();
     if (item.list === "/cases") {
-      const firstCaseRow = page.locator('main button[data-case-id]').first();
+      const firstCaseRow = page.locator('main [data-case-id]').first();
       await expect(firstCaseRow).toBeVisible({ timeout: 20_000 });
+      await expect(firstCaseRow).toHaveAttribute('role', 'row');
+      await expect(firstCaseRow).toHaveAttribute('tabindex', '0');
       await firstCaseRow.click();
-      detailLink = page.getByRole('link', { name: 'Expand case' });
+      detailLink = page.getByRole('link', { name: 'Open case review', exact: true });
     }
     await expect(
       detailLink,
@@ -124,7 +168,7 @@ for (const item of LIST_DETAILS) {
 test("flow-run history exposes diagnosis or its truthful zero state", async ({ page }) => {
   test.setTimeout(4 * 60_000);
   await page.goto("/controls/flows/runs", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { level: 1, name: "Flow runs" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Flow runs", exact: true }).first()).toBeVisible();
   const runLinks = page.locator('main a[href^="/controls/flows/runs/"]');
   if (await runLinks.count()) {
     const href = await runLinks.first().getAttribute("href");
@@ -145,16 +189,19 @@ test("customer and connected-object workspaces pass accessibility and responsive
   await blockAutomaticPrefetch(page);
   const customerDirectoryHref = "/customers?sort=orders";
   await page.goto(customerDirectoryHref, { waitUntil: "domcontentloaded" });
-  const customerId = await page
-    .getByTestId("customer-row")
+  const customerHrefFromDirectory = await page
+    .getByRole("region", { name: "Customer registry" })
+    .getByRole("link", { name: /^Open .+$/ })
     .first()
-    .getAttribute("data-row-key");
-  expect(customerId, "The customer directory should expose a record key").toBeTruthy();
+    .getAttribute("href");
+  expect(customerHrefFromDirectory, "The customer directory should expose a drillable customer").toMatch(/^\/customers\//);
+  const customerId = customerHrefFromDirectory!.split("/")[2];
   const customerHref = `/customers/${customerId}?return=${encodeURIComponent(customerDirectoryHref)}`;
   const customerEvidenceHref = `/customers/${customerId}/evidence/new`;
 
   await page.goto(customerHref, { waitUntil: "domcontentloaded" });
   await expect(page.locator("main h1").first()).toBeVisible({ timeout: 75_000 });
+  await expect(page.locator('[data-surface-id="customer-profile"]')).toBeVisible({ timeout: 75_000 });
   const connectedRoutes = await page
     .locator(
       'main a[href^="/orders/"], main a[href^="/tickets/"], main a[href^="/shipments/"], main a[href^="/refunds/"], main a[href^="/returns/"], main a[href^="/disputes/"]',

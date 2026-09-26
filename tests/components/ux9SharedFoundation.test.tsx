@@ -41,12 +41,12 @@ describe('UX9-1 shared usability foundation', () => {
       />,
     );
 
-    expect(screen.getByText('Search this workspace')).toBeVisible();
-    expect(screen.getByText('Asterlane')).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Search records or navigate' })).toBeVisible();
+    expect(screen.getByRole('listbox', { name: 'Search results' })).toBeVisible();
     expect(screen.getByRole('group', { name: 'Act on work' })).toBeVisible();
     expect(screen.getByRole('group', { name: 'Trace money' })).toBeVisible();
     expect(commandResultGroup('case')).toBe('Cases');
-    expect(commandResultGroup('order')).toBe('Commerce records');
+    expect(commandResultGroup('order')).toBe('Orders');
     expect(commandResultGroup('ticket')).toBe('Support records');
   });
 

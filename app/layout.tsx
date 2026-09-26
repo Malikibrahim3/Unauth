@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
 import ScrollToTop from '@/components/navigation/ScrollToTop';
+import { DesktopRequiredBoundary } from '@/components/system/DesktopRequiredBoundary';
+import { throwForRootAcceptanceScenario } from '@/lib/testing/acceptanceStateInjector';
 import './globals.css';
 
-// Dashboard Design Challenge 6 specifies Instrument Sans for interface text
-// and JetBrains Mono for machine-readable identifiers. The bundled font
-// boundary is build-time only; product surfaces do not request Google Fonts
-// from the browser at runtime.
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   title: 'Unauth — Post-Purchase Payout Control',
@@ -33,15 +31,16 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  throwForRootAcceptanceScenario();
   return (
     <html
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body className="font-sans antialiased">
+      <body>
         <ScrollToTop />
-        {children}
+        <DesktopRequiredBoundary>{children}</DesktopRequiredBoundary>
       </body>
     </html>
   );

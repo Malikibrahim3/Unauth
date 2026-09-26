@@ -26,7 +26,7 @@ export function ReportsTabs({ view, query }: { view: ReportsView; query: Paramet
     <Tabs
       aria-label="Reports views"
       value={view}
-      className="ua-reports-tabs"
+      className="flex items-center gap-3"
       items={[
         { value: 'index', label: 'Report index', href: hrefFor('/financials/reports', query) },
         { value: 'report', label: 'Financial performance', href: hrefFor('/financials/reports/financial', query) },
@@ -67,28 +67,28 @@ export function ReportsScope({ report, selectedCurrency, compare, reportId = nul
     ...currencyCodes.map((currency) => ({ value: currency, label: currency, href: hrefFor(basePath, query, { currency }) })),
   ];
   return (
-    <section className="ua-reports-scope" aria-label="Report scope">
-      <div className="ua-reports-scope__controls">
-        <div className="ua-reports-scope__group"><span>Range</span><SegmentedControl aria-label="Report range" value={report.range} items={[...rangeItems, { value: 'all', label: 'Custom', disabled: true }]} /></div>
-        <div className="ua-reports-scope__group"><span>Currency</span><SegmentedControl aria-label="Report currency" value={selectedCurrency ?? 'separated'} items={currencyItems} /></div>
-        {report.range !== 'all' ? <div className="ua-reports-scope__group"><span>Compare</span><SegmentedControl aria-label="Comparison period" value={compare} items={[
+    <section style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }} aria-label="Report scope">
+      <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0, flexWrap:'wrap' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ color:'#6f6a63', fontSize:10 }}>Range</span><SegmentedControl aria-label="Report range" value={report.range} items={[...rangeItems, { value: 'all', label: 'Custom', disabled: true }]} /></div>
+        <div style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ color:'#6f6a63', fontSize:10 }}>Currency</span><SegmentedControl aria-label="Report currency" value={selectedCurrency ?? 'separated'} items={currencyItems} /></div>
+        {report.range !== 'all' ? <div style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ color:'#6f6a63', fontSize:10 }}>Compare</span><SegmentedControl aria-label="Comparison period" value={compare} items={[
           { value: 'none', label: 'None', href: hrefFor(basePath, query, { compare: null }) },
           { value: 'previous', label: 'Previous period', href: hrefFor(basePath, query, { compare: 'previous' }) },
         ]} /></div> : null}
-        <form method="get" action={basePath} className="ua-reports-scope__timezone">
+        <form method="get" action={basePath} style={{ display:'flex', alignItems:'center', gap:5 }}>
           <input type="hidden" name="range" value={report.range} />
           {selectedCurrency ? <input type="hidden" name="currency" value={selectedCurrency} /> : null}
           {compare === 'previous' ? <input type="hidden" name="compare" value="previous" /> : null}
           {reportId ? <input type="hidden" name="report" value={reportId} /> : null}
-          <label htmlFor="reports-timezone">Timezone</label>
-          <Select id="reports-timezone" name="timezone" defaultValue={report.timezone}>
+          <label style={{ color:'#6f6a63', fontSize:10 }} htmlFor="reports-timezone">Timezone</label>
+          <Select style={{ width:135 }} id="reports-timezone" name="timezone" defaultValue={report.timezone}>
             <option value="UTC">UTC</option><option value="Europe/London">Europe/London</option><option value="America/New_York">America/New_York</option>
             {!['UTC', 'Europe/London', 'America/New_York'].includes(report.timezone) ? <option value={report.timezone}>{report.timezone}</option> : null}
           </Select>
           <Button type="submit" variant="secondary" size="sm">Apply</Button>
         </form>
       </div>
-      <p className="ua-reports-scope__url-note">Scope is URL-backed</p>
+      <p style={{ margin:0, color:'#6f6a63', font:'400 9px/1.3 IBM Plex Mono,monospace', whiteSpace:'nowrap' }}>URL-backed</p>
     </section>
   );
 }
@@ -96,13 +96,13 @@ export function ReportsScope({ report, selectedCurrency, compare, reportId = nul
 export function ReportsTrustLine({ report, selectedCurrency }: { report: IntelligenceReport; selectedCurrency: string | null }) {
   const confidence = report.reconciliation.confidence;
   return (
-    <div className="ua-reports-trust" aria-label="Report scope, freshness, and exclusions">
+    <div style={{ display:'flex', alignItems:'center', gap:7, minWidth:0, color:'#6f6a63', font:'400 9px/1.35 IBM Plex Mono,monospace' }} aria-label="Report scope, freshness, and exclusions">
       <span>{report.range === 'all' ? 'All recorded dates' : report.range} · {report.timezone} · {selectedCurrency ?? 'currencies separated'} · generated {formatDateTime(report.generatedAt)}</span>
-      <span className="ua-reports-trust__divider" aria-hidden="true" />
+      <span style={{ width:1, height:14, background:'#e4e3e0' }} aria-hidden="true" />
       <ButtonLink variant="link" size="sm" href="/sources/connected">Data trust and coverage</ButtonLink>
       {confidence.excludedRecordCount > 0 ? <>
-        <span className="ua-reports-trust__divider" aria-hidden="true" />
-        <span className="ua-reports-trust__warning">△ {confidence.currencyExcludedRecordCount} excluded, mixed currency · {confidence.unreconciledExcludedRecordCount} excluded, unreconciled</span>
+        <span style={{ width:1, height:14, background:'#e4e3e0' }} aria-hidden="true" />
+        <span>△ {confidence.currencyExcludedRecordCount} mixed-currency · {confidence.unreconciledExcludedRecordCount} unreconciled</span>
         <ButtonLink variant="link" size="sm" href="/financials/reconciliation">Review exclusions</ButtonLink>
       </> : null}
     </div>

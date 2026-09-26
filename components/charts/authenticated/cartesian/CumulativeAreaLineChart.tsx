@@ -72,8 +72,8 @@ export function CumulativeAreaLineChart({
             cx={cx}
             cy={cy}
             r={TREND_HOVER_DOT_R}
-            fill={theme['--uo-route-analytical-actual']}
-            stroke={theme['--uo-route-analytical-selected']}
+            fill={theme['--authority-analytical-actual']}
+            stroke={theme['--authority-analytical-selected']}
             strokeWidth={SELECTED_RING_WIDTH}
           />
         );
@@ -87,7 +87,7 @@ export function CumulativeAreaLineChart({
           margin={{ top: 12, right: 12, bottom: 2, left: 6 }}
           accessibilityLayer
         >
-        <CartesianGrid stroke={theme['--uo-route-chart-grid']} strokeOpacity={0.78} vertical={false} />
+        <CartesianGrid stroke={theme['--authority-chart-grid']} strokeOpacity={0.78} vertical={false} />
         <XAxis
           dataKey="label"
           axisLine={false}
@@ -96,8 +96,8 @@ export function CumulativeAreaLineChart({
           tickMargin={8}
           tick={{
             fontSize: 13,
-            fill: theme['--uo-route-text-tertiary'],
-            fontFamily: 'var(--uo-route-font-sans)',
+            fill: theme['--authority-text-tertiary'],
+            fontFamily: 'Inter,ui-sans-serif,system-ui,sans-serif',
           }}
         />
         <YAxis
@@ -109,8 +109,8 @@ export function CumulativeAreaLineChart({
           domain={[0, 'auto']}
           tick={{
             fontSize: 13,
-            fill: theme['--uo-route-text-tertiary'],
-            fontFamily: 'var(--uo-route-font-sans)',
+            fill: theme['--authority-text-tertiary'],
+            fontFamily: 'Inter,ui-sans-serif,system-ui,sans-serif',
           }}
           tickFormatter={valueFormatter}
         />
@@ -125,28 +125,28 @@ export function CumulativeAreaLineChart({
                 ? {
                     label: 'Recovered to date',
                     value: tooltipFormatter(row.cumulativeRecoveredMinor),
-                    colour: theme['--uo-route-outcome-recovered'],
+                    colour: theme['--authority-outcome-recovered'],
                   }
                 : null,
               row.exposureIncrementMinor != null
                 ? {
                     label: 'Exposure added',
                     value: tooltipFormatter(row.exposureIncrementMinor),
-                    colour: theme['--uo-route-analytical-actual'],
+                    colour: theme['--authority-analytical-actual'],
                   }
                 : null,
               row.recoveredIncrementMinor != null
                 ? {
                     label: 'Recovery added',
                     value: tooltipFormatter(row.recoveredIncrementMinor),
-                    colour: theme['--uo-route-outcome-recovered'],
+                    colour: theme['--authority-outcome-recovered'],
                   }
                 : null,
               comparison && row.previousCumulativeExposureMinor != null
                 ? {
                     label: 'Previous exposure to date',
                     value: tooltipFormatter(row.previousCumulativeExposureMinor),
-                    colour: theme['--uo-route-analytical-comparison'],
+                    colour: theme['--authority-analytical-comparison'],
                   }
                 : null,
             ].filter((item): item is { label: string; value: string; colour: string } => item != null);
@@ -165,16 +165,16 @@ export function CumulativeAreaLineChart({
           type="stepAfter"
           dataKey="cumulativeExposureMinor"
           name="Cumulative exposure"
-          stroke={theme['--uo-route-analytical-actual']}
+          stroke={theme['--authority-analytical-actual']}
           strokeWidth={2}
-          fill={theme['--uo-route-analytical-actual']}
+          fill={theme['--authority-analytical-actual']}
           fillOpacity={0.1}
           connectNulls={false}
           dot={actualDot}
           activeDot={{
             r: TREND_HOVER_DOT_R,
-            fill: theme['--uo-route-analytical-actual'],
-            stroke: theme['--uo-route-surface-primary'],
+            fill: theme['--authority-analytical-actual'],
+            stroke: theme['--authority-surface-primary'],
             strokeWidth: 2,
           }}
           {...motion}
@@ -182,13 +182,13 @@ export function CumulativeAreaLineChart({
         {referenceLine ? (
           <ReferenceLine
             y={referenceLine.value}
-            stroke={theme['--uo-route-analytical-reference']}
+            stroke={theme['--authority-analytical-reference']}
             strokeWidth={REFERENCE_LINE_WIDTH}
             strokeDasharray={REFERENCE_DASH.join(' ')}
             label={{
               value: referenceLine.label,
               position: 'right',
-              fill: theme['--uo-route-text-tertiary'],
+              fill: theme['--authority-text-tertiary'],
               fontSize: 11,
             }}
           />
@@ -199,7 +199,7 @@ export function CumulativeAreaLineChart({
             data={forecastData}
             dataKey="value"
             name="Forecast"
-            stroke={theme['--uo-route-analytical-forecast']}
+            stroke={theme['--authority-analytical-forecast']}
             strokeWidth={COMPARISON_LINE_WIDTH}
             strokeDasharray={FORECAST_DASH.join(' ')}
             connectNulls={false}
@@ -211,7 +211,7 @@ export function CumulativeAreaLineChart({
           type="stepAfter"
           dataKey="cumulativeRecoveredMinor"
           name="Recovered to date"
-          stroke={theme['--uo-route-outcome-recovered']}
+          stroke={theme['--authority-outcome-recovered']}
           strokeWidth={2.25}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -219,8 +219,8 @@ export function CumulativeAreaLineChart({
           dot={false}
           activeDot={{
             r: TREND_HOVER_DOT_R,
-            fill: theme['--uo-route-outcome-recovered'],
-            stroke: theme['--uo-route-surface-primary'],
+            fill: theme['--authority-outcome-recovered'],
+            stroke: theme['--authority-surface-primary'],
             strokeWidth: 2,
           }}
           {...motion}
@@ -230,15 +230,15 @@ export function CumulativeAreaLineChart({
             type="stepAfter"
             dataKey="previousCumulativeExposureMinor"
             name="Previous exposure to date"
-            stroke={theme['--uo-route-analytical-comparison']}
+            stroke={theme['--authority-analytical-comparison']}
             strokeWidth={COMPARISON_LINE_WIDTH}
             strokeDasharray={COMPARISON_DASH.join(' ')}
             connectNulls={false}
             dot={false}
             activeDot={{
               r: TREND_HOVER_DOT_R,
-              fill: theme['--uo-route-analytical-comparison'],
-              stroke: theme['--uo-route-surface-primary'],
+              fill: theme['--authority-analytical-comparison'],
+              stroke: theme['--authority-surface-primary'],
               strokeWidth: 2,
             }}
             {...motion}

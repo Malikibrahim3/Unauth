@@ -14,13 +14,13 @@ import { cn } from '@/lib/utils';
 export type KeyInsightTone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
 const TONE: Record<KeyInsightTone, { bg: string; fg: string; bd: string }> = {
-  neutral: { bg: 'var(--uo-route-surface-muted)', fg: 'var(--uo-route-text-secondary)', bd: 'var(--uo-route-border-default)' },
-  info: { bg: 'var(--uo-route-info-bg)', fg: 'var(--uo-route-info)', bd: 'var(--uo-route-info-border)' },
-  warning: { bg: 'var(--uo-route-warning-bg)', fg: 'var(--uo-route-warning)', bd: 'var(--uo-route-warning-border)' },
-  success: { bg: 'var(--uo-route-success-bg)', fg: 'var(--uo-route-success)', bd: 'var(--uo-route-success-border)' },
-  // danger follows the risk-critical family, not --uo-route-critical — they match in
+  neutral: { bg: '#f4f3f1', fg: '#64686d', bd: '#e4e3e0' },
+  info: { bg: '#edf6f8', fg: '#247388', bd: '#c4dfe5' },
+  warning: { bg: '#fff3e9', fg: '#7a5310', bd: '#ead8b6' },
+  success: { bg: '#eaf5ef', fg: '#1a6b43', bd: '#bfdecf' },
+  // danger follows the risk-critical family, not --authority-critical — they match in
   // light mode but diverge in dark (see StatusBadge for the same note).
-  danger: { bg: 'var(--uo-route-risk-critical-bg)', fg: 'var(--uo-route-risk-critical)', bd: 'var(--uo-route-risk-critical-border)' },
+  danger: { bg: '#fdf0e6', fg: '#b0431a', bd: '#edc6b5' },
 };
 
 interface KeyInsightCalloutProps {
@@ -51,9 +51,9 @@ export function KeyInsightCallout({
       data-auth-visual="key-insight"
       style={{
         padding: '12px 14px',
-        border: '1px solid var(--uo-route-border-default)',
-        borderRadius: 'var(--uo-route-radius-surface)',
-        background: 'var(--uo-route-surface-primary)',
+        border: '1px solid #e4e3e0',
+        borderRadius: '12px',
+        background: '#fff',
         boxShadow: 'none',
       }}
     >
@@ -64,7 +64,7 @@ export function KeyInsightCallout({
           style={{
             width: 30,
             height: 30,
-            borderRadius: 'var(--uo-route-radius-surface)',
+            borderRadius: '12px',
             background: t.bg,
             color: t.fg,
             border: `1px solid ${t.bd}`,
@@ -78,11 +78,11 @@ export function KeyInsightCallout({
           <p
             className="m-0"
             style={{
-              color: 'var(--uo-route-text-tertiary)',
-              fontSize: 'var(--uo-route-text-metadata-size)',
-              fontWeight: 'var(--uo-route-text-metadata-weight)' as unknown as number,
-              letterSpacing: 'var(--uo-route-text-metadata-tracking)',
-              lineHeight: 'var(--uo-route-text-metadata-leading)',
+              color: '#6f6a63',
+              fontSize: '10.5px',
+              fontWeight: '#1c1f23' as unknown as number,
+              letterSpacing: '#1c1f23',
+              lineHeight: '1.4',
               marginBottom: 4,
             }}
           >
@@ -90,8 +90,8 @@ export function KeyInsightCallout({
           </p>
         ) : null}
         <p
-          className="m-0 [&_strong]:font-semibold [&_strong]:tabular-nums [&_strong]:text-[var(--uo-route-text-primary)]"
-          style={{ color: 'var(--uo-route-text-secondary)', fontSize: 13, lineHeight: 1.45 }}
+          className="m-0 [&_strong]:font-semibold [&_strong]:tabular-nums [&_strong]:text-[#1c1f23]"
+          style={{ color: '#64686d', fontSize: 13, lineHeight: 1.45 }}
         >
           {children}
         </p>
@@ -99,7 +99,7 @@ export function KeyInsightCallout({
       {detail ? (
         <div
           className="shrink-0"
-          style={{ color: 'var(--uo-route-text-tertiary)', fontSize: 11, lineHeight: 1.4 }}
+          style={{ color: '#6f6a63', fontSize: 11, lineHeight: 1.4 }}
         >
           {detail}
         </div>

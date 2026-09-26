@@ -1,24 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 
-export type OperationalStateKind =
-  | 'zero'
-  | 'empty'
-  | 'filtered-empty'
-  | 'insufficient-history'
-  | 'partial'
-  | 'stale'
-  | 'disconnected'
-  | 'error'
-  | 'mixed-currency'
-  | 'unavailable'
-  | 'refreshing'
-  | 'not-configured'
-  | 'permission'
-  | 'permission-limited'
-  | 'locked'
-  | 'verified-zero';
-
+export type OperationalStateKind = 'zero' | 'empty' | 'filtered-empty' | 'insufficient-history' | 'partial' | 'stale' | 'disconnected' | 'error' | 'mixed-currency' | 'unavailable' | 'refreshing' | 'not-configured' | 'permission' | 'permission-limited' | 'locked' | 'verified-zero';
 export type StatePlacement = 'panel' | 'plot' | 'table' | 'page';
 
 const DEFAULT_COPY: Record<OperationalStateKind, { title: string; description: string }> = {
@@ -39,38 +21,12 @@ const DEFAULT_COPY: Record<OperationalStateKind, { title: string; description: s
   locked: { title: 'This feature is not enabled', description: 'Contact your workspace owner to review availability.' },
   'verified-zero': { title: 'Verified zero', description: 'The query completed and confirmed there is nothing in this scope — this is not missing data.' },
 };
-
-/** `error` and `mixed-currency` interrupt; everything else — including `unavailable` — is ambient status (`ChartFrame.tsx` L40, preserved verbatim). */
 const ALERT_KINDS: ReadonlySet<OperationalStateKind> = new Set(['error', 'mixed-currency']);
 
-export interface OperationalStateProps {
-  kind: OperationalStateKind;
-  /** `plot` replaces a chart's plot area; `table` replaces the tbody, keeping the header. */
-  placement?: StatePlacement;
-  title?: string;
-  description?: string;
-  action?: ReactNode;
-  minHeight?: number;
-  className?: string;
-}
+export interface OperationalStateProps { kind: OperationalStateKind; placement?: StatePlacement; title?: string; description?: string; action?: ReactNode; minHeight?: number; className?: string; }
 
-/** Geometry-aware state copy shared by tables, boards, charts and detail sections. */
-export function OperationalState({ kind, placement = 'panel', title, description, action, minHeight, className }: OperationalStateProps) {
+export function OperationalState({ kind, placement = 'panel', title, description, action, minHeight, className: _className }: OperationalStateProps) {
   const copy = DEFAULT_COPY[kind];
-  const isAlert = ALERT_KINDS.has(kind);
-  const style = minHeight != null ? ({ '--uo-route-state-min-height': `${minHeight}px` } as CSSProperties) : undefined;
-  return (
-    <div
-      className={cn('ua-operational-state', `ua-operational-state--${kind}`, `ua-operational-state--placement-${placement}`, className)}
-      role={isAlert ? 'alert' : 'status'}
-      data-kind={kind}
-      data-state={kind}
-      data-placement={placement}
-      style={style}
-    >
-      <p className="ua-operational-state__title">{title ?? copy.title}</p>
-      <p className="ua-operational-state__description">{description ?? copy.description}</p>
-      {action ? <div className="ua-operational-state__action">{action}</div> : null}
-    </div>
-  );
+  const style: CSSProperties = { minHeight, display: 'grid', placeContent: 'center', justifyItems: 'center', gap: 6, padding: 24, border: '1px solid #e4e3e0', borderRadius: 12, background: '#fff', textAlign: 'center' };
+  return <div role={ALERT_KINDS.has(kind) ? 'alert' : 'status'} data-kind={kind} data-state={kind} data-placement={placement} style={style}><p style={{ margin: 0, color: '#1c1f23', font: "500 13px/1.4 'Inter',sans-serif" }}>{title ?? copy.title}</p><p style={{ maxWidth: 520, margin: 0, color: '#64686d', font: "400 11px/1.45 'Inter',sans-serif" }}>{description ?? copy.description}</p>{action ? <div style={{ marginTop: 6 }}>{action}</div> : null}</div>;
 }

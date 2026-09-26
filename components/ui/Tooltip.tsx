@@ -41,7 +41,7 @@ export function Tooltip({ content, children, delay = 300, className }: TooltipPr
     if (!child || typeof child !== 'object' || !('props' in child)) return children;
     return cloneElement(child, {
       'aria-describedby': [child.props['aria-describedby'], tooltipId].filter(Boolean).join(' '),
-      className: cn('ua-tooltip-trigger', child.props.className),
+      className: child.props.className,
     });
   })();
 
@@ -81,9 +81,9 @@ export function Tooltip({ content, children, delay = 300, className }: TooltipPr
           role="tooltip"
           aria-hidden={phase === 'exiting' ? true : undefined}
           className={cn(
-            'pointer-events-none fixed z-[var(--uo-route-z-tooltip)] max-w-[280px]',
-            'rounded-[var(--uo-route-radius-xs)] bg-[var(--uo-route-text-primary)] px-[var(--uo-route-space-2)] py-[var(--uo-route-space-1)] text-meta text-[var(--uo-route-text-inverse)]',
-            'whitespace-normal shadow-[var(--uo-route-shadow-float)]',
+            'pointer-events-none fixed z-[70] max-w-[280px]',
+            'rounded-[5px] bg-[#1c1f23] px-2.5 py-1.5 text-[10px] text-white',
+            'whitespace-normal shadow-[none]',
             className,
           )}
           style={{
@@ -91,7 +91,7 @@ export function Tooltip({ content, children, delay = 300, className }: TooltipPr
             top: position.top,
             opacity: isOpen ? 1 : 0,
             transform: `translate(-50%, calc(-100% + ${isOpen ? 0 : 2}px))`,
-            transition: motionAllowed ? `opacity ${duration}ms var(--uo-route-ease-standard), transform ${duration}ms var(--uo-route-ease-standard)` : 'none',
+            transition: motionAllowed ? `opacity ${duration}ms ease, transform ${duration}ms ease` : 'none',
           }}
         >
           {content}

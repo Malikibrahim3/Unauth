@@ -1,5 +1,6 @@
 "use client";
 
+import { BILLABLE_EVENTS } from "@/lib/billing/plans";
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFetchJson } from "@/lib/react/useFetchJson";
@@ -9,7 +10,8 @@ import type {
   EvidencePackageFormProps,
   OrdersResponse,
 } from "@/components/evidence/evidencePackageFormTypes";
-import styles from './EvidencePackageOperations.module.css';
+const emptyStateStyle = { display: 'grid', gap: 7, minHeight: 150, alignContent: 'center', padding: 24, border: '1px solid #e4e3e0', borderRadius: 12, background: '#ffffff', color: '#40454a' } as const;
+const stateActionsStyle = { display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 5 } as const;
 
 export type { EvidencePackageFormProps } from "@/components/evidence/evidencePackageFormTypes";
 
@@ -21,6 +23,7 @@ export function EvidencePackageForm({
   showIntro = true,
   onCancel,
   onSuccess,
+  acceptanceState,
 }: EvidencePackageFormProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -38,7 +41,7 @@ export function EvidencePackageForm({
   }
 
   const { data: ordersData, loading: loadingOrders, error: ordersError, reload: reloadOrders } =
-    useFetchJson<OrdersResponse>(`/api/customers/${profileId}/orders`, {
+    useFetchJson<OrdersResponse>(acceptanceState ? null : `/api/customers/${profileId}/orders`, {
       parse: async (response) => {
         if (!response.ok) throw new Error(`Order history could not be loaded (${response.status}).`);
         return response.json() as Promise<OrdersResponse>;
@@ -106,17 +109,29 @@ export function EvidencePackageForm({
 
   const hasEligibleOrders = orders.some((o) => o.refund_claimed);
   const canSubmit = !!selectedOrderId && !loading && !loadingOrders;
+  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
 
   const packageIncludes = [
-    { label: "Customer identity record", available: true },
-    { label: "Order history (all known orders)", available: true },
-    { label: "Identity signals observed", available: true },
     {
       label: "Prior matching transactions (if any)",
       available: priorMatchPreview === "likely",
       pending: priorMatchPreview === "unknown",
+      source: 'Retained customer records',
+      freshness: priorMatchChecking ? 'checking now' : 'checked for this order',
+      packEffect: priorMatchPreview === 'likely' ? 'Included as a supported prior match' : 'Left out; no match is inferred',
+      repairHref: `/customers/${profileId}`,
     },
-    { label: "Merchant notes", available: !!notes.trim(), optional: true },
+    { label: "Customer identity record", available: true, source: 'Customer registry', freshness: 'current route subject', packEffect: 'Anchors the package to this customer', repairHref: `/customers/${profileId}` },
+    { label: "Selected order record", available: Boolean(selectedOrder), source: selectedOrder?.source_name ?? selectedOrder?.source ?? 'Connected commerce source', freshness: selectedOrder?.source_updated_at ?? selectedOrder?.processed_at ?? 'unavailable', packEffect: selectedOrder ? 'Anchors the package to one immutable order' : 'Blocks package construction', repairHref: '/sources/connected' },
+    { label: "Identity signals observed", available: priorMatchPreview !== 'unknown', pending: priorMatchPreview === 'unknown', source: 'Retained customer records', freshness: priorMatchChecking ? 'checking now' : 'current retained read', packEffect: priorMatchPreview === 'unknown' ? 'Left out while source result is unavailable' : 'Includes only observed source results', repairHref: `/customers/${profileId}?tab=identity` },
+    {
+      label: "Merchant notes",
+      available: !!notes.trim(),
+      optional: true,
+      source: 'Merchant entry',
+      freshness: notes.trim() ? 'current unsaved entry' : 'not entered',
+      packEffect: notes.trim() ? 'Included as merchant-authored context' : 'Optional and not included',
+    },
   ];
 
   function selectOrder(orderId: string) {
@@ -129,12 +144,31 @@ export function EvidencePackageForm({
     router.replace(`${pathname}${next.size ? `?${next.toString()}` : ''}`, { scroll: false });
   }
 
+  if (acceptanceState) {
+    return (
+      <div data-state-id="evidence-package-no-orders-no-cases-states">
+        {acceptanceState === 'no-orders' ? (
+          <div style={emptyStateStyle} data-state-id="evidence-package-no-orders">
+            <strong>No orders found</strong>
+            <span>The connected records contain no orders for this customer. Evidence packages require at least one recorded order.</span>
+          </div>
+        ) : (
+          <div style={emptyStateStyle} data-state-id="evidence-package-no-qualifying-cases">
+            <strong>No qualifying cases found</strong>
+            <span>No refund claim or dispute is recorded. Case eligibility is not inferred from an order alone.</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div data-builder-context={caseContextId || undefined} data-show-intro={showIntro || undefined}>
-      {loadingOrders ? <div className={styles.loading} data-state-id="evidence-package-builder-loading" role="status" aria-busy="true"><strong>Loading order history</strong><span>Your customer and case context is preserved. Missing source facts will remain explicitly unavailable.</span></div> : null}
-      {!loadingOrders && ordersError && !ordersData ? <div className={styles.empty} data-state-id="evidence-package-orders-unavailable" role="alert"><strong>Order history unavailable</strong><span>{ordersError} No empty customer history has been inferred.</span><div className={styles.stateActions}><button type="button" onClick={reloadOrders}>Try again</button><button type="button" onClick={() => router.push(`/customers/${profileId}`)}>Back to customer</button></div></div> : null}
-      {!loadingOrders && !ordersError && orders.length === 0 ? <div className={styles.empty} data-state-id="evidence-package-no-orders"><strong>No orders found</strong><span>The connected records contain no orders for this customer. Evidence packages require at least one recorded order.</span><div className={styles.stateActions}><button type="button" onClick={() => router.push(`/customers/${profileId}`)}>Back to customer</button><button type="button" onClick={() => router.push('/sources/connected')}>Review connected sources</button></div></div> : null}
-      {!loadingOrders && !ordersError && orders.length > 0 && !hasEligibleOrders ? <p className={styles.error} data-state-id="evidence-package-no-qualifying-cases">No refund claim or dispute is recorded. Only an order explicitly supplied by the route can remain selected; no case eligibility is inferred.</p> : null}
+    <div data-builder-context={caseContextId || undefined} data-show-intro={showIntro || undefined} style={{ width: '100%', height: '100%', minHeight: 0, overflow: 'hidden' }}>
+      <p data-credit-preview="evidence.summary" style={{ margin: 0, color: "#64686d", fontSize: 12 }}>{BILLABLE_EVENTS["evidence.summary"].label}: {BILLABLE_EVENTS["evidence.summary"].credits} credits. {BILLABLE_EVENTS["evidence.summary"].chargingRule} Each newly generated report is a separate operation.</p>
+      {loadingOrders ? <div style={emptyStateStyle} data-state-id="evidence-package-builder-loading" role="status" aria-busy="true"><strong>Loading order history</strong><span>Your customer and case context is preserved. Missing source facts will remain explicitly unavailable.</span></div> : null}
+      {!loadingOrders && ordersError && !ordersData ? <div style={emptyStateStyle} data-state-id="evidence-package-orders-unavailable" role="alert"><strong>Order history unavailable</strong><span>{ordersError} No empty customer history has been inferred.</span><div style={stateActionsStyle}><button type="button" onClick={reloadOrders}>Try again</button><button type="button" onClick={() => router.push(`/customers/${profileId}`)}>Back to customer</button></div></div> : null}
+      {!loadingOrders && !ordersError && orders.length === 0 ? <div style={emptyStateStyle} data-state-id="evidence-package-no-orders"><strong>No orders found</strong><span>The connected records contain no orders for this customer. Evidence packages require at least one recorded order.</span><div style={stateActionsStyle}><button type="button" onClick={() => router.push(`/customers/${profileId}`)}>Back to customer</button><button type="button" onClick={() => router.push('/sources/connected')}>Review connected sources</button></div></div> : null}
+      {!loadingOrders && !ordersError && orders.length > 0 && !hasEligibleOrders ? <p style={{ margin: 0, padding: '10px 12px', borderRadius: 9, background: '#fdf0e6', color: '#b0431a', fontSize: 12 }} data-state-id="evidence-package-no-qualifying-cases">No refund claim or dispute is recorded. Only an order explicitly supplied by the route can remain selected; no case eligibility is inferred.</p> : null}
 
       {!loadingOrders && !ordersError && orders.length > 0 ? (
         <EvidencePackageFormFields

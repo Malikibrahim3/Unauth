@@ -1,12 +1,55 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
+// Verify real entry-point links and owner cells, not incidental mentions in a
+// heading, example, or comment. This checks instruction wiring, never runtime safety.
+export function verifyGlobalAuthority(root) {
+  const errors = [];
+  const source = (file) => existsSync(join(root, file))
+    ? readFileSync(join(root, file), 'utf8').replace(/<!--[\s\S]*?-->/g, '').replace(/```[\s\S]*?```/g, '')
+    : '';
+  const requiredLinks = [
+    ['AGENTS.md', 'GLOBAL_RULES.md'],
+    ['AGENTS.md', 'docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md'],
+    ['ARCHITECTURE.md', 'GLOBAL_RULES.md'],
+    ['PRODUCT.md', 'GLOBAL_RULES.md'],
+    ['DESIGN.md', 'GLOBAL_RULES.md'],
+    ['GLOBAL_RULES.md', 'ARCHITECTURE.md'],
+    ['GLOBAL_RULES.md', 'docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md'],
+    ['docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md', '../../GLOBAL_RULES.md'],
+  ];
+  for (const [file, target] of requiredLinks) {
+    const links = [...source(file).matchAll(/\[[^\]]+\]\(([^)\s]+)\)/g)].map((match) => match[1]);
+    if (!links.includes(target)) errors.push(`${file} must link directly to ${target}.`);
+    if (!existsSync(resolve(root, file, '..', target))) errors.push(`${file} references missing required owner ${target}.`);
+  }
+  if (!/Read\s+\[GLOBAL_RULES\.md\]\(GLOBAL_RULES\.md\)\s+completely before every task\./.test(source('AGENTS.md'))) {
+    errors.push('AGENTS.md must require reading GLOBAL_RULES.md completely before every task.');
+  }
+  for (const owner of ['AGENTS.md', 'GLOBAL_RULES.md']) {
+    if (!source('CLAUDE.md').split(/\r?\n/).includes(`@${owner}`)) errors.push(`CLAUDE.md must import @${owner}.`);
+  }
+  const ownerCells = source('ARCHITECTURE.md').split('\n')
+    .filter((line) => line.startsWith('|')).map((line) => line.split('|')[2]?.trim());
+  for (const owner of ['GLOBAL_RULES.md', 'docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md']) {
+    if (!ownerCells.includes(`\`${owner}\``)) errors.push(`ARCHITECTURE.md must register ${owner} in the binding owner column.`);
+  }
+  return errors;
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 const root = resolve(process.cwd());
-const errors = [];
+const errors = verifyGlobalAuthority(root);
 const retiredProductName = ['Parcel', 'Claim'].join('');
 
 const requiredOwners = [
+  'AGENTS.md',
+  'CLAUDE.md',
+  'GLOBAL_RULES.md',
+  'docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md',
   'ARCHITECTURE.md',
   'PRODUCT.md',
   'DESIGN.md',
@@ -46,6 +89,45 @@ if (!architecture.includes('| Concern | Binding owner | Projection or boundary |
   errors.push('ARCHITECTURE.md is missing the canonical owner table.');
 }
 
+const visualAuthorityHash = '988c09688e0a02c9138307518c6504e647db5c3a2169081932aa1b747925d4aa';
+const visualAuthorityArchive = '/Users/malikibrahim/Downloads/Cases page design directions.zip';
+const designPath = join(root, 'DESIGN.md');
+const design = readFileSync(designPath, 'utf8');
+if (!design.includes(visualAuthorityArchive) || !design.includes(visualAuthorityHash)) {
+  errors.push('DESIGN.md does not record the supplied visual authority archive and checksum.');
+}
+if (!/supplied visual markup/i.test(architecture) || !architecture.includes('`lib/surfaces/manifest.ts`')) {
+  errors.push('ARCHITECTURE.md does not assign supplied visual markup and its route projection to the canonical owners.');
+}
+const sidecarPath = join(root, '.impeccable', 'design.json');
+if (!existsSync(sidecarPath)) {
+  errors.push('Missing .impeccable/design.json package record.');
+} else {
+  try {
+    const sidecar = JSON.parse(readFileSync(sidecarPath, 'utf8'));
+    const authority = sidecar.extensions?.visualAuthority;
+    if (authority?.archive !== visualAuthorityArchive || authority?.sha256 !== visualAuthorityHash || authority?.shippingPageCount !== 79 || authority?.behaviouralReferenceCount !== 4) {
+      errors.push('.impeccable/design.json does not record the supplied visual authority package exactly.');
+    }
+    const contract = sidecar.extensions?.contract;
+    if (contract?.source !== 'DESIGN.md' || contract?.sourceSha256 !== createHash('sha256').update(design).digest('hex')) {
+      errors.push('.impeccable/design.json is not a current descriptive projection of DESIGN.md.');
+    }
+    if ('entryMinimumViewport' in (sidecar.geometry ?? {}) || 'desktopRequiredBelow' in (sidecar.geometry ?? {})) {
+      errors.push('.impeccable/design.json preserves a superseded mobile-entry or width-only device policy.');
+    }
+  } catch {
+    errors.push('.impeccable/design.json is not valid JSON.');
+  }
+}
+const closureDocument = join(root, 'docs/product/FULL_APP_ACCEPTANCE_REMAINING_CLOSURE_IMPLEMENTATION.md');
+if (existsSync(closureDocument)) {
+  const closureSource = readFileSync(closureDocument, 'utf8');
+  if (/styles\/operations|Evidence Operations Design System|owns visual|sole follow-on implementation authority/i.test(closureSource)) {
+    errors.push('Full-app acceptance closure document still preserves a superseded visual owner.');
+  }
+}
+
 // The owner column is deliberately parsed from the authority index so adding a
 // new concern without a real file cannot silently pass review.
 for (const row of architecture.matchAll(/^\|[^\n]+\|([^\n]+)\|[^\n]+\|$/gm)) {
@@ -59,6 +141,9 @@ for (const row of architecture.matchAll(/^\|[^\n]+\|([^\n]+)\|[^\n]+\|$/gm)) {
 }
 
 const currentDocs = [
+  'AGENTS.md',
+  'GLOBAL_RULES.md',
+  'docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md',
   'ARCHITECTURE.md',
   'PRODUCT.md',
   'DESIGN.md',
@@ -71,6 +156,7 @@ const currentDocs = [
   'docs/product/DEPLOYMENT_READINESS.md',
   'docs/product/DEPENDENCY_UPGRADES.md',
   'docs/product/DEAD_CODE_CANDIDATES.md',
+  'docs/product/FULL_APP_ACCEPTANCE_REMAINING_CLOSURE_IMPLEMENTATION.md',
 ];
 
 for (const doc of currentDocs) {
@@ -176,3 +262,4 @@ if (errors.length) {
 }
 
 console.log(`PASS canonical authority map (${currentDocs.length} current documents; page and capability projections in sync).`);
+}

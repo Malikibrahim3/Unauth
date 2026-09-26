@@ -1,10 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
 import { formatDateTime } from '@/lib/utils/format';
 import { hashId } from '@/lib/ui/displayRef';
-import styles from './AutomationControls.module.css';
+import type { CSSProperties } from 'react';
+const styles: Record<string, CSSProperties> = {
+  flowRunDetail:{display:'grid',gap:14},flowRunSummaryCard:{overflow:'hidden',border:'1px solid #e4e3e0',borderRadius:12,background:'#fff'},flowRunSummaryIdentity:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:14,padding:'14px 16px'},flowRunSummaryBadges:{display:'flex',alignItems:'center',gap:7},flowRunMono:{fontFamily:"'IBM Plex Mono',monospace"},flowRunDetailBadge:{display:'inline-flex',padding:'3px 6px',borderRadius:5,background:'#f2f0ed',fontSize:9.5},flowRunSummaryFacts:{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:1,background:'#eae8e5'},flowRunFailure:{padding:'11px 16px',background:'#fdf0e6',color:'#b0431a',fontSize:11.5},
+  flowRunDetailGrid:{display:'grid',gridTemplateColumns:'minmax(0,1fr) 320px',gap:14,alignItems:'start'},flowRunDetailCard:{overflow:'hidden',border:'1px solid #e4e3e0',borderRadius:12,background:'#fff'},flowRunDetailHeading:{padding:'12px 14px',borderBottom:'1px solid #eae8e5'},flowRunTraceList:{display:'grid'},flowRunTraceStep:{display:'grid',gridTemplateColumns:'34px minmax(0,1fr)',gap:8,padding:'12px 14px',borderBottom:'1px solid #f4f2ef'},flowRunTraceRail:{display:'grid',justifyItems:'center',alignContent:'start'},flowRunTraceBody:{minWidth:0},flowRunTraceHead:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10},flowRunTraceFacts:{display:'grid',gridTemplateColumns:'100px minmax(0,1fr)',gap:'6px 10px',margin:'9px 0 0',fontSize:10.5},flowRunStepNote:{margin:'9px 0 0',padding:9,borderRadius:8,background:'#ffffff',color:'#64686d',fontSize:10.5},flowRunUnavailable:{margin:0,padding:18,color:'#6f6a63',fontSize:11.5},flowRunDetailRail:{display:'grid',gap:12},flowRunDetailFootnote:{margin:0,padding:'10px 14px',borderTop:'1px solid #eae8e5',background:'#ffffff',color:'#6f6a63',fontSize:10.5},flowRunAuditList:{display:'grid',gap:8,margin:0,padding:'12px 14px 12px 30px',fontSize:10.5},flowRunRetryBody:{display:'grid',gap:9,padding:14},flowRunTrigger:{maxHeight:180,overflow:'auto',margin:0,padding:10,borderRadius:8,background:'#f4f3f1',fontSize:10},
+};
 
 type JsonRecord = Record<string, unknown>;
 
@@ -68,7 +72,7 @@ function elapsed(start: string, end: string | null) {
 function humanize(value: string | undefined, fallback = 'Configured action') {
   if (!value) return fallback;
   return value
-    .replaceAll('_', ' ')
+    .replace(/[._]+/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
@@ -89,6 +93,7 @@ function toneFor(status: string, error: string | null) {
 }
 
 export function FlowRunTrace({ data }: { data: FlowRunTraceData }) {
+  const [payloadOpen, setPayloadOpen] = useState(false);
   const configuredOutputs = asOutputs(data.flow?.outputs);
   const expectedCount = Math.max(configuredOutputs.length, data.steps.length);
   const runFailed = Boolean(data.run.error) || data.run.status.toLowerCase() === 'failed';
@@ -109,24 +114,24 @@ export function FlowRunTrace({ data }: { data: FlowRunTraceData }) {
     : humanize(data.run.status, 'Unavailable');
 
   return (
-    <div className={styles.flowRunDetail} data-operations-surface="flow-run-detail">
-      <section className={styles.flowRunSummaryCard} aria-label="Run summary">
-        <div className={styles.flowRunSummaryIdentity}>
-          <div className={styles.flowRunSummaryBadges}>
-            <span className={styles.flowRunMono}>RUN-{hashId(data.run.id).slice(1)}</span>
-            <span className={styles.flowRunDetailBadge} data-tone={runTone}>{runLabel}</span>
-            <span className={styles.flowRunDetailBadge} data-tone="muted">
+    <div style={styles.flowRunDetail} data-operations-surface="flow-run-detail">
+      <section style={styles.flowRunSummaryCard} aria-label="Run summary">
+        <div style={styles.flowRunSummaryIdentity}>
+          <div style={styles.flowRunSummaryBadges}>
+            <span style={styles.flowRunMono}>RUN-{hashId(data.run.id).slice(1)}</span>
+            <span style={styles.flowRunDetailBadge} data-tone={runTone}>{runLabel}</span>
+            <span style={styles.flowRunDetailBadge} data-tone="muted">
               {data.flow ? `v${data.flow.version} ${data.flow.status || 'version'}` : 'Flow unavailable'}
             </span>
           </div>
           <h2>{data.flow?.name ?? 'Originating flow unavailable'}</h2>
           <p>
             Triggered by {humanize(data.event?.event_type ?? data.flow?.trigger_event_type, 'an unavailable event')}
-            {caseId ? <> · <Link href={`/cases/${caseId}`}>{caseId}</Link></> : null}
+            {caseId ? <> · <Link style={{ color: '#9f4f08', textDecoration: 'underline', textUnderlineOffset: '0.2em' }} href={`/cases/${caseId}`}>{caseId}</Link></> : null}
             {' · '}{formatDateTime(data.run.started_at)}
           </p>
         </div>
-        <div className={styles.flowRunSummaryFacts}>
+        <div style={styles.flowRunSummaryFacts}>
           <RunFact label="Duration" value={elapsed(data.run.started_at, data.run.completed_at)} detail={runFailed && failedStep ? `stopped at step ${failedStep.step_index + 1}` : data.run.completed_at ? 'recorded duration' : 'still running'} />
           <RunFact label="Steps run" value={String(data.steps.length)} detail={expectedCount > data.steps.length ? `${expectedCount - data.steps.length} not attempted` : expectedCount ? `${completedSteps.length} completed` : 'no action output'} />
           <RunFact label="Records changed" value={String(recordsChanged)} detail={recordsChanged ? 'recorded outputs' : 'none recorded'} />
@@ -135,8 +140,8 @@ export function FlowRunTrace({ data }: { data: FlowRunTraceData }) {
       </section>
 
       {runFailed ? (
-        <div className={styles.flowRunFailure} role="alert">
-          <TriangleAlert size={15} aria-hidden="true" />
+        <div style={styles.flowRunFailure} role="alert">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7.5 1.8 13.2 12H1.8Z"/><path d="M7.5 5v3.2"/><circle cx="7.5" cy="10.5" r=".55" fill="currentColor" stroke="none"/></svg>
           <p>
             <strong>{failedStep ? `Step ${failedStep.step_index + 1} failed.` : 'This run failed.'}</strong>{' '}
             {failedStep?.error ?? data.run.error ?? 'No retained failure detail is available.'}{' '}
@@ -145,13 +150,13 @@ export function FlowRunTrace({ data }: { data: FlowRunTraceData }) {
         </div>
       ) : null}
 
-      <div className={styles.flowRunDetailGrid}>
-        <section className={styles.flowRunDetailCard} aria-labelledby="execution-trace-title">
-          <div className={styles.flowRunDetailHeading}>
+      <div style={styles.flowRunDetailGrid}>
+        <section style={styles.flowRunDetailCard} aria-labelledby="execution-trace-title">
+          <div style={styles.flowRunDetailHeading}>
             <h2 id="execution-trace-title">Execution trace</h2>
             <p>In order, with the input each step received and the result it produced.</p>
           </div>
-          <div className={styles.flowRunTraceList}>
+          <div style={styles.flowRunTraceList}>
             {traceLength ? Array.from({ length: traceLength }, (_, index) => {
               const step = data.steps.find((candidate) => candidate.step_index === index) ?? data.steps[index] ?? null;
               const configured = configuredOutputs[index] ?? {};
@@ -164,64 +169,65 @@ export function FlowRunTrace({ data }: { data: FlowRunTraceData }) {
               const name = humanize(step?.output_type ?? (typeof configured.type === 'string' ? configured.type : undefined));
               const timestamp = step ? formatDateTime(step.completed_at ?? step.created_at) : '—';
               return (
-                <article className={styles.flowRunTraceStep} key={step?.id ?? `configured-${index}`}>
-                  <div className={styles.flowRunTraceRail}>
+                <article style={styles.flowRunTraceStep} key={step?.id ?? `configured-${index}`}>
+                  <div style={styles.flowRunTraceRail}>
                     <span data-tone={tone}>{index + 1}</span>
                     {index < traceLength - 1 ? <i aria-hidden="true" /> : null}
                   </div>
-                  <div className={styles.flowRunTraceBody}>
-                    <div className={styles.flowRunTraceHead}>
+                  <div style={styles.flowRunTraceBody}>
+                    <div style={styles.flowRunTraceHead}>
                       <strong>{name}</strong>
-                      <span className={styles.flowRunDetailBadge} data-tone={tone}>{status}</span>
+                      <span style={styles.flowRunDetailBadge} data-tone={tone}>{status}</span>
                       <time>{timestamp}</time>
                     </div>
-                    <dl className={styles.flowRunTraceFacts}>
+                    <dl style={styles.flowRunTraceFacts}>
                       <dt>Input</dt>
                       <dd><code>{step ? json(configuredOutputs[index] ?? { event: data.event?.event_type ?? 'Unavailable' }) : '— Not attempted'}</code></dd>
                       <dt>Result</dt>
                       <dd>{step ? <code>{step.error ? '— No result recorded' : json(step.result)}</code> : '— Not attempted'}</dd>
                     </dl>
-                    {step?.error ? <p className={styles.flowRunStepNote} data-tone="critical">{step.error}</p> : null}
-                    {!step && index === traceLength - 1 ? <p className={styles.flowRunStepNote}>A flow cannot make a merchant decision. Any decision boundary stays with an authorised person.</p> : null}
+                    {step?.error ? <p style={styles.flowRunStepNote} data-tone="critical">{step.error}</p> : null}
+                    {!step && index === traceLength - 1 ? <p style={styles.flowRunStepNote}>A flow cannot make a merchant decision. Any decision boundary stays with an authorised person.</p> : null}
                   </div>
                 </article>
               );
-            }) : <p className={styles.flowRunUnavailable}>No bounded action steps were recorded. A non-matching trigger can complete without changing a record.</p>}
+            }) : <p style={styles.flowRunUnavailable}>No bounded action steps were recorded. A non-matching trigger can complete without changing a record.</p>}
           </div>
         </section>
 
-        <aside className={styles.flowRunDetailRail}>
-          <section className={styles.flowRunDetailCard}>
-            <div className={styles.flowRunDetailHeading}>
+        <aside style={styles.flowRunDetailRail}>
+          <section style={styles.flowRunDetailCard}>
+            <div style={styles.flowRunDetailHeading}>
               <h2>Trigger event</h2>
               <p>The event exactly as the flow received it, with sensitive fields redacted.</p>
             </div>
-            <pre className={styles.flowRunTrigger}>{safeTrigger}</pre>
-            <p className={styles.flowRunDetailFootnote}>Sensitive fields and direct identifiers are redacted before this view is rendered.</p>
+            <p style={styles.flowRunDetailFootnote}>Sensitive fields and direct identifiers are redacted before this view is rendered.</p>
+            <button type="button" style={{ margin: '0 14px 14px', padding: '7px 10px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 11.5px/1 'Inter',sans-serif", cursor: 'pointer' }} onClick={() => setPayloadOpen(true)}>Inspect trigger payload</button>
           </section>
 
-          <section className={styles.flowRunDetailCard}>
-            <div className={styles.flowRunDetailHeading}>
+          <section style={styles.flowRunDetailCard}>
+            <div style={styles.flowRunDetailHeading}>
               <h2>Audit events</h2>
               <p>Append-only. A retry would add a new run; it would not rewrite this one.</p>
             </div>
-            <ol className={styles.flowRunAuditList}>
+            <ol style={styles.flowRunAuditList}>
               {data.event ? <AuditRow label={`Trigger received: ${humanize(data.event.event_type)}`} meta={formatDateTime(data.event.occurred_at)} /> : null}
               {data.steps.map((step) => <AuditRow key={step.id} label={`${humanize(step.output_type)} · ${step.error ? 'failed' : humanize(step.status)}`} meta={formatDateTime(step.completed_at ?? step.created_at)} />)}
               {data.run.completed_at ? <AuditRow label={runFailed ? 'Run marked failed' : `Run marked ${humanize(data.run.status).toLowerCase()}`} meta={formatDateTime(data.run.completed_at)} /> : null}
-              {!data.event && !data.steps.length && !data.run.completed_at ? <li className={styles.flowRunUnavailable}>No execution events were retained for this run.</li> : null}
+              {!data.event && !data.steps.length && !data.run.completed_at ? <li style={styles.flowRunUnavailable}>No execution events were retained for this run.</li> : null}
             </ol>
           </section>
 
-          <section className={styles.flowRunDetailCard}>
-            <div className={styles.flowRunDetailHeading}><h2>Retry safely</h2></div>
-            <div className={styles.flowRunRetryBody}>
+          <section style={styles.flowRunDetailCard}>
+            <div style={styles.flowRunDetailHeading}><h2>Retry safely</h2></div>
+            <div style={styles.flowRunRetryBody}>
               <p>A retry must create a new immutable execution. This environment does not expose a retry mutation, so this historic run cannot be replayed from the inspector.</p>
               {flowHref ? <Link href={flowHref}>Open flow</Link> : <span>Originating flow unavailable</span>}
             </div>
           </section>
         </aside>
       </div>
+      {payloadOpen ? <div role="dialog" aria-modal="true" data-overlay-id="flow-run-payload-inspector" style={{ position: 'fixed', zIndex: 80, inset: 0, background: 'rgba(34,29,23,.30)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}><div style={{ width: 720, maxWidth: '100%', maxHeight: '100%', background: '#fff', borderRadius: 14, boxShadow: '0 30px 70px rgba(28,22,14,.34),0 2px 8px rgba(28,22,14,.18)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}><div style={{ padding: '17px 18px 15px', borderBottom: '1px solid #eae8e5', display: 'flex', alignItems: 'flex-start', gap: 12 }}><div style={{ flex: 1 }}><div style={{ font: "500 15px/1.3 'Inter',sans-serif", color: '#1c1f23' }}>Trigger payload</div><div style={{ marginTop: 4, font: "400 12px/1.5 'Inter',sans-serif", color: '#64686d' }}>Read-only provenance from the immutable event that started this run. Sensitive fields are redacted before rendering.</div></div><button type="button" aria-label="Close dialog" onClick={() => setPayloadOpen(false)} style={{ border: 0, padding: 2, background: 'transparent', cursor: 'pointer' }}><svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#64686d" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true"><path d="M2.6 2.6 9.4 9.4M9.4 2.6 2.6 9.4"/></svg></button></div><div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 18px' }}><dl style={styles.flowRunTraceFacts}><dt>Event type</dt><dd>{humanize(data.event?.event_type, 'Unavailable')}</dd><dt>Occurred</dt><dd>{data.event ? formatDateTime(data.event.occurred_at) : '— Unavailable'}</dd><dt>Run</dt><dd><code>RUN-{hashId(data.run.id).slice(1)}</code></dd><dt>Payload</dt><dd><pre style={styles.flowRunTrigger}>{safeTrigger}</pre></dd></dl><p style={styles.flowRunDetailFootnote}>This inspector cannot replay the run, change a record, record a merchant decision, contact a provider, or move money.</p></div></div></div> : null}
     </div>
   );
 }

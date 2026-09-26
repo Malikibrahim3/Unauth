@@ -65,7 +65,7 @@ describe('named report contracts', () => {
 
   it('only marks the confirmed-loss waterfall reconciled when the arithmetic is exact', () => {
     expect(buildFinancialWaterfall(bridge)).toMatchObject({ reconciled: true });
-    expect(buildFinancialWaterfall({ ...bridge, finalNetLossMinor: 5_001 })).toMatchObject({ reconciled: false });
+    expect(buildFinancialWaterfall({ ...bridge, finalNetLossMinor: 5_001 })).toMatchObject({ reconciled: false, adjustmentMinor: 1 });
     expect(buildFinancialWaterfall({ ...bridge, knownStates: bridge.knownStates.filter((state) => state !== 'recovered') })).toMatchObject({ reconciled: false });
   });
 

@@ -42,10 +42,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     patch = { attribution: candidate.attribution, counterparty_type: candidate.accountable_party_type, counterparty_name: candidate.accountable_party_name, attribution_confidence: candidate.confidence };
   }
   if (input.action === 'write_off') {
-    if (model.loss.written_off_at) return NextResponse.json({ error: 'Loss is already written off.' }, { status: 409 });
     if (model.amounts.length === 0) return NextResponse.json({ error: 'A reconciled financial summary is required before write-off.' }, { status: 409 });
     if (model.amounts.length > 1) return NextResponse.json({ error: 'Mixed-currency loss must be written off per currency.' }, { status: 409 });
-    const { error: writeOffError } = await client.rpc('write_off_loss_case', {
+    const { data: writeOffResult, error: writeOffError } = await client.rpc('write_off_loss_case', {
       p_merchant_id: merchantId,
       p_loss_case_id: id,
       p_reason: input.rationale,
@@ -56,7 +55,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const status = writeOffError.message.includes('already_written_off') || writeOffError.message.includes('requires_outstanding') ? 409 : 500;
       return NextResponse.json({ error: status === 409 ? 'Loss cannot be written off in its current financial state.' : 'Could not record write-off' }, { status });
     }
-    return NextResponse.json({ ok: true, loss: await getLossReadModel(client, merchantId, id) });
+    const result = writeOffResult && typeof writeOffResult === 'object'
+      ? writeOffResult as Record<string, unknown>
+      : {};
+    return NextResponse.json({ ok: true, replayed: result.replayed === true, writeOff: result, loss: await getLossReadModel(client, merchantId, id) });
   }
   const { error: updateError } = await client.from(TABLES.LOSS_CASES).update(patch).eq('merchant_id', merchantId).eq('id', id);
   if (updateError) return NextResponse.json({ error: 'Could not update loss' }, { status: 500 });

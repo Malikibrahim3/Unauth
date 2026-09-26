@@ -1,3 +1,4 @@
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 import { redirect } from "next/navigation";
 import {
   hasPermission,
@@ -14,9 +15,11 @@ import {
   FlowsIndexClient,
   type FlowIndexRecord,
 } from "@/components/rules/FlowsIndexClient";
-import { PageFrame } from "@/components/ui";
-import { ControlsNav } from '@/components/rules/ControlsNav';
 import Link from 'next/link';
+import {
+  acceptanceScenarioFromHeaders,
+  throwForAcceptanceScenario,
+} from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +42,8 @@ type FlowRunRow = {
 };
 
 export default async function FlowsPage() {
+  await throwForAcceptanceScenario('flows-error');
+  const acceptanceScenario = await acceptanceScenarioFromHeaders();
   const user = await getRequestUser();
   if (!user) redirect("/login");
   const service = getRequestServiceClient();
@@ -60,9 +65,13 @@ export default async function FlowsPage() {
       .gte('started_at', new Date(Date.now() - 30 * 86_400_000).toISOString()),
     hasPermission(service, ctx, PERMISSIONS.MANAGE_SETTINGS),
   ]);
+  if (rowsResult.error || runsResult.error) throw new Error('Flow registry unavailable. Definitions and run counts could not be verified.');
   const recentRuns = (runsResult.data ?? []) as FlowRunRow[];
   const families = new Map<string, FlowRow[]>();
-  for (const row of (rowsResult.data ?? []) as FlowRow[])
+  const rows = acceptanceScenario === 'flows-empty-state'
+    ? []
+    : (rowsResult.data ?? []) as FlowRow[];
+  for (const row of rows)
     families.set(row.name, [...(families.get(row.name) ?? []), row]);
   const flows: FlowIndexRecord[] = [...families.entries()].map(
     ([name, family]) => {
@@ -103,25 +112,23 @@ export default async function FlowsPage() {
       };
     },
   );
+  const runCount = flows.reduce((total, flow) => total + flow.runCount, 0);
+  const heldCount = flows.reduce((total, flow) => total + flow.heldCount, 0);
   return (
-    <PageFrame
-      title="Flows"
-      subtitle="Flows move work, they don't decide outcomes."
-      meta="A pilot flow draft can plan tasks, evidence requests, deadlines and in-app notifications. It never contacts a provider, submits recovery, decides an outcome or moves money."
-      tabs={<ControlsNav />}
-      surfaceId="flows-registry"
-      archetype="P5"
-      actions={
-        <div className="uo-header-actions">
-          <Link href="/controls/flows/runs" className="ua-button ua-button--secondary ua-button--sm">View activity</Link>
-          {canManage ? <Link href="/controls/flows?new=1" className="ua-button ua-button--primary ua-button--sm">New flow</Link> : null}
-        </div>
-      }
-    >
-        <FlowsIndexClient
-          flows={flows}
-          canManage={canManage}
-        />
-    </PageFrame>
+    <>
+      <SetBreadcrumbLabel label="Flows" detail={`${flows.length} flow families · ${runCount} runs in the last 30 days · ${heldCount} waiting`} />
+      <h1 data-reference-ignore="accessibility-heading" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>Flows</h1>
+      <div style={{ height: 54, flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', borderBottom: '1px solid #eae8e5' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ font: "400 17px/1 'IBM Plex Mono',monospace", color: '#1c1f23' }}>{runCount}</span><span style={{ font: "400 11.5px/1 'Inter',sans-serif", color: '#64686d' }}>runs in 30 days</span></div>
+        <div style={{ width: 1, height: 22, background: '#eae8e5' }}/>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ font: "400 17px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>—</span><span style={{ font: "400 11.5px/1 'Inter',sans-serif", color: '#64686d' }}>recovered through flows</span></div>
+        <div style={{ width: 1, height: 22, background: '#eae8e5' }}/>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ font: "400 17px/1 'IBM Plex Mono',monospace", color: heldCount ? '#c98a1a' : '#40454a' }}>{heldCount}</span><span style={{ font: "400 11.5px/1 'Inter',sans-serif", color: '#64686d' }}>runs waiting</span></div>
+        <div style={{ flex: 1 }}/>
+        <Link href="/controls/flows/runs" style={{ padding: '6px 10px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>View activity</Link>
+        {canManage ? <Link href="/controls/flows?new=1" style={{ padding: '6px 11px', borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>New flow</Link> : null}
+      </div>
+      <FlowsIndexClient flows={flows} canManage={canManage} />
+    </>
   );
 }

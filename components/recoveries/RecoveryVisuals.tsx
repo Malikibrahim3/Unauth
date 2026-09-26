@@ -68,9 +68,9 @@ function RecoveryIntervalPlot({
         barCategoryGap={BAR_CATEGORY_GAP}
         accessibilityLayer
       >
-        <CartesianGrid stroke={theme['--uo-route-chart-grid']} strokeOpacity={0.78} vertical={false} />
-        <XAxis dataKey="label" axisLine={false} tickLine={false} minTickGap={16} tick={{ fontSize: 12, fill: theme['--uo-route-text-tertiary'], fontFamily: 'var(--uo-route-font-sans)' }} />
-        <YAxis axisLine={false} tickLine={false} width={Y_LABEL_GUTTER} tickMargin={Y_LABEL_TICK_MARGIN} tickCount={4} tick={{ fontSize: 12, fill: theme['--uo-route-text-tertiary'], fontFamily: 'var(--uo-route-font-sans)' }} tickFormatter={(value) => money(value, model.currency)} />
+        <CartesianGrid stroke={theme['--authority-chart-grid']} strokeOpacity={0.78} vertical={false} />
+        <XAxis dataKey="label" axisLine={false} tickLine={false} minTickGap={16} tick={{ fontSize: 12, fill: theme['--authority-text-tertiary'], fontFamily: 'Inter,ui-sans-serif,system-ui,sans-serif' }} />
+        <YAxis axisLine={false} tickLine={false} width={Y_LABEL_GUTTER} tickMargin={Y_LABEL_TICK_MARGIN} tickCount={4} tick={{ fontSize: 12, fill: theme['--authority-text-tertiary'], fontFamily: 'Inter,ui-sans-serif,system-ui,sans-serif' }} tickFormatter={(value) => money(value, model.currency)} />
         <Tooltip
           cursor={<ChartCursor />}
           isAnimationActive={false}
@@ -82,18 +82,18 @@ function RecoveryIntervalPlot({
                 value={money(point.receivedMinor, model.currency)}
                 caption={String(label)}
                 series={[
-                  { label: 'New recoverable', value: money(point.newRecoverableMinor, model.currency), colour: theme['--uo-route-chart-neutral-500'] },
-                  { label: 'End-of-week outstanding', value: money(point.outstandingMinor, model.currency), colour: theme['--uo-route-chart-neutral-700'] },
-                  ...(point.writtenOffMinor ? [{ label: 'Written off', value: money(point.writtenOffMinor, model.currency), colour: theme['--uo-route-warning'] }] : []),
-                  { label: 'Supporting recoveries', value: String(point.supportingCount), colour: theme['--uo-route-data-petrol'] },
+                  { label: 'New recoverable', value: money(point.newRecoverableMinor, model.currency), colour: theme['--authority-chart-neutral-500'] },
+                  { label: 'End-of-week outstanding', value: money(point.outstandingMinor, model.currency), colour: theme['--authority-chart-neutral-700'] },
+                  ...(point.writtenOffMinor ? [{ label: 'Written off', value: money(point.writtenOffMinor, model.currency), colour: theme['--authority-warning'] }] : []),
+                  { label: 'Supporting recoveries', value: String(point.supportingCount), colour: theme['--authority-data-petrol'] },
                 ]}
               />
             );
           }}
         />
-        <Bar isAnimationActive={false} dataKey="newRecoverableMinor" name="New recoverable" fill={theme['--uo-route-chart-neutral-500']} radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]} barSize={24} />
-        <Bar isAnimationActive={false} dataKey="receivedMinor" name="Received cash / credit" fill={theme['--uo-route-data-petrol']} radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]} barSize={24} />
-        {showTrajectory ? <Line isAnimationActive={false} type="stepAfter" dataKey="outstandingMinor" name="Outstanding" stroke={theme['--uo-route-chart-neutral-700']} strokeWidth={TREND_LINE_WIDTH} dot={false} activeDot={{ r: 4, fill: theme['--uo-route-chart-neutral-700'], stroke: theme['--uo-route-surface-primary'], strokeWidth: 2 }} connectNulls={false} /> : null}
+        <Bar isAnimationActive={false} dataKey="newRecoverableMinor" name="New recoverable" fill={theme['--authority-chart-neutral-500']} radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]} barSize={24} />
+        <Bar isAnimationActive={false} dataKey="receivedMinor" name="Received cash / credit" fill={theme['--authority-data-petrol']} radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]} barSize={24} />
+        {showTrajectory ? <Line isAnimationActive={false} type="stepAfter" dataKey="outstandingMinor" name="Outstanding" stroke={theme['--authority-chart-neutral-700']} strokeWidth={TREND_LINE_WIDTH} dot={false} activeDot={{ r: 4, fill: theme['--authority-chart-neutral-700'], stroke: theme['--authority-surface-primary'], strokeWidth: 2 }} connectNulls={false} /> : null}
       </ComposedChart>
     </div>
   );
@@ -182,7 +182,7 @@ export function RecoveryCommandCentre({ model }: { model: RecoveryCommandModel }
             ? 'Weekly additions and received cash share one money axis; conversion is kept as a separate KPI.'
             : `${model.intervals.length} exact weekly ${model.intervals.length === 1 ? 'interval' : 'intervals'}; direction is withheld until a third interval is recorded.`}
           scope={`${model.currency} · financial-entry effective dates`}
-          control={<div className="ua-chart-kpi"><strong>{conversionLabel}</strong><span>received ÷ eligible</span></div>}
+          control={<div className="font-semibold tabular-nums text-[#1c1f23]"><strong>{conversionLabel}</strong><span>received ÷ eligible</span></div>}
           legend={<ChartLegend items={[
             { label: 'New recoverable', tone: 'analytical-actual' },
             { label: 'Received cash / credit', tone: 'outcome-recovered' },
@@ -195,7 +195,7 @@ export function RecoveryCommandCentre({ model }: { model: RecoveryCommandModel }
           {hasObservedIntervals ? (
             <div data-history={hasIntervalHistory ? 'trend-ready' : 'observed-only'}>
               {!hasIntervalHistory ? (
-                <p className="ua-observed-history-note" role="status">
+                <p className="text-[11px] leading-[1.45] text-[#64686d]" role="status">
                   Showing recorded weeks only. No trajectory or missing week has been inferred.
                 </p>
               ) : null}

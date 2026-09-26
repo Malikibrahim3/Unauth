@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { ArrowRight, Plus } from "lucide-react";
 import {
   PERMISSIONS,
   resolveDefaultAppPath,
@@ -16,13 +15,12 @@ import { connectionReadModel } from "@/lib/connections/readModel";
 import type { CatalogueRowItem, IntegrationsView } from "@/lib/integrations/catalogueView";
 import { DeferredLiveConnectionVerification } from "@/components/integrations/DeferredLiveConnectionVerification";
 import { ShipBobIntegrationBanner } from "@/components/integrations/ShipBobIntegrationBanner";
-import { ButtonLink } from "@/components/ui";
-import { PageFrame } from "@/components/ui/PageFrame";
 import { SourcesOperations } from "@/components/sources/SourcesOperations";
+import type { RequiredEvidenceLayerId } from "@/lib/sources/evidenceReadiness";
 import {
-  evaluateSourceReadiness,
-  type RequiredEvidenceLayerId,
-} from "@/lib/sources/evidenceReadiness";
+  acceptanceScenarioFromHeaders,
+  throwForAcceptanceScenario,
+} from "@/lib/testing/acceptanceStateInjector";
 
 export const dynamic = "force-dynamic";
 
@@ -53,8 +51,11 @@ export default async function IntegrationsPage({
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_SETTINGS);
   if (!ctx) redirect(await resolveDefaultAppPath(service, user.id));
 
+  await throwForAcceptanceScenario(defaultView === "browse" ? "source-catalogue-error" : "connected-sources-error");
+  const acceptanceScenario = await acceptanceScenarioFromHeaders();
+
   const catalogueRows = await loadConnectorCatalogue(service, ctx.merchantId);
-  const catalogue: CatalogueRowItem[] = catalogueRows.map((item) => {
+  const catalogue: CatalogueRowItem[] = (acceptanceScenario === "connected-sources-empty" ? [] : catalogueRows).map((item) => {
     /*
      * RUN-18: the row's status, badge and note come from the canonical model,
      * not from a parallel resolve. Two sources of truth on one row is exactly
@@ -80,12 +81,6 @@ export default async function IntegrationsPage({
 
   const resolvedSearch = await searchParams;
   const view = resolveView(resolvedSearch?.view, defaultView);
-  const readiness = evaluateSourceReadiness(catalogue);
-  const firstMissingLayer = readiness.firstMissingLayer?.id ?? null;
-  const setupHref = firstMissingLayer
-    ? `/sources/browse?layer=${encodeURIComponent(firstMissingLayer)}`
-    : "/sources/browse";
-  const setupLabel = readiness.ready ? "Add another source" : "Complete source setup";
   const initialStatus = ["all", "connected", "not_connected", "attention", "planned"].includes(resolvedSearch?.status ?? "")
     ? resolvedSearch?.status as "all" | "connected" | "not_connected" | "attention" | "planned"
     : "all";
@@ -106,24 +101,8 @@ export default async function IntegrationsPage({
     <>
       <ShipBobIntegrationBanner />
       <DeferredLiveConnectionVerification />
-      <PageFrame
-        surfaceId={view === "browse" ? "source-catalogue" : "connected-sources"}
-        archetype={view === "browse" ? "P5-catalogue" : "P5-registry"}
-        title="Sources"
-        breadcrumbs={[
-          { label: "Unauth", href: "/overview" },
-          { label: view === "browse" ? "Source catalogue" : "Connected sources" },
-        ]}
-        subtitle="Connect the systems Unauth uses to assemble complete order, support, fulfilment, delivery and payment evidence."
-        actions={
-          <>
-            {view === "browse" ? <ButtonLink href="/sources/connected?view=connected" variant="secondary" size="sm">View connections</ButtonLink> : null}
-            <ButtonLink href={setupHref} size="sm" leadingIcon={readiness.ready ? <Plus size={14} /> : <ArrowRight size={14} />}>
-              {setupLabel}
-            </ButtonLink>
-          </>
-        }
-      >
+      <section data-screen-label={view === 'browse' ? 'Provider catalogue' : 'Connected sources'} data-visual-world="supplied-package" data-surface-id={view === "browse" ? "source-catalogue" : "connected-sources"} data-archetype={view === "browse" ? "P5-catalogue" : "P5-registry"} style={{ width: '100%', maxWidth: '100%', height: '100%', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', color: '#1c1f23' }}>
+        <h1 style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>{view === 'browse' ? 'Provider catalogue' : 'Connected sources'}</h1>
         <SourcesOperations
           items={catalogue}
           view={view}
@@ -131,7 +110,7 @@ export default async function IntegrationsPage({
           initialStatus={initialStatus}
           initialLayer={initialLayer}
         />
-      </PageFrame>
+      </section>
     </>
   );
 }

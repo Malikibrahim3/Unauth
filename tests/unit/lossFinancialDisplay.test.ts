@@ -26,7 +26,7 @@ describe('loss financial display provenance', () => {
     });
   });
 
-  it('preserves a proven zero and the independent recovery estimate fallback', () => {
+  it('preserves proven zero without turning a recovery estimate into eligibility', () => {
     expect(lossFinancialDisplay({
       confirmed_loss_minor: 0,
       estimated_loss_minor: 900,
@@ -36,7 +36,7 @@ describe('loss financial display provenance', () => {
     }, 375)).toEqual({
       realisedLossMinor: 0,
       estimatedLossMinor: null,
-      recoverableMinor: 375,
+      recoverableMinor: null,
       recoveredMinor: 0,
     });
   });

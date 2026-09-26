@@ -12,6 +12,7 @@ import { workflowHandler } from '@/lib/events/handlers/workflowHandler';
 import { exceptionProjection } from '@/lib/events/handlers/exceptionProjection';
 import { auditTimelineProjection } from '@/lib/events/handlers/auditTimelineProjection';
 import { workProjection } from '@/lib/events/handlers/workProjection';
+import { replacementProjection } from '@/lib/events/handlers/replacementProjection';
 import type { DomainEventHandler, DomainEventRecord } from '@/lib/events/handlers/types';
 
 export const DOMAIN_EVENT_HANDLERS: Record<string, DomainEventHandler> = {
@@ -26,6 +27,7 @@ export const DOMAIN_EVENT_HANDLERS: Record<string, DomainEventHandler> = {
   exceptionProjection,
   auditTimelineProjection,
   workProjection,
+  replacementProjection,
 };
 
 type Delivery = { id: string; domain_event_id: string; handler_name: string };

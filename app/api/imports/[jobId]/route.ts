@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { TABLES } from '@/lib/supabase/tables';
+import { buildHoldRateTimeseries } from '@/lib/capabilities/derived';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,5 +25,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ job
     .maybeSingle();
   if (error) return NextResponse.json({ error: 'lookup_failed' }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  return NextResponse.json(data);
+  const recent = await scoped
+    .from(TABLES.PROCESSING_JOBS)
+    .select('created_at,total_rows,failed_rows')
+    .eq('job_kind', 'csv_import')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  return NextResponse.json({
+    ...data,
+    holdRateTimeseries: buildHoldRateTimeseries((recent.data ?? []) as Array<{ created_at: string | null; total_rows: number | null; failed_rows: number | null }>),
+  });
 }

@@ -96,7 +96,7 @@ export function buildCustomerProfileHeroHeader({
       <>
         {status}
         {!viewToken && headerAction ? (
-          <Link href={headerAction.href} className="ua-text-label inline-flex h-8 items-center rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-action-primary)] px-3 text-[var(--uo-route-action-primary-fg)]">
+          <Link href={headerAction.href} className="text-[11px] font-medium leading-4 text-[#64686d] inline-flex h-8 items-center rounded-[8px] bg-[#9f4f08] px-3 text-[#fff]">
             {headerAction.label}
           </Link>
         ) : null}
@@ -104,8 +104,8 @@ export function buildCustomerProfileHeroHeader({
     ),
     meta: (
       <>
-        <span className="inline-flex items-center gap-1.5 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-tertiary)]"><CalendarDays className="h-3 w-3" aria-hidden="true" />Customer since {formatDateAbsolute(profile.first_seen)} · Last active {formatDateAbsolute(profile.last_seen)}</span>
-        {gorgiasSource === 'gorgias' ? <span className="inline-flex items-center gap-1.5 text-[length:var(--uo-route-text-metadata-size)] text-[var(--uo-route-text-secondary)]"><Info className="h-3 w-3" aria-hidden="true" />From Gorgias{gorgiasTicketId ? ` · case #${gorgiasTicketId}` : ''}</span> : null}
+        <span className="inline-flex items-center gap-1.5 text-[length:10.5px] text-[#6f6a63]"><CalendarDays className="h-3 w-3" aria-hidden="true" />Customer since {formatDateAbsolute(profile.first_seen)} · Last active {formatDateAbsolute(profile.last_seen)}</span>
+        {gorgiasSource === 'gorgias' ? <span className="inline-flex items-center gap-1.5 text-[length:10.5px] text-[#64686d]"><Info className="h-3 w-3" aria-hidden="true" />From Gorgias{gorgiasTicketId ? ` · case #${gorgiasTicketId}` : ''}</span> : null}
       </>
     ),
   };
@@ -120,7 +120,7 @@ export function buildCustomerProfileHeroHeader({
  */
 function metricGroupValue(value: string): ReactNode {
   if (value === 'Unavailable') return <UnavailableValue placement="metric" />;
-  if (value.length > 10) return <span className="ua-metric-card__value--long">{value}</span>;
+  if (value.length > 10) return <span className="rounded-xl border border-[#e4e3e0] bg-white">{value}</span>;
   return value;
 }
 

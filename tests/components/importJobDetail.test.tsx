@@ -1,6 +1,7 @@
 /**
  * @jest-environment jsdom
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ replace: jest.fn() }) }));
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
@@ -44,36 +45,35 @@ describe('ImportJobDetail', () => {
   it('renders immutable mapping, row recovery evidence and truthful actions', () => {
     render(<ImportJobDetail job={job()} />);
 
-    expect(screen.getByRole('heading', { name: 'What happened, in order' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Retained mapping snapshot' })).toBeInTheDocument();
+    expect(screen.getByText('MAPPING SNAPSHOT')).toBeInTheDocument();
+    expect(screen.getByText('WHY 1 ROWS WERE HELD')).toBeInTheDocument();
     expect(screen.getByText('external_id')).toBeInTheDocument();
     expect(screen.getByText('external_id missing')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Download error rows' })).toHaveAttribute('href', '/api/imports/job-p05/errors');
+    expect(screen.getByRole('link', { name: 'Download error report' })).toHaveAttribute('href', '/api/imports/job-p05/errors');
     expect(screen.queryByRole('button', { name: 'Cancel job' })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Start a new import' })[0]).toHaveAttribute('href', '/sources/imports?step=upload');
+    expect(screen.getByRole('link', { name: 'Fix the mapping and re-import' })).toHaveAttribute('href', '/sources/imports/job-p05?step=mapping');
   });
 
   it('offers a new import after failure without pretending a retry exists', () => {
     render(<ImportJobDetail job={job({ status: 'failed', processed_rows: 0, completed_at: null, last_error_code: 'commit_failed' })} />);
 
-    expect(screen.getByText(/Failed · no records written/i)).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Start a new import' })[0]).toHaveAttribute('href', '/sources/imports?step=upload');
+    expect(screen.getByText('FAILED')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Fix the mapping and re-import' })).toHaveAttribute('href', '/sources/imports/job-p05?step=mapping');
     expect(screen.queryByRole('button', { name: /Retry/i })).not.toBeInTheDocument();
   });
 
   it('does not mark unrecorded queued stages complete', () => {
     render(<ImportJobDetail job={job({ status: 'queued', total_rows: null, column_map: null, error_log: null, processed_rows: 0, failed_rows: 0, completed_at: null, cursor: { dataset: 'orders', file_name: 'orders.csv' } })} />);
 
-    expect(screen.getByText('Waiting to parse source rows')).toBeInTheDocument();
-    expect(screen.getByText('Waiting for a retained mapping snapshot')).toBeInTheDocument();
-    expect(screen.getByText('Waiting for validation')).toBeInTheDocument();
-    expect(screen.getByText('Waiting to commit')).toBeInTheDocument();
+    expect(screen.getByText('This job did not retain its source-to-ledger mapping snapshot.')).toBeInTheDocument();
+    expect(screen.getByText('No rows were held in the retained job outcome.')).toBeInTheDocument();
   });
 
   it('renders a partial job as a terminal incomplete outcome', () => {
     render(<ImportJobDetail job={job({ status: 'partial', processed_rows: 1, completed_at: '2026-08-07T09:00:04.000Z' })} />);
 
-    expect(screen.getByText(/1 record written · outcome incomplete/)).toBeInTheDocument();
-    expect(screen.queryByText('Waiting to commit')).not.toBeInTheDocument();
+    expect(screen.getByText('WHY 1 ROWS WERE HELD')).toBeInTheDocument();
+    expect(screen.getByText('PARTIAL')).toBeInTheDocument();
+    expect(screen.queryByText('No rows were held in the retained job outcome.')).not.toBeInTheDocument();
   });
 });

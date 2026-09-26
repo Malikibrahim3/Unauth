@@ -1,7 +1,6 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { getClaimSlaState } from '@/lib/claims/sla';
 import { Card, Select, Textarea } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -26,7 +25,7 @@ export function SlaBadge({ claim }: { claim: ClaimRecord }) {
 
 export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="ua-text-label block mb-1" style={{ color: 'var(--uo-route-text-secondary)' }}>
+    <label htmlFor={htmlFor} style={{ display: 'block', marginBottom: 4, color: '#64686d', fontSize: 11, fontWeight: 500, lineHeight: '16px' }}>
       {children}
     </label>
   );
@@ -52,34 +51,32 @@ export function RailSection({
   return (
     <Card unstyled
       variant="panel"
-      className={`overflow-hidden p-0 ${id === 'manage' ? 'ua-focal-panel rounded-none border-x-0 shadow-none' : ''}`}
       style={{
-        borderColor: highlighted ? 'var(--uo-route-text-primary)' : 'var(--uo-route-border-subtle)',
+        overflow: 'hidden',
+        padding: 0,
+        borderRadius: id === 'manage' ? 0 : 12,
+        borderLeft: id === 'manage' ? 0 : undefined,
+        borderRight: id === 'manage' ? 0 : undefined,
+        borderColor: highlighted ? '#1c1f23' : '#eae8e5',
         boxShadow: undefined,
       }}
     >
       <button
         type="button"
         onClick={() => onToggle(id)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left"
-        style={{ background: 'var(--uo-route-surface-primary)' }}
+        style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between', border: 0, padding: '12px 16px', background: '#fff', textAlign: 'left' }}
         aria-expanded={open}
       >
-        <span className="flex items-center gap-1.5 min-w-0">
-          <span className="ua-text-working-title truncate" style={{ color: 'var(--uo-route-text-primary)' }}>{title}</span>
+        <span style={{ display: 'flex', minWidth: 0, alignItems: 'center', gap: 6 }}>
+          <span style={{ overflow: 'hidden', color: '#1c1f23', fontSize: 13, fontWeight: 500, lineHeight: '20px', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
           {badge}
         </span>
         {/* Styled disclosure, not a raw triangle glyph (C11) — matches
          * components/ui/Disclosure's chevron-rotation convention. */}
-        <ChevronDown
-          size={14}
-          aria-hidden="true"
-          className="shrink-0 ml-2 transition-transform duration-[var(--uo-route-duration-fast)]"
-          style={{ transform: open ? 'rotate(180deg)' : undefined, color: 'var(--uo-route-icon-secondary)' }}
-        />
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#64686d" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginLeft: 8, transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 120ms ease' }}><path d="m3.5 5.25 3.5 3.5 3.5-3.5" /></svg>
       </button>
       {open && (
-        <div className="border-t px-4 pb-4 pt-4" style={{ borderColor: 'var(--uo-route-border-subtle)' }}>
+        <div style={{ borderTop: '1px solid #eae8e5', padding: '16px 16px 16px' }}>
           {children}
         </div>
       )}
@@ -89,9 +86,9 @@ export function RailSection({
 
 export function CaseIntelTile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Card unstyled variant="muted" className="min-w-0 px-3 py-2.5">
-      <p className="ua-text-label mb-1" style={{ color: 'var(--uo-route-text-secondary)' }}>{label}</p>
-      <div className="ua-text-dense leading-snug" style={{ color: 'var(--uo-route-text-primary)' }}>{children}</div>
+    <Card unstyled variant="muted" style={{ minWidth: 0, padding: '10px 12px' }}>
+      <p style={{ margin: '0 0 4px', color: '#64686d', fontSize: 11, fontWeight: 500, lineHeight: '16px' }}>{label}</p>
+      <div style={{ color: '#1c1f23', fontSize: 12, lineHeight: 1.45 }}>{children}</div>
     </Card>
   );
 }
@@ -129,12 +126,11 @@ export function ClaimLifecycleStatusBar({
 }) {
   if (claimIsClosed) {
     return (
-      <div className="space-y-2">
-        <p className="ua-text-caption-role">Case archived. Reopen to continue evidence review.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <p style={{ margin: 0, color: '#64686d', fontSize: 11.5, lineHeight: 1.45 }}>Case archived. Reopen to continue evidence review.</p>
         <Textarea
           id="claim-reopen-note"
-          className="resize-none"
-          style={inputStyle()}
+          style={{ ...inputStyle(), resize: 'none' }}
           rows={2}
           placeholder="Reason for reopening"
           value={reopenNote}
@@ -145,8 +141,7 @@ export function ClaimLifecycleStatusBar({
           type="button"
           onClick={onReopen}
           disabled={busy || !claimId || !canReopen}
-          className="ua-text-working-title w-full px-3 py-1.5 rounded-md disabled:opacity-60"
-          style={btnStyle(submitIsPrimary ? 'primary' : 'secondary')}
+          style={{ ...btnStyle(submitIsPrimary ? 'primary' : 'secondary'), width: '100%', padding: '6px 12px', borderRadius: 6, color: '#1c1f23', fontSize: 13, fontWeight: 500, lineHeight: '20px', opacity: busy || !claimId || !canReopen ? .6 : 1 }}
         >
           Reopen case
         </button>
@@ -155,8 +150,8 @@ export function ClaimLifecycleStatusBar({
   }
 
   return (
-    <div className="space-y-2">
-      <label className="block">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <label style={{ display: 'block' }}>
         <FieldLabel htmlFor="claim-lifecycle-status">Review status</FieldLabel>
         <Select
           id="claim-lifecycle-status"
@@ -170,13 +165,12 @@ export function ClaimLifecycleStatusBar({
           ))}
         </Select>
       </label>
-      <label className="block">
+      <label style={{ display: 'block' }}>
         <FieldLabel htmlFor="claim-status-note">Status note (required)</FieldLabel>
         <input
           id="claim-status-note"
           type="text"
-          className="ua-text-body w-full px-2 py-1.5 rounded-md"
-          style={inputStyle()}
+          style={{ ...inputStyle(), boxSizing: 'border-box', width: '100%', padding: '6px 8px', borderRadius: 6, color: '#40454a', fontSize: 13, lineHeight: '20px' }}
           placeholder="e.g. Awaiting delivery proof or customer evidence"
           value={statusNote}
           onChange={(e) => setStatusNote(e.target.value)}
@@ -186,12 +180,11 @@ export function ClaimLifecycleStatusBar({
         type="button"
         onClick={onStatusChange}
         disabled={busy || !claimId}
-        className="ua-text-working-title w-full px-3 py-1.5 rounded-md disabled:opacity-60"
-        style={btnStyle(submitIsPrimary && claimId ? 'primary' : claimId ? 'secondary' : 'disabled')}
+        style={{ ...btnStyle(submitIsPrimary && claimId ? 'primary' : claimId ? 'secondary' : 'disabled'), width: '100%', padding: '6px 12px', borderRadius: 6, color: '#1c1f23', fontSize: 13, fontWeight: 500, lineHeight: '20px', opacity: busy || !claimId ? .6 : 1 }}
       >
         Update review status
       </button>
-      <fieldset className="flex flex-wrap gap-1 border-0 p-0 m-0">
+      <fieldset style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: 0, border: 0, padding: 0 }}>
         <legend className="sr-only">Quick status shortcuts</legend>
         {QUICK_LIFECYCLE_STATUSES.map((item) => (
           <button
@@ -199,11 +192,18 @@ export function ClaimLifecycleStatusBar({
             type="button"
             disabled={busy || !claimId}
             onClick={() => setStatusToSet(item.value)}
-            className="ua-text-label rounded-md border px-2 py-0.5 disabled:opacity-50"
             style={{
-              borderColor: statusToSet === item.value ? 'var(--uo-route-action-primary)' : 'var(--uo-route-border-subtle)',
-              background: 'var(--uo-route-surface-primary)',
-              color: statusToSet === item.value ? 'var(--uo-route-action-primary)' : 'var(--uo-route-text-secondary)',
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderRadius: 6,
+              padding: '2px 8px',
+              fontSize: 11,
+              fontWeight: 500,
+              lineHeight: '16px',
+              opacity: busy || !claimId ? .5 : 1,
+              borderColor: statusToSet === item.value ? '#9f4f08' : '#eae8e5',
+              background: '#fff',
+              color: statusToSet === item.value ? '#9f4f08' : '#64686d',
             }}
           >
             {item.label}

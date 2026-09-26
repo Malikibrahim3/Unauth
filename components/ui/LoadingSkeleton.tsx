@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties } from 'react';
-import { cn } from '@/lib/utils';
 import { DELAY } from '@/lib/design/motion';
 
 export type LoadingSkeletonVariant = 'shell' | 'page' | 'metric-group' | 'table' | 'detail' | 'drawer' | 'form' | 'chart' | 'header' | 'panel';
@@ -11,28 +10,18 @@ type LoadingSkeletonProps = {
   rows?: number;
   title?: string;
   className?: string;
-  /** Internal composition flag; nested geometry must not repeat the live announcement. */
+  style?: CSSProperties;
   announce?: boolean;
-  /**
-   * §7.6: below this, a resource shows no skeleton at all. Internal
-   * recursive composition (the nested table inside `shell`/`page`) passes
-   * `0` — the outer call already absorbed the delay once.
-   */
   delayMs?: number;
 };
 
-/**
- * The one canonical skeleton bone (§7.6). Its background comes from the
- * shared `.skeleton` class (states.css) — callers may pass `style` for
- * geometry (a variable width/height/position) but must never set
- * `background` there, which is exactly how two visually different bone
- * colours coexisted before this consolidation.
- */
-export function Bone({ className, style }: { className?: string; style?: CSSProperties }) {
-  return <div className={cn('skeleton rounded-[var(--uo-route-radius-control)]', className)} style={style} aria-hidden="true" />;
+const stack = (gap: number): CSSProperties => ({ display: 'flex', flexDirection: 'column', gap });
+const roundedPanel: CSSProperties = { overflow: 'hidden', border: '1px solid #e4e3e0', borderRadius: 12 };
+
+export function Bone({ className: _className, style }: { className?: string; style?: CSSProperties }) {
+  return <div style={{ minHeight: 8, borderRadius: 8, background: '#eae8e5', ...style }} aria-hidden="true" />;
 }
 
-/** §7.6: explanatory copy once a resource has been loading for 8s straight. */
 function useSlowLoadNotice(active: boolean): boolean {
   const [slow, setSlow] = useState(false);
   useEffect(() => {
@@ -50,7 +39,8 @@ export function LoadingSkeleton({
   variant = 'page',
   rows = 6,
   title = 'Loading workspace',
-  className,
+  className: _className,
+  style,
   announce = true,
   delayMs = DELAY.skeleton,
 }: LoadingSkeletonProps) {
@@ -65,30 +55,21 @@ export function LoadingSkeleton({
   }, [delayMs]);
 
   const stateProps = { 'aria-busy': true, 'aria-label': title, 'data-skeleton-variant': variant } as const;
-  const announcement = announce ? (
-    <>
-      <span className="sr-only" role="status">{title}</span>
-      {slow ? (
-        <p className="text-caption" style={{ color: 'var(--uo-route-text-tertiary)' }}>
-          This is taking longer than expected.
-        </p>
-      ) : null}
-    </>
-  ) : null;
+  const announcement = announce ? <>
+    <span style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }} role="status">{title}</span>
+    {slow ? <p style={{ margin: 0, color: '#6f6a63', fontSize: 11 }}>This is taking longer than expected.</p> : null}
+  </> : null;
 
-  if (!visible) {
-    // The resource is already busy; only the bone geometry is delayed.
-    return <div className={className} {...stateProps}>{announcement}</div>;
-  }
+  if (!visible) return <div style={style} {...stateProps}>{announcement}</div>;
 
-  if (variant === 'shell') return <div className={cn('flex min-h-screen flex-col gap-4 p-4 sm:p-6', className)} {...stateProps}><Bone className="h-10 w-full" /><div className="flex gap-4"><Bone className="h-[calc(100vh-6rem)] w-56 shrink-0" /><div className="min-w-0 flex-1 space-y-4"><Bone className="h-8 w-56" /><Bone className="h-4 w-full max-w-xl" /><LoadingSkeleton variant="table" rows={rows} title={title} announce={false} delayMs={0} /></div></div>{announcement}</div>;
-  if (variant === 'metric-group') return <div className={cn('ua-metric-group', className)} {...stateProps}>{Array.from({ length: 4 }, (_, index) => <div key={index} className="ua-metric-group__item space-y-2"><Bone className="h-3 w-20" /><Bone className="h-7 w-16" /><Bone className="h-3 w-28" /></div>)}{announcement}</div>;
-  if (variant === 'table') return <div className={cn('overflow-hidden rounded-[var(--uo-route-radius-surface)] border border-[var(--uo-route-border-default)]', className)} {...stateProps}><Bone className="h-[var(--uo-route-table-header-height)] w-full rounded-none" />{Array.from({ length: rows }, (_, index) => <div key={index} className="flex h-[var(--uo-route-table-row-height)] items-center gap-4 border-t border-[var(--uo-route-border-subtle)] px-4"><Bone className="h-4 w-32" /><Bone className="h-4 w-24" /><Bone className="h-4 w-16" /></div>)}{announcement}</div>;
-  if (variant === 'drawer') return <div className={cn('space-y-4 p-4', className)} {...stateProps}><Bone className="h-6 w-48" /><Bone className="h-4 w-full" /><Bone className="h-24 w-full" /><Bone className="h-32 w-full" />{announcement}</div>;
-  if (variant === 'form') return <div className={cn('space-y-4', className)} {...stateProps}>{Array.from({ length: Math.max(3, rows) }, (_, index) => <div key={index} className="space-y-2"><Bone className="h-3 w-28" /><Bone className="h-9 w-full" /></div>)}<Bone className="h-9 w-28" />{announcement}</div>;
-  if (variant === 'chart') return <div className={cn('space-y-3 rounded-[var(--uo-route-radius-surface)] border border-[var(--uo-route-border-default)] p-4', className)} {...stateProps}><Bone className="h-4 w-40" /><Bone className="h-48 w-full" />{announcement}</div>;
-  if (variant === 'header') return <div className={cn('space-y-2 py-4', className)} {...stateProps}><Bone className="h-5 w-40" /><Bone className="h-3 w-full max-w-md" />{announcement}</div>;
-  if (variant === 'panel') return <div className={cn('space-y-3 rounded-[var(--uo-route-radius-surface)] border border-[var(--uo-route-border-default)] p-4', className)} {...stateProps}><Bone className="h-4 w-32" /><Bone className="h-3 w-full max-w-sm" /><Bone className="h-20 w-full" />{announcement}</div>;
-  if (variant === 'detail') return <div className={cn('grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]', className)} {...stateProps}><div className="space-y-3">{Array.from({ length: Math.max(3, rows) }, (_, index) => <Bone key={index} className="h-20 w-full rounded-[var(--uo-route-radius-surface)] border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-primary)]" />)}</div><Bone className="h-72 w-full rounded-[var(--uo-route-radius-surface)] border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-primary)]" />{announcement}</div>;
-  return <div className={cn('space-y-5', className)} {...stateProps}><div className="space-y-2"><Bone className="h-7 w-48" /><Bone className="h-4 w-full max-w-xl" /></div><LoadingSkeleton variant="table" rows={rows} title={title} announce={false} delayMs={0} />{announcement}</div>;
+  if (variant === 'shell') return <div style={{ ...stack(16), minHeight: '100vh', padding: 16, ...style }} {...stateProps}><Bone style={{ width: '100%', height: 40 }} /><div style={{ display: 'flex', gap: 16 }}><Bone style={{ width: 224, height: 'calc(100vh - 6rem)', flexShrink: 0 }} /><div style={{ ...stack(16), minWidth: 0, flex: 1 }}><Bone style={{ width: 224, height: 32 }} /><Bone style={{ width: '100%', maxWidth: 576, height: 16 }} /><LoadingSkeleton variant="table" rows={rows} title={title} announce={false} delayMs={0} /></div></div>{announcement}</div>;
+  if (variant === 'metric-group') return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, overflow: 'hidden', border: '1px solid #e4e3e0', borderRadius: 12, background: '#e4e3e0', ...style }} {...stateProps}>{Array.from({ length: 4 }, (_, index) => <div key={index} style={{ ...stack(8), background: '#fff', padding: 16 }}><Bone style={{ width: 80, height: 12 }} /><Bone style={{ width: 64, height: 28 }} /><Bone style={{ width: 112, height: 12 }} /></div>)}{announcement}</div>;
+  if (variant === 'table') return <div style={{ ...roundedPanel, ...style }} {...stateProps}><Bone style={{ width: '100%', height: 36, borderRadius: 0 }} />{Array.from({ length: rows }, (_, index) => <div key={index} style={{ display: 'flex', height: 44, alignItems: 'center', gap: 16, borderTop: '1px solid #eae8e5', padding: '0 16px' }}><Bone style={{ width: 128, height: 16 }} /><Bone style={{ width: 96, height: 16 }} /><Bone style={{ width: 64, height: 16 }} /></div>)}{announcement}</div>;
+  if (variant === 'drawer') return <div style={{ ...stack(16), padding: 16, ...style }} {...stateProps}><Bone style={{ width: 192, height: 24 }} /><Bone style={{ width: '100%', height: 16 }} /><Bone style={{ width: '100%', height: 96 }} /><Bone style={{ width: '100%', height: 128 }} />{announcement}</div>;
+  if (variant === 'form') return <div style={{ ...stack(16), ...style }} {...stateProps}>{Array.from({ length: Math.max(3, rows) }, (_, index) => <div key={index} style={stack(8)}><Bone style={{ width: 112, height: 12 }} /><Bone style={{ width: '100%', height: 36 }} /></div>)}<Bone style={{ width: 112, height: 36 }} />{announcement}</div>;
+  if (variant === 'chart') return <div style={{ ...stack(12), ...roundedPanel, padding: 16, ...style }} {...stateProps}><Bone style={{ width: 160, height: 16 }} /><Bone style={{ width: '100%', height: 192 }} />{announcement}</div>;
+  if (variant === 'header') return <div style={{ ...stack(8), padding: '16px 0', ...style }} {...stateProps}><Bone style={{ width: 160, height: 20 }} /><Bone style={{ width: '100%', maxWidth: 448, height: 12 }} />{announcement}</div>;
+  if (variant === 'panel') return <div style={{ ...stack(12), ...roundedPanel, padding: 16, ...style }} {...stateProps}><Bone style={{ width: 128, height: 16 }} /><Bone style={{ width: '100%', maxWidth: 384, height: 12 }} /><Bone style={{ width: '100%', height: 80 }} />{announcement}</div>;
+  if (variant === 'detail') return <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 340px', gap: 16, ...style }} {...stateProps}><div style={stack(12)}>{Array.from({ length: Math.max(3, rows) }, (_, index) => <Bone key={index} style={{ width: '100%', height: 80, border: '1px solid #eae8e5', borderRadius: 12, background: '#fff' }} />)}</div><Bone style={{ width: '100%', height: 288, border: '1px solid #eae8e5', borderRadius: 12, background: '#fff' }} />{announcement}</div>;
+  return <div style={{ ...stack(20), ...style }} {...stateProps}><div style={stack(8)}><Bone style={{ width: 192, height: 28 }} /><Bone style={{ width: '100%', maxWidth: 576, height: 16 }} /></div><LoadingSkeleton variant="table" rows={rows} title={title} announce={false} delayMs={0} />{announcement}</div>;
 }

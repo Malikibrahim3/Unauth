@@ -1,6 +1,4 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 import { Bone } from './primitives';
 import { AuthenticatedChartSkeleton, type AuthChartSkeletonVariant } from './AuthenticatedChartSkeleton';
 import { LoadingRecovery } from './LoadingRecovery';
@@ -26,13 +24,13 @@ function InsightBandSkeleton() {
       className="flex items-center gap-3"
       style={{
         padding: '12px 14px',
-        border: '1px solid var(--uo-route-border-default)',
-        borderRadius: 'var(--uo-route-radius-surface)',
-        background: 'var(--uo-route-surface-primary)',
+        border: '1px solid #e4e3e0',
+        borderRadius: '12px',
+        background: '#fff',
         boxShadow: 'none',
       }}
     >
-      <Bone className="h-[30px] w-[30px] rounded-[var(--uo-route-radius-surface)]" />
+      <Bone className="h-[30px] w-[30px] rounded-[12px]" />
       <Bone className="h-3 w-64 max-w-full" />
     </div>
   );
@@ -41,16 +39,16 @@ function InsightBandSkeleton() {
 /** Placeholder for the 310px side-summary rail (a stack of small summary cards). */
 function RailSkeleton() {
   return (
-    <aside className={styles.rail}>
+    <aside style={{ minWidth: 0 }}>
       <div className="grid gap-2.5">
         {RAIL_CARD_KEYS.map((cardKey) => (
           <div
             key={cardKey}
             style={{
               padding: 14,
-              border: '1px solid var(--uo-route-border-default)',
-              borderRadius: 'var(--uo-route-radius-surface)',
-              background: 'var(--uo-route-surface-primary)',
+              border: '1px solid #e4e3e0',
+              borderRadius: '12px',
+              background: '#fff',
               boxShadow: 'none',
             }}
           >
@@ -96,26 +94,27 @@ export function WorkbenchPageSkeleton({
   title?: string;
   children: ReactNode;
 }) {
-  const mainPanel = <section className={cn(styles.panel, styles.mainPanel)}>{children}</section>;
+  const panelStyle = { minWidth: 0, overflow: 'hidden', borderRadius: 12, background: '#fff', boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' } as const;
+  const mainPanel = <section style={panelStyle}>{children}</section>;
   return (
     <div role="status" aria-busy="true" aria-label={`Loading ${title}`} data-skeleton-variant="workbench">
-      <header className={styles.pageHeader}>
-        <div className={styles.headerTop}>
+      <header style={{ width: '100%', padding: '12px 22px 11px', borderBottom: '1px solid #eae8e5', background: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14 }}>
           <div className="min-w-0 space-y-2">
-            <p className="ua-loading-context__scope">Current workspace · route scope preserved</p>
-            <p className="ua-loading-context__title">Preparing {title}</p>
+            <p className="flex items-center gap-3">Current workspace · route scope preserved</p>
+            <p className="font-semibold text-[#1c1f23]">Preparing {title}</p>
             {showNav ? <Bone className="h-3 w-80 max-w-full" /> : null}
           </div>
           {showActions ? <Bone className="h-8 w-28" /> : null}
         </div>
       </header>
 
-      <div className={styles.pageBody}>
-        <div className={styles.workbenchStack}>
+      <div style={{ width: '100%', minHeight: 0, padding: '14px 22px 18px', background: '#fbfaf8' }}>
+        <div style={{ display: 'grid', minWidth: 0, gap: 14, overflowX: 'hidden' }}>
           {kpiCount > 0 ? (
-            <div className={cn(styles.kpiStrip, kpiColsClassName)}>
+            <div className={kpiColsClassName} style={{ display: 'grid', borderRadius: 12, overflow: 'hidden', background: '#fff', boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' }}>
               {KPI_SLOT_KEYS.slice(0, kpiCount).map((slotKey) => (
-                <div key={slotKey} className={styles.kpiItem}>
+                <div key={slotKey} style={{ minWidth: 0, padding: '14px 16px', borderRight: '1px solid #eae8e5' }}>
                   <Bone className="h-2.5 w-20" />
                   <Bone className="mt-2 h-5 w-16" />
                   <Bone className="mt-2 h-2.5 w-24 max-w-full" />
@@ -128,7 +127,7 @@ export function WorkbenchPageSkeleton({
           {visualVariant ? <AuthenticatedChartSkeleton variant={visualVariant} /> : null}
 
           {showActionBar ? (
-            <div className={styles.toolbar}>
+            <div style={{ display: 'flex', minWidth: 0, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <Bone className="h-8 w-full max-w-md" />
               <Bone className="h-8 w-24" />
               <Bone className="h-8 w-20" />
@@ -136,7 +135,7 @@ export function WorkbenchPageSkeleton({
           ) : null}
 
           {showRail ? (
-            <div className={styles.workbenchGrid}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 300px', gap: 14 }}>
               {mainPanel}
               <RailSkeleton />
             </div>

@@ -30,6 +30,6 @@ export const carrierClaimsProvider: IntegrationProvider = {
     { id: 'reconnect', applicability: 'applicable', evidence: 'unavailable', detail: 'Not built.' },
     { id: 'disconnect', applicability: 'applicable', evidence: 'unavailable', detail: 'Not built.' },
     { id: 'freshness_health', applicability: 'applicable', evidence: 'unavailable', detail: 'Not built.' },
-    { id: 'bounded_writeback', applicability: 'applicable', evidence: 'unavailable', detail: 'Claim submission is not built and remains forbidden until reversibility and audit controls exist.' },
+    { id: 'bounded_writeback', applicability: 'applicable', evidence: 'unavailable', detail: 'Claim submission is not built; claimant rights, channel, permission, retry and audit controls require separate verification.' },
   ],
 };

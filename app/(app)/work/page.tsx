@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
-import { WorkbenchPage } from '@/components/ui';
-import { WorkQueueOperations } from '@/components/work/WorkQueueOperations';
+import { ExactWorkQueueOperations } from '@/components/work/ExactWorkQueueOperations';
 import {
   getRequestServiceClient,
   getRequestUser,
@@ -10,12 +9,16 @@ import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { now } from '@/lib/time/clock';
 import { loadWorkOwnerDirectory } from '@/lib/work/owners';
 import { loadWorkQueuePage } from '@/lib/work/store';
+import { TABLES } from '@/lib/supabase/tables';
+import { toMinorUnits } from '@/lib/canonical/money';
+import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 import {
   normaliseWorkPriority,
   normaliseWorkSort,
   normaliseWorkState,
   normaliseWorkView,
 } from '@/lib/work/types';
+import { delayForAcceptanceScenario, throwForAcceptanceScenario } from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +40,8 @@ export default async function WorkPage({
 }: {
   searchParams: Promise<WorkSearchParams>;
 }) {
+  await delayForAcceptanceScenario('operational-list-board-loading-skeleton', 5_000);
+  await throwForAcceptanceScenario('work-error');
   const [user, ctx] = await Promise.all([
     getRequestUser(),
     requirePagePermission(PERMISSIONS.VIEW_INBOX),
@@ -55,11 +60,10 @@ export default async function WorkPage({
     assignee: params.assignee?.trim().slice(0, 80) || null,
     sort: normaliseWorkSort(params.sort),
     page: Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1),
-    pageSize: 25,
+    pageSize: 10,
   };
-  const [canManage, canManageViews, ownerDirectory] = await Promise.all([
+  const [canManage, ownerDirectory] = await Promise.all([
     hasPermission(serviceClient, ctx, PERMISSIONS.MANAGE_WORK),
-    hasPermission(serviceClient, ctx, PERMISSIONS.MANAGE_WORK_VIEWS),
     loadWorkOwnerDirectory(serviceClient, ctx.merchantId),
   ]);
   const canManageAnyAssignment = ctx.role === 'owner' || ctx.role === 'admin';
@@ -72,40 +76,49 @@ export default async function WorkPage({
     filters,
     asOf: referenceTime,
   });
+  const caseIds = [...new Set(result.items.flatMap((item) => item.supportPayoutCaseId ? [item.supportPayoutCaseId] : []))];
+  const financialResult = caseIds.length ? await serviceClient.from(TABLES.MERCHANT_CLAIMS)
+    .select('id,amount_at_risk,currency,source_order_id').eq('merchant_id', ctx.merchantId).in('id', caseIds)
+    : {data: [], error: null};
+  type FinancialRow = { id: string; amount_at_risk: number | string | null; currency: string | null; source_order_id: string | null };
+  const financialRows = (financialResult.error ? [] : financialResult.data ?? []) as FinancialRow[];
+  const financialByCase = new Map(financialRows.map((row) => [row.id, row]));
+  const orderIds = [...new Set([...financialByCase.values()].flatMap((row) => row.source_order_id ? [row.source_order_id] : []))];
+  const orderResult = orderIds.length ? await serviceClient.from(TABLES.SOURCE_ORDERS)
+    .select('id,order_number,customer_name').eq('merchant_id', ctx.merchantId).in('id', orderIds)
+    : {data: [], error: null};
+  type OrderRow = { id: string; order_number: string | null; customer_name: string | null };
+  const orderRows = (orderResult.error ? [] : orderResult.data ?? []) as OrderRow[];
+  const orderById = new Map(orderRows.map((row) => [row.id, row]));
   const items = result.items.map((item) => {
     const owner = item.ownerUserId ? ownerDirectory.get(item.ownerUserId) : null;
+    const financial = item.supportPayoutCaseId ? financialByCase.get(item.supportPayoutCaseId) : null;
+    const order = financial?.source_order_id ? orderById.get(financial.source_order_id) : null;
+    const amount = financial?.amount_at_risk == null ? null : Number(financial.amount_at_risk);
+    const currency = financial?.currency?.toUpperCase() ?? null;
+    const minor = amount != null && Number.isFinite(amount) && currency ? toMinorUnits(amount, currency) : null;
     return {
       ...item,
+      sourceMetadata: {
+        ...item.sourceMetadata,
+        ...(financial ? {amount_minor: minor, currency, amount_display: formatMinorCurrencyNullable(minor, currency)} : {}),
+        ...(order ? {order_ref: order.order_number, customer_name: order.customer_name} : {}),
+      },
       ownerName: owner?.name ?? null,
       ownerInitials: owner?.initials ?? null,
       ownerRole: owner?.role ?? item.ownerRole,
     };
   });
 
-  return (
-    <WorkbenchPage
-      title="Work"
-      subtitle="One source-backed queue for tasks, exceptions and external handoffs."
-      surfaceId="work-queue"
-      archetype="P5/P6"
-      main={(
-        <WorkQueueOperations
+  return <ExactWorkQueueOperations
           items={items}
           total={result.total}
-          view={filters.view}
           viewCounts={result.viewCounts}
           page={result.page}
           pageSize={result.pageSize}
           asOf={referenceTime.toISOString()}
-          initialQuery={filters.search}
           currentUserId={user.id}
           canManage={canManage}
-          canManageViews={canManageViews}
-          sourceNotice={result.notice}
-          savedViewId={params.savedView ?? null}
-        />
-      )}
-      mainSurface="open"
-    />
-  );
+          sourceNotice={[result.notice, financialResult.error ? 'Work item amounts are unavailable from the case source.' : null, orderResult.error ? 'Order identities are unavailable from the source.' : null].filter(Boolean).join(' ') || null}
+        />;
 }

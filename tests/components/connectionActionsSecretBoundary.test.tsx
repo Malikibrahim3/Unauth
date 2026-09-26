@@ -24,8 +24,8 @@ describe('ConnectionActions one-time credential boundary', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect UPS' }));
-    const clientId = await screen.findByLabelText('Client ID');
-    const clientSecret = screen.getByLabelText('Client secret');
+    const clientId = await screen.findByLabelText(/Client ID/i);
+    const clientSecret = screen.getByLabelText(/Client secret/i);
     const accountNumber = screen.getByLabelText(/Shipper account number/i);
     fireEvent.change(clientId, { target: { value: 'client-credential' } });
     fireEvent.change(clientSecret, { target: { value: 'secret-credential' } });
@@ -35,8 +35,8 @@ describe('ConnectionActions one-time credential boundary', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect UPS' }));
-    expect(await screen.findByLabelText('Client ID')).toHaveValue('');
-    expect(screen.getByLabelText('Client secret')).toHaveValue('');
+    expect(await screen.findByLabelText(/Client ID/i)).toHaveValue('');
+    expect(screen.getByLabelText(/Client secret/i)).toHaveValue('');
     expect(screen.getByLabelText(/Shipper account number/i)).toHaveValue('');
   });
 });

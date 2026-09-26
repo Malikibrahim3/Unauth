@@ -1,3 +1,7 @@
+import { loadClaimPatterns, claimPatternFingerprint } from '@/lib/reporting/claimPatternRead';
+import { PATTERN_DIMENSIONS, patternCaseRows, type PatternDimension } from '@/lib/reporting/claimPatterns';
+import { buildClaimPatternExportRows } from '@/lib/reporting/export';
+import { merchantHasEntitlement } from '@/lib/product/requireEntitlement';
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
@@ -60,14 +64,31 @@ export async function GET(request: NextRequest) {
   const range = parseReportRange(
     request.nextUrl.searchParams.get("range") ?? undefined,
   );
-  const timezoneParam = request.nextUrl.searchParams.get("timezone") || "UTC";
-  const timezone = timezoneParam.length < 80 ? timezoneParam : "UTC";
+  const timezoneParam = request.nextUrl.searchParams.get("timezone") || "Europe/London";
+  const timezone = timezoneParam.length < 80 ? timezoneParam : "Europe/London";
+  const asOfParam = request.nextUrl.searchParams.get("asOf");
+  const asOf = asOfParam ? new Date(asOfParam) : new Date();
+  if (Number.isNaN(asOf.getTime())) {
+    return NextResponse.json({ error: "Use a valid asOf instant." }, { status: 400 });
+  }
   const currencyParam = request.nextUrl.searchParams.get("currency");
   const currency = currencyParam ? normaliseCurrencyOrNull(currencyParam) : null;
   if (currencyParam && !currency) {
     return NextResponse.json({ error: "Use a valid ISO currency code." }, { status: 400 });
   }
   const requestedView = request.nextUrl.searchParams.get("view");
+  if (requestedView === 'patterns') {
+    if (!(await merchantHasEntitlement(svc, permission.ctx.merchantId, 'REPORTS_ADVANCED'))) return NextResponse.json({error:'Advanced reports access required.'},{status:403});
+    const dimension = request.nextUrl.searchParams.get('dimension') as PatternDimension;
+    if (!PATTERN_DIMENSIONS.includes(dimension)) return NextResponse.json({error:'Unsupported grouping.'},{status:400});
+    const report = await loadClaimPatterns(svc, permission.ctx.merchantId, range, timezone, asOf);
+    if (claimPatternFingerprint(report) !== request.nextUrl.searchParams.get('fingerprint')) return NextResponse.json({error:'The report changed. Reload and review it before exporting.'},{status:409});
+    if (report.state === 'unavailable' || report.state === 'capped') return NextResponse.json({error:'This cohort cannot be exported. Narrow or retry the report.'},{status:409});
+    const key = request.nextUrl.searchParams.get('group');
+    const rows = buildClaimPatternExportRows(report, dimension, patternCaseRows(report, dimension, key));
+    await logAction({ctx:permission.ctx,action:'export_audit',resourceType:'report',metadata:{view:'patterns',range,dimension,from:report.from,to:report.to,completeness:report.state,rowCount:rows.length-1}});
+    return new NextResponse(csv(rows), {headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="unauth-claim-patterns.csv"','Cache-Control':'private, no-store'}});
+  }
   const view: ReportExportView = requestedView === "outcomes"
     ? "outcomes"
     : requestedView === "records"
@@ -81,13 +102,14 @@ export async function GET(request: NextRequest) {
   const category = (request.nextUrl.searchParams.get("category") ?? "").slice(0, 100) || null;
   if (view === "records") {
     const recordMetric = metric ?? "exposed";
-    const cutoff = reportCutoff(range);
+    const cutoff = reportCutoff(range, asOf);
     const supportingRows: SupportingRecord[] = [];
     let totalCount = 0;
     for (let offset = 0; offset === 0 || offset < totalCount; offset += SUPPORTING_RECORD_PAGE_SIZE) {
-      const page = await svc.rpc("get_financial_report_records", {
+      const page = await svc.rpc("get_financial_report_records_v2", {
         p_merchant_id: permission.ctx.merchantId,
-        p_cutoff: cutoff,
+        p_from: cutoff,
+        p_to: asOf.toISOString(),
         p_currency: currency ?? undefined,
         p_metric: recordMetric,
         p_category: category ?? undefined,
@@ -108,10 +130,10 @@ export async function GET(request: NextRequest) {
       if (rows.length < SUPPORTING_RECORD_PAGE_SIZE) break;
     }
     const rows: unknown[][] = [[
-      "report_version", "range", "timezone", "metric", "category", "currency_scope",
+      "report_version", "range", "timezone", "from_inclusive", "to_exclusive", "as_of", "population", "row_cap", "metric", "category", "currency_scope",
       "case_reference", "case_status", "claim_type", "submitted_at", "updated_at", "currency", "amount_minor",
     ], ...supportingRows.map((row) => [
-      "mvp-plus-financial-v2", range, timezone, recordMetric, category ?? "all", currency ?? "separated",
+      "merchant-clarity-p02-financial-v3", range, timezone, cutoff ?? "all recorded history", asOf.toISOString(), asOf.toISOString(), "merchant_support_payout_cases_by_submitted_at", SUPPORTING_RECORD_LIMIT, recordMetric, category ?? "all", currency ?? "separated",
       hashId(row.support_payout_case_id), row.case_status, row.claim_type, row.submitted_at, row.updated_at,
       row.currency, row.amount_minor,
     ])];
@@ -119,7 +141,7 @@ export async function GET(request: NextRequest) {
       ctx: permission.ctx,
       action: "export_audit",
       resourceType: "report",
-      metadata: { view, range, timezone, currency, metric: recordMetric, category, rowCount: supportingRows.length, rowLimit: SUPPORTING_RECORD_LIMIT },
+      metadata: { view, range, timezone, from: cutoff, to: asOf.toISOString(), asOf: asOf.toISOString(), currency, metric: recordMetric, category, rowCount: supportingRows.length, rowLimit: SUPPORTING_RECORD_LIMIT },
     });
     const encoder = new TextEncoder();
     const body = new ReadableStream({ start(controller) { controller.enqueue(encoder.encode(csv(rows))); controller.close(); } });
@@ -137,6 +159,7 @@ export async function GET(request: NextRequest) {
     permission.ctx.merchantId,
     range,
     timezone,
+    { asOf },
   );
   const scopedReport = currency
     ? {
@@ -145,15 +168,28 @@ export async function GET(request: NextRequest) {
         causes: report.causes.filter((row) => row.currency === currency),
       }
     : report;
-  const rows = buildReportExportRows(scopedReport, view, {
+  const reportRows = buildReportExportRows(scopedReport, view, {
     metric,
     category,
   });
+  const scopeColumns = [
+    "scope_from_inclusive", "scope_to_exclusive", "scope_timezone",
+    "scope_population", "scope_row_cap", "as_of",
+  ];
+  const scopeValues = [
+    report.financialScope?.from ?? "all recorded history",
+    report.financialScope?.to ?? report.generatedAt,
+    report.timezone,
+    report.financialScope?.population ?? "merchant_support_payout_cases",
+    report.financialScope?.rowCap ?? SUPPORTING_RECORD_LIMIT,
+    report.generatedAt,
+  ];
+  const rows = reportRows.map((row, index) => [...row, ...(index === 0 ? scopeColumns : scopeValues)]);
   await logAction({
     ctx: permission.ctx,
     action: "export_audit",
     resourceType: "report",
-    metadata: { view, range, timezone, currency, metric, category, rowCount: rows.length - 1 },
+    metadata: { view, range, timezone, from: report.financialScope?.from ?? null, to: report.financialScope?.to ?? report.generatedAt, asOf: report.generatedAt, currency, metric, category, rowCount: rows.length - 1 },
   });
   return new NextResponse(csv(rows), {
     headers: {

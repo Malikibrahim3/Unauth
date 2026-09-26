@@ -7,10 +7,10 @@ const CURRENT_ROUTES = [
   { path: "/financials/losses", heading: "Loss ledger" },
   { path: "/financials/recovery", heading: "Recovery board" },
   { path: "/customers", heading: "Customers" },
-  { path: "/controls/rules", heading: "Rules" },
+  { path: "/controls/rules", heading: "Payout rules" },
   { path: "/controls/flows", heading: "Flows" },
   { path: "/financials/reports", heading: "Reports" },
-  { path: "/sources/connected", heading: "Sources" },
+  { path: "/sources/connected", heading: "Connected sources" },
   { path: "/notifications", heading: "Notifications" },
   { path: "/settings/workspace/team", heading: "Team" },
 ] as const;
@@ -27,15 +27,19 @@ async function expectNoDocumentOverflow(page: Page) {
     .toBe(true);
 }
 
+async function expectRouteHeading(page: Page, heading: string) {
+  await expect(
+    page.getByRole("heading", { level: 1, name: heading, exact: true }).first(),
+  ).toBeVisible();
+}
+
 test.describe("current merchant experience", () => {
   for (const route of CURRENT_ROUTES) {
     test(`${route.path} renders the current product surface`, async ({
       page,
     }) => {
       await page.goto(route.path);
-      await expect(
-        page.getByRole("heading", { level: 1, name: route.heading }),
-      ).toBeVisible();
+      await expectRouteHeading(page, route.heading);
       await expect(page.getByText("Loading page", { exact: true })).toHaveCount(
         0,
       );
@@ -50,22 +54,24 @@ test.describe("current merchant experience", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Work" }),
     ).toBeVisible();
-    const exceptionRows = page.getByRole("button", {
-      name: /Reconciliation Exception/,
-    });
-    await expect(exceptionRows).not.toHaveCount(0, { timeout: 20_000 });
-    await exceptionRows.first().click();
-    await page.getByRole("link", { name: "Open full record" }).click();
+    const reviewButton = page.getByRole("button", { name: "Review" }).first();
+    await expect(reviewButton).toBeVisible({ timeout: 20_000 });
+    await reviewButton.click();
     await expect(page).toHaveURL(/\/cases\//, { timeout: 30_000 });
     await expect(
-      page.getByRole("region", { name: "Recommendation → decision → external result → money" }),
+      page.getByRole("navigation", { name: "Case file tabs" }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
-      page.getByRole("region", { name: "Evidence and readiness" }),
+      page.getByRole("button", { name: "Evidence", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("region", { name: "Evidence register" }),
+      page.getByRole("button", { name: "Recommendation", exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Review merchant decision" }),
+    ).toBeVisible();
+    await expect(page.getByText("PROVIDER GATES", { exact: true })).toBeVisible();
+    await expect(page.getByText("MONEY & RECOVERY", { exact: true })).toBeVisible();
   });
 
   test("command search opens and returns current navigation results", async ({
@@ -91,23 +97,28 @@ test.describe("current merchant experience", () => {
   }) => {
     await page.goto("/sources/imports?step=upload");
     await expect(
-      page.getByRole("heading", { level: 1, name: "Imports" }),
+      page.getByRole("heading", { level: 1, name: "Imports", exact: true }).first(),
     ).toBeVisible();
-    await page.getByText("Paste CSV text instead", { exact: true }).click();
-    await page
-      .locator("textarea:visible")
-      .fill("external_id,currency,total_minor\nE2E-VALIDATE-ONLY,GBP,8400");
-    await page.getByRole("button", { name: "Continue to mapping" }).click();
+    const uploadDialog = page.getByRole("dialog", { name: "Upload a file" });
+    await expect(uploadDialog).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "validate-only.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from("external_id,currency,total_minor\nE2E-VALIDATE-ONLY,GBP,8400"),
+    });
+    const mappingDialog = page.getByRole("dialog", { name: "Map source columns" });
+    await expect(mappingDialog).toBeVisible({ timeout: 30_000 });
     await expect(page.getByLabel("Map external_id")).toHaveValue("external_id");
     await expect(page.getByLabel("Map currency")).toHaveValue("currency");
     await expect(page.getByLabel("Map total_minor")).toHaveValue("total_minor");
-    await page.getByRole("button", { name: "Validate rows", exact: true }).click();
-    await expect(
-      page.getByText("Every row passed validation.", { exact: true }),
-    ).toBeVisible({ timeout: 30_000 });
-    await expect(
-      page.getByRole("button", { name: "Commit 1 valid rows" }),
-    ).toBeEnabled();
+    await mappingDialog.getByRole("button", { name: "Validate mapping", exact: true }).click();
+    const validationCard = mappingDialog.locator("aside section").filter({ hasText: "VALIDATION" });
+    await expect(validationCard).toContainText(/Rows read\s*1/);
+    await expect(validationCard).toContainText(/Valid\s*1/);
+    await expect(validationCard).toContainText(/Held\s*0/);
+    await expect(validationCard).toContainText(/Duplicates\s*0/);
+    await expect(mappingDialog.getByText("Validation has not run. No row count is inferred.", { exact: true })).toHaveCount(0);
+    await expect(mappingDialog.getByText(/rows posted in job/)).toHaveCount(0);
   });
 
   test("integration catalogue exposes connection health, capability, and provenance", async ({
@@ -115,53 +126,30 @@ test.describe("current merchant experience", () => {
   }) => {
     test.setTimeout(90_000);
     await page.goto("/sources/browse");
+    await expect(page.getByText("connected", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("you could connect today", { exact: true })).toBeVisible();
+    await expect(page.getByText("planned, no date", { exact: true })).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "Minimum evidence stack" }),
-    ).toBeVisible({ timeout: 20_000 });
-    await expect(
-      page.getByText(/\d+ providers?$/).first(),
+      page.getByText("One layer decides most answers", { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText(/\d+ in the canonical registry/).first(),
+      page.getByRole("region", { name: "ORDERS AND MONEY" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /Needs attention \d+/ }),
+      page.getByRole("region", { name: "SUPPORT AND EVIDENCE" }),
     ).toBeVisible();
-    const connectorLink = page
-      .locator('a[href^="/sources/"]')
-      .filter({ hasText: "Details" })
-      .first();
+    const connectorLink = page.getByRole("link", { name: "Shopify AVAILABLE", exact: true });
     await expect(connectorLink).toBeVisible();
     await connectorLink.click();
-    await expect(page).toHaveURL(/\/sources\/[^/?]+(?:\?|$)/, {
+    await expect(page).toHaveURL(/\/sources\/setup\/shopify(?:\?|$)/, {
       timeout: 60_000,
     });
     await expect(
-      page.getByRole("heading", {
-        level: 2,
-        name: "What this source is allowed to do",
-      }),
+      page.getByTestId("source-setup-wizard"),
     ).toBeVisible({ timeout: 60_000 });
-    await expect(
-      page.getByText("Records held", { exact: true }).first(),
-    ).toBeVisible({ timeout: 60_000 });
-    await expect(
-      page.getByText(/Runtime verification pending/).first(),
-    ).toBeVisible();
-    const retainedRunHistory = page.getByRole("heading", {
-      level: 2,
-      name: "Sync and import history",
-    });
-    const explicitNoRunHistory = page.getByText(
-      "No sync history is inferred from connection state.",
-      { exact: true },
-    );
-    await expect(
-      retainedRunHistory.or(explicitNoRunHistory).first(),
-    ).toBeVisible({ timeout: 60_000 });
-    await expect(
-      page.getByRole("heading", { level: 2, name: "Configuration" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Connect Shopify", exact: true })).toBeVisible();
+    await expect(page.getByText(/provider access, field coverage and activation as separate decisions/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Continue to mapping", exact: true })).toBeVisible();
     await expectNoDocumentOverflow(page);
   });
 
@@ -172,24 +160,22 @@ test.describe("current merchant experience", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Reports" }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: "How did requested value become final net loss?" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Is exposure outpacing recovery?" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Which causes make up confirmed loss?" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /Open loss causes/ }),
-    ).toBeVisible();
+    const reportSurface = page.locator('[data-surface-id="financial-reports"]');
+    await expect(reportSurface).toBeVisible();
+    for (const label of [
+      "WHERE THIS PERIOD’S LOSS ENDED UP",
+      "BY CAUSE",
+      "EXCLUDED FROM EVERY FIGURE",
+      "SAVED REPORTS",
+    ]) {
+      await expect(reportSurface.getByText(label, { exact: true })).toBeVisible();
+    }
+    await expect(page.getByRole("link", { name: "Export CSV" })).toBeVisible();
     await expect(page.locator("main canvas")).toHaveCount(0);
     await expect(page.locator("main .recharts-wrapper")).toHaveCount(0);
-    await expect(page.getByRole("img", { name: /Cumulative maximum exposure and recovered cash/ })).toBeVisible();
-    await expect(page.getByText("View chart data").first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Open a report" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Metric definitions" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /records$/ }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "a ledger entry", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Attribution", exact: true })).toBeVisible();
     await expect(page.getByText("Case financials", { exact: true })).toHaveCount(0);
     await expect(page.getByText("How is financial value accumulating?", { exact: true })).toHaveCount(0);
   });

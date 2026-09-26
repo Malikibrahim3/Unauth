@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { AlertTriangle } from "lucide-react";
 import { AUTH_RETURN_COOKIE } from "@/lib/auth/routeContinuity";
 import {
   pendingResourceCount,
@@ -33,7 +32,7 @@ function stateFromMarker(marker: string | undefined): TerminalRouteState | null 
 }
 
 export function detectTerminalRouteState(root: HTMLElement): TerminalRouteState | null {
-  const routeRoot = root.querySelector<HTMLElement>(":scope > [data-surface-id], :scope > [data-state-id]");
+  const routeRoot = root.querySelector<HTMLElement>("[data-surface-id], [data-state-id]");
   if (!routeRoot) return null;
   if (routeRoot.matches('[aria-busy="true"]') || routeRoot.querySelector('[aria-busy="true"]')) return null;
 
@@ -72,13 +71,28 @@ export function RouteReadinessBoundary({ children }: { children: ReactNode }) {
     const root = rootRef.current;
     if (!root) return;
     setState("loading");
+    let settleTimer: number | null = null;
     const update = () => {
       if (pendingResourceCount() > 0) {
+        if (settleTimer !== null) {
+          window.clearTimeout(settleTimer);
+          settleTimer = null;
+        }
         setState("loading");
         return;
       }
       const next = detectTerminalRouteState(root);
-      if (next) setState(next);
+      if (!next || settleTimer !== null) return;
+      // The page may already contain the final supplied tree when the last
+      // resource settles. Do not keep that visible tree inert for an
+      // additional debounce window; the boundary is already observing both
+      // resource settlement and the DOM mutation that produced it.
+      settleTimer = window.setTimeout(() => {
+        settleTimer = null;
+        if (pendingResourceCount() !== 0) return;
+        const settled = detectTerminalRouteState(root);
+        if (settled) setState(settled);
+      }, 0);
     };
     update();
     const observer = new MutationObserver(update);
@@ -90,32 +104,27 @@ export function RouteReadinessBoundary({ children }: { children: ReactNode }) {
     return () => {
       observer.disconnect();
       unsubscribePending();
+      if (settleTimer !== null) window.clearTimeout(settleTimer);
       window.clearTimeout(timeout);
     };
   }, [pathname]);
 
   const resolved = state !== "loading" && state !== "timeout";
+  // Readiness is observational, not an interaction lock. A missing marker,
+  // slow resource or timeout must never disable navigation and recovery.
+  // Individual forms and modal focus guards own their disabled states.
   return (
     <div
       ref={rootRef}
-      className="ua-route-readiness"
       data-readiness="data-resolved"
       data-data-resolved={resolved ? "true" : "false"}
       data-route-state={state}
       data-requested-path={pathname}
+      aria-busy={!resolved || undefined}
+      style={{ display: 'contents' }}
     >
       {children}
-      {state === "timeout" ? (
-        <section className="ua-route-timeout" role="alert" data-state-id="route-readiness-timeout">
-          <AlertTriangle size={18} aria-hidden="true" />
-          <div>
-            <h2>This page is taking too long to load</h2>
-            <p>The requested route is still open. Reload it to retry the session and data request.</p>
-          </div>
-          <button type="button" onClick={() => window.location.reload()}>Reload page</button>
-        </section>
-      ) : null}
-      <span className="sr-only" role="status" aria-live="polite">
+      <span role="status" aria-live="polite" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>
         {state === "loading" ? "Loading page data" : state === "timeout" ? "Page loading timed out" : `Page ${state}`}
       </span>
     </div>

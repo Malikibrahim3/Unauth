@@ -3,6 +3,9 @@ import path from 'node:path';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const storageState = path.join(__dirname, 'current/.auth/storage-state.json');
+const forensicBrowser = process.env.UNAUTH_FORENSIC_BROWSER ?? 'chromium';
+if (!['chromium', 'firefox', 'webkit'].includes(forensicBrowser)) throw new Error('Unsupported forensic browser');
+const desktopDevice = forensicBrowser === 'firefox' ? devices['Desktop Firefox'] : forensicBrowser === 'webkit' ? devices['Desktop Safari'] : devices['Desktop Chrome'];
 
 export default defineConfig({
   testDir: './current',
@@ -27,13 +30,13 @@ export default defineConfig({
   webServer: {
     command: 'npm run start',
     url: `${baseURL}/login`,
-    reuseExistingServer: process.env.RELEASE_E2E_LOCAL !== '1',
+    reuseExistingServer: process.env.RELEASE_E2E_LOCAL !== '1' || process.env.PLAYWRIGHT_REUSE_SERVER === '1',
     timeout: 120_000,
   },
   projects: [
     {
       name: 'desktop',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      use: { ...desktopDevice, browserName: forensicBrowser as 'chromium' | 'firefox' | 'webkit', viewport: { width: 1440, height: 900 } },
     },
     {
       name: 'tablet',

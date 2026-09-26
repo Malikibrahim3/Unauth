@@ -101,6 +101,8 @@ export const TABLES = {
   RECORD_MATCH_RESOLUTIONS: 'record_match_resolutions',
   CASE_FINANCIAL_ENTRIES: 'case_financial_entries',
   CASE_FINANCIAL_SUMMARIES: 'case_financial_summaries',
+  DATA_SUBJECT_ERASURE_RECEIPTS: 'data_subject_erasure_receipts',
+  PRIVACY_STORAGE_CLEANUP_JOBS: 'privacy_storage_cleanup_jobs',
   // ── Canonical entity model (Phase 3) ──
   MERCHANT_CUSTOMER_SIGNALS: 'merchant_customer_signals',
   SOURCE_TICKETS: 'source_tickets',
@@ -139,6 +141,8 @@ export const TABLES = {
   CASE_OUTCOME_EVENTS: 'case_outcome_events',
   PROVIDER_CREDIT_RECORDS: 'provider_credit_records',
   PROVIDER_CREDIT_EVENTS: 'provider_credit_events',
+  FINANCIAL_PERIOD_CLOSURES: 'financial_period_closures',
+  REPORT_RUN_SNAPSHOTS: 'report_run_snapshots',
   RECOVERY_CLAIM_PACKS: 'recovery_claim_packs',
   RECOVERY_CLAIM_SUBMISSIONS: 'recovery_claim_submissions',
   RECOVERY_PROVIDER_RESPONSES: 'recovery_provider_responses',

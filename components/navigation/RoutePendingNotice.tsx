@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { DELAY } from '@/lib/design/motion';
 
 /**
- * Instrument Grade. After 8s of a genuinely pending navigation the product
+ * Evidence Operations. After 8s of a genuinely pending navigation the product
  * explains itself rather than leaving an indefinite loader.
  *
  * It deliberately claims nothing it cannot know: not cancellation, not failure,
@@ -34,9 +34,9 @@ export default function RoutePendingNotice({ pendingHref }: { pendingHref: strin
     <div
       role="status"
       aria-live="polite"
-      className="ua-auth-surface fixed inset-x-0 bottom-4 z-[var(--uo-route-z-toast)] mx-auto flex w-fit max-w-[min(560px,calc(100%-var(--uo-route-space-8)))] items-center gap-[var(--uo-route-space-3)] rounded-[var(--uo-route-radius-overlay)] border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] px-[var(--uo-route-space-4)] py-[var(--uo-route-space-2-5)] shadow-[var(--uo-route-shadow-menu)]"
+      className="fixed inset-x-0 bottom-4 z-[80] mx-auto flex w-fit max-w-[min(560px,calc(100%-2rem))] items-center gap-3 rounded-[14px] border border-[#e4e3e0] bg-white px-4 py-3 text-[#1c1f23] shadow-[0_12px_30px_rgba(28,27,25,.12)]"
     >
-      <p className="m-0 text-[length:var(--uo-route-text-dense-size)] leading-[var(--uo-route-text-dense-leading)] text-[var(--uo-route-text-secondary)]">
+      <p className="m-0 text-[12px] leading-5 text-[#64686d]">
         This page is taking longer than expected.
       </p>
       {sameOriginPath ? (

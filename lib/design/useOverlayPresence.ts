@@ -18,6 +18,8 @@ type Options = {
   exitDurationMs?: number;
   trapFocus?: boolean;
   restoreFocus?: boolean;
+  /** Explicit opener for browsers that do not focus pointer-clicked buttons. */
+  restoreFocusTarget?: RefObject<HTMLElement | null>;
   lockBodyScroll?: boolean;
   closeOnEscape?: boolean;
   closeOnOutsideClick?: boolean;
@@ -39,6 +41,7 @@ export function useOverlayPresence({
   exitDurationMs = DURATION.base,
   trapFocus = false,
   restoreFocus = trapFocus,
+  restoreFocusTarget,
   lockBodyScroll = false,
   closeOnEscape = Boolean(onClose),
   closeOnOutsideClick = false,
@@ -84,7 +87,8 @@ export function useOverlayPresence({
   useEffect(() => {
     if (!restoreFocus || !mounted) return;
     if (!returnFocusRef.current) {
-      returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      returnFocusRef.current = restoreFocusTarget?.current
+        ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     }
     return () => {
       const target = returnFocusRef.current;
@@ -94,7 +98,7 @@ export function useOverlayPresence({
       // contract as animated closes. One frame lets the shell lose `inert`.
       requestAnimationFrame(() => target?.focus({ preventScroll: true }));
     };
-  }, [restoreFocus, mounted]);
+  }, [restoreFocus, restoreFocusTarget, mounted]);
 
   useEffect(() => {
     if (!trapFocus || !mounted) return;

@@ -242,7 +242,7 @@ function matchesView(row: RawWorkQueueRow, filters: WorkQueueFilters, userId: st
     case 'mine': return active && !snoozed && row.owner_user_id === userId;
     case 'unassigned': return active && !snoozed && row.owner_user_id == null;
     case 'snoozed': return snoozed;
-    case 'completed': return isFinalWorkState(row);
+    case 'completed': return ['completed', 'resolved', 'dismissed'].includes(row.status);
     case 'blocked': return active && !snoozed && row.status === 'blocked';
     case 'evidence-needed': return active && !snoozed && (row.task_kind === 'evidence_gap' || row.blocking_reason?.toLowerCase().includes('evidence') === true);
     case 'decision-needed': return active && !snoozed && (row.task_kind === 'decision' || `${row.title} ${row.blocking_reason ?? ''}`.toLowerCase().includes('decision'));
@@ -277,7 +277,7 @@ function compatibilityCounts(rows: RawWorkQueueRow[], userId: string, nowMs: num
     'evidence-needed': actionable.filter((row) => row.task_kind === 'evidence_gap' || row.blocking_reason?.toLowerCase().includes('evidence') === true).length,
     'decision-needed': actionable.filter((row) => row.task_kind === 'decision' || `${row.title} ${row.blocking_reason ?? ''}`.toLowerCase().includes('decision')).length,
     'integration-exceptions': actionable.filter((row) => row.kind === 'exception').length,
-    completed: rows.filter(isFinalWorkState).length,
+    completed: rows.filter((row) => ['completed', 'resolved', 'dismissed'].includes(row.status)).length,
   };
 }
 

@@ -5,34 +5,39 @@ const read = (relativePath: string) => fs.readFileSync(path.join(process.cwd(), 
 
 describe('UX9-7 public, auth, support, and root structure', () => {
   it('replaces internal landing placeholders with current proof and truthful fallbacks', () => {
-    const model = read('app/(public)/landing/_components/neutral/neutralLandingViewModel.ts');
-    const artifact = read('app/(public)/landing/_components/neutral/NeutralArtifact.tsx');
-    expect(model).toContain("src: '/product-proof/hero-case-gate-hold-signal-3420x1920.png'");
-    expect(artifact).toContain("data-artifact-state={spec.src ? 'ready' : 'truthful-fallback'}");
-    expect(artifact).not.toContain('ARTWORK PLACEHOLDER — NOT FINAL');
+    const landing = read('app/(public)/landing/_components/operations/PublicLanding.tsx');
+    expect(landing).toContain('Refunds, disputes and lost parcels are decided somewhere. Usually nowhere you can find later.');
+    expect(landing).toContain('ONE CASE, END TO END');
+    expect(landing).toContain('This is the desk, on a real Tuesday');
+    expect(landing).toContain('data-screen-label="Landing"');
+    expect(landing).not.toContain('visualAuthorityStyles');
+    expect(landing).not.toContain('ARTWORK PLACEHOLDER — NOT FINAL');
   });
 
   it('keeps plan intent server-confirmed and visible during account entry', () => {
     const signup = read('app/(public)/signup/page.tsx');
     const login = read('app/(auth)/login/page.tsx');
-    expect(signup).toContain('Requested plan intent');
-    expect(signup).toContain('billing changes only after provider confirmation');
+    const loginVisual = read('components/visual-authority/generated/Login-Clean.tsx');
+    expect(signup).toContain('planCarry');
+    expect(signup).toContain('subscription_intent_key');
+    expect(signup).toContain('plan request could not be saved');
     expect(signup).toContain("parseRequestedPlanId(searchParams.get('plan'))");
     expect(signup).toContain('safeRedirectPath(requestedNext)');
-    expect(login).toContain('Need an account?');
+    expect(login).toContain('LoginVisual');
+    expect(loginVisual).toContain('No workspace yet?');
     expect(login).toContain('safeRedirectPath(requestedNext)');
   });
 
   it('uses stable audited IDs across Phase 7 route owners', () => {
     const checks: Array<[string, string]> = [
-      ['app/(public)/landing/_components/neutral/NeutralLanding.tsx', 'marketing-landing'],
-      ['components/public/Challenge6PublicPages.tsx', 'interactive-product-demo'],
+      ['app/(public)/landing/_components/operations/PublicLanding.tsx', 'marketing-landing'],
+      ['components/public/PublicOperationsPages.tsx', 'interactive-product-demo'],
       ['app/(public)/signup/page.tsx', 'create-account'],
       ['app/(auth)/login/page.tsx', 'sign-in'],
       ['app/(auth)/reset/page.tsx', 'password-reset-sent-state'],
       ['app/(auth)/reset/update/page.tsx', 'set-new-password'],
       ['components/notifications/NotificationCentre.tsx', 'notifications-inbox'],
-      ['app/(app)/search/page.tsx', 'search-route'],
+      ['components/search/WorkspaceSearch.tsx', 'search-route'],
       ['components/help/HelpCentre.tsx', 'help-index'],
       ['app/(app)/help/[articleSlug]/page.tsx', 'help-article'],
       ['app/not-found.tsx', 'root-not-found'],
@@ -42,7 +47,7 @@ describe('UX9-7 public, auth, support, and root structure', () => {
   });
 
   it('keeps legal facts gated while adding document identity and keyboard anchors', () => {
-    const legal = read('components/public/Challenge6Legal.tsx');
+    const legal = read('components/public/PublicOperationsLegal.tsx');
     expect(legal).toContain('data-release-status="blocked-unapproved"');
     expect(legal).toContain('named legal entity');
     expect(legal).toContain('aria-label="On this page"');
@@ -60,8 +65,11 @@ describe('UX9-7 public, auth, support, and root structure', () => {
     for (const state of ['You are caught up', 'Nothing needs you', 'No source notifications', 'No notifications yet']) expect(notifications).toContain(state);
     for (const state of ['No match in this search scope', 'Workspace records are restricted', 'Workspace search is unavailable']) expect(search).toContain(state);
     expect(search).toContain('No partial count is shown');
-    expect(help).toContain("window.history.replaceState(null, '', term ? `/help?q=");
-    expect(rootError).toContain('does not infer that it succeeded or failed');
-    expect(rootError).toContain('mailto:support@unauth.app');
+    expect(help).toContain("url.searchParams.set('q', term)");
+    expect(help).toContain("url.searchParams.delete('q')");
+    expect(help).toContain('`${url.pathname}${url.search}${url.hash}`');
+    expect(rootError).toContain('GlobalErrorVisual');
+    expect(rootError).toContain("'data-surface-id': 'root-global-error'");
+    expect(rootError).toContain('data-state-id');
   });
 });

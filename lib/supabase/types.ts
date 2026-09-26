@@ -34,6 +34,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      merchant_rule_input_versions: {
+        Row: { merchant_id: string; revision: number }
+        Insert: { merchant_id: string; revision?: number }
+        Update: { merchant_id?: string; revision?: number }
+        Relationships: [{ foreignKeyName: "merchant_rule_input_versions_merchant_id_fkey"; columns: ["merchant_id"]; isOneToOne: true; referencedRelation: "merchants"; referencedColumns: ["id"] }]
+      }
       access_audit_log: {
         Row: {
           created_at: string
@@ -2052,6 +2058,188 @@ export type Database = {
           },
         ]
       }
+      case_replacement_authorisation_items: {
+        Row: {
+          case_claimed_item_id: string
+          case_decision_id: string
+          cost_provenance: Json
+          created_at: string
+          currency: string
+          external_action_id: string
+          id: string
+          line_external_id: string
+          merchant_id: string
+          quantity: number
+          sku: string | null
+          source_order_id: string
+          source_order_line_id: string
+          support_payout_case_id: string
+          title: string | null
+          variant_ref: string | null
+        }
+        Insert: {
+          case_claimed_item_id: string
+          case_decision_id: string
+          cost_provenance?: Json
+          created_at?: string
+          currency: string
+          external_action_id: string
+          id?: string
+          line_external_id: string
+          merchant_id: string
+          quantity: number
+          sku?: string | null
+          source_order_id: string
+          source_order_line_id: string
+          support_payout_case_id: string
+          title?: string | null
+          variant_ref?: string | null
+        }
+        Update: {
+          case_claimed_item_id?: string
+          case_decision_id?: string
+          cost_provenance?: Json
+          created_at?: string
+          currency?: string
+          external_action_id?: string
+          id?: string
+          line_external_id?: string
+          merchant_id?: string
+          quantity?: number
+          sku?: string | null
+          source_order_id?: string
+          source_order_line_id?: string
+          support_payout_case_id?: string
+          title?: string | null
+          variant_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_replacement_authorisation_item_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "case_replacement_authorisation_item_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_authorisation_items_case_claimed_item_id_fkey"
+            columns: ["case_claimed_item_id"]
+            isOneToOne: false
+            referencedRelation: "case_claimed_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_authorisation_items_case_decision_id_fkey"
+            columns: ["case_decision_id"]
+            isOneToOne: false
+            referencedRelation: "case_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_authorisation_items_external_action_id_fkey"
+            columns: ["external_action_id"]
+            isOneToOne: false
+            referencedRelation: "connector_action_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_authorisation_items_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_authorisation_items_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_authorisation_items_source_order_line_id_fkey"
+            columns: ["source_order_line_id"]
+            isOneToOne: false
+            referencedRelation: "source_order_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_replacement_corroborations: {
+        Row: {
+          created_at: string
+          external_action_id: string
+          id: string
+          merchant_id: string
+          observed_at: string
+          quantity: number
+          replacement_authorisation_item_id: string
+          source_external_id: string
+          source_replacement_id: string
+          source_status: string | null
+        }
+        Insert: {
+          created_at?: string
+          external_action_id: string
+          id?: string
+          merchant_id: string
+          observed_at: string
+          quantity: number
+          replacement_authorisation_item_id: string
+          source_external_id: string
+          source_replacement_id: string
+          source_status?: string | null
+        }
+        Update: {
+          created_at?: string
+          external_action_id?: string
+          id?: string
+          merchant_id?: string
+          observed_at?: string
+          quantity?: number
+          replacement_authorisation_item_id?: string
+          source_external_id?: string
+          source_replacement_id?: string
+          source_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_replacement_corroboratio_replacement_authorisation_it_fkey"
+            columns: ["replacement_authorisation_item_id"]
+            isOneToOne: false
+            referencedRelation: "case_replacement_authorisation_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_corroborations_external_action_id_fkey"
+            columns: ["external_action_id"]
+            isOneToOne: false
+            referencedRelation: "connector_action_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_corroborations_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_replacement_corroborations_source_replacement_id_fkey"
+            columns: ["source_replacement_id"]
+            isOneToOne: false
+            referencedRelation: "source_replacements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_applicability: {
         Row: {
           category: string
@@ -3826,6 +4014,75 @@ export type Database = {
           },
           {
             foreignKeyName: "extracted_partner_terms_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_period_closures: {
+        Row: {
+          acknowledged_blocker_ids: string[]
+          actor_user_id: string | null
+          created_at: string
+          domain_event_id: string | null
+          id: string
+          idempotency_key: string
+          merchant_id: string
+          note: string | null
+          period: string
+          period_end: string
+          period_start: string
+          position_snapshot: Json
+          request_fingerprint: string
+          settlement_snapshot: Json
+          signed_off_at: string
+        }
+        Insert: {
+          acknowledged_blocker_ids?: string[]
+          actor_user_id?: string | null
+          created_at?: string
+          domain_event_id?: string | null
+          id?: string
+          idempotency_key: string
+          merchant_id: string
+          note?: string | null
+          period: string
+          period_end: string
+          period_start: string
+          position_snapshot: Json
+          request_fingerprint: string
+          settlement_snapshot: Json
+          signed_off_at?: string
+        }
+        Update: {
+          acknowledged_blocker_ids?: string[]
+          actor_user_id?: string | null
+          created_at?: string
+          domain_event_id?: string | null
+          id?: string
+          idempotency_key?: string
+          merchant_id?: string
+          note?: string | null
+          period?: string
+          period_end?: string
+          period_start?: string
+          position_snapshot?: Json
+          request_fingerprint?: string
+          settlement_snapshot?: Json
+          signed_off_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_period_closures_domain_event_id_fkey"
+            columns: ["domain_event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_period_closures_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -6609,6 +6866,7 @@ export type Database = {
         Row: {
           created_at: string
           credits_monthly: number | null
+          annual_price_gbp: number | null
           name: string
           plan_id: string
           price_gbp: number | null
@@ -6617,6 +6875,7 @@ export type Database = {
         Insert: {
           created_at?: string
           credits_monthly?: number | null
+          annual_price_gbp?: number | null
           name: string
           plan_id: string
           price_gbp?: number | null
@@ -6625,6 +6884,7 @@ export type Database = {
         Update: {
           created_at?: string
           credits_monthly?: number | null
+          annual_price_gbp?: number | null
           name?: string
           plan_id?: string
           price_gbp?: number | null
@@ -7840,6 +8100,69 @@ export type Database = {
           },
           {
             foreignKeyName: "recovery_tasks_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_run_snapshots: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          domain_event_id: string | null
+          generated_at: string
+          id: string
+          idempotency_key: string
+          merchant_id: string
+          record_count: number
+          report_definition_id: string
+          request_fingerprint: string
+          scope: Json
+          scope_hash: string
+          snapshot: Json
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          domain_event_id?: string | null
+          generated_at: string
+          id?: string
+          idempotency_key: string
+          merchant_id: string
+          record_count: number
+          report_definition_id: string
+          request_fingerprint: string
+          scope: Json
+          scope_hash: string
+          snapshot: Json
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          domain_event_id?: string | null
+          generated_at?: string
+          id?: string
+          idempotency_key?: string
+          merchant_id?: string
+          record_count?: number
+          report_definition_id?: string
+          request_fingerprint?: string
+          scope?: Json
+          scope_hash?: string
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_run_snapshots_domain_event_id_fkey"
+            columns: ["domain_event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_run_snapshots_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -9890,6 +10213,7 @@ export type Database = {
       subscription_intents: {
         Row: {
           checkout_session_id: string | null
+          billing_interval: string
           created_at: string
           id: string
           logical_operation_id: string
@@ -9902,6 +10226,7 @@ export type Database = {
         }
         Insert: {
           checkout_session_id?: string | null
+          billing_interval?: string
           created_at?: string
           id?: string
           logical_operation_id: string
@@ -9914,6 +10239,7 @@ export type Database = {
         }
         Update: {
           checkout_session_id?: string | null
+          billing_interval?: string
           created_at?: string
           id?: string
           logical_operation_id?: string
@@ -11423,6 +11749,16 @@ export type Database = {
         Args: { p_chunk_index: number; p_job_id: string }
         Returns: string
       }
+      bulk_transition_payout_cases: {
+        Args: {
+          p_action: string
+          p_actor_user_id: string
+          p_idempotency_key: string
+          p_items: Json
+          p_merchant_id: string
+        }
+        Returns: Json
+      }
       bulk_transition_work_tasks: {
         Args: {
           p_action: string
@@ -11627,6 +11963,19 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      close_financial_period: {
+        Args: {
+          p_acknowledged_blocker_ids: string[]
+          p_actor_id: string
+          p_idempotency_key: string
+          p_merchant_id: string
+          p_note: string
+          p_period: string
+          p_period_end: string
+          p_period_start: string
+        }
+        Returns: Json
+      }
       complete_case_investigation_dispatch: {
         Args: {
           p_accepted: boolean
@@ -11693,6 +12042,14 @@ export type Database = {
           p_issue: string
           p_merchant_id: string
           p_rationale: string
+        }
+        Returns: Json
+      }
+      corroborate_replacement_handoff_v1: {
+        Args: {
+          p_merchant_id: string
+          p_observed_at?: string
+          p_source_replacement_id: string
         }
         Returns: Json
       }
@@ -11832,6 +12189,10 @@ export type Database = {
         }
         Returns: Json
       }
+      financial_period_preview_v1: {
+        Args: { p_from: string; p_merchant_id: string; p_to: string }
+        Returns: Json
+      }
       flag_aged_payout_case: {
         Args: {
           p_case_id: string
@@ -11908,6 +12269,28 @@ export type Database = {
           p_merchant_id: string
           p_metric?: string
           p_offset?: number
+        }
+        Returns: {
+          amount_minor: number
+          case_status: string
+          claim_type: string
+          currency: string
+          submitted_at: string
+          support_payout_case_id: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      get_financial_report_records_v2: {
+        Args: {
+          p_category?: string
+          p_currency?: string
+          p_from?: string
+          p_limit?: number
+          p_merchant_id: string
+          p_metric?: string
+          p_offset?: number
+          p_to?: string
         }
         Returns: {
           amount_minor: number
@@ -12031,6 +12414,14 @@ export type Database = {
         Args: { p_job_id: string }
         Returns: number
       }
+      publish_previewed_merchant_rule: {
+        Args: { p_merchant_id: string; p_rule_id: string; p_actor_id: string; p_revision: number; p_draft_id: string; p_no_cases_ack?: boolean }
+        Returns: Json
+      }
+      reorder_previewed_merchant_rules: {
+        Args: { p_merchant_id: string; p_actor_id: string; p_revision: number; p_order: Json }
+        Returns: Json
+      }
       publish_merchant_rule_version: {
         Args: { p_actor_id: string; p_merchant_id: string; p_rule_id: string }
         Returns: Json
@@ -12084,6 +12475,20 @@ export type Database = {
           p_search?: string
           p_source?: string
           p_status?: string
+        }
+        Returns: Json
+      }
+      reconciliation_page_v2: {
+        Args: {
+          p_currency?: string
+          p_from?: string
+          p_merchant_id: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_source?: string
+          p_status?: string
+          p_to?: string
         }
         Returns: Json
       }
@@ -12382,6 +12787,51 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      record_replacement_cost_v1: {
+        Args: {
+          p_action_id: string
+          p_actor_user_id: string
+          p_amount_minor: number
+          p_case_id: string
+          p_currency: string
+          p_idempotency_key: string
+          p_merchant_id: string
+          p_occurred_at?: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      record_report_run_snapshot: {
+        Args: {
+          p_actor_user_id: string
+          p_generated_at: string
+          p_idempotency_key: string
+          p_merchant_id: string
+          p_record_count: number
+          p_report_definition_id: string
+          p_scope: Json
+          p_snapshot: Json
+        }
+        Returns: Json
+      }
+      record_same_item_replacement_v1: {
+        Args: {
+          p_actor_user_id: string
+          p_budget_minor: number
+          p_case_id: string
+          p_currency: string
+          p_duplicate_concession_justification: string
+          p_expected_version: number
+          p_followed_recommendation: boolean
+          p_idempotency_key: string
+          p_items: Json
+          p_merchant_id: string
+          p_reason: string
+          p_recommendation_snapshot: Json
+          p_related_source_object: Json
+        }
+        Returns: Json
+      }
       recovery_page_v1: {
         Args: {
           p_currency?: string
@@ -12417,6 +12867,19 @@ export type Database = {
       }
       reorder_merchant_rules: {
         Args: { p_actor_id: string; p_merchant_id: string; p_order: Json }
+        Returns: Json
+      }
+      report_replacement_dispatch_v1: {
+        Args: {
+          p_action_id: string
+          p_actor_user_id: string
+          p_expected_version: number
+          p_external_reference?: string
+          p_idempotency_key: string
+          p_merchant_id: string
+          p_method: string
+          p_receipt_evidence?: Json
+        }
         Returns: Json
       }
       reset_merchant_monthly_credits: {
@@ -12572,6 +13035,7 @@ export type Database = {
       try_claim_job_finalize: { Args: { p_job_id: string }; Returns: boolean }
       upsert_subscription_intent: {
         Args: {
+          p_billing_interval: string
           p_logical_operation_id: string
           p_merchant_id: string
           p_requested_by: string

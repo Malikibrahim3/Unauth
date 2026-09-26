@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 /**
- * Grouped Instrument Grade settings navigation.
+ * Grouped Evidence Operations settings navigation.
  *
  * The prior settings nav was a single flat strip of ten links that scrolled
  * horizontally once it ran out of room (`overflow-x-auto`). §8.1 replaces that
@@ -48,23 +48,23 @@ export function SettingsNav({
   return (
     <nav
       className={cn(
-        'ua-settings-nav',
-        orientation === 'vertical' && 'ua-settings-nav--vertical',
+        'text-[#9f4f08] no-underline',
+        orientation === 'vertical' && 'text-[#9f4f08] no-underline',
         className,
       )}
       aria-label={ariaLabel}
     >
       {groups.map((group, groupIndex) => (
-        <div key={group.label ?? `group-${groupIndex}`} className="ua-settings-nav__group">
-          {group.label ? <p className="ua-settings-nav__group-label">{group.label}</p> : null}
-          <ul className="ua-settings-nav__list">
+        <div key={group.label ?? `group-${groupIndex}`} className="text-[#9f4f08] no-underline">
+          {group.label ? <p className="text-[11px] leading-[1.45] text-[#64686d]">{group.label}</p> : null}
+          <ul className="flex flex-col gap-3">
             {group.items.map((item) => {
               const active = isSettingsNavItemActive(currentPath, item.href);
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="ua-settings-nav__link"
+                    className="text-[#9f4f08] no-underline"
                     aria-current={active ? 'page' : undefined}
                   >
                     {item.label}

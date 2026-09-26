@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { PlanId } from '@/lib/billing/plans';
+import type { BillingInterval, PlanId } from '@/lib/billing/plans';
 import { TABLES } from '@/lib/supabase/tables';
 import { ensureMerchantBillingAccount } from '@/lib/billing/merchantBilling';
 
@@ -21,6 +21,7 @@ export type SubscriptionIntent = {
   id: string;
   merchantId: string;
   requestedPlanId: PlanId;
+  billingInterval: BillingInterval;
   requestedBy: string | null;
   logicalOperationId: string;
   source: SubscriptionIntentSource;
@@ -41,6 +42,7 @@ type IntentRow = {
   id: string;
   merchant_id: string;
   requested_plan_id: PlanId;
+  billing_interval: BillingInterval;
   requested_by: string | null;
   logical_operation_id: string;
   source: SubscriptionIntentSource;
@@ -55,6 +57,7 @@ function toIntent(row: IntentRow): SubscriptionIntent {
     id: row.id,
     merchantId: row.merchant_id,
     requestedPlanId: row.requested_plan_id,
+    billingInterval: row.billing_interval,
     requestedBy: row.requested_by,
     logicalOperationId: row.logical_operation_id,
     source: row.source,
@@ -70,15 +73,17 @@ export async function persistSubscriptionIntent(
   input: {
     merchantId: string;
     planId: PlanId;
+    billingInterval?: BillingInterval;
     requestedBy: string;
     logicalOperationId: string;
     source: SubscriptionIntentSource;
   },
-): Promise<{ id: string; planId: PlanId; status: SubscriptionIntentStatus; duplicate: boolean }> {
+): Promise<{ id: string; planId: PlanId; billingInterval: BillingInterval; status: SubscriptionIntentStatus; duplicate: boolean }> {
   await ensureMerchantBillingAccount(client, input.merchantId);
   const { data, error } = await client.rpc('upsert_subscription_intent', {
     p_merchant_id: input.merchantId,
     p_requested_plan_id: input.planId,
+    p_billing_interval: input.billingInterval ?? 'monthly',
     p_requested_by: input.requestedBy,
     p_logical_operation_id: input.logicalOperationId,
     p_source: input.source,
@@ -87,12 +92,14 @@ export async function persistSubscriptionIntent(
   const row = data as {
     id: string;
     requested_plan_id: PlanId;
+    billing_interval: BillingInterval;
     status: SubscriptionIntentStatus;
     duplicate: boolean;
   };
   return {
     id: row.id,
     planId: row.requested_plan_id,
+    billingInterval: row.billing_interval,
     status: row.status,
     duplicate: row.duplicate,
   };
@@ -108,8 +115,11 @@ export async function getLatestSubscriptionIntent(
 function isPendingSubscriptionIntentSchema(error: { code?: string; message?: string }): boolean {
   return error.code === 'PGRST205'
     || error.code === '42P01'
+    || error.code === '42703'
+    || error.code === 'PGRST204'
     || error.message?.includes("table 'public.subscription_intents'") === true
-    || error.message?.includes('relation "subscription_intents" does not exist') === true;
+    || error.message?.includes('relation "subscription_intents" does not exist') === true
+    || error.message?.includes('billing_interval') === true;
 }
 
 export async function loadLatestSubscriptionIntent(
@@ -118,7 +128,7 @@ export async function loadLatestSubscriptionIntent(
 ): Promise<SubscriptionIntentReadModel> {
   const { data, error } = await client
     .from(TABLES.SUBSCRIPTION_INTENTS)
-    .select('id,merchant_id,requested_plan_id,requested_by,logical_operation_id,source,status,checkout_session_id,created_at,updated_at')
+    .select('id,merchant_id,requested_plan_id,billing_interval,requested_by,logical_operation_id,source,status,checkout_session_id,created_at,updated_at')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false })
     .limit(1)

@@ -38,7 +38,7 @@ export function NamedReportScopeBar({
     <WorkbenchActionBar
           left={(
             <div className="flex min-w-0 flex-wrap items-center gap-2" aria-label="Named report scope">
-              <span className="ua-text-metadata">Date</span>
+              <span className="text-[10.5px] leading-4 text-[#6f6a63]">Date</span>
               <SegmentedControl
                 aria-label="Report range"
                 value={report.range}
@@ -48,7 +48,7 @@ export function NamedReportScopeBar({
                   href: reportHref({ reportId, range, timezone: report.timezone, currency: selectedCurrency, measure, page }),
                 }))}
               />
-              <span className="ua-text-metadata ml-1">Currency</span>
+              <span className="text-[10.5px] leading-4 text-[#6f6a63] ml-1">Currency</span>
               <SegmentedControl
                 aria-label="Report currency"
                 value={selectedCurrency ?? 'separated'}
@@ -83,8 +83,8 @@ export function NamedReportScopeBar({
 
   return (
     <>
-      <div className="ua-named-report-scope-desktop">{actionBar}</div>
-      <details className="ua-named-report-scope-compact">
+      <div className="flex items-center gap-3">{actionBar}</div>
+      <details className="flex items-center gap-3">
         <summary>
           <span><strong>Report scope</strong><small>{TIME_RANGE_LABELS[report.range]} · {selectedCurrency ?? 'Currencies separated'} · {report.timezone}</small></span>
           <span>Change</span>

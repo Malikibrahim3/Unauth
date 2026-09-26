@@ -8,27 +8,27 @@ const STYLES: Record<
   { bg: string; fg: string; border: string; label: string }
 > = {
   confirmed: {
-    bg: "var(--uo-route-success-bg)",
-    fg: "var(--uo-route-success)",
-    border: "var(--uo-route-success-border)",
+    bg: "#eaf5ef",
+    fg: "#1a6b43",
+    border: "#bfdecf",
     label: "Confirmed",
   },
   probable: {
-    bg: "var(--uo-route-warning-bg)",
-    fg: "var(--uo-route-warning)",
-    border: "var(--uo-route-warning-border)",
+    bg: "#fff3e9",
+    fg: "#7a5310",
+    border: "#ead8b6",
     label: "Probable",
   },
   ambiguous: {
-    bg: "var(--uo-route-critical-bg)",
-    fg: "var(--uo-route-critical)",
-    border: "var(--uo-route-risk-critical-border)",
+    bg: "#fdf0e6",
+    fg: "#b0431a",
+    border: "#edc6b5",
     label: "Needs review",
   },
   unmatched: {
-    bg: "var(--uo-route-surface-muted)",
-    fg: "var(--uo-route-text-secondary)",
-    border: "var(--uo-route-border-default)",
+    bg: "#f4f3f1",
+    fg: "#64686d",
+    border: "#e4e3e0",
     label: "Unmatched",
   },
 };
@@ -48,7 +48,7 @@ export function MatchStatusBadge({
   return (
     <span
       className={cn(
-        "ua-text-label inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 leading-none",
+        "text-[11px] font-medium leading-4 text-[#64686d] inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 leading-none",
         className,
       )}
       style={{

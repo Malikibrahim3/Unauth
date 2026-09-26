@@ -8,6 +8,7 @@ import {
 } from '@/lib/auth/requestContext';
 import { PERMISSIONS } from '@/lib/permissions';
 import AccountSettingsPage, { type AccountSetupPayload } from './AccountSettingsPage';
+import { throwForAcceptanceScenario } from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,12 +19,13 @@ export default async function AccountSettingsRoute() {
     getRequestPermissions(),
   ]);
   if (!user) redirect('/login');
+  await throwForAcceptanceScenario('account-settings-error');
 
   const merchant = ctx
     ? await getMerchantProfileById(getRequestServiceClient(), ctx.merchantId)
     : null;
   const initialData: AccountSetupPayload = {
-    user: { email: user.email ?? '' },
+    user: { email: user.email ?? '', role: ctx?.role ?? null },
     merchant: merchant
       ? {
           id: merchant.id,

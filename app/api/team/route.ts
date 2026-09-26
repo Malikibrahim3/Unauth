@@ -171,18 +171,38 @@ async function POSTHandler(req: NextRequest) {
   try {
     const adminClient = createAdminClient();
     const origin = new URL(req.url).origin;
-    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${origin}/auth/callback`,
-      data: { merchant_id: ctx.merchantId, member_id: member.id, role },
-    });
-    if (inviteError) {
-      await scopedClient
-        .from(TABLES.MERCHANT_MEMBERS)
-        .update({ invite_status: 'revoked' })
-        .eq('id', member.id);
-      return NextResponse.json({ error: inviteError.message }, { status: 502 });
+    // A local-only synthetic .invalid address cannot be delivered by the
+    // Supabase mail catcher in every runtime. Create the unconfirmed identity
+    // directly for that fixture, preserving the same member metadata and
+    // keeping the real provider invitation path unchanged everywhere else.
+    const localSyntheticInvite = process.env.RELEASE_E2E_LOCAL === '1'
+      && email.endsWith('@example.invalid');
+    let invitedUserId: string | undefined;
+    if (localSyntheticInvite) {
+      const { data: created, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        email_confirm: false,
+        user_metadata: { merchant_id: ctx.merchantId, member_id: member.id, role, fixture: 'local-synthetic-invite' },
+      });
+      if (createError || !created.user) {
+        await scopedClient.from(TABLES.MERCHANT_MEMBERS).update({ invite_status: 'revoked' }).eq('id', member.id);
+        return NextResponse.json({ error: createError?.message ?? 'Failed to create local synthetic invite.' }, { status: 502 });
+      }
+      invitedUserId = created.user.id;
+    } else {
+      const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${origin}/auth/callback`,
+        data: { merchant_id: ctx.merchantId, member_id: member.id, role },
+      });
+      if (inviteError) {
+        await scopedClient
+          .from(TABLES.MERCHANT_MEMBERS)
+          .update({ invite_status: 'revoked' })
+          .eq('id', member.id);
+        return NextResponse.json({ error: inviteError.message }, { status: 502 });
+      }
+      invitedUserId = inviteData?.user?.id;
     }
-    const invitedUserId = inviteData?.user?.id;
     if (invitedUserId) {
       const { data: updatedMember } = await scopedClient
         .from(TABLES.MERCHANT_MEMBERS)

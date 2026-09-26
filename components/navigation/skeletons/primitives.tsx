@@ -26,7 +26,7 @@ export function MetricCardGridSkeleton({
         <div
           key={cardKey}
           className="rounded-md border p-4 space-y-2"
-          style={{ borderColor: 'var(--uo-route-border-default)', background: 'var(--uo-route-surface-primary)' }}
+          style={{ borderColor: '#e4e3e0', background: '#fff' }}
         >
           <Bone className="h-3 w-20" />
           <Bone className="h-7 w-16" />
@@ -47,10 +47,10 @@ export function TableSkeleton({
   minWidth?: string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-md border" style={{ borderColor: 'var(--uo-route-border-subtle)' }}>
+    <div className="overflow-x-auto rounded-md border" style={{ borderColor: '#eae8e5' }}>
       <table className="w-full text-sm" style={{ minWidth }}>
-        <thead style={{ background: 'var(--uo-route-surface-secondary)' }}>
-          <tr style={{ borderBottom: '1px solid var(--uo-route-border-subtle)' }}>
+        <thead style={{ background: '#f4f3f1' }}>
+          <tr style={{ borderBottom: '1px solid #eae8e5' }}>
             {columns.map((col, i) => (
               <th key={skeletonColumnKey(i, col)} className={cn('px-4 py-2.5 text-left', col.className)} style={{ width: col.width }}>
                 <Bone className="h-3 w-16" />
@@ -60,7 +60,7 @@ export function TableSkeleton({
         </thead>
         <tbody>
           {TABLE_ROW_KEYS.slice(0, rows).map((rowKey) => (
-            <tr key={rowKey} className="border-t" style={{ borderColor: 'var(--uo-route-border-subtle)' }}>
+            <tr key={rowKey} className="border-t" style={{ borderColor: '#eae8e5' }}>
               {columns.map((col, colIdx) => (
                 <td key={`${rowKey}-${skeletonColumnKey(colIdx, col)}`} className={cn('px-4 py-3', col.className)}>
                   <Bone className={cn('h-4', colIdx === 0 ? 'w-36' : 'w-20')} />
@@ -87,11 +87,11 @@ export function SectionCardSkeleton({
   return (
     <section
       className="rounded-md border overflow-hidden"
-      style={{ borderColor: 'var(--uo-route-border-default)', background: 'var(--uo-route-surface-primary)' }}
+      style={{ borderColor: '#e4e3e0', background: '#fff' }}
     >
       <div
         className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3"
-        style={{ borderColor: 'var(--uo-route-border-default)' }}
+        style={{ borderColor: '#e4e3e0' }}
       >
         <div className="space-y-1.5 min-w-0">
           <Bone className={cn('h-4', titleWidth)} />

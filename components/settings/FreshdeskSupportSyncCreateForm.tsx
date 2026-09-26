@@ -14,9 +14,9 @@ type Props = {
 };
 
 const INPUT_STYLE: CSSProperties = {
-  background: 'var(--uo-route-surface-secondary)',
-  border: '1px solid var(--uo-route-border-default)',
-  color: 'var(--uo-route-text-primary)',
+  background: '#f4f3f1',
+  border: '1px solid #e4e3e0',
+  color: '#1c1f23',
 };
 
 export function FreshdeskSupportSyncCreateForm({
@@ -35,8 +35,8 @@ export function FreshdeskSupportSyncCreateForm({
         {isCreate ? (
           <label
             htmlFor="freshdesk-domain"
-            className="ua-text-label block mb-1"
-            style={{ color: 'var(--uo-route-text-secondary)' }}
+            className="text-[11px] font-medium leading-4 text-[#64686d] block mb-1"
+            style={{ color: '#64686d' }}
           >
             Freshdesk domain
           </label>
@@ -45,7 +45,7 @@ export function FreshdeskSupportSyncCreateForm({
           id={isCreate ? 'freshdesk-domain' : undefined}
           required
           aria-label="Freshdesk domain"
-          className="ua-text-body w-full rounded-md px-3 py-2"
+          className="text-[13px] leading-5 text-[#40454a] w-full rounded-md px-3 py-2"
           style={INPUT_STYLE}
           placeholder={isCreate ? 'acme or acme.freshdesk.com' : 'Domain'}
           value={state.domain}
@@ -53,7 +53,7 @@ export function FreshdeskSupportSyncCreateForm({
           disabled={!canManage || state.busy}
         />
         {isCreate ? (
-          <p className="ua-text-caption-role mt-2" style={{ color: 'var(--uo-route-text-secondary)' }}>
+          <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-2" style={{ color: '#64686d' }}>
             Your Freshdesk subdomain. If you log in at <code>acme.freshdesk.com</code>, enter{' '}
             <code>acme</code> or the full host.
           </p>
@@ -64,14 +64,14 @@ export function FreshdeskSupportSyncCreateForm({
         <div>
           <label
             htmlFor="freshdesk-display-name"
-            className="ua-text-label block mb-1"
-            style={{ color: 'var(--uo-route-text-secondary)' }}
+            className="text-[11px] font-medium leading-4 text-[#64686d] block mb-1"
+            style={{ color: '#64686d' }}
           >
             Display name (optional)
           </label>
           <input
             id="freshdesk-display-name"
-            className="ua-text-body w-full rounded-md px-3 py-2"
+            className="text-[13px] leading-5 text-[#40454a] w-full rounded-md px-3 py-2"
             style={INPUT_STYLE}
             placeholder="Support team"
             value={state.displayName}
@@ -94,8 +94,8 @@ export function FreshdeskSupportSyncCreateForm({
       <button
         type="submit"
         disabled={!canManage || state.busy}
-        className="ua-text-working-title rounded-md px-4 py-2 disabled:opacity-60"
-        style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
+        className="font-medium text-[13px] leading-5 text-[#1c1f23] rounded-md px-4 py-2 disabled:opacity-60"
+        style={{ background: '#9f4f08', color: '#fff' }}
       >
         {state.busy ? 'Saving…' : submitLabel}
       </button>

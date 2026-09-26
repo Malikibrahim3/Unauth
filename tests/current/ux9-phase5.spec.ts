@@ -74,11 +74,12 @@ test('UX9-5 representative production surfaces remain truthful and error-free', 
 
   await page.context().addCookies([{ name: 'unauth.auth-theme', value: 'dark', url: new URL(page.url()).origin }]);
   await ready(page, '/controls/rules?new=1', 'Payout rules');
-  const darkBuilder = page.getByRole('dialog', { name: 'New payout rule' });
-  await expect(darkBuilder).toBeVisible();
-  await expect(page.locator('.ua-overlay-host')).toHaveAttribute('data-auth-theme', 'dark');
-  await expect(darkBuilder).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await page.screenshot({ path: path.join(evidenceDir, 'rule-builder-draft-dark-1280x720.png'), fullPage: false });
+  const lightBuilder = page.getByRole('dialog', { name: 'New payout rule' });
+  await expect(lightBuilder).toBeVisible();
+  await expect(page.locator('[data-overlay-host="true"]')).not.toHaveAttribute('data-auth-theme', /.+/);
+  await expect(page.locator('[data-overlay-host="true"]')).toHaveAttribute('data-unauth-ui', 'supplied-package');
+  await expect(lightBuilder).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await page.screenshot({ path: path.join(evidenceDir, 'rule-builder-draft-legacy-cookie-light-1280x720.png'), fullPage: false });
 
   expect(pageErrors).toEqual([]);
 });

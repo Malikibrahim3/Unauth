@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import type { CSSProperties, ReactNode } from 'react';
 
 export interface BeforeYouConfirmProps {
   objectSummary: ReactNode;
@@ -9,6 +8,7 @@ export interface BeforeYouConfirmProps {
   appendOnly: ReactNode;
   children?: ReactNode;
   className?: string;
+  style?: CSSProperties;
 }
 
 const rows = ['objectSummary', 'valueSummary', 'externalAction', 'reversible', 'appendOnly'] as const;
@@ -30,7 +30,8 @@ export function BeforeYouConfirm({
   reversible,
   appendOnly,
   children,
-  className,
+  className: _className,
+  style,
 }: BeforeYouConfirmProps) {
   const values: Record<BeforeYouConfirmRow, ReactNode> = {
     objectSummary,
@@ -41,19 +42,19 @@ export function BeforeYouConfirm({
   };
 
   return (
-    <aside className={cn('ua-before-confirm', className)} aria-label="Before you confirm">
-      <div className="ua-before-confirm__heading">
-        <h3>Before you confirm</h3>
+    <aside style={{ overflow: 'hidden', border: '1px solid #e8d7c9', borderRadius: 12, background: '#fff3e9', ...style }} aria-label="Before you confirm">
+      <div style={{ borderBottom: '1px solid #eadfd5', padding: '12px 16px', color: '#1c1f23', fontWeight: 600 }}>
+        <h3 style={{ margin: 0, fontSize: 12 }}>Before you confirm</h3>
       </div>
-      <dl className="ua-before-confirm__rows">
+      <dl style={{ margin: 0 }}>
         {rows.map((row) => (
-          <div className="ua-before-confirm__row" key={row}>
-            <dt>{labels[row]}</dt>
-            <dd>{values[row]}</dd>
+          <div style={{ display: 'grid', gridTemplateColumns: '120px minmax(0,1fr)', gap: 12, padding: '10px 16px', borderTop: row === rows[0] ? 0 : '1px solid #eadfd5' }} key={row}>
+            <dt style={{ color: '#6f6a63', fontSize: 10 }}>{labels[row]}</dt>
+            <dd style={{ margin: 0, color: '#40454a', fontSize: 11 }}>{values[row]}</dd>
           </div>
         ))}
       </dl>
-      {children ? <div className="ua-before-confirm__note">{children}</div> : null}
+      {children ? <div style={{ borderTop: '1px solid #eadfd5', padding: '12px 16px', color: '#64686d', fontSize: 11, lineHeight: 1.45 }}>{children}</div> : null}
     </aside>
   );
 }

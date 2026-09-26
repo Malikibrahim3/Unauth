@@ -27,7 +27,7 @@ export default function CustomerSupportCasesSection({ profileId }: { profileId: 
       description="Helpdesk case records linked to this customer or their orders."
     >
       {loading ? (
-        <p className="text-sm" style={{ color: 'var(--uo-route-text-secondary)' }}>
+        <p className="text-sm" style={{ color: '#64686d' }}>
           Loading support cases…
         </p>
       ) : (

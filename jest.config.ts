@@ -18,7 +18,7 @@ const config: Config = {
       },
     }],
   },
-  testMatch: ['**/tests/**/*.test.ts', '**/tests/**/*.test.tsx'],
+  testMatch: ['<rootDir>/tests/**/*.test.ts', '<rootDir>/tests/**/*.test.tsx'],
   testPathIgnorePatterns: ['/node_modules/', '/\\.next/', '/\\.claude/'],
 };
 

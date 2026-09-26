@@ -12,6 +12,8 @@
  * lib/rules/fields.ts and re-uses the labels exported here.
  */
 
+import { normaliseCurrencyOrNull, toMinorUnits } from '@/lib/canonical/money';
+
 export type ConfidenceGrade = 'definite' | 'probable' | 'possible' | 'weak';
 export type RuleAction = 'approve' | 'manual_review' | 'deny';
 export type ConditionOperator = 'and' | 'or';
@@ -21,6 +23,8 @@ export interface RuleCondition {
   field: string;
   operator: string;
   value: unknown;
+  /** Explicitly confirmed threshold currency; legacy absence stays unknown. */
+  currency?: string | null;
 }
 
 export interface MerchantRule {
@@ -55,6 +59,8 @@ export interface MatchedCondition extends RuleCondition {
 }
 
 export interface RuleEvaluationResult {
+  certainty?: 'definite' | 'insufficient_evidence';
+  missing_inputs?: string[];
   recommendation: RuleAction | 'no_match';
   rule_id: string | null;
   rule_name: string | null;
@@ -122,6 +128,21 @@ export const OPERATOR_LABELS: Record<string, string> = {
   contains_any: 'includes any of',
 };
 
+/** Historical persisted spellings share the engine's canonical semantics. */
+export function normalizeRuleOperator(operator: string): string | null {
+  const aliases: Record<string, string> = {
+    equals: 'eq', equal: 'eq', '=': 'eq', '==': 'eq', '===': 'eq',
+    not_equals: 'neq', not_equal: 'neq', '!=': 'neq', '!==': 'neq', '<>': 'neq',
+    greater_than: 'gt', '>': 'gt', greater_than_or_equal: 'gte', greater_than_or_equals: 'gte', '>=': 'gte',
+    less_than: 'lt', '<': 'lt', less_than_or_equal: 'lte', less_than_or_equals: 'lte', '<=': 'lte',
+  };
+  return Object.hasOwn(OPERATOR_LABELS, operator) ? operator : Object.hasOwn(aliases, operator) ? aliases[operator] : null;
+}
+
+export function normalizeRuleCondition(condition: RuleCondition): RuleCondition {
+  return { ...condition, operator: normalizeRuleOperator(condition.operator) ?? condition.operator };
+}
+
 // ---------------------------------------------------------------------------
 // Core evaluation
 // ---------------------------------------------------------------------------
@@ -133,7 +154,7 @@ export function evaluateRules(
   // Sort by priority ascending (lower number = higher priority).
   const sorted = [...rules]
     .filter((r) => r.is_active)
-    .sort((a, b) => a.priority - b.priority);
+    .sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id));
 
   if (sorted.length === 0) {
     return {
@@ -147,9 +168,18 @@ export function evaluateRules(
   }
 
   for (const rule of sorted) {
-    const matched = evaluateRule(signals, rule);
-    // A rule with zero conditions is treated as "always matches".
-    if (matched.length > 0 || rule.conditions.length === 0) {
+    const result = evaluateRule(signals, rule);
+    if (result.state === 'unknown') {
+      const explanation = `Insufficient evidence to determine whether rule "${rule.name}" wins: ${result.missing.join(', ')}.`;
+      return {
+        recommendation: 'manual_review', certainty: 'insufficient_evidence',
+        rule_id: null, rule_name: null, matched_conditions: [],
+        missing_inputs: result.missing,
+        justification: explanation, justification_lines: [explanation],
+      };
+    }
+    const matched = result.matched;
+    if (result.state === 'true') {
       const justification_lines = buildJustificationLines(rule, matched);
       return {
         recommendation: rule.action,
@@ -172,24 +202,45 @@ export function evaluateRules(
   };
 }
 
-function evaluateRule(signals: RuleSignalBag, rule: MerchantRule): MatchedCondition[] {
-  const results: Array<MatchedCondition | null> = rule.conditions.map((condition) => {
-    const actual = getSignalValue(signals, condition.field);
-    const passes = evaluateCondition(condition, actual);
-    return passes ? { ...condition, actual_value: actual } : null;
-  });
+export const MONETARY_RULE_FIELDS = new Set(['order_value_usd', 'amount_at_risk', 'total_estimated_loss']);
 
-  if (rule.condition_operator === 'and') {
-    const allPassed = results.every((r) => r !== null);
-    return allPassed ? (results as MatchedCondition[]) : [];
+type ConditionState = 'true' | 'false' | 'unknown';
+function evaluateRule(signals: RuleSignalBag, rule: MerchantRule): {
+  state: ConditionState; matched: MatchedCondition[]; missing: string[];
+} {
+  if (!['and', 'or'].includes(rule.condition_operator)) {
+    return { state: 'unknown', matched: [], missing: ['unsupported condition grouping'] };
   }
-  // 'or' — any condition passing is enough; report the conditions that passed.
-  const passed = results.filter((r): r is MatchedCondition => r !== null);
-  return passed.length > 0 ? passed : [];
+  const results = rule.conditions.map(condition => {
+    const actual = getSignalValue(signals, condition.field);
+    const operator = normalizeRuleOperator(condition.operator);
+    let missing: string | null = !operator ? `${condition.field}: unsupported operator` : null;
+    if (actual == null || (typeof actual === 'number' && !Number.isFinite(actual))) missing ??= condition.field;
+    if (MONETARY_RULE_FIELDS.has(condition.field)) {
+      const expectedCurrency = normaliseCurrencyOrNull(condition.currency);
+      const actualCurrency = normaliseCurrencyOrNull(getSignalValue(signals, `${condition.field}_currency`) as string | null);
+      if (!expectedCurrency || !actualCurrency || expectedCurrency !== actualCurrency) {
+        missing ??= `${condition.field}: confirmed matching currency required`;
+      }
+    }
+    if (['gt', 'gte', 'lt', 'lte'].includes(operator ?? '') && (!isNumber(actual) || !isNumber(condition.value))) missing ??= `${condition.field}: numeric evidence required`;
+    if (condition.value == null) missing ??= `${condition.field}: missing threshold`;
+    if (MONETARY_RULE_FIELDS.has(condition.field) && (!isNumber(actual) || !isNumber(condition.value) || !Number.isSafeInteger(toMinorUnits(actual, condition.currency ?? '')) || !Number.isSafeInteger(toMinorUnits(condition.value, condition.currency ?? '')))) missing ??= `${condition.field}: supported amount required`;
+    const state: ConditionState = missing ? 'unknown' : evaluateCondition(condition, actual) ? 'true' : 'false';
+    return { state, missing, match: { ...condition, actual_value: actual } };
+  });
+  const matched = results.filter(r => r.state === 'true').map(r => r.match);
+  // Empty rules retain their existing catch-all semantics for both groupings.
+  const state: ConditionState = !results.length ? 'true'
+    : rule.condition_operator === 'and'
+      ? results.some(r => r.state === 'false') ? 'false' : results.some(r => r.state === 'unknown') ? 'unknown' : 'true'
+      : matched.length ? 'true' : results.some(r => r.state === 'unknown') ? 'unknown' : 'false';
+  return { state, matched, missing: state === 'unknown' ? [...new Set(results.flatMap(r => r.missing ? [r.missing] : []))] : [] };
 }
 
 function getSignalValue(signals: RuleSignalBag, field: string): unknown {
   const bag = signals as Record<string, unknown>;
+  if (Array.isArray(bag.unavailable_rule_inputs) && bag.unavailable_rule_inputs.includes(field)) return null;
   if (!Object.prototype.hasOwnProperty.call(bag, field)) return null;
   return bag[field];
 }
@@ -199,7 +250,12 @@ function isNumber(value: unknown): value is number {
 }
 
 function evaluateCondition(condition: RuleCondition, actual: unknown): boolean {
-  const { operator, value } = condition;
+  let { value } = condition;
+  if (MONETARY_RULE_FIELDS.has(condition.field) && isNumber(actual) && isNumber(value) && condition.currency) {
+    actual = toMinorUnits(actual, condition.currency);
+    value = toMinorUnits(value, condition.currency);
+  }
+  const operator = normalizeRuleOperator(condition.operator);
   if (actual === null || actual === undefined) return false;
 
   switch (operator) {
@@ -242,7 +298,7 @@ function buildJustificationLines(rule: MerchantRule, matched: MatchedCondition[]
   const lines: string[] = [`Rule "${rule.name}" triggered`];
   for (const c of matched) {
     const fieldLabel = FIELD_LABELS[c.field] ?? c.field;
-    const opLabel = OPERATOR_LABELS[c.operator] ?? c.operator;
+    const opLabel = OPERATOR_LABELS[normalizeRuleOperator(c.operator) ?? ''] ?? c.operator;
     const valueLabel = formatValue(c.field, c.value);
     const actualLabel = formatValue(c.field, c.actual_value);
     lines.push(`${fieldLabel} ${opLabel} ${valueLabel} (actual: ${actualLabel})`);
@@ -254,7 +310,7 @@ export function formatValue(field: string, value: unknown): string {
   if (Array.isArray(value)) return value.join(', ');
   if (typeof value === 'boolean') return value ? 'yes' : 'no';
   if (field === 'order_value_usd' && typeof value === 'number') {
-    return `$${value.toLocaleString()}`;
+    return `${value.toLocaleString()} (currency specified by condition)`;
   }
   return String(value ?? '—');
 }

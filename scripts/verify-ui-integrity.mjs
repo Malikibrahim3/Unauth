@@ -75,7 +75,7 @@ function hasAction(attributes) {
 
 function isDisabled(attributes) {
   const attribute = attributes.get('disabled');
-  if (!attribute) return false;
+  if (!attribute) return staticString(attributes.get('aria-disabled')?.initializer) === 'true';
   if (!attribute.initializer) return true;
   if (!ts.isJsxExpression(attribute.initializer)) return true;
   return attribute.initializer.expression?.kind !== ts.SyntaxKind.FalseKeyword;
@@ -130,7 +130,9 @@ for (const filePath of scannedFiles) {
       const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
       const at = `${rel}:${position.line + 1}`;
 
-      if (href === '#') findings.push(`${at}: placeholder href="#"`);
+      // Generated reference markup is immutable. Its bound runtime links are
+      // checked in rendered parity, not inferred from placeholder source HTML.
+      if (href === '#' && !rel.startsWith('components/visual-authority/generated/')) findings.push(`${at}: placeholder href="#"`);
       else if (href && !validInternalHref(href)) findings.push(`${at}: internal href has no page or redirect owner: ${href}`);
 
       const actionControl = tagName === 'button' || tagName === 'Button' || tagName === 'IconButton';
@@ -146,9 +148,9 @@ for (const filePath of scannedFiles) {
   visit(sourceFile);
 }
 
-const dashboardSource = fs.readFileSync(path.join(projectRoot, 'components/dashboard/DashboardOverview.tsx'), 'utf8');
-if (!dashboardSource.includes('href="/settings/workspace/account"') || !dashboardSource.includes('aria-label="Open Settings"')) {
-  findings.push('components/dashboard/DashboardOverview.tsx: exact shell is missing its Settings entry');
+const dashboardSource = fs.readFileSync(path.join(projectRoot, 'components/visual-authority/generated/Overview-Clean.tsx'), 'utf8');
+if (!dashboardSource.includes('href="/settings/product/platform"')) {
+  findings.push('Supplied Overview shell is missing its canonical Settings entry');
 }
 
 const intelligenceSource = fs.readFileSync(path.join(projectRoot, 'lib/reporting/intelligence.ts'), 'utf8');

@@ -33,6 +33,7 @@ import {
   markSubscriptionIntentStatusById,
   persistSubscriptionIntent,
 } from '@/lib/billing/subscriptionIntent';
+import { isRemainingClosureFixtureRequest } from '@/lib/testing/remainingClosureGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +79,47 @@ export async function POST(req: NextRequest) {
 
   const appUrl = getAppUrl();
   const returnPath = returnTo ? safeRedirectPath(returnTo) : '/settings/billing';
+
+  const providerFreeAcceptance = await isRemainingClosureFixtureRequest({
+    request: req,
+    service,
+    merchantId: ctx.merchantId,
+    scenarioId: 'billing-plan-change-modal',
+    fixtureKind: 'settings',
+  });
+  if (providerFreeAcceptance) {
+    if (action !== 'downgrade' || !planId) {
+      return NextResponse.json({ error: 'The local acceptance path supports only a scheduled downgrade.' }, { status: 400 });
+    }
+    if (!isDowngrade(state.subscription.planId, planId)) {
+      return NextResponse.json({ error: 'The requested plan is not a lower canonical plan.' }, { status: 400 });
+    }
+    if (isStripeConfigured()) {
+      return NextResponse.json({ error: 'The local provider-free path is unavailable while Stripe is configured.' }, { status: 409 });
+    }
+
+    const suppliedKey = req.headers.get('idempotency-key')?.trim();
+    const requestKey = suppliedKey && /^[A-Za-z0-9:_-]{8,128}$/.test(suppliedKey)
+      ? suppliedKey
+      : `${action}:${planId}:${state.subscription.currentPeriodStart}`;
+    const localIntent = await persistSubscriptionIntent(service, {
+      merchantId: ctx.merchantId,
+      planId,
+      requestedBy: user.id,
+      logicalOperationId: `billing:${user.id}:${requestKey}`,
+      source: 'billing',
+    });
+    const result = await scheduleDowngrade(service, ctx.merchantId, planId, { sendEmail: false });
+    return NextResponse.json({
+      ok: true,
+      ...result,
+      subscriptionIntent: { id: localIntent.id, status: localIntent.status },
+      providerProvenance: 'local-acceptance-provider-free',
+      localAcceptance: true,
+      message: 'Scheduled locally for acceptance verification; no provider confirmation or email was sent.',
+    });
+  }
+
   const planSelectionAction = ['checkout', 'upgrade', 'downgrade', 'contact_scale'].includes(action);
   let selectionIntent: Awaited<ReturnType<typeof persistSubscriptionIntent>> | null = null;
   if (planSelectionAction) {

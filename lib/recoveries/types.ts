@@ -1,5 +1,6 @@
 import type { Partner, PartnerRecoveryRule, PartnerRecoveryType } from '@/lib/partners/types';
 import type { ClaimPosture, ClaimReadinessState } from './claimReadiness';
+import type { PartnerStatistics, RecoveryAgeing } from '@/lib/capabilities/derived';
 
 export const RECOVERY_CASE_STATUSES = [
   'draft',
@@ -91,6 +92,10 @@ export type RecoveryCase = {
   provider_position_at?: string | null;
   claim_readiness?: ClaimReadinessState;
   partner?: Partner | null;
+  /** Derived from timestamped recovery history; null fields remain unavailable. */
+  ageing?: RecoveryAgeing;
+  /** Historical partner observations, never a provider guarantee. */
+  partner_statistics?: PartnerStatistics;
   support_payout_case?: {
     id: string;
     claim_type: string;

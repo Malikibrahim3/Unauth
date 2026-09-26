@@ -28,23 +28,23 @@ export function ApiKeyRevokeDialog({
       title="Revoke API key?"
       description="This action takes effect immediately and cannot be undone."
       size="sm"
-      overlayId="revoke-api-key"
+      overlayId="create-reveal-and-revoke-api-key-modals"
       closeOnBackdrop={!busyId}
       closeOnEscape={!busyId}
       showCloseButton={!busyId}
     >
       {revokeTarget ? (
         <>
-          <p className="text-sm" style={{ color: "var(--uo-route-text-secondary)" }}>
+          <p className="text-sm" style={{ color: "#64686d" }}>
             Integrations using <strong>{revokeTarget.name}</strong> (
             {revokeTarget.key_prefix}) will stop working immediately.
           </p>
-          <dl className="mt-4 grid gap-3 rounded-[var(--uo-route-radius-surface)] bg-[var(--uo-route-surface-secondary)] p-3">
-            <div><dt className="ua-text-metadata">Scope</dt><dd className="ua-text-body mt-1">{revokeTarget.scopes.length ? revokeTarget.scopes.join(', ') : 'No machine scopes'}</dd></div>
-            <div><dt className="ua-text-metadata">Recovery</dt><dd className="ua-text-body mt-1">None. Create a new key and update the integration.</dd></div>
-            <div><dt className="ua-text-metadata">Audit result</dt><dd className="ua-text-body mt-1">The key remains in history with its revoked state and prior use.</dd></div>
+          <dl className="mt-4 grid gap-3 rounded-[12px] bg-[#f4f3f1] p-3">
+            <div><dt className="text-[10.5px] leading-4 text-[#6f6a63]">Scope</dt><dd className="text-[13px] leading-5 text-[#40454a] mt-1">{revokeTarget.scopes.length ? revokeTarget.scopes.join(', ') : 'No machine scopes'}</dd></div>
+            <div><dt className="text-[10.5px] leading-4 text-[#6f6a63]">Recovery</dt><dd className="text-[13px] leading-5 text-[#40454a] mt-1">None. Create a new key and update the integration.</dd></div>
+            <div><dt className="text-[10.5px] leading-4 text-[#6f6a63]">Audit result</dt><dd className="text-[13px] leading-5 text-[#40454a] mt-1">The key remains in history with its revoked state and prior use.</dd></div>
           </dl>
-          {error ? <p role="alert" className="mt-4 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-critical-border)] bg-[var(--uo-route-critical-bg)] px-3 py-2 text-[length:var(--uo-route-text-caption-size)] text-[var(--uo-route-critical)]">{error}</p> : null}
+          {error ? <p role="alert" className="mt-4 rounded-[8px] border border-[#edc6b5] bg-[#fdf0e6] px-3 py-2 text-[length:11.5px] text-[#b0431a]">{error}</p> : null}
           <div className="mt-6 flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={onClose} disabled={Boolean(busyId)}>
               Cancel

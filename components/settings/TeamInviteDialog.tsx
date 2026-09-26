@@ -53,7 +53,7 @@ export function TeamInviteDialog({
       closeOnBackdrop={!submitting}
       closeOnEscape={!submitting}
       showCloseButton={!submitting}
-      overlayId="invite-member"
+      overlayId="invite-member-and-transfer-ownership-modals"
       footer={
         <div className="flex items-center justify-end gap-2 px-5 py-4">
           <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
@@ -69,7 +69,7 @@ export function TeamInviteDialog({
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="team-invite-email"
-            className="text-[length:var(--uo-route-text-label-size)] font-medium leading-[var(--uo-route-text-label-leading)] text-[var(--uo-route-text-primary)]"
+            className="text-[length:11px] font-medium leading-[1.4] text-[#1c1f23]"
           >
             Email address
           </label>
@@ -82,13 +82,13 @@ export function TeamInviteDialog({
             placeholder="name@company.com"
             onChange={(event) => onEmailChange(event.target.value)}
           />
-          <p className="text-[length:var(--uo-route-text-caption-size)] leading-[var(--uo-route-text-caption-leading)] text-[var(--uo-route-text-tertiary)]">
+          <p className="text-[length:11.5px] leading-[1.45] text-[#6f6a63]">
             Up to 50 invitations per hour.
           </p>
         </div>
 
         <div className="grid gap-1.5">
-          <label htmlFor="team-invite-role" className="text-[length:var(--uo-route-text-label-size)] font-medium leading-[var(--uo-route-text-label-leading)] text-[var(--uo-route-text-primary)]">Assigned role</label>
+          <label htmlFor="team-invite-role" className="text-[length:11px] font-medium leading-[1.4] text-[#1c1f23]">Assigned role</label>
           <Select
             id="team-invite-role"
             value={role}
@@ -98,10 +98,10 @@ export function TeamInviteDialog({
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </Select>
-          <p className="ua-text-caption-role">{INVITE_ROLES.find((option) => option.value === role)?.help} Ownership is transferred separately and cannot be invited.</p>
+          <p className="text-[11.5px] leading-[1.45] text-[#64686d]">{INVITE_ROLES.find((option) => option.value === role)?.help} Ownership is transferred separately and cannot be invited.</p>
         </div>
         {error ? (
-          <p role="alert" className="rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-critical-border)] bg-[var(--uo-route-critical-bg)] px-3 py-2 text-[length:var(--uo-route-text-caption-size)] text-[var(--uo-route-critical)]">
+          <p role="alert" className="rounded-[8px] border border-[#edc6b5] bg-[#fdf0e6] px-3 py-2 text-[length:11.5px] text-[#b0431a]">
             {error}
           </p>
         ) : null}

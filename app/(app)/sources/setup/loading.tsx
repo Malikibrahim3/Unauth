@@ -1,4 +1,1 @@
-import { SettingsListLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
-export default function Loading() {
-  return <SettingsListLoadingSkeleton />;
-}
+export { default } from "@/components/visual-authority/SuppliedAuthenticatedRouteLoading";

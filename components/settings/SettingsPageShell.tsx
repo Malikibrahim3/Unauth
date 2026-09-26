@@ -1,100 +1,31 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 import type { Breadcrumb } from '@/components/authenticated/AuthenticatedPageHeader';
-import { PageFrame } from '@/components/ui/PageFrame';
 import { HandoffSettingsNav } from '@/components/settings/HandoffSettingsNav';
-import styles from '@/components/settings/OperationsSettings.module.css';
 
-export type SettingsTruth = {
-  access: string;
-  currentState: string;
-  saveBehavior: string;
-  impact: string;
-};
-
+export type SettingsTruth = { access: string; currentState: string; saveBehavior: string; impact: string };
 interface SettingsPageShellProps {
-  title: string;
-  subtitle?: string;
-  eyebrow?: string;
-  breadcrumbs?: Breadcrumb[];
-  primaryAction?: ReactNode;
-  secondaryActions?: ReactNode[];
-  meta?: ReactNode;
-  tabs?: ReactNode;
-  children: ReactNode;
-  className?: string;
-  surfaceId?: string;
-  layout?: 'form' | 'wide';
-  truth: SettingsTruth;
+  title: string; subtitle?: string; eyebrow?: string; breadcrumbs?: Breadcrumb[];
+  primaryAction?: ReactNode; secondaryActions?: ReactNode[]; meta?: ReactNode; tabs?: ReactNode;
+  toolbar?: ReactNode;
+  children: ReactNode; className?: string; surfaceId?: string; layout?: 'form' | 'wide'; truth: SettingsTruth;
+  workspaceName?: string | null;
+  workspaceCreatedLabel?: string | null;
 }
 
-/**
- * Instrument Grade configuration-document shell.
- *
- * The settings family is "Header → grouped local navigation → 680–820px form →
- * contextual help only when specific". Grouped navigation is owned by the
- * settings layout (`SettingsNav`); this shell renders the header and a single
- * readable form column capped at 820px.
- *
- * The prior shell hung a fixed "Workspace controls" guidance card plus a
- * "Settings help" link on every page — a generic rail repeated across ~12
- * settings routes, which §5.5 explicitly removes. Contextual help now belongs
- * inline within a page's own content, and only when it is specific to that page.
- */
-export function SettingsPageShell({
-  title,
-  subtitle,
-  eyebrow,
-  breadcrumbs,
-  primaryAction,
-  secondaryActions,
-  meta,
-  tabs,
-  children,
-  className,
-  surfaceId,
-  layout = 'form',
-  truth,
-}: SettingsPageShellProps) {
-  return (
-    <PageFrame
-      className={cn('min-w-0', className)}
-      surfaceId={surfaceId}
-      archetype="P10"
-      title={title}
-      subtitle={subtitle}
-      eyebrow={eyebrow}
-      breadcrumbs={breadcrumbs ?? [
-        { label: 'Settings', href: '/settings/workspace/account' },
-        { label: title },
-      ]}
-      showCurrentBreadcrumb
-      actions={
-        primaryAction || secondaryActions?.length
-          ? <>{secondaryActions}{primaryAction}</>
-          : undefined
-      }
-      meta={meta}
-      tabs={tabs}
-      headerCapabilityId="operations-settings"
-    >
-      <div className="ua-handoff-settings-layout">
-        <HandoffSettingsNav />
-        <div
-          className={cn('ua-settings-form', layout === 'wide' && 'ua-settings-form--wide')}
-          data-settings-document={surfaceId ?? 'settings'}
-        >
-          <section className={styles.settingsTruth} aria-label="Setting authority and impact">
-            <dl>
-              <div><dt>Who can change it</dt><dd>{truth.access}</dd></div>
-              <div><dt>Current state</dt><dd>{truth.currentState}</dd></div>
-              <div><dt>Save behavior</dt><dd>{truth.saveBehavior}</dd></div>
-              <div><dt>Impact</dt><dd>{truth.impact}</dd></div>
-            </dl>
-          </section>
-          {children}
-        </div>
+export function SettingsPageShell({ title, subtitle, primaryAction, secondaryActions, meta, tabs, toolbar, children, className: _className, surfaceId, layout = 'form', truth, workspaceName, workspaceCreatedLabel }: SettingsPageShellProps) {
+  return <>
+    {toolbar ?? <div style={{ height: 54, flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', borderBottom: '1px solid #eae8e5' }}>
+      <p style={{ maxWidth: 760, margin: 0, color: '#64686d', font: "400 12.5px/1.5 'Inter',sans-serif" }}>{subtitle ?? truth.impact}</p>
+      <span style={{ flex: 1 }}/>{meta ? <span style={{ color: '#64686d', font: "400 10.5px/1.4 'IBM Plex Mono',monospace" }}>{meta}</span> : null}
+      {secondaryActions}{primaryAction}
+    </div>}
+    {tabs ? <div style={{ minHeight: 42, display: 'flex', alignItems: 'center', gap: 8, padding: '0 22px', borderBottom: '1px solid #eae8e5' }}>{tabs}</div> : null}
+    <div data-screen-label={title} data-visual-world="supplied-package" data-surface-id={surfaceId} data-archetype="P10" style={{ flex: 1, minHeight: 0, padding: '16px 22px 20px', display: 'flex', gap: 16, overflow: 'hidden' }}>
+      <HandoffSettingsNav workspaceName={workspaceName} workspaceCreatedLabel={workspaceCreatedLabel}/>
+      <div role="region" aria-label={`${title} settings`} tabIndex={0} data-settings-document={surfaceId ?? 'settings'} style={{ flex: 1, width: layout === 'wide' ? '100%' : 'auto', maxWidth: '100%', minWidth: 0, minHeight: 0, overflowY: 'auto', display: 'grid', gridAutoRows: 'max-content', alignContent: 'start', gap: 12 }}>
+        <dl className="sr-only" aria-label="Setting authority and impact"><dt>Who can change it</dt><dd>{truth.access}</dd><dt>Current state</dt><dd>{truth.currentState}</dd><dt>Save behavior</dt><dd>{truth.saveBehavior}</dd><dt>Impact</dt><dd>{truth.impact}</dd></dl>
+        {children}
       </div>
-    </PageFrame>
-  );
+    </div>
+  </>;
 }

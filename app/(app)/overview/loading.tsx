@@ -1,5 +1,1 @@
-import { DashboardOverviewLoading } from '@/components/dashboard/DashboardOverview';
-
-export default function DashboardLoading() {
-  return <DashboardOverviewLoading />;
-}
+export { default } from "@/components/visual-authority/SuppliedAuthenticatedRouteLoading";

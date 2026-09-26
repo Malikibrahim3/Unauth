@@ -10,17 +10,22 @@ import { computeClaimDecision } from '@/lib/claims/decision/evaluate';
 import { getRecoveryCaseForSupportPayoutCase } from '@/lib/recoveries/store';
 import { loadCaseEvidenceFile } from '@/lib/claims/caseEvidenceFile';
 import { trustedFinancialStatesByCurrency } from '@/lib/finance/caseFinancialTruth';
+import type { CaseDetailAction, CaseDetailTab } from '@/components/claims/CaseDetailOperations';
+import { buildResolutionComparison } from '@/lib/claims/decision/resolutionComparison';
+import { loadReplacementReadModel } from '@/lib/claims/replacement';
 
 export async function CaseDetailRoute({
   claimId,
   caseBackHref = '/cases',
   initialTab,
   investigationId,
+  initialAction,
 }: {
   claimId: string;
   caseBackHref?: string;
-  initialTab?: 'evidence' | 'responsibility' | 'recovery' | 'activity' | null;
+  initialTab?: CaseDetailTab | null;
   investigationId?: string | null;
+  initialAction?: CaseDetailAction;
 }) {
   const user = await getRequestUser();
   if (!user) redirect('/login');
@@ -35,7 +40,7 @@ export async function CaseDetailRoute({
   const loaded = authorizeClaimForMerchant(claimRow, ctx.merchantId);
   if (!loaded.claim) notFound();
 
-  const [canManage, sourceOrderResult, identityStateResult, financialResult, financialEntriesResult, claimEventsResult, computedDecision, recoveryCase, caseEvidenceFile] = await Promise.all([
+  const [canManage, sourceOrderResult, identityStateResult, financialResult, financialEntriesResult, claimEventsResult, computedDecision, recoveryCase, caseEvidenceFile, replacement] = await Promise.all([
     hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS),
     loaded.claim.source_order_id
       ? serviceClient
@@ -73,6 +78,7 @@ export async function CaseDetailRoute({
     computeClaimDecision({ client: serviceClient, merchantId: ctx.merchantId, claimId }),
     getRecoveryCaseForSupportPayoutCase(serviceClient, ctx.merchantId, claimId),
     loadCaseEvidenceFile(serviceClient, ctx.merchantId, claimId),
+    loadReplacementReadModel(serviceClient, ctx.merchantId, claimId),
   ]);
 
   const sourceCustomerId = sourceOrderResult.data?.source_customer_id ?? null;
@@ -107,11 +113,13 @@ export async function CaseDetailRoute({
   };
 
   const initialDecisionData = computedDecision ? {
+    context: computedDecision.context,
     evaluation: computedDecision.evaluation,
     ruleCount: computedDecision.ruleCount,
     evaluatedAt: computedDecision.evaluatedAt,
     payoutCase: computedDecision.payoutCase,
     recoveryCase,
+    resolutionComparison: buildResolutionComparison({ ...computedDecision, replacement }),
     readOnly: true,
   } : null;
   const knownStatesByCurrency = trustedFinancialStatesByCurrency(
@@ -124,7 +132,7 @@ export async function CaseDetailRoute({
   })) as CaseFinancialSummary[];
 
   return (
-    <div data-surface-id="case-review-workbench" data-archetype="P8">
+    <>
     <ClaimReviewPanel
       profileId={loaded.claim.identity_id ?? ''}
       sourceCustomerId={sourceCustomerId}
@@ -136,8 +144,9 @@ export async function CaseDetailRoute({
       caseBackHref={caseBackHref}
       initialTab={initialTab}
       investigationId={investigationId}
+      initialAction={initialAction}
       caseEvidenceFile={caseEvidenceFile}
     />
-    </div>
+    </>
   );
 }

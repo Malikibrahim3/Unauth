@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/server';
-import { PERMISSIONS } from '@/lib/permissions';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import {
   getRequestServiceClient,
   getRequestUser,
   requirePagePermission,
 } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
-import { ButtonLink, PageFrame } from '@/components/ui';
+import Link from 'next/link';
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 import {
   listRecoveryCasesPage,
   RECOVERY_BOARD_STAGES,
@@ -15,8 +16,8 @@ import {
 } from '@/lib/recoveries/store';
 import type { RecoveryCase } from '@/lib/recoveries/types';
 import { RecoveryBoardOperations } from '@/components/recoveries/RecoveryBoardOperations';
-import ExportMenu from '@/components/reports/ExportMenu';
 import { loadCanonicalFinancialAggregate } from '@/lib/financial/canonicalAggregates';
+import { throwForAcceptanceScenario } from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,6 +104,7 @@ export default async function RecoveriesPage({
   const serviceClient = getRequestServiceClient();
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
   if (!ctx) redirect('/overview');
+  await throwForAcceptanceScenario('recovery-board-error');
   const params = searchParams ? await searchParams : {};
   const requestedCurrency = one(params.currency)?.toUpperCase() ?? null;
   const requestedStage = one(params.stage);
@@ -113,7 +115,7 @@ export default async function RecoveriesPage({
   const page = Number.isInteger(pageValue) && pageValue > 0 ? pageValue : 1;
   const search = one(params.search)?.slice(0, 100) ?? null;
   const asOf = new Date();
-  const [result, aggregate] = await Promise.all([
+  const [result, aggregate, canManage] = await Promise.all([
     listRecoveryCasesPage(serviceClient, ctx.merchantId, {
       stage,
       currency: requestedCurrency,
@@ -126,24 +128,44 @@ export default async function RecoveriesPage({
       to: asOf.toISOString(),
       currency: requestedCurrency && /^[A-Z]{3}$/.test(requestedCurrency) ? requestedCurrency : null,
     }),
+    hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS),
   ]);
   result.rows = await enrichRecoveryCases(serviceClient, ctx.merchantId, result.rows);
 
+  const stageLabel = stage === 'all' ? 'all' : stage.replaceAll('_', ' ');
+  const stageOptions: Array<[RecoveryBoardStage, string]> = [
+    ['all', 'All routes'],
+    ['ready_to_file', 'Ready to file'],
+    ['filed', 'Filed'],
+    ['partner_responded', 'Partner responded'],
+    ['received', 'Received'],
+    ['reconciled', 'Reconciled'],
+    ['closed', 'Closed'],
+  ];
+  const stageHref = (nextStage: RecoveryBoardStage) => {
+    const query = new URLSearchParams();
+    if (nextStage !== 'all') query.set('stage', nextStage);
+    if (requestedCurrency) query.set('currency', requestedCurrency);
+    if (search) query.set('search', search);
+    return query.size ? `/financials/recovery?${query}` : '/financials/recovery';
+  };
+
   return (
-    <PageFrame
-      title="Recovery board"
-      surfaceId="recovery-board"
-      archetype="operations-recovery-board"
-      breadcrumbs={[{ label: 'Unauth', href: '/overview' }, { label: 'Recovery board' }]}
-      actions={
-        <div className="uo-header-actions">
-          <span>Last 30 days</span>
-          <ExportMenu range="30d" currency={result.currency} />
-          <ButtonLink href="/cases?status=decision_recorded" size="sm">Review recovery-ready cases</ButtonLink>
-        </div>
-      }
-    >
-      <RecoveryBoardOperations result={result} search={search} aggregate={aggregate} />
-    </PageFrame>
+    <section data-screen-label="Recovery board" data-visual-world="supplied-package" data-surface-id="recovery-board" data-archetype="operations-recovery-board" style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', color: '#1c1f23' }}>
+      <SetBreadcrumbLabel label="Open routes" detail={result.currency ? `${result.currency} only · other currencies excluded` : 'currencies remain separate'} />
+      <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Recovery board</h1>
+      <div style={{ height: 54, flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '0 22px', borderBottom: '1px solid #eae8e5' }}>
+        <details style={{ position: 'relative' }}>
+          <summary style={{ listStyle: 'none', display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.1)', color: '#1c1f23', font: "400 12.5px/1 'Inter',sans-serif", cursor: 'pointer' }}>Stage: {stageLabel}<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#64686d" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><path d="M2.6 4 5 6.4 7.4 4"/></svg></summary>
+          <div style={{ position: 'absolute', zIndex: 20, top: 34, left: 0, width: 176, padding: 5, borderRadius: 10, background: '#fff', boxShadow: '0 10px 30px rgba(28,22,14,.18),0 0 0 1px rgba(28,27,25,.08)', display: 'flex', flexDirection: 'column' }}>{stageOptions.map(([value, label]) => <Link key={value} href={stageHref(value)} style={{ padding: '7px 9px', borderRadius: 7, background: value === stage ? '#f4f3f1' : '#fff', font: "400 11.5px/1.3 'Inter',sans-serif", color: '#1c1f23', textDecoration: 'none' }}>{label}</Link>)}</div>
+        </details>
+        <button type="button" disabled title="Partner filtering is not available in the canonical recovery query" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.1)', color: '#64686d', font: "400 12.5px/1 'Inter',sans-serif" }}>Partner: all<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#64686d" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><path d="M2.6 4 5 6.4 7.4 4"/></svg></button>
+        <button type="button" disabled title="Owner filtering is not available in the canonical recovery query" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.1)', color: '#64686d', font: "400 12.5px/1 'Inter',sans-serif" }}>Owner: anyone<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#64686d" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><path d="M2.6 4 5 6.4 7.4 4"/></svg></button>
+        <span style={{ flex: 1 }}/><span style={{ color: '#64686d', font: "400 11px/1 'IBM Plex Mono',monospace" }}>{result.totalCount} routes · {result.currency ? `${result.currency} only` : 'currencies separate'}</span>
+        {result.totalCount === 0 && requestedCurrency ? <Link href="/financials/recovery" style={{ color: '#9f4f08', font: "500 11.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Clear recovery scope</Link> : null}
+        {canManage ? <Link href="/cases?status=decision_recorded" style={{ padding: '6px 11px', borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>New route</Link> : <span title="Read-only access" style={{ padding: '6px 11px', borderRadius: 9, background: '#d8d4cf', color: '#fff', font: "500 12.5px/1 'Inter',sans-serif" }}>New route</span>}
+      </div>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '16px 22px 20px' }}><RecoveryBoardOperations result={result} search={search} aggregate={aggregate}/></div>
+    </section>
   );
 }

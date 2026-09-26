@@ -8,7 +8,7 @@ export function SyncStatusScopesList({ scopes, label }: SyncStatusScopesListProp
 
   return (
     <div>
-      <p className="ua-text-label mb-2" style={{ color: 'var(--uo-route-text-secondary)' }}>
+      <p className="text-[11px] font-medium leading-4 text-[#64686d] mb-2" style={{ color: '#64686d' }}>
         {label}
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -16,7 +16,7 @@ export function SyncStatusScopesList({ scopes, label }: SyncStatusScopesListProp
           <span
             key={scope}
             className="rounded px-2 py-0.5 font-mono text-xs"
-            style={{ background: 'var(--uo-route-surface-secondary)', color: 'var(--uo-route-text-secondary)' }}
+            style={{ background: '#f4f3f1', color: '#64686d' }}
           >
             {scope}
           </span>

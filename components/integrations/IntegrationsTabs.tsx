@@ -19,12 +19,12 @@ export function IntegrationsTabs({
       items={[
         {
           value: "connected",
-          label: <>Connected <span className="ml-1 tabular-nums text-[var(--uo-route-text-tertiary)]">{connectedCount}</span></>,
+          label: <>Connected <span className="ml-1 tabular-nums text-[#6f6a63]">{connectedCount}</span></>,
           href: "/sources/connected?view=connected",
         },
         {
           value: "browse",
-          label: <>Catalogue <span className="ml-1 tabular-nums text-[var(--uo-route-text-tertiary)]">{catalogueCount}</span></>,
+          label: <>Catalogue <span className="ml-1 tabular-nums text-[#6f6a63]">{catalogueCount}</span></>,
           href: "/sources/browse",
         },
         {

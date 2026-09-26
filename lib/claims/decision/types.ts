@@ -1,4 +1,6 @@
 export type ClaimDecisionContext = {
+  /** Missing or incomplete rule facts must not be interpreted as verified zero. */
+  unavailableRuleInputs?: string[];
   merchantId: string;
   claim: {
     id: string;
@@ -12,6 +14,14 @@ export type ClaimDecisionContext = {
     sourceTicketId: string | null;
     identityId: string | null;
     createdAt: string | null;
+    updatedAt: string | null;
+    stateVersion: number;
+    costs: {
+      refundAmount: number | null;
+      replacementItemValue: number | null;
+      replacementShippingCost: number | null;
+      estimatedSupportCost: number | null;
+    };
     /** Deterministic gate recommendation persisted by the decision engine, if any. */
     gateRecommendation?: import('@/lib/claim-gate/buildRecommendation').GateRecommendation | null;
   };
@@ -32,6 +42,9 @@ export type ClaimDecisionContext = {
     createdAt: string | null;
     financialStatus: string | null;
     fulfillmentStatus: string | null;
+    source: string | null;
+    sourceName: string | null;
+    sourceAccountId: string | null;
   } | null;
   delivery: {
     status: string | null;
@@ -104,6 +117,13 @@ export type ClaimDecisionContext = {
     hasDeliveryEvidence: boolean;
     /** Canonical evidence keys available for checklist-level readiness. */
     evidenceTypes?: string[];
+    latestEvidenceAt: string | null;
+  };
+  priorConcessions: {
+    count: number;
+    amount: number | null;
+    currency: string | null;
+    coverage: 'complete' | 'mixed_currency' | 'unavailable';
   };
 };
 

@@ -7,6 +7,7 @@ next-env.d.ts
 .env.local
 *.tsbuildinfo
 .tmp_*
+tmp/
 .DS_Store
 *.log
 # Anchored to repo root only — the Chrome extension's committed build lives at

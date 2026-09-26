@@ -35,20 +35,20 @@ function CopyRow({
   return (
     <div className="space-y-1.5">
       <p
-        className="ua-text-label"
-        style={{ color: "var(--uo-route-text-secondary)" }}
+        className="text-[11px] font-medium leading-4 text-[#64686d]"
+        style={{ color: "#64686d" }}
       >
         {label}
       </p>
       <div
         className="flex items-center gap-2 rounded-lg px-3 py-2"
         style={{
-          background: "color-mix(in srgb, var(--uo-route-text-primary) 5%, transparent)",
+          background: "color-mix(in srgb, #1c1f23 5%, transparent)",
         }}
       >
         <span
-          className={`ua-text-dense flex-1 truncate ${mono ? "font-mono" : ""}`}
-          style={{ color: "var(--uo-route-text-primary)" }}
+          className={`text-[12px] leading-[1.45] text-[#40454a] flex-1 truncate ${mono ? "font-mono" : ""}`}
+          style={{ color: "#1c1f23" }}
         >
           {value}
         </span>
@@ -57,7 +57,7 @@ function CopyRow({
           aria-label={copied ? `${label} copied` : `Copy ${label}`}
           onClick={() => onCopy(field, value)}
           className="shrink-0 ml-1"
-          style={{ color: copied ? "var(--uo-route-success)" : "var(--uo-route-text-secondary)" }}
+          style={{ color: copied ? "#1a6b43" : "#64686d" }}
         >
           {copied ? (
             <Check className="h-3.5 w-3.5" />
@@ -84,19 +84,19 @@ export function GorgiasWebhookSetupPanel({
         variant="muted"
         className="flex gap-3 px-4 py-3"
         style={{
-          borderColor: "color-mix(in srgb, var(--uo-route-warning) 35%, var(--uo-route-border-default))",
-          background: "color-mix(in srgb, var(--uo-route-warning) 8%, var(--uo-route-surface-primary))",
+          borderColor: "color-mix(in srgb, #7a5310 35%, #e4e3e0)",
+          background: "color-mix(in srgb, #7a5310 8%, #fff)",
         }}
       >
         <AlertTriangle
           className="h-4 w-4 shrink-0 mt-0.5"
-          style={{ color: "var(--uo-route-warning)" }}
+          style={{ color: "#7a5310" }}
         />
         <div className="space-y-1">
-          <p className="ua-text-working-title" style={{ color: "var(--uo-route-text-primary)" }}>
+          <p className="font-medium text-[13px] leading-5 text-[#1c1f23]" style={{ color: "#1c1f23" }}>
             Copy your secret now
           </p>
-          <p className="ua-text-caption-role" style={{ color: "var(--uo-route-text-secondary)" }}>
+          <p className="text-[11.5px] leading-[1.45] text-[#64686d]" style={{ color: "#64686d" }}>
             {secret.warning} This secret is shown once — if you lose it, rotate
             it from the connection settings.
           </p>
@@ -106,10 +106,10 @@ export function GorgiasWebhookSetupPanel({
       {/* Credentials to copy */}
       <Card unstyled variant="panel" className="divide-y p-4 space-y-3">
         <p
-          className="ua-text-label pb-3"
+          className="text-[11px] font-medium leading-4 text-[#64686d] pb-3"
           style={{
-            color: "var(--uo-route-text-secondary)",
-            borderColor: "var(--uo-route-border-default)",
+            color: "#64686d",
+            borderColor: "#e4e3e0",
           }}
         >
           Webhook credentials
@@ -145,8 +145,8 @@ export function GorgiasWebhookSetupPanel({
       <Card unstyled variant="panel" className="divide-y p-0">
         <div className="px-4 py-2.5">
           <p
-            className="ua-text-label"
-            style={{ color: "var(--uo-route-text-secondary)" }}
+            className="text-[11px] font-medium leading-4 text-[#64686d]"
+            style={{ color: "#64686d" }}
           >
             How to configure in Gorgias
           </p>
@@ -161,21 +161,21 @@ export function GorgiasWebhookSetupPanel({
           <div
             key={step}
             className="flex gap-3 px-4 py-3"
-            style={{ borderColor: "var(--uo-route-border-default)" }}
+            style={{ borderColor: "#e4e3e0" }}
           >
             <span
-              className="ua-text-label flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-bold mt-0.5"
+              className="text-[11px] font-medium leading-4 text-[#64686d] flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-bold mt-0.5"
               style={{
                 background:
-                  "color-mix(in srgb, var(--uo-route-text-secondary) 10%, transparent)",
-                color: "var(--uo-route-text-secondary)",
+                  "color-mix(in srgb, #64686d 10%, transparent)",
+                color: "#64686d",
               }}
             >
               {i + 1}
             </span>
             <p
-              className="ua-text-caption-role leading-relaxed"
-              style={{ color: "var(--uo-route-text-secondary)" }}
+              className="text-[11.5px] leading-[1.45] text-[#64686d] leading-relaxed"
+              style={{ color: "#64686d" }}
             >
               {step}
             </p>
@@ -186,8 +186,8 @@ export function GorgiasWebhookSetupPanel({
       <button
         type="button"
         onClick={onDismiss}
-        className="ua-text-label underline"
-        style={{ color: "var(--uo-route-text-secondary)" }}
+        className="text-[11px] font-medium leading-4 text-[#64686d] underline"
+        style={{ color: "#64686d" }}
       >
         I saved the secret — hide this panel
       </button>

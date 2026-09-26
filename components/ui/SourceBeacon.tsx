@@ -30,31 +30,31 @@ export function SourceBeacon({
 }) {
   const content = (
     <>
-      {provider ? <span className="ua-source-beacon__provider">{provider}</span> : null}
-      <span className="ua-source-beacon__identity">
-        <strong>{source}</strong>
-        {authority ? <span>{authority}</span> : null}
+      {provider ? <span className="shrink-0">{provider}</span> : null}
+      <span className="min-w-0 flex-1">
+        <strong className="block truncate text-[11px] font-medium text-[#1c1f23]">{source}</strong>
+        {authority ? <span className="block text-[9.5px] text-[#6f6a63]">{authority}</span> : null}
       </span>
-      <span className="ua-source-beacon__status" data-state={state}>
-        <span className="ua-source-beacon__mark" aria-hidden="true" />
+      <span className="inline-flex items-center rounded-md bg-[#f4f3f1] px-2 py-1 text-[10px] font-semibold text-[#40454a]" data-state={state}>
+        <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
         {state}
       </span>
       {observedAt ? (
-        <span className="ua-source-beacon__time">{observedAt}</span>
+        <span className="text-[11px] leading-[1.45] text-[#64686d]">{observedAt}</span>
       ) : null}
       {limitation ? (
-        <span className="ua-source-beacon__limitation">{limitation}</span>
+        <span className="basis-full text-[10px] text-[#6f6a63]">{limitation}</span>
       ) : null}
     </>
   );
 
   if (href) {
     return (
-      <Link className={cn('ua-source-beacon', 'ua-source-beacon--link', className)} href={href}>
+      <Link className={cn('flex flex-wrap items-center gap-2 rounded-lg border border-[#e4e3e0] bg-white p-3 text-[#9f4f08] no-underline', className)} href={href}>
         {content}
       </Link>
     );
   }
 
-  return <div className={cn('ua-source-beacon', className)}>{content}</div>;
+  return <div className={cn('flex flex-wrap items-center gap-2 rounded-lg border border-[#e4e3e0] bg-white p-3', className)}>{content}</div>;
 }

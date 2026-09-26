@@ -1,0 +1,2 @@
+@AGENTS.md
+@GLOBAL_RULES.md

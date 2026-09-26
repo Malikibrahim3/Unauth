@@ -25,19 +25,19 @@ export function Inspector({
   className,
 }: InspectorProps) {
   return (
-    <aside className={cn('ua-inspector', `ua-inspector--${width}`, className)}>
-      <header className={cn('ua-inspector__header', sticky && 'ua-inspector__header--sticky')}>
-        <div className="ua-inspector__header-content">{header}</div>
-        <div className="ua-inspector__header-actions">
+    <aside className={cn('rounded-xl border border-[#e4e3e0] bg-white shadow-xl', `${width}`, className)}>
+      <header className={cn('flex items-center gap-3', sticky && 'flex items-center gap-3')}>
+        <div className="flex items-center gap-3">{header}</div>
+        <div className="flex items-center gap-3">
           {actions}
           {onClose ? (
-            <button type="button" className="ua-icon-button ua-icon-button--sm" onClick={onClose} aria-label="Close">
+            <button type="button" className="inline-flex items-center justify-center rounded-lg border border-[#d8d4cf] bg-white p-2 text-[#40454a]" onClick={onClose} aria-label="Close">
               <X size={14} aria-hidden="true" />
             </button>
           ) : null}
         </div>
       </header>
-      <div className="ua-inspector__body">{children}</div>
+      <div className="flex flex-col gap-3">{children}</div>
     </aside>
   );
 }

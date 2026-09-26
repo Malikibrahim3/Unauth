@@ -39,4 +39,17 @@ describe('CanonicalCsvImportClient recovery', () => {
     await waitFor(() => expect(screen.getByRole('link', { name: 'Open failed job' })).toHaveAttribute('href', '/sources/imports/job-failed-p05'));
     expect(screen.getByText(/retained its mapping and row-level outcome/i)).toBeInTheDocument();
   });
+
+  it('follows a client-side step query change without a hard refresh', async () => {
+    const { rerender } = render(<CanonicalCsvImportClient />);
+
+    expect(screen.getByText('No import jobs yet')).toBeInTheDocument();
+
+    rerender(<CanonicalCsvImportClient initialStep="upload" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Choose source records' })).toBeInTheDocument();
+      expect(screen.queryByText('No import jobs yet')).not.toBeInTheDocument();
+    });
+  });
 });

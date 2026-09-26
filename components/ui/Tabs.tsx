@@ -52,10 +52,10 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
   };
 
   return isTrueTabs ? (
-    <div id={id} role="tablist" aria-label={ariaLabel} className={cn('ua-tabs', className)}>
+    <div id={id} role="tablist" aria-label={ariaLabel} className={cn('flex items-center gap-1', className)}>
       {items.map((item, index) => {
         const active = item.value === value;
-        const classes = cn('ua-tabs__item', active && 'ua-tabs__item--active', item.disabled && 'ua-tabs__item--disabled');
+        const classes = cn('inline-flex min-h-8 items-center gap-1.5 border-b-2 border-transparent px-2.5 text-[11px] text-[#64686d]', active && 'border-[#9f4f08] font-medium text-[#1c1f23]', item.disabled && 'opacity-45');
         return (
           <button
             key={item.value}
@@ -71,17 +71,17 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
             onKeyDown={(event) => moveFocus(event, index)}
             className={classes}
           >
-            {item.icon ? <span aria-hidden="true" className="ua-tabs__item-icon">{item.icon}</span> : null}
+            {item.icon ? <span aria-hidden="true" className="flex items-center gap-3">{item.icon}</span> : null}
             {item.label}
           </button>
         );
       })}
     </div>
   ) : isInPageTabs ? (
-    <div id={id} role="group" aria-label={ariaLabel} className={cn('ua-tabs', className)}>
+    <div id={id} role="group" aria-label={ariaLabel} className={cn('flex items-center gap-1', className)}>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = cn('ua-tabs__item', active && 'ua-tabs__item--active', item.disabled && 'ua-tabs__item--disabled');
+        const classes = cn('inline-flex min-h-8 items-center gap-1.5 border-b-2 border-transparent px-2.5 text-[11px] text-[#64686d]', active && 'border-[#9f4f08] font-medium text-[#1c1f23]', item.disabled && 'opacity-45');
         return (
           <button
             key={item.value}
@@ -91,17 +91,17 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
             onClick={() => onValueChange?.(item.value)}
             className={classes}
           >
-            {item.icon ? <span aria-hidden="true" className="ua-tabs__item-icon">{item.icon}</span> : null}
+            {item.icon ? <span aria-hidden="true" className="flex items-center gap-3">{item.icon}</span> : null}
             {item.label}
           </button>
         );
       })}
     </div>
   ) : (
-    <nav id={id} aria-label={ariaLabel} className={cn('ua-tabs', className)}>
+    <nav id={id} aria-label={ariaLabel} className={cn('flex items-center gap-1', className)}>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = cn('ua-tabs__item', active && 'ua-tabs__item--active', item.disabled && 'ua-tabs__item--disabled');
+        const classes = cn('inline-flex min-h-8 items-center gap-1.5 border-b-2 border-transparent px-2.5 text-[11px] text-[#64686d] no-underline', active && 'border-[#9f4f08] font-medium text-[#1c1f23]', item.disabled && 'opacity-45');
         return (
           <Link
             key={item.value}
@@ -112,7 +112,7 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
             className={classes}
             onClick={item.disabled ? (event) => event.preventDefault() : undefined}
           >
-            {item.icon ? <span aria-hidden="true" className="ua-tabs__item-icon">{item.icon}</span> : null}
+            {item.icon ? <span aria-hidden="true" className="flex items-center gap-3">{item.icon}</span> : null}
             {item.label}
           </Link>
         );

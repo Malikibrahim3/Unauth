@@ -3,6 +3,8 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { RECOVERY_CASE_STATUSES } from '@/lib/recoveries/types';
 import { listRecoveryCases } from '@/lib/recoveries/store';
+import { deriveRecoveryAgeing } from '@/lib/capabilities/derived';
+import { TABLES } from '@/lib/supabase/tables';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +28,31 @@ export async function GET(request: NextRequest) {
     supportPayoutCaseId: sp.get('supportPayoutCaseId') ?? undefined,
     partnerId: sp.get('partnerId') ?? undefined,
   });
-  return NextResponse.json({ recoveries });
+  const recoveryIds = recoveries.map((recovery) => recovery.id);
+  const eventsByRecovery = new Map<string, Array<{ to_status: string | null; created_at: string | null }>>();
+  if (recoveryIds.length > 0) {
+    const { data: events, error } = await serviceClient
+      .from(TABLES.RECOVERY_CASE_EVENTS)
+      .select('recovery_case_id,to_status,created_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('recovery_case_id', recoveryIds);
+    if (error) return NextResponse.json({ error: 'Recovery history unavailable' }, { status: 503 });
+    for (const event of (events ?? []) as Array<{ recovery_case_id: string; to_status: string | null; created_at: string | null }>) {
+      const list = eventsByRecovery.get(event.recovery_case_id) ?? [];
+      list.push({ to_status: event.to_status, created_at: event.created_at });
+      eventsByRecovery.set(event.recovery_case_id, list);
+    }
+  }
+  const enriched = recoveries.map((recovery) => ({
+    ...recovery,
+    ageing: deriveRecoveryAgeing({
+      createdAt: recovery.created_at,
+      status: recovery.status,
+      deadlineAt: recovery.deadline_at,
+      events: eventsByRecovery.get(recovery.id),
+    }),
+  }));
+  return NextResponse.json({ recoveries: enriched });
 }
 
 /**

@@ -76,15 +76,15 @@ function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <tr key={i} className="ua-data-table__skeleton-row">
+        <tr key={i} className="border-t border-[#e4e3e0]">
           {Array.from({ length: cols }).map((_, j) => (
             <td
               key={j}
-              className="ua-data-table__skeleton-cell"
+              className="px-3 py-2.5 align-middle"
               aria-hidden="true"
             >
               <div
-                className="skeleton ua-data-table__skeleton-bar"
+                className="skeleton relative"
                 style={{ width: `${skeletonBarWidth(j)}%` }}
                 aria-hidden="true"
               />
@@ -105,8 +105,8 @@ function SortIcon({ active, dir }: { active: boolean; dir?: "asc" | "desc" }) {
   return (
     <Icon
       className={cn(
-        "ua-data-table__sort-icon shrink-0",
-        !active && "ua-data-table__sort-icon--muted",
+        " shrink-0",
+        !active && "text-[11px] leading-[1.45] text-[#64686d]",
       )}
       aria-hidden="true"
     />
@@ -140,10 +140,10 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "ua-data-table",
-        `ua-data-table--density-${density}`,
-        flush && "ua-data-table--flush",
-        persistentHeader && "ua-data-table--persistent-header",
+        "w-full border-collapse text-[11.5px]",
+        `${density}`,
+        flush && "",
+        persistentHeader && "flex items-center gap-3",
         className,
       )}
       role="region"
@@ -152,26 +152,26 @@ export function DataTable<T>({
       tabIndex={persistentHeader ? 0 : undefined}
     >
       {loading ? <span className="sr-only" role="status">Loading table</span> : null}
-      <table className="ua-data-table__table">
+      <table className="w-full border-collapse text-[11.5px]">
         <thead>
-          <tr className="ua-data-table__head-row">
+          <tr className="bg-[#f4f3f1] px-3 py-2 text-left text-[10px] font-semibold uppercase text-[#64686d]">
             {columns.map((col) => (
               <th
                 key={col.key}
                 scope="col"
                 className={cn(
-                  "ua-data-table__header-cell",
-                  columnAlign(col) === "right" && "ua-data-table__header-cell--right",
-                  columnAlign(col) === "center" && "ua-data-table__header-cell--center",
-                  (col.kind === "numeric" || col.kind === "currency") && "ua-data-table__header-cell--numeric",
-                  col.sortable && onSort && "ua-data-table__header-cell--sortable",
+                  "bg-[#f4f3f1] px-3 py-2 text-left text-[10px] font-semibold uppercase text-[#64686d]",
+                  columnAlign(col) === "right" && "bg-[#f4f3f1] px-3 py-2 text-left text-[10px] font-semibold uppercase text-[#64686d]",
+                  columnAlign(col) === "center" && "bg-[#f4f3f1] px-3 py-2 text-left text-[10px] font-semibold uppercase text-[#64686d]",
+                  (col.kind === "numeric" || col.kind === "currency") && "bg-[#f4f3f1] px-3 py-2 text-left text-[10px] font-semibold uppercase text-[#64686d]",
+                  col.sortable && onSort && "w-full border-collapse text-[11.5px]",
                 )}
                 style={col.width || col.minWidth ? { width: col.width, minWidth: col.minWidth } : undefined}
               >
                 {col.sortable && onSort ? (
                   <button
                     type="button"
-                    className="inline-flex items-center rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--uo-route-border-focus)]"
+                    className="inline-flex items-center rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9f4f08]"
                     onClick={() => onSort(col.key)}
                     aria-label={`Sort by ${col.headerLabel ?? (typeof col.header === "string" ? col.header : col.key)}${sortKey === col.key ? `, currently ${sortDir === "asc" ? "ascending" : "descending"}` : ""}`}
                   >
@@ -187,7 +187,7 @@ export function DataTable<T>({
               </th>
             ))}
             {rowActions ? (
-              <th scope="col" className="ua-data-table__header-cell ua-data-table__header-cell--right">
+              <th scope="col" className="bg-[#f4f3f1] px-3 py-2 text-left text-[10px] font-semibold uppercase text-[#64686d]">
                 <span className="sr-only">Actions</span>
               </th>
             ) : null}
@@ -213,18 +213,18 @@ export function DataTable<T>({
                   data-row-key={onRowClick && rowTestId ? key : undefined}
                   aria-selected={selectedKey !== undefined ? isSelected : undefined}
                   className={cn(
-                    "ua-data-table__row",
-                    isSelected && "ua-data-table__row--selected",
+                    "border-t border-[#e4e3e0]",
+                    isSelected && "rounded-lg border border-[#d8d4cf] bg-white px-3 py-2 text-[12px] text-[#1c1f23]",
                   )}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
                       className={cn(
-                        "ua-data-table__cell",
-                        columnAlign(col) === "right" && "ua-data-table__cell--right",
-                        columnAlign(col) === "center" && "ua-data-table__cell--center",
-                        (col.kind === "numeric" || col.kind === "currency") && "ua-data-table__cell--numeric",
+                        "px-3 py-2.5 align-middle",
+                        columnAlign(col) === "right" && "px-3 py-2.5 align-middle",
+                        columnAlign(col) === "center" && "px-3 py-2.5 align-middle",
+                        (col.kind === "numeric" || col.kind === "currency") && "px-3 py-2.5 align-middle",
                       )}
                     >
                       {getRowHref && col.key === (primaryColumnKey ?? columns[0]?.key) ? (
@@ -252,7 +252,7 @@ export function DataTable<T>({
                   ))}
                   {rowActions ? (
                     <td
-                      className="ua-data-table__actions-cell"
+                      className="px-3 py-2.5 align-middle"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <RowActionsMenu actions={rowActions(row)} />

@@ -1,3 +1,5 @@
+import { getMerchantProfileById } from '@/lib/account/merchantProfile';
+import { isScreenshotAccount, screenshotSource, SCREENSHOT_MERCHANT_ID } from '@/lib/demo/screenshotAccount';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { resolveConnectorCapabilities } from '@/lib/connectors/runtime';
 import { listConnectors } from '@/lib/connectors/registry';
@@ -23,6 +25,7 @@ import type { LiveVerificationResult } from '@/lib/connections/liveVerification'
 import { TABLES } from '@/lib/supabase/tables';
 
 export type ConnectorCatalogueItem = {
+  screenshotFixture?: 'asterlane-screenshots-v1';
   id: string;
   name: string;
   description: string;
@@ -75,6 +78,8 @@ export type ConnectorCatalogueItem = {
     description: string;
     availability: string;
     availabilityReason: string;
+    lastDataReceivedAt?: string;
+    recordCount?: number;
   }>;
   /** Runtime availability projected onto the evidence vocabulary used by
    * readiness. This is separate from product lifecycle maturity and generic
@@ -251,7 +256,7 @@ export async function loadConnectorCatalogue(
   client: SupabaseClient,
   merchantId: string,
 ): Promise<ConnectorCatalogueItem[]> {
-  const [{ data, error }, storedViews, { data: gorgiasRows }, { data: shopifyRows }] = await Promise.all([
+  const [{ data, error }, storedViews, { data: gorgiasRows }, { data: shopifyRows }, merchant] = await Promise.all([
     client
       .from(TABLES.MERCHANT_INTEGRATIONS)
       .select('id,provider_id,status,provider_account_name,last_sync_started_at,last_sync_completed_at,last_successful_sync_at,last_verified_at,last_verification_status,last_verification_error,webhook_last_received_at,last_error_code,last_error_message,last_error,imported_record_count,granted_scopes,writeback_enabled,updated_at')
@@ -274,6 +279,7 @@ export async function loadConnectorCatalogue(
       .eq('platform', 'shopify')
       .order('installed_at', { ascending: false })
       .limit(1),
+    merchantId === SCREENSHOT_MERCHANT_ID ? getMerchantProfileById(client, merchantId) : Promise.resolve(null),
   ]);
   if (error) throw new Error(`connector_catalogue_failed: ${error.message}`);
   const gorgiasLastSyncAt = (gorgiasRows?.[0] as { last_sync_at: string | null } | undefined)?.last_sync_at ?? null;
@@ -351,7 +357,7 @@ export async function loadConnectorCatalogue(
     // (e.g. a "Stale" badge next to a "Last data received: Never" card).
     const dataReceivedAnchor = freshness.lastDataReceivedAt ?? primary?.last_successful_sync_at ?? view?.lastSyncAt ?? null;
 
-    return {
+    return screenshotSource({
       id: provider.id,
       name: provider.name,
       description: provider.description ?? 'Connection to this source.',
@@ -403,6 +409,6 @@ export async function loadConnectorCatalogue(
       evidenceCapabilities,
       connectEnabled: provider.codeMaturity !== 'slot_only'
         && (Boolean(provider.setupHref) || Boolean(adapter?.manifest.launchVisible)),
-    };
+    }, isScreenshotAccount(merchant));
   });
 }

@@ -37,6 +37,7 @@ export type ClaimPackInput = {
   readiness: ProviderClaimReadiness;
   ruleVersionId: string | null;
   issueSummary: string;
+  merchantNotes?: string | null;
   chronology: Array<{ stage: string; occurredAt: string | null; summary: string; evidenceIds: string[] }>;
   sources: ClaimPackSource[];
   generatedAt?: string;
@@ -54,6 +55,7 @@ export type ClaimPackManifest = {
   posture: ClaimPosture;
   draftWatermark: boolean;
   issueSummary: string;
+  merchantNotes?: string | null;
   claimAmount: { minor: number | null; currency: string | null };
   gates: ClaimGate[];
   chronology: ClaimPackInput['chronology'];
@@ -114,6 +116,7 @@ export function buildClaimPack(input: ClaimPackInput): ClaimPackBuild {
     posture: input.readiness.posture,
     draftWatermark: state === 'draft',
     issueSummary: input.issueSummary,
+    merchantNotes: input.merchantNotes ?? null,
     claimAmount: { minor: input.amountSoughtMinor, currency: input.currency?.toUpperCase() ?? null },
     gates: input.readiness.gates,
     chronology: [...input.chronology].sort((left, right) => (left.occurredAt ?? '').localeCompare(right.occurredAt ?? '')),
@@ -164,6 +167,7 @@ export async function renderClaimPackPdf(build: ClaimPackBuild): Promise<Buffer>
       text(styles.small, `Case ${manifest.recoveryCaseId} · Provider ${escapeText(manifest.provider.name)}`),
       text(styles.small, `Readiness ${manifest.readiness} · Posture ${manifest.posture}`),
       text(styles.small, manifest.issueSummary),
+      ...(manifest.merchantNotes ? [text(styles.heading, 'Merchant notes — not independently verified'), text(styles.row, manifest.merchantNotes)] : []),
       text(styles.heading, 'Claim gates'),
       ...manifest.gates.map((gate) => text(styles.row, `${gate.id}: ${gate.state} — ${escapeText(gate.reason)}`, gate.id)),
       text(styles.heading, 'Chronology'),

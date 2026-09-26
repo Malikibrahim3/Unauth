@@ -24,6 +24,7 @@ import {
 } from "@/lib/claims/decision/auditHashes";
 import {
   evaluateRules,
+  normalizeRuleCondition,
   type MerchantRule,
   type RuleAction,
   type RuleCondition,
@@ -40,7 +41,7 @@ const conditionSchema = z.object({
   field: z.string().min(1),
   operator: z.string().min(1),
   value: z.unknown(),
-});
+}).passthrough().transform(condition => normalizeRuleCondition(condition as RuleCondition));
 
 const actionSchema = z.enum(["approve", "manual_review", "deny"]);
 const operatorSchema = z.enum(["and", "or"]);
@@ -106,6 +107,7 @@ interface MerchantRuleRow {
 }
 
 export function mapRuleRow(row: MerchantRuleRow): MerchantRule {
+  if (!Array.isArray(row.conditions)) throw new Error("Rule conditions unavailable; evaluation is blocked.");
   return {
     id: row.id,
     merchant_id: row.merchant_id,
@@ -114,10 +116,10 @@ export function mapRuleRow(row: MerchantRuleRow): MerchantRule {
     is_active: row.is_active,
     priority: row.priority,
     conditions: Array.isArray(row.conditions)
-      ? (row.conditions as RuleCondition[])
+      ? (row.conditions as RuleCondition[]).map((condition, index) => normalizeRuleCondition({ ...condition, id: condition.id || `${row.id}:condition:${index}` }))
       : [],
     action: row.action as RuleAction,
-    condition_operator: row.condition_operator === "or" ? "or" : "and",
+    condition_operator: row.condition_operator as MerchantRule['condition_operator'],
   };
 }
 

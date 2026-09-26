@@ -203,6 +203,25 @@ async function latestSnapshot(
   return result.data ? record(result.data) : null;
 }
 
+async function snapshotForInput(
+  client: UntypedQueryClient,
+  merchantId: string,
+  caseId: string,
+  recommendationType: string,
+  inputHash: string,
+): Promise<Record<string, any> | null> {
+  const result = await client
+    .from(TABLES.CASE_RECOMMENDATION_SNAPSHOTS)
+    .select('id,input_hash,generated_at,supersedes_snapshot_id')
+    .eq('merchant_id', merchantId)
+    .eq('support_payout_case_id', caseId)
+    .eq('recommendation_type', recommendationType)
+    .eq('input_hash', inputHash)
+    .maybeSingle();
+  if (result.error) throw new Error(`reconciliation_input_snapshot_failed: ${result.error.message}`);
+  return result.data ? record(result.data) : null;
+}
+
 async function appendSnapshot(
   client: UntypedQueryClient,
   merchantId: string,
@@ -210,17 +229,53 @@ async function appendSnapshot(
   recommendation: ReconciliationRecommendation,
   inputHash: string,
 ): Promise<ReconciliationRecommendationSnapshot> {
-  const existing = await latestSnapshot(client, merchantId, caseId, recommendation.recommendationType);
-  if (existing?.input_hash === inputHash) {
-    return { ...recommendation, id: String(existing.id), caseId, inputHash, supersedesSnapshotId: null };
+  const matching = await snapshotForInput(
+    client,
+    merchantId,
+    caseId,
+    recommendation.recommendationType,
+    inputHash,
+  );
+  if (matching) {
+    return {
+      ...recommendation,
+      id: String(matching.id),
+      caseId,
+      inputHash,
+      supersedesSnapshotId: matching.supersedes_snapshot_id ? String(matching.supersedes_snapshot_id) : null,
+    };
   }
+  const existing = await latestSnapshot(client, merchantId, caseId, recommendation.recommendationType);
 
   const result = await client
     .from(TABLES.CASE_RECOMMENDATION_SNAPSHOTS)
     .insert(snapshotRow(caseId, merchantId, recommendation, inputHash, existing?.id ? String(existing.id) : null))
     .select('id')
     .single();
-  if (result.error) throw new Error(`reconciliation_snapshot_insert_failed: ${result.error.message}`);
+  if (result.error) {
+    // Concurrent refreshes can both miss the same immutable input snapshot.
+    // The unique input index chooses the winner; the loser reads that exact
+    // snapshot back instead of reporting a failed reconciliation refresh.
+    if (result.error.code === '23505' || /idx_reconciliation_snapshots_input|duplicate key/i.test(result.error.message)) {
+      const replay = await snapshotForInput(
+        client,
+        merchantId,
+        caseId,
+        recommendation.recommendationType,
+        inputHash,
+      );
+      if (replay) {
+        return {
+          ...recommendation,
+          id: String(replay.id),
+          caseId,
+          inputHash,
+          supersedesSnapshotId: replay.supersedes_snapshot_id ? String(replay.supersedes_snapshot_id) : null,
+        };
+      }
+    }
+    throw new Error(`reconciliation_snapshot_insert_failed: ${result.error.message}`);
+  }
   return {
     ...recommendation,
     id: String(result.data.id),

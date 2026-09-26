@@ -34,7 +34,7 @@ const FINAL_CLAIM_STATUSES = ['closed', 'resolved_refunded', 'resolved_won', 're
 
 /** v2 `claims` columns surfaced to the queue view-model. */
 const CLAIM_LIST_SELECT =
-  'id,identity_id,source_order_id,source_ticket_id,claim_type,status,amount_at_risk,total_estimated_loss,currency,loss_attribution,attribution_confidence,recoverability,recovery_owner,recovery_required_evidence,recovery_next_action,payout_decision_state,recovery_state,next_action,next_action_reason,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until';
+  'id,identity_id,source_order_id,source_ticket_id,claim_type,status,state_version,amount_at_risk,total_estimated_loss,currency,loss_attribution,attribution_confidence,recoverability,recovery_owner,recovery_required_evidence,recovery_next_action,payout_decision_state,recovery_state,next_action,next_action_reason,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until';
 
 const ALLOWED_STATUSES = [
   'new',
@@ -71,6 +71,7 @@ type ClaimQueryRow = {
   source_ticket_id: string | null;
   claim_type: string;
   status: string;
+  state_version: number | null;
   amount_at_risk: number | null;
   total_estimated_loss: number | null;
   currency: string | null;
@@ -105,6 +106,7 @@ type ClaimsSearchParams = {
   owner?: string;
   viewed?: string;
   selected?: string;
+  new?: string;
   /** Compatibility only; generated links use `selected`. */
   focus?: string;
   /** Internal route context injected by the canonical /cases entry point. */
@@ -113,6 +115,7 @@ type ClaimsSearchParams = {
   responsibility?: string;
   claim_readiness?: string;
   deadline?: string;
+  __visual?: string;
 };
 
 type RecoveryTruthRow = {
@@ -310,6 +313,7 @@ export default async function ClaimsPage({
   const sp: Record<string, string | undefined> = { ...(resolvedParams ?? {}) };
   const basePath = '/cases';
   delete sp.surface;
+  delete sp.__visual;
   const selectedCaseId = resolvedParams.selected ?? resolvedParams.focus ?? null;
   delete sp.focus;
   if (selectedCaseId) sp.selected = selectedCaseId;
@@ -416,7 +420,7 @@ export default async function ClaimsPage({
     fetchClaimQueueCounts(serviceClient, ctx.merchantId, user.id),
     serviceClient
       .from(TABLES.MERCHANT_CLAIMS)
-      .select('status,total_estimated_loss,amount_at_risk,currency,recoverability,recovery_owner', { count: 'exact' })
+      .select('id,status,total_estimated_loss,amount_at_risk,currency,recoverability,recovery_owner', { count: 'exact' })
       .eq('merchant_id', ctx.merchantId),
     serviceClient
       .from(TABLES.RECOVERY_CASES)
@@ -485,12 +489,20 @@ export default async function ClaimsPage({
   const totalPages = Math.max(1, Math.ceil(totalForPager / pageSize));
 
   const flowClaimIds = (flowClaimRows ?? []).map((claim: { id: string }) => claim.id);
-  const { data: flowClosureRows, error: flowClosureError } = flowClaimIds.length > 0
-    ? await serviceClient
-        .from('claim_outcomes')
-        .select('claim_id,updated_at')
-        .in('claim_id', flowClaimIds)
-    : { data: [], error: null };
+  // Keep PostgREST URLs below proxy/header limits for populated workspaces.
+  const flowClosureRows: { claim_id: string; updated_at: string }[] = [];
+  let flowClosureError = null;
+  for (let offset = 0; offset < flowClaimIds.length; offset += 100) {
+    const result = await serviceClient
+      .from('claim_outcomes')
+      .select('claim_id,updated_at')
+      .in('claim_id', flowClaimIds.slice(offset, offset + 100));
+    if (result.error) {
+      flowClosureError = result.error;
+      break;
+    }
+    flowClosureRows.push(...(result.data ?? []));
+  }
   if (flowClaimError || flowClosureError) {
     console.error('Cases flow query failed', flowClaimError ?? flowClosureError);
   }
@@ -499,6 +511,44 @@ export default async function ClaimsPage({
     : buildCasesFlowSnapshot(flowClaimRows ?? [], flowClosureRows ?? []);
 
   const claimIds = claimRows.map((c) => c.id);
+  type RecoverableSummaryRow = {
+    support_payout_case_id: string;
+    currency: string;
+    recoverable_minor: number;
+    known_states: string[] | null;
+  };
+  const financialSummaryIds = [...new Set([
+    ...claimIds,
+    ...(recoveryMetricRows ?? []).map((row: { id: string }) => row.id),
+  ])];
+  const recoverableSummaryRows: RecoverableSummaryRow[] = [];
+  let recoverableSummaryUnavailable = false;
+  for (let offset = 0; offset < financialSummaryIds.length; offset += 100) {
+    const result = await serviceClient
+      .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+      .select('support_payout_case_id,currency,recoverable_minor,known_states')
+      .eq('merchant_id', ctx.merchantId)
+      .in('support_payout_case_id', financialSummaryIds.slice(offset, offset + 100));
+    if (result.error) {
+      recoverableSummaryUnavailable = true;
+      break;
+    }
+    recoverableSummaryRows.push(...(result.data ?? []) as RecoverableSummaryRow[]);
+  }
+  const recoverableByCase = new Map<string, RecoverableSummaryRow[]>();
+  for (const row of recoverableSummaryRows) {
+    const values = recoverableByCase.get(row.support_payout_case_id) ?? [];
+    values.push(row);
+    recoverableByCase.set(row.support_payout_case_id, values);
+  }
+  const recoverableFor = (caseId: string, currency: string | null) => {
+    if (recoverableSummaryUnavailable) return null;
+    const values = recoverableByCase.get(caseId) ?? [];
+    const row = currency
+      ? values.find((value) => value.currency.toUpperCase() === currency.toUpperCase()) ?? null
+      : values.length === 1 ? values[0] : null;
+    return row?.known_states?.includes('recoverable') ? row : null;
+  };
   const sourceOrderIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_order_id ? [c.source_order_id] : []))));
   const sourceTicketIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_ticket_id ? [c.source_ticket_id] : []))));
   const identityIds = Array.from(new Set(claimRows.flatMap((c) => (c.identity_id ? [c.identity_id] : []))));
@@ -710,6 +760,7 @@ export default async function ClaimsPage({
   const claims: ClaimRow[] = claimRows.map((c) => {
     const order = c.source_order_id ? orderById.get(c.source_order_id) ?? null : null;
     const investigation = investigationByClaimId.get(c.id);
+    const recoverable = recoverableFor(c.id, c.currency);
     return {
       id: c.id,
       // Identity is the customer key when resolved; otherwise fall back to a
@@ -720,6 +771,7 @@ export default async function ClaimsPage({
       source_ticket_ref: c.source_ticket_id ? ticketRefById.get(c.source_ticket_id) ?? null : null,
       claim_type: c.claim_type,
       status: c.status,
+      state_version: c.state_version ?? 1,
       amount_at_risk: c.amount_at_risk,
       total_estimated_loss: c.total_estimated_loss,
       currency: c.currency,
@@ -754,7 +806,9 @@ export default async function ClaimsPage({
       claim_deadline: truthFor(c).recovery?.deadline_at ?? null,
       provider_position: truthFor(c).recovery?.provider_position ?? 'not_recorded',
       money_outcome: truthFor(c).money,
-    };
+      recoverable_minor: recoverable?.recoverable_minor ?? null,
+      recoverable_state: recoverable ? 'known' : 'unavailable',
+    } as ClaimRow & { recoverable_minor: number | null; recoverable_state: 'known' | 'unavailable' };
   });
 
   // Build the CustomerProfileSummary view-model from identity + merchant-scoped order/state.
@@ -829,13 +883,21 @@ export default async function ClaimsPage({
       ? 'partial' as const
       : 'unavailable' as const;
   const recoveryRows = (recoveryMetricRows ?? []) as Array<{
+    id: string;
     status: string;
     total_estimated_loss: number | null;
     amount_at_risk: number | null;
     currency: string | null;
     recoverability: string | null;
     recovery_owner: string | null;
+    recoverable_minor?: number | null;
+    recoverable_state?: 'known' | 'unavailable';
   }>;
+  for (const row of recoveryRows) {
+    const recoverable = recoverableFor(row.id, row.currency);
+    row.recoverable_minor = recoverable?.recoverable_minor ?? null;
+    row.recoverable_state = recoverable ? 'known' : 'unavailable';
+  }
   const atRiskCoverageFromQuery = !recoveryMetricError
     && recoveryMetricCount != null
     && recoveryRows.length === recoveryMetricCount
@@ -948,7 +1010,6 @@ export default async function ClaimsPage({
       filterTabs={filterTabs}
       queueFilter={queueFilter}
       sp={sp}
-      sort={sort}
       slaFilter={slaFilter}
       claims={claims}
       listView={listView}
@@ -959,8 +1020,10 @@ export default async function ClaimsPage({
       initialSelectedCaseId={selectedCaseId}
       searchTerm={searchTerm}
       recoveryMetricRows={recoveryRows}
+      recoveryMetricCoverage={atRiskCoverage}
       page={page}
       totalPages={totalPages}
+      totalMatching={listViewTotal}
       basePath={basePath}
     />
   );

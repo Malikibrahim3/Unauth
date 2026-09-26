@@ -4,6 +4,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import {
   getRequestServiceClient,
   getRequestUser,
+  getRequestPermissions,
   requirePagePermission,
 } from "@/lib/auth/requestContext";
 import { buildBehavioralNarrative } from "@/lib/customers/narrative";
@@ -130,6 +131,11 @@ export type ClaimSummaryRow = {
   id: string;
   claim_type: string;
   status: string;
+  source_order_id?: string | null;
+  reason_normalized?: string | null;
+  reason_raw?: string | null;
+  amount_at_risk?: number | string | null;
+  currency?: string | null;
   shopify_order_id?: string | null;
   order_ref?: string | null;
   submitted_at?: string | null;
@@ -145,6 +151,7 @@ export type ActivityLogEntry = {
 };
 
 export type CustomerProfilePageViewProps = {
+  notePermissions?: { add: boolean; delete: boolean };
   connectionState: ConnectionState;
   auditRunId: string | null;
   viewToken: string;
@@ -182,6 +189,7 @@ export type CustomerProfilePageViewProps = {
   activityLog: ActivityLogEntry[];
   openClaimCount: number | null;
   latestClaim: ClaimSummaryRow | null;
+  claims: ClaimSummaryRow[];
   merchantRefundRate: number;
   evidenceDisplay: CustomerEvidenceDisplay | null;
   billingAddress: string | null;
@@ -239,6 +247,8 @@ type ClaimRow = {
   source_order_id: string | null;
   reason_normalized: string | null;
   reason_raw: string | null;
+  amount_at_risk: number | string | null;
+  currency: string | null;
   submitted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -590,7 +600,7 @@ export async function loadCustomerProfilePage(
     const { data, error, count } = (await svc
       .from(TABLES.MERCHANT_CLAIMS)
       .select(
-        "id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at",
+        "id, claim_type, status, source_order_id, reason_normalized, reason_raw, amount_at_risk, currency, submitted_at, created_at, updated_at",
         { count: "exact" },
       )
       .eq("merchant_id", merchantId)
@@ -608,7 +618,7 @@ export async function loadCustomerProfilePage(
     const { data: canonicalClaimRows, error: canonicalClaimError, count: canonicalClaimCount } = (await svc
       .from(TABLES.MERCHANT_CLAIMS)
       .select(
-        "id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at",
+        "id, claim_type, status, source_order_id, reason_normalized, reason_raw, amount_at_risk, currency, submitted_at, created_at, updated_at",
         { count: "exact" },
       )
       .eq("merchant_id", merchantId)
@@ -1188,6 +1198,11 @@ export async function loadCustomerProfilePage(
         id: claim.id,
         claim_type: claim.claim_type,
         status: claim.status,
+        source_order_id: claim.source_order_id,
+        reason_normalized: claim.reason_normalized,
+        reason_raw: claim.reason_raw,
+        amount_at_risk: claim.amount_at_risk,
+        currency: claim.currency,
         shopify_order_id: order?.external_id ?? null,
         order_ref: order?.order_number ?? null,
         submitted_at: claim.submitted_at,
@@ -1195,7 +1210,7 @@ export async function loadCustomerProfilePage(
         updated_at: claim.updated_at,
       };
     });
-  const observedOpenClaimCount = claimSummaryRows.filter((claim) =>
+  const observedOpenClaimCount = claimRows.filter((claim) =>
     ACTIVE_CLAIM_STATUSES.includes(
       claim.status as (typeof ACTIVE_CLAIM_STATUSES)[number],
     ),
@@ -1241,7 +1256,9 @@ export async function loadCustomerProfilePage(
     matchedTypes: match.matchedTypes,
   }));
 
+  const permissions = viewToken ? [] : await getRequestPermissions();
   const props: CustomerProfilePageViewProps = {
+    notePermissions: { add: permissions.includes(PERMISSIONS.ADD_CUSTOMER_NOTE), delete: permissions.includes(PERMISSIONS.DELETE_CUSTOMER_NOTE) },
     connectionState: connectionState as ConnectionState,
     auditRunId,
     viewToken,
@@ -1279,6 +1296,7 @@ export async function loadCustomerProfilePage(
     activityLog,
     openClaimCount,
     latestClaim,
+    claims: claimSummaryRows,
     merchantRefundRate,
     evidenceDisplay,
     billingAddress: billingAddressDisplay,

@@ -25,6 +25,7 @@ import { CustomersOverviewPageView } from "@/app/(app)/customers/CustomersOvervi
 import { resolveCustomerActions } from "@/app/(app)/customers/customersOverviewPageUtils";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import { ACTIVE_CLAIM_STATUSES } from "@/lib/claims/sla";
+import { delayForAcceptanceScenario, throwForAcceptanceScenario } from "@/lib/testing/acceptanceStateInjector";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -94,6 +95,8 @@ export default async function CustomersOverviewPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  await delayForAcceptanceScenario("customers-registry-loading", 5_000);
+  await throwForAcceptanceScenario("customers-error");
   const user = await getRequestUser();
   if (!user) redirect("/login");
 
@@ -293,8 +296,17 @@ export default async function CustomersOverviewPage({
 
   if (q.length >= 2 && !isOrderReferenceSearch) {
     const safeLike = `%${escapePostgrestFilterValue(q)}%`;
+    const nameTokens = q.split(/\s+/).filter(Boolean);
+    const fullNameFilter = nameTokens.length >= 2
+      ? `and(first_name.ilike.%${escapePostgrestFilterValue(nameTokens[0])}%,last_name.ilike.%${escapePostgrestFilterValue(nameTokens[nameTokens.length - 1])}%)`
+      : null;
     scanQuery = scanQuery.or(
-      `email.ilike.${safeLike},first_name.ilike.${safeLike},last_name.ilike.${safeLike}`,
+      [
+        `email.ilike.${safeLike}`,
+        `first_name.ilike.${safeLike}`,
+        `last_name.ilike.${safeLike}`,
+        fullNameFilter,
+      ].filter(Boolean).join(','),
     );
   }
   if (restrictToCustomerIds !== null) {
@@ -459,19 +471,27 @@ export default async function CustomersOverviewPage({
   // Merchant-wide case aggregate (single bounded query). Feeds the KPI strip,
   // the "Most cases" sort, and the per-row case counts.
   // -------------------------------------------------------------------------
-  type CaseAggregate = { total: number; open: number; refunds: number; chargebacks: number };
+  type CaseAggregate = {
+    total: number;
+    open: number;
+    refunds: number;
+    chargebacks: number;
+    totals: Map<string, number>;
+  };
   const caseAggByCustomer = new Map<string, CaseAggregate>();
   const caseAggByMerchantCustomer = new Map<string, CaseAggregate>();
   let caseCoverage: CoverageState = "unavailable";
   try {
     const { data: caseRows, error: caseError, count: caseCount } = (await svc
       .from(TABLES.MERCHANT_CLAIMS)
-      .select("status, claim_type, merchant_customer_id, source_orders(source_customer_id)", { count: "exact" })
+      .select("status, claim_type, amount_at_risk, currency, merchant_customer_id, source_orders(source_customer_id)", { count: "exact" })
       .eq("merchant_id", ctx.merchantId)
       .limit(CASE_AGG_LIMIT)) as unknown as {
       data: Array<{
         status: string;
         claim_type: string;
+        amount_at_risk: number | string | null;
+        currency: string | null;
         merchant_customer_id: string | null;
         source_orders: { source_customer_id: string | null } | null;
       }> | null;
@@ -487,11 +507,16 @@ export default async function CustomersOverviewPage({
       const customerId = r.source_orders?.source_customer_id;
       const merchantCustomerId = r.merchant_customer_id;
       const add = (map: Map<string, CaseAggregate>, key: string) => {
-        const agg = map.get(key) ?? { total: 0, open: 0, refunds: 0, chargebacks: 0 };
+        const agg = map.get(key) ?? { total: 0, open: 0, refunds: 0, chargebacks: 0, totals: new Map<string, number>() };
         agg.total += 1;
         if ((ACTIVE_CLAIM_STATUSES as readonly string[]).includes(r.status)) agg.open += 1;
         if (r.claim_type === "refund_request") agg.refunds += 1;
         if (r.claim_type === CHARGEBACK_CLAIM_TYPE) agg.chargebacks += 1;
+        const currency = r.currency?.trim().toUpperCase();
+        const amount = Number(r.amount_at_risk);
+        if (currency && r.amount_at_risk != null && Number.isFinite(amount)) {
+          agg.totals.set(currency, (agg.totals.get(currency) ?? 0) + amount);
+        }
         map.set(key, agg);
       };
       // A canonical claim is authoritative; legacy source-customer claims are
@@ -600,6 +625,7 @@ export default async function CustomersOverviewPage({
     ordersCountSum: number;
     caseTotal: number;
     caseOpen: number;
+    claimTotals: Map<string, number>;
     refundCases: number;
     chargebackCases: number;
     name: string;
@@ -615,6 +641,12 @@ export default async function CustomersOverviewPage({
     let caseOpen = 0;
     let refundCases = 0;
     let chargebackCases = 0;
+    const claimTotals = new Map<string, number>();
+    const addClaimTotals = (totals: Map<string, number>) => {
+      for (const [currency, amount] of totals) {
+        claimTotals.set(currency, (claimTotals.get(currency) ?? 0) + amount);
+      }
+    };
     const merchantCustomerId = g.members.find((m) => m.merchant_customer_id)?.merchant_customer_id ?? null;
     const canonicalCases = merchantCustomerId ? caseAggByMerchantCustomer.get(merchantCustomerId) : null;
     if (canonicalCases) {
@@ -622,6 +654,7 @@ export default async function CustomersOverviewPage({
       caseOpen += canonicalCases.open;
       refundCases += canonicalCases.refunds;
       chargebackCases += canonicalCases.chargebacks;
+      addClaimTotals(canonicalCases.totals);
     }
     for (const m of g.members) {
       const agg = caseAggByCustomer.get(m.id);
@@ -630,6 +663,7 @@ export default async function CustomersOverviewPage({
         caseOpen += agg.open;
         refundCases += agg.refunds;
         chargebackCases += agg.chargebacks;
+        addClaimTotals(agg.totals);
       }
     }
     const name =
@@ -646,6 +680,7 @@ export default async function CustomersOverviewPage({
       }, ordersByMerchantCustomer.get(merchantCustomerId ?? "")?.count ?? 0),
       caseTotal,
       caseOpen,
+      claimTotals,
       refundCases,
       chargebackCases,
       name,
@@ -733,6 +768,8 @@ export default async function CustomersOverviewPage({
       has_mixed_currency: totalsByCurrency.size > 1,
       payout_cases_total: m.caseTotal > 0 || caseCoverage === "complete" ? m.caseTotal : null,
       payout_cases_open: m.caseOpen > 0 || caseCoverage === "complete" ? m.caseOpen : null,
+      claim_value: m.claimTotals.size === 1 ? [...m.claimTotals.values()][0] : null,
+      claim_currency: m.claimTotals.size === 1 ? [...m.claimTotals.keys()][0] : null,
       case_coverage: caseCoverage,
       has_refund_case: m.refundCases > 0 ? true : caseCoverage === "complete" ? false : null,
       has_chargeback_case: m.chargebackCases > 0 ? true : caseCoverage === "complete" ? false : null,
@@ -755,6 +792,47 @@ export default async function CustomersOverviewPage({
     setupState,
     connectionState,
   );
+
+  const matchGroups = metas
+    .filter((meta) => meta.group.members.length > 1)
+    .slice(0, 3)
+    .map((meta) => ({
+      id: meta.group.members.find((member) => member.merchant_customer_id)?.merchant_customer_id ?? meta.group.members[0].id,
+      title: `${meta.group.members.length} accounts that may be one person`,
+      basis: "matched identifiers from merchant-owned records · a person decides",
+      claimValue: meta.claimTotals.size === 1 ? [...meta.claimTotals.values()][0] : null,
+      claimCurrency: meta.claimTotals.size === 1 ? [...meta.claimTotals.keys()][0] : null,
+      members: meta.group.members.slice(0, 4).map((member) => {
+        const memberCases = member.merchant_customer_id
+          ? caseAggByMerchantCustomer.get(member.merchant_customer_id)
+          : caseAggByCustomer.get(member.id);
+        return {
+          id: member.id,
+          name: fullName(member) || member.email || "Guest customer",
+          email: member.email,
+          claims: memberCases?.total ?? null,
+        };
+      }),
+    }));
+
+  const cohortSummaries = [
+    { label: "One claim", min: 1, max: 1 },
+    { label: "Two claims", min: 2, max: 2 },
+    { label: "Three to five", min: 3, max: 5 },
+    { label: "Six or more", min: 6, max: Number.POSITIVE_INFINITY },
+  ].map((cohort) => {
+    const members = metas.filter((meta) => meta.caseTotal >= cohort.min && meta.caseTotal <= cohort.max);
+    const currencies = new Set(members.flatMap((meta) => [...meta.claimTotals.keys()]));
+    return {
+      ...cohort,
+      count: members.length,
+      orders: members.reduce((sum, meta) => sum + meta.ordersCountSum, 0),
+      claimValue: currencies.size === 1
+        ? members.reduce((sum, meta) => sum + ([...meta.claimTotals.values()][0] ?? 0), 0)
+        : null,
+      currency: currencies.size === 1 ? [...currencies][0] : null,
+    };
+  });
 
   return (
     <CustomersOverviewPageView
@@ -779,6 +857,8 @@ export default async function CustomersOverviewPage({
       statusFilter={openClaimsOnly ? "open_cases" : ""}
       listCoverage={customerListCoverage}
       caseFilterCoverage={caseFilterCoverage}
+      matchGroups={matchGroups}
+      cohortSummaries={cohortSummaries}
     />
   );
 }

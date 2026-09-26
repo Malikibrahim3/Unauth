@@ -218,15 +218,16 @@ describe('capability rendering matches the evidence model', () => {
     }
   });
 
-  it('the detail page names pending runtime verification and renders every evidence field', () => {
+  it('the detail page renders the supplied capability table and preserves each capability state', () => {
     const detailPage = fs.readFileSync(
       path.join(process.cwd(), 'components/sources/SourceDetailOperations.tsx'),
       'utf-8',
     );
-    expect(detailPage).toContain('Runtime verification pending');
-    expect(detailPage).toContain('item.pendingRuntimeCapabilities');
-    expect(detailPage).toContain('dim.evidence');
-    expect(detailPage).toContain('dim.runtimeEvidence');
+    expect(detailPage).toContain('WHAT THIS SOURCE CAN DO');
+    expect(detailPage).toContain('capability.description');
+    expect(detailPage).toContain('capability.level');
+    expect(detailPage).toContain('capability.availability');
+    expect(detailPage).toContain('stateForCapability(capability, connected)');
   });
 
   it('every lifecycle dimension and evidence level has display copy and a badge tone', () => {

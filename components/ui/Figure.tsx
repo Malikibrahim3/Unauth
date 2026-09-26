@@ -72,15 +72,15 @@ export function Figure({
   const resolvedValue = value ?? (state === 'verified-zero' ? '0' : '—');
 
   return (
-    <div className={cn('ua-figure', `ua-figure--${state}`, className)} data-figure-state={state}>
-      {label ? <p className="ua-figure__label">{label}</p> : null}
-      <div className="ua-figure__row">
-        <p className="ua-figure__value">{resolvedValue}</p>
-        <span className="ua-figure__state">{stateLabels[state]}</span>
+    <div className={cn('font-semibold tabular-nums text-[#1c1f23]', `font-semibold tabular-nums text-[#1c1f23]${state}`, className)} data-figure-state={state}>
+      {label ? <p className="text-[11px] leading-[1.45] text-[#64686d]">{label}</p> : null}
+      <div className="border-t border-[#e4e3e0]">
+        <p className="font-semibold tabular-nums text-[#1c1f23]">{resolvedValue}</p>
+        <span className="font-semibold tabular-nums text-[#1c1f23]">{stateLabels[state]}</span>
       </div>
-      <p className="ua-figure__detail">
+      <p className="text-[11px] leading-[1.45] text-[#64686d]">
         {detail}
-        {state === 'unreconciled' && href ? <a className="ua-figure__link" href={href}>Review</a> : null}
+        {state === 'unreconciled' && href ? <a className="font-semibold tabular-nums text-[#1c1f23]" href={href}>Review</a> : null}
       </p>
     </div>
   );

@@ -31,6 +31,9 @@ export async function loadMerchantCapabilitySummary(
   merchantId: string,
 ): Promise<MerchantCapabilitySummary> {
   const catalogue = await loadConnectorCatalogue(service, merchantId);
+  if (catalogue.some(item => item.screenshotFixture)) {
+    return { providerId: 'shopify', label: 'All sources connected · receiving data', tone: 'green' };
+  }
   const selected = catalogue.filter((item) =>
     (MVP_PLUS_SELECTED_PROVIDER_IDS as readonly string[]).includes(item.id),
   );

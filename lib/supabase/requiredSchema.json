@@ -1,6 +1,7 @@
 {
   "$comment": "RUN-01/02/03 deploy preflight contract. Every relation, column and relationship the application requires before it may serve traffic. Checked by scripts/verify-schema-preflight.mjs against the target environment and by tests/polish/phase01/schemaPreflight.test.ts against the generated database types. Add an entry here in the same change as the migration that introduces the dependency; never add a client-side fallback that pretends a missing object is present.",
   "relations": [
+    { "table": "merchant_rule_input_versions", "requiredBy": "P08 - current-evidence publication version guard", "columns": ["merchant_id", "revision"] },
     {
       "table": "support_payout_cases",
       "requiredBy": "RUN-01 \u2014 case decision endpoint",
@@ -429,12 +430,20 @@
       ]
     },
     {
+      "table": "plans",
+      "requiredBy": "Core and Scale annual pricing catalogue",
+      "columns": [
+        "annual_price_gbp"
+      ]
+    },
+    {
       "table": "subscription_intents",
       "requiredBy": "MR0 - server-owned subscription selection and provider-confirmation boundary",
       "columns": [
         "id",
         "merchant_id",
         "requested_plan_id",
+        "billing_interval",
         "requested_by",
         "logical_operation_id",
         "source",
@@ -512,6 +521,44 @@
         "verification",
         "verified_at",
         "meaning"
+      ]
+    },
+    {
+      "table": "case_replacement_authorisation_items",
+      "requiredBy": "P05 M06-M08 - atomic same-item replacement quantity and identity ledger",
+      "columns": [
+        "id",
+        "merchant_id",
+        "support_payout_case_id",
+        "case_decision_id",
+        "external_action_id",
+        "source_order_id",
+        "case_claimed_item_id",
+        "source_order_line_id",
+        "line_external_id",
+        "sku",
+        "variant_ref",
+        "title",
+        "quantity",
+        "currency",
+        "cost_provenance",
+        "created_at"
+      ]
+    },
+    {
+      "table": "case_replacement_corroborations",
+      "requiredBy": "P05 M08 - deduplicated source corroboration of merchant replacement handoffs",
+      "columns": [
+        "id",
+        "merchant_id",
+        "replacement_authorisation_item_id",
+        "source_replacement_id",
+        "external_action_id",
+        "quantity",
+        "source_external_id",
+        "source_status",
+        "observed_at",
+        "created_at"
       ]
     }
   ],
@@ -648,6 +695,18 @@
       "columns": ["requested_plan_id"],
       "references": "plans",
       "requiredBy": "MR0 - canonical plan identity for subscription intents"
+    },
+    {
+      "table": "case_replacement_authorisation_items",
+      "columns": ["case_claimed_item_id"],
+      "references": "case_claimed_items",
+      "requiredBy": "P05 - replacement authorisation is restricted to a confirmed claimed item"
+    },
+    {
+      "table": "case_replacement_corroborations",
+      "columns": ["source_replacement_id"],
+      "references": "source_replacements",
+      "requiredBy": "P05 - one source replacement can corroborate only one exact authorisation item"
     }
   ],
   "grants": [
@@ -814,6 +873,18 @@
       "role": "service_role",
       "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
       "requiredBy": "MR5 - immutable workspace deletion receipt reads and writes"
+    },
+    {
+      "table": "case_replacement_authorisation_items",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "P05 - atomic replacement authorisation and reloadable exact item reads"
+    },
+    {
+      "table": "case_replacement_corroborations",
+      "role": "service_role",
+      "privileges": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+      "requiredBy": "P05 - idempotent source replacement corroboration"
     }
   ]
 }

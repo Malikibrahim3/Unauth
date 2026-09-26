@@ -100,7 +100,7 @@ export function RowActionsMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--uo-route-radius-control)] text-[var(--uo-route-text-secondary)] hover:bg-[var(--uo-route-surface-hover)] hover:text-[var(--uo-route-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)] disabled:cursor-not-allowed disabled:bg-[var(--uo-route-surface-muted)] disabled:text-[var(--uo-route-text-disabled)]"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-[#64686d] hover:bg-[#f3f0ed] hover:text-[#1c1f23] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#9f4f08] disabled:cursor-not-allowed disabled:bg-[#f4f3f1] disabled:text-[#6f6a63]"
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -111,15 +111,15 @@ export function RowActionsMenu({
           role="menu"
           aria-label={label}
           aria-hidden={phase === "exiting" ? true : undefined}
-          className="fixed z-[var(--uo-route-z-dropdown)] min-w-[168px] overflow-hidden rounded-[var(--uo-route-radius-control)] border bg-[var(--uo-route-surface-overlay)] py-1 shadow-[var(--uo-route-shadow-menu)]"
+          className="fixed z-[70] min-w-[168px] overflow-hidden rounded-[8px] border border-[#e4e3e0] bg-white py-1 shadow-[0_12px_30px_rgba(28,27,25,.12)]"
           style={{
             left: position.left,
             top: position.top,
             bottom: position.bottom,
-            borderColor: "var(--uo-route-border-default)",
+            borderColor: "#e4e3e0",
             opacity: isOpen ? 1 : 0,
             transform: `translateY(${isOpen ? 0 : 2}px)`,
-            transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--uo-route-ease-standard), transform ${DURATION.fast}ms var(--uo-route-ease-standard)` : "none",
+            transition: motionAllowed ? `opacity ${DURATION.fast}ms ease, transform ${DURATION.fast}ms ease` : "none",
             pointerEvents: phase === "exiting" ? "none" : undefined,
           }}
         >
@@ -143,13 +143,13 @@ export function RowActionsMenu({
                   moveFocus(-1, index);
                 }
               }}
-              className="flex w-full items-center px-3 py-1.5 text-left text-sm hover:bg-[var(--uo-route-surface-hover)] focus-visible:bg-[var(--uo-route-surface-hover)] focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-[var(--uo-route-surface-muted)] disabled:text-[var(--uo-route-text-disabled)]"
+              className="flex w-full items-center px-3 py-1.5 text-left text-sm hover:bg-[#f3f0ed] focus-visible:bg-[#f3f0ed] focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-[#f4f3f1] disabled:text-[#6f6a63]"
               style={{
                 color: action.disabled
-                  ? "var(--uo-route-text-disabled)"
+                  ? "#6f6a63"
                   : action.tone === "danger"
-                    ? "var(--uo-route-risk-critical)"
-                    : "var(--uo-route-text-primary)",
+                    ? "#b0431a"
+                    : "#1c1f23",
               }}
             >
               {action.label}

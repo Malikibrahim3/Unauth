@@ -4,7 +4,6 @@ import { getRequestUser } from "@/lib/auth/requestContext";
 import { TABLES } from "@/lib/supabase/tables";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import AuditTrailClient from "@/components/settings/AuditTrailClient";
-import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 
 export default async function AuditTrailPage() {
   const user = await getRequestUser();
@@ -37,20 +36,5 @@ export default async function AuditTrailPage() {
     };
   }
 
-  return (
-    <SettingsPageShell
-      title="Audit trail"
-      subtitle="Who did what, to which object, when, and with which permission — including everything automation did and did not do."
-      surfaceId="audit-trail"
-      layout="wide"
-      truth={{
-        access: "Members with View audit trail permission",
-        currentState: "Immutable workspace events, newest first, with retained actor and object context where available",
-        saveBehavior: "Read and export only; audit events cannot be edited from this page",
-        impact: "Filters change the view and export scope, never the underlying history",
-      }}
-    >
-      <AuditTrailClient actorsByUserId={actorsByUserId} />
-    </SettingsPageShell>
-  );
+  return <AuditTrailClient actorsByUserId={actorsByUserId} />;
 }

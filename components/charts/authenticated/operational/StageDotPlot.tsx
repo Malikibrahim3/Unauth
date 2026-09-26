@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import type { AuthChartTone } from '../types';
-import styles from './StageDotPlot.module.css';
 
 export type StageDotPlotRow = {
   key: string;
@@ -21,12 +20,12 @@ export type StageDotPlotRow = {
  * workflow-axis colour rather than each stage reading its own hue.
  */
 const WORKFLOW_TONE_VAR: Record<AuthChartTone, string> = {
-  primary: '--uo-route-workflow-ready',
-  positive: '--uo-route-workflow-ready',
-  secondary: '--uo-route-workflow-active',
-  attention: '--uo-route-workflow-escalated',
-  negative: '--uo-route-workflow-blocked',
-  neutral: '--uo-route-workflow-closed',
+  primary: '--authority-workflow-ready',
+  positive: '--authority-workflow-ready',
+  secondary: '--authority-workflow-active',
+  attention: '--authority-workflow-escalated',
+  negative: '--authority-workflow-blocked',
+  neutral: '--authority-workflow-closed',
 };
 
 export function StageDotPlot({ rows }: { rows: StageDotPlotRow[] }) {
@@ -34,7 +33,7 @@ export function StageDotPlot({ rows }: { rows: StageDotPlotRow[] }) {
 
   return (
     <dl
-      className={styles.plot}
+      style={{ display: 'grid', gap: 0, margin: 0 }}
       aria-label={rows.map((row) => `${row.label}: ${row.displayValue}`).join(', ')}
     >
       {rows.map((row) => {
@@ -46,23 +45,22 @@ export function StageDotPlot({ rows }: { rows: StageDotPlotRow[] }) {
         return (
           <div
             key={row.key}
-            className={styles.row}
+            style={{ display: 'grid', gridTemplateColumns: '150px minmax(100px,1fr) 118px', gap: 12, alignItems: 'center', minHeight: 38, borderTop: '1px solid #f4f2ef' }}
             data-stage={row.key}
             data-tone={row.tone}
             data-availability={row.value == null ? 'unavailable' : 'available'}
           >
-            <dt className={styles.label}>
+            <dt style={{ color: '#40454a', fontSize: 11.5 }}>
               {row.href ? <Link href={row.href}>{row.label}</Link> : row.label}
             </dt>
-            <dd className={styles.track} aria-hidden="true">
+            <dd style={{ position: 'relative', height: 1, margin: 0, background: '#e4e3e0' }} aria-hidden="true">
               {percent != null ? (
                 <span
-                  className={styles.dot}
-                  style={{ left: `${percent}%`, background: `var(${WORKFLOW_TONE_VAR[row.tone]})`, color: `var(${WORKFLOW_TONE_VAR[row.tone]})` }}
+                  style={{ position: 'absolute', top: -4, left: `${percent}%`, width: 9, height: 9, marginLeft: -4, borderRadius: '50%', background: `var(${WORKFLOW_TONE_VAR[row.tone]})`, color: `var(${WORKFLOW_TONE_VAR[row.tone]})` }}
                 />
               ) : null}
             </dd>
-            <dd className={styles.value}>
+            <dd style={{ display: 'grid', justifyItems: 'end', gap: 2, margin: 0, fontSize: 10, color: '#6f6a63' }}>
               <strong>{row.displayValue}</strong>
               {row.detail ? <span>{row.detail}</span> : null}
             </dd>

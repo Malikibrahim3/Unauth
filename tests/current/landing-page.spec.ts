@@ -1,231 +1,161 @@
 import { expect, test } from '@playwright/test';
-import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { DEMO_CASES, DEMO_GATE_PRESENTATION, DEMO_PRESENTATION, demoUrl } from '../../lib/demo/merchantCaseV1';
 
-const SECTION_ORDER = ['gate', 'evidence', 'features', 'recovery', 'outcome', 'integrations', 'close-loop'] as const;
+const labels: Record<string,string> = { legitimate:'Damaged item', duplicate:'Prior refund', recoverable:'Wrong item' };
+const anchors=['product','workflow','evidence','sources','examples','recovery','money','controls','policy','availability','connections','faq'];
+const captureDir=process.env.LANDING_CAPTURE_DIR;
+test.beforeEach(async({page})=>{await page.goto('/landing',{waitUntil:'domcontentloaded'});await expect(page.locator('[data-landing-page]')).toBeVisible();});
 
-const ARTIFACTS = [
-  { id: 'hero-gate-overview', type: 'Real product screen', width: '2400', height: '1350', mobileWidth: '1200', mobileHeight: '900', mustShow: ['One £128 request with evidence 4 of 5', 'External action: None'], avoid: 'No generic mockup' },
-  { id: 'gate-evidence-to-decision', type: 'Custom diagram', width: '1920', height: '1200', mobileWidth: '1200', mobileHeight: '1200', mustShow: ['Support, Commerce, Fulfilment, and Carrier inputs', 'Missing proof causing Needs review'], avoid: 'No risk gauge' },
-  { id: 'workspace-around-the-gate', type: 'Custom diagram', width: '1920', height: '1200', mobileWidth: '1200', mobileHeight: '1200', mustShow: ['Connect evidence → Operate case → Control gate', 'Control gate → Recover loss → Reconcile money'], avoid: 'No bento cards' },
-  { id: 'recovery-follow-through', type: 'Custom diagram', width: '1920', height: '1200', mobileWidth: '1200', mobileHeight: '1200', mustShow: ['Carrier, warehouse/3PL, and supplier responsibility candidates', 'External submission, provider position, and deadline'], avoid: 'Do not present review-only signals as fault evidence' },
-  { id: 'financial-case-to-ledger', type: 'Custom diagram', width: '1920', height: '1200', mobileWidth: '1200', mobileHeight: '1200', mustShow: ['Recommendation → Merchant decision → External action', 'Unknown values shown as unavailable, never zero'], avoid: 'No collapsed money stages' },
-] as const;
+test('preserves landmarks, entry destinations, metadata and unique anchors',async({page})=>{
+ await expect(page.getByRole('heading',{level:1})).toHaveText('Your rules before money moves. Recover what you’re owed.');
+ for(const id of anchors){await expect(page.locator(`#${id}`)).toHaveCount(1);expect((await page.locator(`#${id}`).innerText()).length).toBeGreaterThan(15);}
+ for(const href of ['/pricing','/login','/landing/data','/legal/privacy','/legal/data-handling','/legal/pilot-terms','/legal/dpa','mailto:support@unauth.app'])expect(await page.locator(`a[href="${href}"]`).count()).toBeGreaterThan(0);
+ await expect(page.getByRole('link',{name:'See it in action',exact:true}).first()).toHaveAttribute('href',demoUrl('recoverable'));
+ await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content',/Turn customer claims into clear decisions/);
+ await expect(page.locator('meta[property="og:image"]').first()).toHaveAttribute('content',/unauth-og-1200x630.png/);
+ const image=page.locator('[data-story-artifact="hero-live-capture"] img');
+ await expect(page.getByRole('link',{name:'View full-size image'})).toHaveAttribute('href',(await image.getAttribute('src'))!);
+ await page.locator('main').getByRole('link',{name:'How it works',exact:true}).click();await expect(page).toHaveURL(/#workflow$/);
+ await page.goBack();await expect(page).not.toHaveURL(/#workflow$/);await page.goForward();await expect(page).toHaveURL(/#workflow$/);
+});
 
-const rgb = {
-  canvas: 'rgb(255, 255, 255)',
-  surface1: 'rgb(250, 250, 251)',
-  text: 'rgb(17, 19, 24)',
-  secondary: 'rgb(69, 75, 85)',
-  muted: 'rgb(107, 114, 128)',
-  inverse: 'rgb(24, 26, 31)',
-} as const;
+test('case selection changes its explanation and product illustration without writing demo progress or altering later examples',async({page})=>{
+ const before=await page.evaluate(()=>JSON.stringify(localStorage));const writes:string[]=[];
+ page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url());});
+ const tabs=page.getByRole('tablist',{name:'Customer situations'});
+ await expect(tabs.getByRole('tab',{selected:true})).toHaveText('Wrong item');
+ for(const sample of DEMO_CASES){
+  await tabs.getByRole('tab',{name:labels[sample.id]}).click();const panel=page.getByRole('tabpanel',{name:labels[sample.id]});
+  for(const text of [sample.reference,DEMO_PRESENTATION[sample.id].record,DEMO_PRESENTATION[sample.id].route,DEMO_GATE_PRESENTATION[sample.id].conciseRule,DEMO_GATE_PRESENTATION[sample.id].nextAction,'decision pending'])await expect(panel).toContainText(text);
+  await expect(panel).toContainText('Example rule');
+  await panel.getByText('More case facts and permitted options',{exact:true}).click();for(const fact of sample.facts)await expect(panel).toContainText(fact);
+  if(sample.id==='legitimate')for(const amount of ['£96.00','£33.00','£28.00','£5.00'])await expect(panel).toContainText(amount);
+  await expect(panel.getByRole('link',{name:'Explore this case'})).toHaveAttribute('href',demoUrl(sample.id));
+  await expect(page.locator('#recovery')).toContainText('SAMPLE-248');await expect(page.locator('#money')).toContainText('SAMPLE-248');
+ }
+ await tabs.getByRole('tab',{selected:true}).press('Home');await expect(tabs.getByRole('tab').first()).toBeFocused();
+ await tabs.getByRole('tab').first().press('ArrowLeft');await expect(tabs.getByRole('tab').last()).toBeFocused();
+ await tabs.getByRole('tab').last().press('ArrowRight');await expect(tabs.getByRole('tab').first()).toBeFocused();
+ await tabs.getByRole('tab').first().press('End');await expect(tabs.getByRole('tab').last()).toBeFocused();
+ expect(await page.evaluate(()=>JSON.stringify(localStorage))).toBe(before);expect(writes.filter(x=>/\/api\//.test(x))).toEqual([]);
+});
 
-function relativeLuminance(color: string) {
-  const channels = color.match(/\d+/g)?.slice(0, 3).map(Number) ?? [];
-  return channels.map((value) => {
-    const channel = value / 255;
-    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
-}
+test('keeps current recovery, later receipt and conditional reconciliation separate',async({page})=>{
+ const recovery=page.locator('#recovery');for(const value of ['Not submitted','no receipt recorded','Amelia Reed','Merchant-set','Confirm who can claim and where to submit','ILLUSTRATIVE-SUBMISSION-248','not approved','approval is not payment'])await expect(recovery).toContainText(value);
+ const money=page.locator('#money');for(const value of ['Current','Illustrative later receipt','Awaiting match','Illustrative outcome after verification','received, matched and reconciled','Not total loss or profit.','claimant and route must be confirmed'])await expect(money).toContainText(value);
+ const bridge=money.locator('[data-story-artifact="reconciled-outcome"]');
+ for(const [label,amount] of [['Refund paid','£248.00'],['Recovery reconciled','£150.00'],['Unrecovered refund balance','£98.00']])await expect(bridge.locator('dl > div').filter({hasText:label})).toContainText(amount);
+ await expect(page.locator('[data-story-artifact="shared-case"]')).toContainText('Illustrative later receipt');
+ await expect(page.locator('#connections')).toContainText('Courier tracking does not verify payment');
+});
 
-function contrastRatio(foreground: string, background: string) {
-  const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
-  const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));
-  return (lighter + 0.05) / (darker + 0.05);
-}
+test('all anchor destinations clear the sticky header',async({page})=>{
+ for(const id of anchors){await page.goto(`/landing#${id}`,{waitUntil:'domcontentloaded'});await expect(page.locator('[data-landing-page]')).toBeVisible();await page.evaluate(()=>document.fonts.ready);await page.locator(`#${id}`).evaluate(e=>e.scrollIntoView());
+ const top=await page.locator(`#${id}`).evaluate(e=>e.getBoundingClientRect().top);const bottom=await page.locator('[data-landing-navigation] header').evaluate(e=>e.getBoundingClientRect().bottom);
+ expect(top,`#${id} sticky clearance`).toBeGreaterThanOrEqual(bottom+19);}
+});
 
-test.describe('neutral gate-led landing', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/landing', { waitUntil: 'domcontentloaded' });
+test('native menu and disclosures remain keyboard operable',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await expect(page.getByRole('tab',{name:'Wrong item'})).toBeEnabled();const summary=page.locator('header summary');await summary.press('Enter');await expect(page.locator('header details')).toHaveAttribute('open','');await summary.press('Escape');await expect(page.locator('header details')).not.toHaveAttribute('open','');await expect(summary).toBeFocused();
+ const panel=page.getByRole('tabpanel',{name:'Wrong item'});await panel.getByText('More case facts and permitted options',{exact:true}).press('Enter');await expect(panel).toContainText(DEMO_CASES.find(item=>item.id==='recoverable')!.facts[0]);
+});
+
+test('static story survives JavaScript disabled and reduced motion',async({browser,baseURL})=>{
+ const context=await browser.newContext({javaScriptEnabled:false,reducedMotion:'reduce',viewport:{width:1440,height:900}});const page=await context.newPage();await page.goto(`${baseURL}/landing`,{waitUntil:'domcontentloaded'});
+ await expect(page.getByRole('tabpanel',{name:'Wrong item'})).toBeVisible();await expect(page.locator('#evidence')).toContainText(DEMO_GATE_PRESENTATION.recoverable.conciseRule);
+ for(const id of ['recovery','money','availability','controls'])await expect(page.locator(`#${id}`)).toBeVisible();
+ await expect(page.getByRole('link',{name:/Explore this case on desktop/}).first()).toHaveAttribute('href',demoUrl('legitimate'));
+ await expect(page.locator('#money')).toContainText('Illustrative outcome after verification');await context.close();
+});
+
+for(const width of [320,390,768,1024,1280,1440])test(`readable contained story at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:width>=1024?720:844});await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>document.fonts.ready);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const essential=page.locator('[role="tabpanel"]:not([hidden]) h4, [role="tabpanel"]:not([hidden]) strong, #recovery h4, #recovery dd, #money dd, #money h4');
+ for(const item of await essential.all()){const box=await item.boundingBox();if(box){expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(width+1);}}
+ if(captureDir){mkdirSync(captureDir,{recursive:true});await page.screenshot({path:join(captureDir,`full-${width}.png`),fullPage:true,animations:'disabled'});
+ for(const id of ['sources','recovery','money','availability'])await page.locator(`#${id}`).screenshot({path:join(captureDir,`${id}-${width}.png`),animations:'disabled',style:'[data-landing-navigation]{visibility:hidden}'});}
+});
+
+test('failed images preserve explanation, provenance and destinations',async({browser,baseURL})=>{
+ const context=await browser.newContext({reducedMotion:'reduce',viewport:{width:1280,height:720}});const page=await context.newPage();await page.route('**/*',r=>r.request().resourceType()==='image'?r.abort():r.continue());await page.goto(`${baseURL}/landing`);
+ await expect(page.locator('[data-story-artifact="hero-live-capture"] img')).toHaveAttribute('alt',/Fictional Asterlane/);await expect(page.getByText('Customer claims and recovery.')).toBeVisible();await expect(page.locator('#sources')).toContainText('Wrong item received');await expect(page.locator('#recovery')).toContainText('Not submitted');await expect(page.getByRole('link',{name:'See it in action',exact:true}).first()).toHaveAttribute('href',demoUrl('recoverable'));await context.close();
+});
+
+test('records local loading, layout shift and case interaction samples',async({page},testInfo)=>{
+ await page.addInitScript(()=>{const measurements={lcp:0,cls:0,events:[] as {duration:number;interactionId:number;name:string}[]};(window as unknown as {landingMeasurements:typeof measurements}).landingMeasurements=measurements;
+ new PerformanceObserver(list=>{for(const entry of list.getEntries() as (PerformanceEntry&{interactionId?:number})[])if(entry.interactionId)measurements.events.push({duration:entry.duration,interactionId:entry.interactionId,name:entry.name});}).observe({type:'event',buffered:true,durationThreshold:16} as PerformanceObserverInit);
+ new PerformanceObserver(list=>{for(const entry of list.getEntries())measurements.lcp=entry.startTime;}).observe({type:'largest-contentful-paint',buffered:true});
+ new PerformanceObserver(list=>{for(const entry of list.getEntries() as (PerformanceEntry&{hadRecentInput:boolean;value:number})[])if(!entry.hadRecentInput)measurements.cls+=entry.value;}).observe({type:'layout-shift',buffered:true});});
+ await page.reload();await expect(page.locator('#sources')).toContainText('Wrong item received');await page.evaluate(()=>document.fonts.ready);
+ const interactions=[];for(const sample of DEMO_CASES){const start=Date.now();await page.getByRole('tab',{name:labels[sample.id]}).click();await expect(page.getByRole('tabpanel')).toContainText(sample.reference);interactions.push({case:sample.id,automationRoundTripMs:Date.now()-start});}
+ const metrics=await page.evaluate(()=>({...(window as unknown as {landingMeasurements:object}).landingMeasurements,resources:performance.getEntriesByType('resource').filter(e=>e.name.includes('/landing/')||e.name.includes('/_next/')).map(e=>({name:e.name,bytes:(e as PerformanceResourceTiming).encodedBodySize,duration:e.duration}))}));
+ const result={runtime:process.env.LANDING_RUNTIME ?? 'development',metrics,interactions,qualification:'Single local run; automation latency is not INP. No p75 field verdict or comparable pre-change baseline.'};await testInfo.attach('landing-performance.json',{body:JSON.stringify(result,null,2),contentType:'application/json'});if(captureDir){mkdirSync(captureDir,{recursive:true});writeFileSync(join(captureDir,'performance.json'),JSON.stringify(result,null,2));}
+});
+
+test('records visible copy for each default case and expanded FAQs',async({page},testInfo)=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.evaluate(()=>document.fonts.ready);
+ await expect(page.getByRole('tab',{name:'Wrong item'})).toBeEnabled();
+ const counts:Record<string,number>={};
+ const count=()=>page.locator('main').evaluate(element=>((element as HTMLElement).innerText.trim().match(/\S+/g)??[]).length);
+ for(const sample of DEMO_CASES){
+  await page.getByRole('tab',{name:labels[sample.id]}).click();
+  counts[sample.id]=await count();
+ }
+ for(const question of await page.locator('#faq summary').all())await question.click();
+ counts.faqExpanded=await count();
+ const result={viewport:'390×844',browser:'Playwright Chrome',counts};
+ await testInfo.attach('visible-word-counts.json',{body:JSON.stringify(result,null,2),contentType:'application/json'});
+ if(captureDir){mkdirSync(captureDir,{recursive:true});writeFileSync(join(captureDir,'visible-word-counts.json'),JSON.stringify(result,null,2));}
+});
+
+test('keyboard entry and expanded FAQ retain accessible names, focus and contrast',async({page},testInfo)=>{
+  const runtimeErrors:string[]=[];
+  page.on('pageerror',error=>runtimeErrors.push(error.message));
+  await page.goto('/landing');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link',{name:'Skip to content'})).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('main')).toBeFocused();
+  const question=page.locator('#faq summary').first();
+  await question.press('Enter');
+  await expect(page.locator('#faq details').first()).toHaveAttribute('open','');
+  await expect(question).toBeFocused();
+  await page.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
+  const results=await page.evaluate(async()=>{
+    const axe=(window as unknown as {axe:{run:(context:string,options:object)=>Promise<{violations:unknown[];incomplete:unknown[]}>}}).axe;
+    return axe.run('[data-landing-page]',{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa']}});
   });
+  await testInfo.attach('accessibility-results',{body:JSON.stringify(results,null,2),contentType:'application/json'});
+  expect(results.violations).toEqual([]);
+  expect(runtimeErrors).toEqual([]);
+});
 
-  test('preserves story order, anchors, landmarks and destinations', async ({ page }) => {
-    await expect(page).toHaveTitle(/The evidence gate before every refund or reship/);
-    await expect(page.locator('main > section').evaluateAll((sections) => sections.map(({ id }) => id))).resolves.toEqual(SECTION_ORDER);
-    await expect(page.locator('#decision')).toHaveCount(1);
-    await expect(page.getByRole('banner')).toHaveCount(1);
-    await expect(page.getByRole('main')).toHaveCount(1);
-    await expect(page.getByRole('contentinfo')).toHaveCount(1);
+test('desktop sample entry retains case, Inspect and browser Back', async ({ page }) => {
+  await page.goto('/landing', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('link', { name: 'See it in action', exact: true }).first().click();
+  await expect(page).toHaveURL(/\/demo\?case=recoverable&step=inspect$/);
+  await expect(page.getByRole('main')).toContainText('SAMPLE-248');
+  await expect(page.locator('[data-demo-case]')).toHaveAttribute('data-demo-step', 'inspect');
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/landing$/);
+});
 
-    await expect(page.getByRole('link', { name: 'Unauth home' }).first()).toHaveAttribute('href', '/landing');
-    await expect(page.locator('header img[src*="unauth-r1-wordmark-graphite.svg"]')).toHaveCount(1);
-    await expect(page.getByRole('link', { name: 'See the gate in action' }).first()).toHaveAttribute('href', '/demo?step=recommendation');
-    await expect(page.getByRole('link', { name: 'View the demo' }).first()).toHaveAttribute('href', '/demo');
-    await expect(page.locator('a[href="/login"]').first()).toHaveAttribute('href', '/login');
-    await expect(page.getByRole('link', { name: 'Create workspace' }).last()).toHaveAttribute('href', '/signup');
-  });
-
-  test('renders current hero proof and truthful diagram fallbacks without broken images', async ({ page }) => {
-    const slots = page.locator('[data-artifact-slot]');
-    await expect(slots).toHaveCount(ARTIFACTS.length);
-    await expect(slots.evaluateAll((items) => items.map((item) => item.getAttribute('data-artifact-slot')))).resolves.toEqual(ARTIFACTS.map(({ id }) => id));
-
-    for (const artifact of ARTIFACTS) {
-      const slot = page.locator(`[data-artifact-slot="${artifact.id}"]`);
-      await expect(slot).toHaveAttribute('data-desktop-width', artifact.width);
-      await expect(slot).toHaveAttribute('data-desktop-height', artifact.height);
-      await expect(slot).toHaveAttribute('data-mobile-width', artifact.mobileWidth);
-      await expect(slot).toHaveAttribute('data-mobile-height', artifact.mobileHeight);
-      if (artifact.id === 'hero-gate-overview') {
-        await expect(slot).toHaveAttribute('data-artifact-state', 'ready');
-        const image = slot.getByRole('img');
-        await expect(image).toHaveAttribute('src', '/product-proof/hero-case-gate-hold-signal-3420x1920.png');
-        await expect(image).toHaveJSProperty('complete', true);
-        await expect(image).not.toHaveJSProperty('naturalWidth', 0);
-      } else {
-        await expect(slot).toHaveAttribute('data-artifact-state', 'truthful-fallback');
-        await expect(slot.getByRole('img')).toHaveAttribute('aria-label', /Unauth/);
-        await expect(slot.getByRole('img')).toHaveAttribute('data-artifact-visual-type', artifact.type);
-        await expect(slot.getByText('Product boundary')).toBeVisible();
-        await expect(slot.getByText('Fictional case · explanatory view')).toBeVisible();
-        for (const requirement of artifact.mustShow) await expect(slot.getByText(requirement, { exact: true })).toBeVisible();
-        await expect(slot.getByText(new RegExp(artifact.avoid))).toBeVisible();
-        await expect(slot.locator('img')).toHaveCount(0);
-      }
-    }
-    await expect(page.getByText('ARTWORK PLACEHOLDER — NOT FINAL')).toHaveCount(0);
-  });
-
-  test('uses the exact neutral palette and maintains the inverse action', async ({ page }) => {
-    const colors = await page.locator('[data-landing-page]').evaluate((root) => {
-      const rootStyles = getComputedStyle(root);
-      const artifact = root.querySelector<HTMLElement>('[data-artifact-slot] [role="img"]');
-      const intro = root.querySelector<HTMLElement>('section h2 + div p');
-      const inverse = root.querySelector<HTMLElement>('a[href="/demo"]');
-      return {
-        canvas: rootStyles.backgroundColor,
-        text: rootStyles.color,
-        surface1: artifact ? getComputedStyle(artifact.parentElement!).backgroundColor : '',
-        secondary: intro ? getComputedStyle(intro).color : '',
-        muted: getComputedStyle(root.querySelector<HTMLElement>('[aria-label="Demonstration provenance"]')!).color,
-        border: rootStyles.getPropertyValue('--neutral-border').trim(),
-        inverse: inverse ? getComputedStyle(inverse).backgroundColor : '',
-        inverseText: inverse ? getComputedStyle(inverse).color : '',
-        tokenText: rootStyles.getPropertyValue('--neutral-text').trim(),
-        tokens: {
-          surface2: rootStyles.getPropertyValue('--neutral-surface-2').trim(),
-          raised: rootStyles.getPropertyValue('--neutral-surface-raised').trim(),
-          borderStrong: rootStyles.getPropertyValue('--neutral-border-strong').trim(),
-          faint: rootStyles.getPropertyValue('--neutral-text-faint').trim(),
-        },
-      };
-    });
-
-    expect(colors).toEqual({
-      canvas: rgb.canvas,
-      text: rgb.text,
-      surface1: rgb.surface1,
-      secondary: rgb.secondary,
-      muted: rgb.muted,
-      border: '#E6E8EC',
-      inverse: rgb.inverse,
-      inverseText: 'rgb(255, 255, 255)',
-      tokenText: '#111318',
-      tokens: {
-        surface2: '#F5F6F8',
-        raised: '#FFFFFF',
-        borderStrong: '#CDD1D8',
-        faint: '#9AA1AB',
-      },
-    });
-
-    expect(contrastRatio(colors.text, colors.canvas)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(colors.secondary, colors.canvas)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(colors.muted, colors.canvas)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(colors.inverseText, colors.inverse)).toBeGreaterThanOrEqual(4.5);
-
-    const renderedGradients = await page.locator('[data-landing-page]').evaluate((root) => {
-      return [root, ...Array.from(root.querySelectorAll('*'))]
-        .map((element) => getComputedStyle(element).backgroundImage)
-        .filter((value) => value !== 'none');
-    });
-    expect(renderedGradients).toEqual([]);
-  });
-
-  test('has one h1, ordered chapter headings and no horizontal overflow', async ({ page }) => {
-    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-    await expect(page.getByRole('heading', { level: 2 }).allTextContents()).resolves.toEqual([
-      'Inside the gate',
-      'Workspace around the gate',
-      'The decision is not the end',
-      'From decision to financial outcome',
-      'One case model across your post-purchase stack.',
-      'Put the gate in front of your next refund or reship.',
-      'Product',
-      'Privacy',
-      'Company',
-    ]);
-
-    const viewport = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      clientWidth: document.documentElement.clientWidth,
-    }));
-    expect(viewport.scrollWidth).toBe(viewport.clientWidth);
-  });
-
-  test('mobile menu supports keyboard traversal, Escape and focus return', async ({ page }) => {
-    if ((page.viewportSize()?.width ?? 0) > 900) test.skip();
-
-    const toggle = page.getByRole('button', { name: 'Open navigation menu' });
-    await expect(toggle).toBeVisible();
-    await expect(toggle).toHaveAttribute('data-hydrated', 'true');
-    await toggle.press('Enter');
-    await expect(page.getByRole('dialog', { name: 'Navigation menu' })).toBeVisible();
-    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
-    await expect(page.getByRole('link', { name: 'The gate', exact: true }).last()).toBeFocused();
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('link', { name: 'What it sees', exact: true }).last()).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(page.getByRole('dialog', { name: 'Navigation menu' })).toHaveCount(0);
-    await expect(toggle).toBeFocused();
-  });
-
-  test('disables meaningful motion when reduced motion is requested', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    const motion = await page.locator('h1').evaluate((heading) => {
-      const styles = getComputedStyle(heading.parentElement!);
-      return { animationDuration: styles.animationDuration, transitionDuration: styles.transitionDuration };
-    });
-    expect(Number.parseFloat(motion.animationDuration)).toBeLessThanOrEqual(0.01);
-    expect(Number.parseFloat(motion.transitionDuration)).toBeLessThanOrEqual(0.01);
-  });
-
-  test('captures reproducible landing evidence when requested', async ({ page }, testInfo) => {
-    test.skip(process.env.CAPTURE_LANDING_EVIDENCE !== '1');
-    test.skip(testInfo.project.name === 'tablet');
-
-    const viewport = page.viewportSize();
-    if (!viewport) throw new Error('Landing evidence requires a fixed viewport.');
-
-    const outputDirectory = path.resolve(process.cwd(), 'artifacts/landing-neutral');
-    await mkdir(outputDirectory, { recursive: true });
-    const filename = `landing-neutral-${testInfo.project.name}-${viewport.width}x${viewport.height}.png`;
-    const screenshotPath = path.join(outputDirectory, filename);
-    await expect(page.locator('[data-landing-page]')).toBeVisible();
-    const screenshot = await page.screenshot({ path: screenshotPath, fullPage: true, animations: 'disabled' });
-
-    const pageState = await page.locator('[data-landing-page]').evaluate((root) => ({
-      url: window.location.href,
-      sectionIds: Array.from(root.querySelectorAll<HTMLElement>('main > section')).map(({ id }) => id),
-      placeholders: Array.from(root.querySelectorAll<HTMLElement>('[data-artifact-slot]')).map((slot) => ({
-        id: slot.dataset.artifactSlot,
-        status: slot.dataset.artifactState,
-      })),
-      overflow: document.documentElement.scrollWidth === document.documentElement.clientWidth ? 'none' : 'horizontal',
-    }));
-
-    const manifestPath = path.join(outputDirectory, 'manifest.json');
-    const existing = await readFile(manifestPath, 'utf8').then((value) => JSON.parse(value)).catch(() => ({ captures: {} }));
-    existing.url = '/landing';
-    existing.generatedAt = new Date().toISOString();
-    existing.captures[testInfo.project.name] = {
-      viewport,
-      file: filename,
-      imageSignature: `sha256:${createHash('sha256').update(screenshot).digest('hex')}`,
-      ...pageState,
-    };
-    await writeFile(manifestPath, `${JSON.stringify(existing, null, 2)}\n`, 'utf8');
-  });
+test('phone handoff preserves the sample destination without mounting the case', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1' });
+  const page = await context.newPage();
+  await page.goto(`${baseURL}/landing`, { waitUntil: 'domcontentloaded' });
+  await page.getByRole('link', { name: 'See it in action', exact: true }).first().click();
+  await expect(page).toHaveURL(/\/demo\?case=recoverable&step=inspect$/);
+  await expect(page.getByRole('heading', { name: /desktop/i }).first()).toBeVisible({timeout:15000});
+  await expect(page.locator('[data-desktop-required="unsupported-portable"]')).toBeVisible();
+  await expect(page.locator('[data-demo-case]')).toHaveCount(0);
+  const emailLink = await page.getByRole('link', { name: 'Email the link' }).getAttribute('href');
+  expect(decodeURIComponent(emailLink!)).toContain('/demo?case=recoverable&step=inspect');
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/landing$/);
+  await context.close();
 });

@@ -1,7 +1,8 @@
 /** Privacy Policy — static page. */
 
 import type { Metadata } from 'next';
-import { Challenge6Legal } from '@/components/public/Challenge6Legal';
+import PrivacyVisual from '@/components/visual-authority/generated/Legal-Privacy-Clean';
+import PublicLegal from '@/components/public/PublicLegal';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Unauth',
@@ -9,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  return <Challenge6Legal doc="privacy" />;
+  return <PublicLegal source={PrivacyVisual} surfaceId="privacy-policy" />;
 }

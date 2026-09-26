@@ -20,12 +20,12 @@ export function RegistryToolbar({
   label?: string;
 }) {
   return (
-    <div className={cn('ua-registry-toolbar', className)} role="group" aria-label={label}>
-      {search ? <div className="ua-registry-toolbar__search" data-registry-slot="search">{search}</div> : null}
-      {scope ? <div className="ua-registry-toolbar__scope" data-registry-slot="scope">{scope}</div> : null}
-      {filters ? <div className="ua-registry-toolbar__filters" data-registry-slot="filters">{filters}</div> : null}
-      {viewControls ? <div className="ua-registry-toolbar__views" data-registry-slot="view">{viewControls}</div> : null}
-      {actions ? <div className="ua-registry-toolbar__actions" data-registry-slot="actions">{actions}</div> : null}
+    <div className={cn('flex items-center gap-3', className)} role="group" aria-label={label}>
+      {search ? <div className="flex items-center gap-3" data-registry-slot="search">{search}</div> : null}
+      {scope ? <div className="flex items-center gap-3" data-registry-slot="scope">{scope}</div> : null}
+      {filters ? <div className="flex items-center gap-3" data-registry-slot="filters">{filters}</div> : null}
+      {viewControls ? <div className="flex items-center gap-3" data-registry-slot="view">{viewControls}</div> : null}
+      {actions ? <div className="flex items-center gap-3" data-registry-slot="actions">{actions}</div> : null}
     </div>
   );
 }

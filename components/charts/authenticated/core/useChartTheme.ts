@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 /*
  * Evidence Operations: charts are drawn from the interaction accent, observed-data
  * ink, and a neutral comparison ramp.
@@ -11,103 +9,91 @@ import { useEffect, useState } from 'react';
  * palette.
  */
 const CHART_TOKENS = [
-  '--uo-route-chart-primary',
-  '--uo-route-chart-primary-soft',
-  '--uo-route-chart-neutral-900',
-  '--uo-route-chart-neutral-700',
-  '--uo-route-chart-neutral-500',
-  '--uo-route-chart-neutral-300',
-  '--uo-route-chart-track',
-  '--uo-route-chart-grid',
-  '--uo-route-chart-ramp-1',
-  '--uo-route-chart-ramp-2',
-  '--uo-route-chart-ramp-3',
-  '--uo-route-chart-ramp-4',
-  '--uo-route-data-petrol',
-  '--uo-route-success',
-  '--uo-route-warning',
-  '--uo-route-critical',
-  '--uo-route-info',
-  '--uo-route-text-primary',
-  '--uo-route-text-secondary',
-  '--uo-route-text-tertiary',
-  '--uo-route-border-strong',
-  '--uo-route-border-subtle',
-  '--uo-route-border-default',
-  '--uo-route-surface-primary',
-  '--uo-route-icon-secondary',
+  '--authority-chart-primary',
+  '--authority-chart-primary-soft',
+  '--authority-chart-neutral-900',
+  '--authority-chart-neutral-700',
+  '--authority-chart-neutral-500',
+  '--authority-chart-neutral-300',
+  '--authority-chart-track',
+  '--authority-chart-grid',
+  '--authority-chart-ramp-1',
+  '--authority-chart-ramp-2',
+  '--authority-chart-ramp-3',
+  '--authority-chart-ramp-4',
+  '--authority-data-petrol',
+  '--authority-success',
+  '--authority-warning',
+  '--authority-critical',
+  '--authority-info',
+  '--authority-text-primary',
+  '--authority-text-secondary',
+  '--authority-text-tertiary',
+  '--authority-border-strong',
+  '--authority-border-subtle',
+  '--authority-border-default',
+  '--authority-surface-primary',
+  '--authority-icon-secondary',
   // VP2 §14.4 — outcome axis. The only tokens permitted to encode one of the
   // five canonical outcomes (§15.1) in a chart.
-  '--uo-route-outcome-prevented',
-  '--uo-route-outcome-recovered',
-  '--uo-route-outcome-realised',
-  '--uo-route-outcome-open',
-  '--uo-route-outcome-identified',
+  '--authority-outcome-prevented',
+  '--authority-outcome-recovered',
+  '--authority-outcome-realised',
+  '--authority-outcome-open',
+  '--authority-outcome-identified',
   // VP2 §14.7 — cause axis. A monochrome ramp off the parent outcome; never
   // an independent hue per cause.
-  '--uo-route-cause-1',
-  '--uo-route-cause-2',
-  '--uo-route-cause-3',
-  '--uo-route-cause-4',
-  '--uo-route-cause-5',
-  '--uo-route-cause-other',
+  '--authority-cause-1',
+  '--authority-cause-2',
+  '--authority-cause-3',
+  '--authority-cause-4',
+  '--authority-cause-5',
+  '--authority-cause-other',
   // VP2 §14.8 — analytical axis + chart furniture. Distinction between
   // actual/comparison/forecast/reference is carried by stroke pattern
   // (§18.4), not by hue alone.
-  '--uo-route-analytical-actual',
-  '--uo-route-analytical-actual-soft',
-  '--uo-route-analytical-secondary',
-  '--uo-route-analytical-comparison',
-  '--uo-route-analytical-forecast',
-  '--uo-route-analytical-reference',
-  '--uo-route-analytical-selected',
-  '--uo-route-analytical-remainder',
-  '--uo-route-analytical-stage-1',
-  '--uo-route-analytical-stage-2',
-  '--uo-route-analytical-stage-3',
-  '--uo-route-analytical-stage-4',
-  '--uo-route-chart-axis',
-  '--uo-route-chart-zero',
-  '--uo-route-chart-annotation',
+  '--authority-analytical-actual',
+  '--authority-analytical-actual-soft',
+  '--authority-analytical-secondary',
+  '--authority-analytical-comparison',
+  '--authority-analytical-forecast',
+  '--authority-analytical-reference',
+  '--authority-analytical-selected',
+  '--authority-analytical-remainder',
+  '--authority-analytical-stage-1',
+  '--authority-analytical-stage-2',
+  '--authority-analytical-stage-3',
+  '--authority-analytical-stage-4',
+  '--authority-chart-axis',
+  '--authority-chart-zero',
+  '--authority-chart-annotation',
 ] as const;
 
 export type ChartTheme = Record<(typeof CHART_TOKENS)[number], string>;
 
-function readTheme(): ChartTheme {
-  if (typeof window === 'undefined') {
-    return Object.fromEntries(CHART_TOKENS.map((token) => [token, ''])) as ChartTheme;
-  }
-  // --uo-route-chart-* tokens are scoped to .ua-app/.ua-auth-surface, not :root — resolve
-  // against that element (falling back to <html> for isolated previews/tests).
-  const scope = document.querySelector('.ua-app, .ua-auth-surface') ?? document.documentElement;
-  const styles = getComputedStyle(scope);
-  return Object.fromEntries(
-    CHART_TOKENS.map((token) => [token, styles.getPropertyValue(token).trim()]),
-  ) as ChartTheme;
+function colour(token: string): string {
+  if (token.includes('surface-primary')) return '#fff';
+  if (token.includes('border') || token.includes('grid') || token.includes('track') || token.includes('neutral-300')) return '#e4e3e0';
+  if (token.includes('recovered') || token.includes('success')) return '#1a6b43';
+  if (token.includes('realised') || token.includes('critical')) return '#b0431a';
+  if (token.includes('warning') || token.includes('open')) return '#7a5310';
+  if (token.includes('petrol') || token.includes('info') || token.includes('prevented')) return '#247388';
+  if (token.includes('soft')) return '#e9e4de';
+  if (token.includes('tertiary') || token.includes('neutral-500') || token.includes('comparison') || token.includes('forecast')) return '#6f6a63';
+  if (token.includes('secondary') || token.includes('neutral-700') || token.includes('reference')) return '#64686d';
+  if (token.includes('ramp-1') || token.includes('cause-1') || token.includes('stage-1')) return '#3c3935';
+  if (token.includes('ramp-2') || token.includes('cause-2') || token.includes('stage-2')) return '#625e58';
+  if (token.includes('ramp-3') || token.includes('cause-3') || token.includes('stage-3')) return '#6f6a63';
+  if (token.includes('ramp-4') || token.includes('cause-4') || token.includes('stage-4')) return '#b7b1aa';
+  return token.includes('primary') || token.includes('actual') ? '#9f4f08' : '#40454a';
 }
 
+const THEME = Object.fromEntries(CHART_TOKENS.map((token) => [token, colour(token)])) as ChartTheme;
+
 /**
- * Resolves --uo-route-chart-* (and the handful of ink/border/status tokens Recharts needs)
- * to hex once per mount, and again whenever the authenticated theme root flips. Recharts components must
- * never hardcode a hex value or read the deleted --dashboard-* remap layer — this is
- * the bridge.
+ * Resolves the static light token set once per mount. Recharts components must
+ * never hardcode a hex value or read the deleted --dashboard-* remap layer.
  */
 export function useChartTheme(): ChartTheme {
-  const [theme, setTheme] = useState<ChartTheme>(readTheme);
-
-  useEffect(() => {
-    setTheme(readTheme());
-    const root = document.documentElement;
-    const observer = new MutationObserver(() => setTheme(readTheme()));
-    observer.observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-color-mode', 'data-mode'] });
-    document.querySelectorAll<HTMLElement>('.uo-product[data-auth-theme]').forEach((themeRoot) => {
-      observer.observe(themeRoot, { attributes: true, attributeFilter: ['data-auth-theme'] });
-    });
-    document.querySelectorAll<HTMLElement>('.ua-app').forEach((app) => {
-      observer.observe(app, { attributes: true, attributeFilter: ['data-auth-theme', 'data-color-mode'] });
-    });
-    return () => observer.disconnect();
-  }, []);
-
-  return theme;
+  return THEME;
 }

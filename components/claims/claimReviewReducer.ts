@@ -16,6 +16,7 @@ import type {
   MessageTone,
   MetaRow,
   Outcome,
+  ResolutionAction,
 } from '@/components/claims/claimReviewTypes';
 
 export type ClaimReviewState = {
@@ -27,6 +28,13 @@ export type ClaimReviewState = {
   decision: Decision;
   outcome: Outcome;
   decisionAmount: string;
+  resolution: ResolutionAction | '';
+  replacementQuantities: Record<string, string>;
+  duplicateConcessionJustification: string;
+  replacementExternalReference: string;
+  replacementReceiptNote: string;
+  replacementActualCost: string;
+  replacementCostNote: string;
   evidenceType: EvidenceType;
   source: EvidenceSource;
   evidenceUrl: string;
@@ -40,6 +48,7 @@ export type ClaimReviewState = {
   statusNote: string;
   reopenNote: string;
   reverseDecision: Decision;
+  reverseAmount: string;
   reverseOutcome: Outcome;
   reverseNote: string;
   nextClaimHref: string | null;
@@ -84,6 +93,13 @@ export function createClaimReviewInitialState(_profileId: string, initialClaimId
     decision: '' as Decision,
     outcome: 'pending',
     decisionAmount: '',
+    resolution: '',
+    replacementQuantities: {},
+    duplicateConcessionJustification: '',
+    replacementExternalReference: '',
+    replacementReceiptNote: '',
+    replacementActualCost: '',
+    replacementCostNote: '',
     evidenceType: 'tracking',
     source: 'manual',
     evidenceUrl: '',
@@ -97,6 +113,7 @@ export function createClaimReviewInitialState(_profileId: string, initialClaimId
     statusNote: '',
     reopenNote: '',
     reverseDecision: 'approved',
+    reverseAmount: '',
     reverseOutcome: 'pending',
     reverseNote: '',
     nextClaimHref: null,

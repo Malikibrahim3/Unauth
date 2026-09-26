@@ -143,12 +143,14 @@ describe("Static security guard: service-role routes must be auth-gated", () => 
 
       // Merchant routes should have both checks, but some routes are explicitly
       // protected through other mechanisms (cron secret, internal HMAC, public intake).
-      const hasUserAuth = content.includes("auth.getUser");
+      const hasUserAuth =
+        content.includes("auth.getUser") ||
+        content.includes("auth.getClaims");
       const hasPermissionCheck = content.includes("requirePermission");
 
       if (!hasUserAuth || !hasPermissionCheck) {
         violations.push(
-          `${relPath} — missing: ${!hasUserAuth ? "auth.getUser()" : ""}${!hasUserAuth && !hasPermissionCheck ? " + " : ""}${!hasPermissionCheck ? "requirePermission()" : ""}`,
+          `${relPath} — missing: ${!hasUserAuth ? "session authentication" : ""}${!hasUserAuth && !hasPermissionCheck ? " + " : ""}${!hasPermissionCheck ? "requirePermission()" : ""}`,
         );
       }
     }

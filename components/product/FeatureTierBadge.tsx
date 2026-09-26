@@ -12,8 +12,8 @@ export function FeatureTierBadge({
     <span
       className={cn(
         'inline-flex items-center rounded-sm px-1.5 py-0.5',
-        'ua-text-label leading-none',
-        'bg-[var(--uo-route-surface-muted)] text-[var(--uo-route-text-tertiary)]',
+        'text-[11px] font-medium leading-4 text-[#64686d] leading-none',
+        'bg-[#f4f3f1] text-[#6f6a63]',
         className,
       )}
     >

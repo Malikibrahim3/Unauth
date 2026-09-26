@@ -3,10 +3,10 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getRequestUser } from '@/lib/auth/requestContext';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
-import { ButtonLink, PageFrame } from '@/components/ui';
 import { FlowRunTrace, type FlowRunTraceData } from '@/components/rules/FlowRunTrace';
 import { hashId } from '@/lib/ui/displayRef';
 import { redactSensitiveData } from '@/lib/log/redactSensitiveData';
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 
 export default async function Run({ params }: { params: Promise<{ id: string }> }) {
   const user = await getRequestUser();
@@ -35,12 +35,10 @@ export default async function Run({ params }: { params: Promise<{ id: string }> 
       error: redactSensitiveData(step.error),
     })),
   };
-  return <PageFrame
-    title={`Run RUN-${hashId(run.id).slice(1)}`}
-    subtitle="Why this automation acted, paused or failed — step by step, with the trigger it received and the records it changed."
-    breadcrumbs={[{label:'Flows',href:'/controls/flows'},{label:'Run history',href:'/controls/flows/runs'},{label:`RUN-${hashId(run.id).slice(1)}`}]}
-    actions={flowResult.data ? <ButtonLink href={`/controls/flows/${flowResult.data.id}?version=${flowResult.data.version}`} variant="secondary" size="sm">Open flow</ButtonLink> : undefined}
-    surfaceId="flow-run-detail"
-    archetype="P7/P8"
-  ><FlowRunTrace data={data} /></PageFrame>;
+  return <>
+    <SetBreadcrumbLabel label={`RUN-${hashId(run.id).slice(1)}`} />
+    <h1 data-reference-ignore="accessibility-heading" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>Run RUN-{hashId(run.id).slice(1)}</h1>
+    <div style={{ height: 54, flex: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '0 22px', borderBottom: '1px solid #eae8e5' }}><span style={{ font: "400 17px/1 'IBM Plex Mono',monospace", color: '#1c1f23' }}>RUN-{hashId(run.id).slice(1)}</span><span style={{ padding: '2px 7px', borderRadius: 5, background: run.error || run.status === 'failed' ? '#fdf0e6' : run.completed_at ? '#eef6f1' : '#fff3e9', color: run.error || run.status === 'failed' ? '#b0431a' : run.completed_at ? '#1a6b43' : '#7a5310', font: "500 10px/1.5 'Inter',sans-serif" }}>{run.error || run.status === 'failed' ? 'FAILED' : run.completed_at ? 'COMPLETED' : 'RUNNING'}</span><div style={{ flex: 1 }}/>{flowResult.data ? <a href={`/controls/flows/${flowResult.data.id}?version=${flowResult.data.version}`} style={{ padding: '6px 10px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Open flow</a> : null}</div>
+    <div data-screen-label="Flow run" data-visual-world="supplied-package" data-surface-id="flow-run-detail" data-archetype="P7/P8" style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '16px 22px 20px' }}><FlowRunTrace data={data} /></div>
+  </>;
 }

@@ -13,9 +13,9 @@ import {
 } from '@/lib/design/liveness';
 
 const FRESHNESS_STYLE: Record<FreshnessState, { color: string; label: string }> = {
-  current: { color: 'var(--uo-route-success)', label: 'Current' },
-  stale: { color: 'var(--uo-route-warning)', label: 'Stale' },
-  unknown: { color: 'var(--uo-route-neutral)', label: 'Unknown' },
+  current: { color: '#1a6b43', label: 'Current' },
+  stale: { color: '#7a5310', label: 'Stale' },
+  unknown: { color: '#40454a', label: 'Unknown' },
 };
 
 const TRANSPORT_LABEL: Record<TransportState, string> = {
@@ -69,8 +69,8 @@ export function LivenessIndicator({
 
   return (
     <span
-      className={cn('inline-flex items-center gap-1.5 text-[length:var(--uo-route-text-metadata-size)]', className)}
-      style={{ color: 'var(--uo-route-text-tertiary)' }}
+      className={cn('inline-flex items-center gap-1.5 text-[length:10.5px]', className)}
+      style={{ color: '#6f6a63' }}
     >
       {showSpinner ? (
         <Spinner size="sm" delayMs={0} label={activity === 'syncing' ? 'Syncing' : 'Updating'} />
@@ -81,7 +81,7 @@ export function LivenessIndicator({
           />
           {showLiveDot ? (
             <span
-              className="ua-live-dot"
+              className="relative"
               style={{ position: 'absolute', inset: 0, borderRadius: '50%', backgroundColor: freshnessStyle.color }}
             />
           ) : null}

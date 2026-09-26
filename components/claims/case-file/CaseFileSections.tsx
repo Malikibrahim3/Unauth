@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { BeforeYouConfirm, Button, Drawer, Modal } from "@/components/ui";
 import type {
   CaseEvidenceFile,
@@ -16,7 +16,18 @@ import type { RecoveryCase } from "@/lib/recoveries/types";
 import { parseMajorUnitInput } from "@/lib/ui/merchantCopy";
 import { formatMinorCurrencyNullable } from "@/lib/utils/format";
 import { formatDateTime } from "@/lib/utils/format";
-import styles from "./CaseFileSections.module.css";
+const line = '1px solid #e4e3e0';
+const card: CSSProperties = { padding: 16, border: line, borderRadius: 12, background: '#fff' };
+const styles: Record<string, CSSProperties> = {
+  card, cardHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, marginBottom: 12 }, eyebrow: { color: '#6f6a63', fontSize: 10, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' }, mutedLabel: { color: '#64686d', fontSize: 11 }, explainer: { margin: '0 0 13px', color: '#64686d', fontSize: 11.5, lineHeight: 1.45 },
+  truthStrip: { display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', border: line, borderRadius: 10, overflow: 'hidden', background: '#fff' }, truthLane: { minWidth: 0, padding: 12, borderRight: line }, gateGrid: { display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8 }, gate: { padding: 12, border: line, borderRadius: 9, background: '#ffffff' }, gateTop: { display: 'flex', justifyContent: 'space-between', gap: 10 }, gateState: { padding: '2px 6px', borderRadius: 5, background: '#f4f3f1', color: '#40454a', fontSize: 9.5, fontWeight: 600 }, posture: { padding: '3px 7px', borderRadius: 6, background: '#fff3e9', color: '#7a5310', fontSize: 10.5, fontWeight: 600 }, nextAction: { marginTop: 8, color: '#7a5310', fontSize: 11 }, nextActionBar: { display: 'flex', gap: 10, marginTop: 12, padding: 10, borderRadius: 8, background: '#fff3e9', color: '#7a5310', fontSize: 11.5 },
+  chain: { display: 'flex', flexDirection: 'column' }, chainEvent: { display: 'grid', gridTemplateColumns: '28px 1fr auto', gap: 10, padding: '10px 0', borderTop: line }, chainIndex: { display: 'grid', width: 22, height: 22, placeItems: 'center', borderRadius: '50%', background: '#f4f3f1', fontSize: 10 }, failureCallout: { marginTop: 12, padding: 12, borderRadius: 9, background: '#fdf0e6', color: '#b0431a' },
+  tableWrap: { overflowX: 'auto', border: line, borderRadius: 9 }, table: { width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }, empty: { color: '#64686d', fontSize: 11.5 }, emptyState: { padding: 24, color: '#64686d', textAlign: 'center' },
+  register: { display: 'flex', flexDirection: 'column', border: line, borderRadius: 9, overflow: 'hidden' }, registerRow: { display: 'grid', gridTemplateColumns: '26px 1fr auto', gap: 10, padding: '10px 12px', border: 0, borderTop: line, background: '#fff', textAlign: 'left' }, registerMarker: { display: 'grid', width: 20, height: 20, placeItems: 'center', borderRadius: 6, background: '#f4f3f1' }, registerRight: { color: '#64686d', fontSize: 10.5 }, historyNote: { marginTop: 10, color: '#64686d', fontSize: 11 },
+  drawerBody: { display: 'flex', flexDirection: 'column', gap: 14 }, drawerTitle: { display: 'flex', gap: 10, alignItems: 'center' }, metadata: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10, margin: 0 }, drawerSummary: { color: '#40454a', lineHeight: 1.5 }, miniList: { padding: 10, borderRadius: 8, background: '#f4f3f1' }, evidenceColumns: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }, confirmBoundary: { marginTop: 14, padding: 12, border: '1px solid #e4d2c2', borderRadius: 9, background: '#fffaf6' },
+  recoveryGrid: { display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }, actionRow: { display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }, outcomeRows: { display: 'flex', flexDirection: 'column', marginTop: 12 }, artifactLinks: { display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }, error: { color: '#b0431a', fontSize: 12 }, form: { display: 'flex', flexDirection: 'column', gap: 12 },
+  activity: { margin: 0, padding: 0, listStyle: 'none' }, activityDot: { width: 7, height: 7, marginTop: 5, borderRadius: '50%', background: '#9f4f08' }, activityTop: { display: 'flex', justifyContent: 'space-between', gap: 12 },
+};
 
 function stateLabel(value: string): string {
   return value
@@ -82,9 +93,9 @@ export function CaseTruthStrip({ file }: { file: CaseEvidenceFile }) {
     },
   ] as const;
   return (
-    <section className={styles.truthStrip} aria-label="Case truth lanes">
+    <section style={styles.truthStrip} aria-label="Case truth lanes">
       {lanes.map((lane) => (
-        <div className={styles.truthLane} data-tone={lane.tone} key={lane.id}>
+        <div style={styles.truthLane} data-tone={lane.tone} key={lane.id}>
           <span>{lane.label}</span>
           <strong>{lane.value}</strong>
           <small>{lane.detail}</small>
@@ -96,7 +107,7 @@ export function CaseTruthStrip({ file }: { file: CaseEvidenceFile }) {
 
 function GateState({ gate }: { gate: ClaimGate }) {
   return (
-    <span className={styles.gateState} data-state={gate.state}>
+    <span style={styles.gateState} data-state={gate.state}>
       {stateLabel(gate.state)}
     </span>
   );
@@ -104,26 +115,26 @@ function GateState({ gate }: { gate: ClaimGate }) {
 
 export function ClaimGates({ file }: { file: CaseEvidenceFile }) {
   return (
-    <section className={styles.card} aria-labelledby="claim-gates-heading">
-      <div className={styles.cardHeader}>
+    <section style={styles.card} aria-labelledby="claim-gates-heading">
+      <div style={styles.cardHeader}>
         <div>
           <h2 id="claim-gates-heading">Nine hard claim gates</h2>
         </div>
         <span
-          className={styles.posture}
+          style={styles.posture}
           data-posture={file.providerClaimReadiness.posture}
         >
           {postureLabel(file.providerClaimReadiness.posture)}
         </span>
       </div>
-      <p className={styles.explainer}>
+      <p style={styles.explainer}>
         All gates must be met before a final provider pack can be frozen. This
         posture never promises provider acceptance or payment.
       </p>
-      <div className={styles.gateGrid}>
+      <div style={styles.gateGrid}>
         {file.providerClaimReadiness.gates.map((gate) => (
-          <article className={styles.gate} key={gate.id}>
-            <div className={styles.gateTop}>
+          <article style={styles.gate} key={gate.id}>
+            <div style={styles.gateTop}>
               <strong>{gate.headline}</strong>
               <GateState gate={gate} />
             </div>
@@ -134,12 +145,12 @@ export function ClaimGates({ file }: { file: CaseEvidenceFile }) {
                 : "No cited source"}
             </small>
             {gate.state !== "met" && gate.state !== "not_applicable" ? (
-              <div className={styles.nextAction}>{gate.nextAction}</div>
+              <div style={styles.nextAction}>{gate.nextAction}</div>
             ) : null}
           </article>
         ))}
       </div>
-      <div className={styles.nextActionBar}>
+      <div style={styles.nextActionBar}>
         <strong>Next action</strong>
         <span>{file.providerClaimReadiness.nextAction}</span>
       </div>
@@ -155,23 +166,23 @@ export function CustodyChainCard({
   firstFailure: CaseEvidenceFile["firstEvidencedFailure"];
 }) {
   return (
-    <section className={styles.card} aria-labelledby="custody-chain-heading">
-      <div className={styles.cardHeader}>
+    <section style={styles.card} aria-labelledby="custody-chain-heading">
+      <div style={styles.cardHeader}>
         <div>
           <h2 id="custody-chain-heading">Custody chain</h2>
         </div>
-        <span className={styles.mutedLabel}>
+        <span style={styles.mutedLabel}>
           Last correct → first evidenced failure
         </span>
       </div>
-      <div className={styles.chain}>
+      <div style={styles.chain}>
         {chain.map((event, index) => (
           <div
-            className={styles.chainEvent}
+            style={styles.chainEvent}
             data-state={event.state}
             key={event.id}
           >
-            <span className={styles.chainIndex}>{index + 1}</span>
+            <span style={styles.chainIndex}>{index + 1}</span>
             <div>
               <strong>{event.label}</strong>
               <small>
@@ -180,14 +191,14 @@ export function CustodyChainCard({
                   : "Date unavailable"}
               </small>
               <p>{event.summary}</p>
-              <span className={styles.gateState} data-state={event.state}>
+              <span style={styles.gateState} data-state={event.state}>
                 {stateLabel(event.state)}
               </span>
             </div>
           </div>
         ))}
       </div>
-      <div className={styles.failureCallout}>
+      <div style={styles.failureCallout}>
         <span>First evidenced failure</span>
         <strong>
           {firstFailure.stage
@@ -205,19 +216,19 @@ export function CustodyChainCard({
 
 export function ItemParcelMatrixCard({ file }: { file: CaseEvidenceFile }) {
   return (
-    <section className={styles.card} aria-labelledby="item-parcel-heading">
-      <div className={styles.cardHeader}>
+    <section style={styles.card} aria-labelledby="item-parcel-heading">
+      <div style={styles.cardHeader}>
         <div>
           <h2 id="item-parcel-heading">Item → parcel matrix</h2>
         </div>
-        <span className={styles.mutedLabel}>
+        <span style={styles.mutedLabel}>
           {file.itemParcelMatrix.length} reconciled row
           {file.itemParcelMatrix.length === 1 ? "" : "s"}
         </span>
       </div>
       {file.itemParcelMatrix.length ? (
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
+        <div style={styles.tableWrap}>
+          <table style={styles.table}>
             <thead>
               <tr>
                 <th>Item</th>
@@ -239,7 +250,7 @@ export function ItemParcelMatrixCard({ file }: { file: CaseEvidenceFile }) {
                   <td>{row.recordedQuantity}</td>
                   <td>
                     <span
-                      className={styles.gateState}
+                      style={styles.gateState}
                       data-state={
                         row.state === "delivered"
                           ? "conflicting"
@@ -267,7 +278,7 @@ export function ItemParcelMatrixCard({ file }: { file: CaseEvidenceFile }) {
           </table>
         </div>
       ) : (
-        <p className={styles.empty}>
+        <p style={styles.empty}>
           No claimed item or parcel rows are available.
         </p>
       )}
@@ -290,29 +301,29 @@ export function EvidenceRegisterCard({ file }: { file: CaseEvidenceFile }) {
   );
   return (
     <section
-      className={styles.card}
+      style={styles.card}
       aria-labelledby="evidence-register-heading"
     >
-      <div className={styles.cardHeader}>
+      <div style={styles.cardHeader}>
         <div>
           <h2 id="evidence-register-heading">Evidence register</h2>
         </div>
-        <span className={styles.mutedLabel}>
+        <span style={styles.mutedLabel}>
           {ordered.length} provider-eligible case record
           {ordered.length === 1 ? "" : "s"}
         </span>
       </div>
-      <div className={styles.register}>
+      <div style={styles.register}>
         {ordered.length ? (
           ordered.map((item) => (
             <button
-              className={styles.registerRow}
+              style={styles.registerRow}
               type="button"
               key={item.id}
               onClick={() => setSelected(item)}
             >
               <span
-                className={styles.registerMarker}
+                style={styles.registerMarker}
                 data-state={item.freshness}
               >
                 {item.factKind === "source_fact"
@@ -330,7 +341,7 @@ export function EvidenceRegisterCard({ file }: { file: CaseEvidenceFile }) {
                     : "Event time unavailable"}
                 </small>
               </span>
-              <span className={styles.registerRight}>
+              <span style={styles.registerRight}>
                 <em>{stateLabel(item.freshness)}</em>
                 <small>
                   {item.contentHash
@@ -341,13 +352,13 @@ export function EvidenceRegisterCard({ file }: { file: CaseEvidenceFile }) {
             </button>
           ))
         ) : (
-          <p className={styles.empty}>
+          <p style={styles.empty}>
             Source evidence is unavailable for this case.
           </p>
         )}
       </div>
       {file.customerHistory.length ? (
-        <div className={styles.historyNote}>
+        <div style={styles.historyNote}>
           <strong>Customer history is separate</strong>
           <span>
             {file.customerHistory.length} context record
@@ -372,9 +383,9 @@ export function EvidenceRegisterCard({ file }: { file: CaseEvidenceFile }) {
 function EvidenceDrawerBody({ item }: { item: CaseEvidenceRecord | null }) {
   if (!item) return null;
   return (
-    <div className={styles.drawerBody}>
-      <div className={styles.drawerTitle}>
-        <span className={styles.registerMarker}>
+    <div style={styles.drawerBody}>
+      <div style={styles.drawerTitle}>
+        <span style={styles.registerMarker}>
           {item.factKind === "source_fact"
             ? "S"
             : item.factKind === "human_finding"
@@ -388,7 +399,7 @@ function EvidenceDrawerBody({ item }: { item: CaseEvidenceRecord | null }) {
           </small>
         </div>
       </div>
-      <dl className={styles.metadata}>
+      <dl style={styles.metadata}>
         <div>
           <dt>Evidence type</dt>
           <dd>{stateLabel(item.evidenceType)}</dd>
@@ -432,15 +443,15 @@ function EvidenceDrawerBody({ item }: { item: CaseEvidenceRecord | null }) {
           </dd>
         </div>
       </dl>
-      <p className={styles.drawerSummary}>{item.summary}</p>
+      <p style={styles.drawerSummary}>{item.summary}</p>
       {item.supports.length ? (
-        <div className={styles.miniList}>
+        <div style={styles.miniList}>
           <strong>Supports</strong>
           <span>{item.supports.join(", ")}</span>
         </div>
       ) : null}
       {item.conflicts.length ? (
-        <div className={styles.miniList} data-tone="warning">
+        <div style={styles.miniList} data-tone="warning">
           <strong>Conflicts</strong>
           <span>{item.conflicts.join(", ")}</span>
         </div>
@@ -458,21 +469,21 @@ export function ResponsibilityCard({
 }) {
   const responsibility = file.apparentResponsibility;
   return (
-    <section className={styles.card} aria-labelledby="responsibility-heading">
-      <div className={styles.cardHeader}>
+    <section style={styles.card} aria-labelledby="responsibility-heading">
+      <div style={styles.cardHeader}>
         <div>
           <h2 id="responsibility-heading">Apparent responsibility</h2>
         </div>
         <span
-          className={styles.posture}
+          style={styles.posture}
           data-posture={responsibility.confidence}
         >
           {stateLabel(responsibility.confidence)}
         </span>
       </div>
       <h3>{responsibility.headline}</h3>
-      <p className={styles.explainer}>{responsibility.explanation}</p>
-      <div className={styles.evidenceColumns}>
+      <p style={styles.explainer}>{responsibility.explanation}</p>
+      <div style={styles.evidenceColumns}>
         <div>
           <strong>Supporting</strong>
           {responsibility.supportingEvidenceIds.length ? (
@@ -510,7 +521,7 @@ export function ResponsibilityCard({
           )}
         </div>
       </div>
-      <div className={styles.confirmBoundary}>
+      <div style={styles.confirmBoundary}>
         <div>
           <strong>
             {responsibility.merchantConfirmed
@@ -564,13 +575,13 @@ export function RecoveryOutcomeCard({
   const [creditedAmount, setCreditedAmount] = useState("");
   if (!recoveryCase)
     return (
-      <section className={styles.card}>
-        <div className={styles.cardHeader}>
+      <section style={styles.card}>
+        <div style={styles.cardHeader}>
           <div>
             <h2>Recovery not opened</h2>
           </div>
         </div>
-        <p className={styles.empty}>
+        <p style={styles.empty}>
           No provider recovery case is linked. This is separate from the
           customer decision.
         </p>
@@ -613,19 +624,19 @@ export function RecoveryOutcomeCard({
   const canFinalize =
     file.providerClaimReadiness.readiness === "ready_to_submit";
   return (
-    <section className={styles.card} aria-labelledby="recovery-heading">
-      <div className={styles.cardHeader}>
+    <section style={styles.card} aria-labelledby="recovery-heading">
+      <div style={styles.cardHeader}>
         <div>
           <h2 id="recovery-heading">External claim and money outcome</h2>
         </div>
         <span
-          className={styles.posture}
+          style={styles.posture}
           data-posture={file.providerClaimReadiness.posture}
         >
           {readinessLabel(file.providerClaimReadiness.readiness)}
         </span>
       </div>
-      <div className={styles.recoveryGrid}>
+      <div style={styles.recoveryGrid}>
         <div>
           <span>Provider</span>
           <strong>
@@ -669,7 +680,7 @@ export function RecoveryOutcomeCard({
           </small>
         </div>
       </div>
-      <div className={styles.actionRow}>
+      <div style={styles.actionRow}>
         <Button
           size="sm"
           variant="secondary"
@@ -703,7 +714,7 @@ export function RecoveryOutcomeCard({
           Record response
         </Button>
       </div>
-      <div className={styles.outcomeRows}>
+      <div style={styles.outcomeRows}>
         {latestPack ? (
           <div>
             <span>Latest pack</span>
@@ -738,14 +749,14 @@ export function RecoveryOutcomeCard({
         ) : null}
       </div>
       {latestPack ? (
-        <div className={styles.artifactLinks} aria-label="Claim pack downloads">
+        <div style={styles.artifactLinks} aria-label="Claim pack downloads">
           <span>Export frozen artifacts</span>
           <a href={`/api/recoveries/${recoveryCase.id}/claim-packs/${latestPack.id}?format=pdf`}>PDF</a>
           <a href={`/api/recoveries/${recoveryCase.id}/claim-packs/${latestPack.id}?format=zip`}>ZIP + manifest</a>
         </div>
       ) : null}
       {error ? (
-        <p className={styles.error} role="alert">
+        <p style={styles.error} role="alert">
           {error}
         </p>
       ) : null}
@@ -781,11 +792,11 @@ export function RecoveryOutcomeCard({
           appendOnly="Pack manifest, source hashes, and audit record."
         />
         {packModal === "final" && !canFinalize ? (
-          <p className={styles.error}>
+          <p style={styles.error}>
             Finalization is blocked until all nine hard gates are met.
           </p>
         ) : (
-          <p className={styles.explainer}>
+          <p style={styles.explainer}>
             {packModal === "final"
               ? "The manifest will be frozen for manual merchant submission."
               : "The pack will be watermarked Draft — evidence incomplete when any gate is unresolved."}
@@ -872,7 +883,7 @@ function SubmissionForm({
   busy: boolean;
 }) {
   return (
-    <div className={styles.form}>
+    <div style={styles.form}>
       <label>
         Provider reference
         <input
@@ -940,7 +951,7 @@ function ResponseForm({
     (approvedMinor != null && creditedMinor != null && creditedMinor > approvedMinor);
 
   return (
-    <div className={styles.form}>
+    <div style={styles.form}>
       <label>
         Provider position
         <select
@@ -994,7 +1005,7 @@ function ResponseForm({
         appendOnly="Provider position, compensation state, amount, timestamp, and actor."
       />
       {amountInvalid ? (
-        <p className={styles.error} role="alert">
+        <p style={styles.error} role="alert">
           Enter valid non-negative {currency} amounts; credited value cannot exceed approved value.
         </p>
       ) : null}
@@ -1007,21 +1018,21 @@ function ResponseForm({
 
 export function ActivityTimeline({ file }: { file: CaseEvidenceFile }) {
   return (
-    <section className={styles.card} aria-labelledby="activity-heading">
-      <div className={styles.cardHeader}>
+    <section style={styles.card} aria-labelledby="activity-heading">
+      <div style={styles.cardHeader}>
         <div>
-          <span className={styles.eyebrow}>Audit trace</span>
+          <span style={styles.eyebrow}>Audit trace</span>
           <h2 id="activity-heading">Combined case activity</h2>
         </div>
-        <span className={styles.mutedLabel}>{file.activity.length} events</span>
+        <span style={styles.mutedLabel}>{file.activity.length} events</span>
       </div>
       {file.activity.length ? (
-        <ol className={styles.activity}>
+        <ol style={styles.activity}>
           {file.activity.map((event) => (
             <li key={event.id}>
-              <span className={styles.activityDot} data-kind={event.kind} />
+              <span style={styles.activityDot} data-kind={event.kind} />
               <div>
-                <div className={styles.activityTop}>
+                <div style={styles.activityTop}>
                   <strong>{event.title}</strong>
                   <time>
                     {event.occurredAt
@@ -1040,7 +1051,7 @@ export function ActivityTimeline({ file }: { file: CaseEvidenceFile }) {
           ))}
         </ol>
       ) : (
-        <p className={styles.empty}>No case activity has been recorded.</p>
+        <p style={styles.empty}>No case activity has been recorded.</p>
       )}
     </section>
   );
@@ -1048,8 +1059,8 @@ export function ActivityTimeline({ file }: { file: CaseEvidenceFile }) {
 
 export function CaseFileUnavailable({ message }: { message: string }) {
   return (
-    <section className={styles.card}>
-      <div className={styles.emptyState}>
+    <section style={styles.card}>
+      <div style={styles.emptyState}>
         <strong>Case evidence file unavailable</strong>
         <p>{message}</p>
       </div>

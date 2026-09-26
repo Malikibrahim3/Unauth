@@ -121,3 +121,20 @@ export function buildReportExportRows(
     ),
   ];
 }
+
+/** One row per case/currency: group amounts must not be summed across overlaps. */
+export function buildClaimPatternExportRows(
+  report: import('./claimPatterns').PatternReport,
+  dimension: import('./claimPatterns').PatternDimension,
+  rows: import('./claimPatterns').PatternCase[],
+): unknown[][] {
+  return [
+    ['definition','from_inclusive','to_exclusive','read_at','timezone','completeness','issues','dimension','case_id','source_order_id','submitted_at','groups','currency','known_confirmed_loss_minor','known_matched_recovery_minor','known_final_net_loss_minor','allocation','active_work_ids'],
+    ...rows.flatMap(row=>(row.money.length ? row.money : [{currency:null,confirmed:null,matched:null,net:null}]).map(m=>[
+      'Submitted-case cohort; current known outcomes, not period cash movements. Counts overlap. Association is not liability.',
+      report.from,report.to,report.readAt,report.timezone,report.state,report.issues.join('; '),dimension,row.id,row.orderId,row.submittedAt,
+      row.groups[dimension].map(g=>g.label).join('; '),m.currency,m.confirmed,m.matched,m.net,
+      row.groups[dimension].length===1 && row.allocationEligible[dimension] ? 'single established group':'unallocated',row.work.map(work=>work.id).join('; '),
+    ])),
+  ];
+}

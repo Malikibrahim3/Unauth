@@ -50,31 +50,31 @@ export function CasesFlow({ counts, flow }: Pick<Props, 'counts' | 'flow'>) {
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
   return (
-    <section className="ua-cases-flow" aria-labelledby="cases-flow-title">
-      <div className="ua-cases-flow__chart">
+    <section aria-labelledby="cases-flow-title">
+      <div className="relative">
         <header>
           <div>
             <h2 id="cases-flow-title">Case flow</h2>
             <p>Open backlog against cases opened and closed each day</p>
           </div>
-          <div className="ua-cases-flow__legend" aria-label="Case flow legend"><span><i data-tone="backlog" />Open backlog</span><span><i data-tone="opened" />Opened</span><span><i data-tone="closed" />Closed</span></div>
+          <div className="flex items-center gap-3" aria-label="Case flow legend"><span><i data-tone="backlog" />Open backlog</span><span><i data-tone="opened" />Opened</span><span><i data-tone="closed" />Closed</span></div>
         </header>
         {flow ? (
-          <div className="ua-cases-flow__plot" role="img" aria-label={`Thirty-day case flow: ${flow.opened30d} opened, ${flow.closed30d} closed, net change ${flow.netChange}.`}>
+          <div className="relative" role="img" aria-label={`Thirty-day case flow: ${flow.opened30d} opened, ${flow.closed30d} closed, net change ${flow.netChange}.`}>
             <span data-axis="top">{maxBacklog}</span>
             <span data-axis="bottom">0</span>
-            <svg className="ua-cases-flow__backlog" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
+            <svg viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
               <polyline points={backlogPoints} />
             </svg>
-            <div className="ua-cases-flow__movements" aria-hidden="true">
+            <div aria-hidden="true">
               {flow.daily.map((day) => (
-                <span className="ua-cases-flow__day" key={day.date}>
+                <span key={day.date}>
                   <i data-tone="opened" style={{ height: `${Math.max(2, (day.opened / maxDailyMovement) * 52)}%` }} />
                   <i data-tone="closed" style={{ height: `${Math.max(2, (day.closed / maxDailyMovement) * 52)}%` }} />
                 </span>
               ))}
             </div>
-            <div className="ua-cases-flow__periods"><span>{flow.daily[0]?.label}</span><span>{flow.daily[14]?.label}</span><span>{flow.daily.at(-1)?.label}</span></div>
+            <div><span>{flow.daily[0]?.label}</span><span>{flow.daily[14]?.label}</span><span>{flow.daily.at(-1)?.label}</span></div>
           </div>
         ) : (
           <OperationalState
@@ -86,7 +86,7 @@ export function CasesFlow({ counts, flow }: Pick<Props, 'counts' | 'flow'>) {
           />
         )}
       </div>
-      <dl className="ua-cases-flow__stats">
+      <dl>
         <div><dt>Opened, 30 days</dt><dd>{flow ? flow.opened30d : <UnavailableValue reason="Interval unavailable" />}<small>{flow ? 'new cases' : 'interval unavailable'}</small></dd></div>
         <div><dt>Closed, 30 days</dt><dd>{flow ? flow.closed30d : <UnavailableValue reason="Timeline unavailable" />}<small>{counts.closed} recorded overall</small></dd></div>
         <div><dt>Net change</dt><dd>{flow ? `${flow.netChange > 0 ? '+' : ''}${flow.netChange}` : <UnavailableValue reason="Timeline unavailable" />}<small>{flow ? 'opened minus closed' : 'timeline unavailable'}</small></dd></div>

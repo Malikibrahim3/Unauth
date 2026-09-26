@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { surfaceManifest } from '../lib/surfaces/manifest';
+import { surfaceManifest, scenarioLedger } from '../lib/surfaces/manifest';
 
 const START = '<!-- active-renderer-inventory:start -->';
 const END = '<!-- active-renderer-inventory:end -->';
@@ -20,6 +20,18 @@ function activeRendererInventory() {
     '| Route | Page module | Active renderer | Maturity |',
     '|---|---|---|---|',
     ...rows,
+    '',
+    'Current acceptance scope is governed by `GLOBAL_RULES.md`, `docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md` and the public-only `docs/product/PUBLIC_EXPERIENCE_TRANSFORMATION.md`. Historical cutover phases do not authorise replacement. Landing/pricing/legal support responsive marketing at 390/768. Auth/demo/onboarding/app remain desktop-only; verify 1024/1280/1440, short heights, zoom and safe destination/plan handoff independently. These are requirements, not a runtime-compliance claim.',
+    '',
+    '### Planned merchant-clarity scenarios',
+    '',
+    'Generated from the same scenario ledger. These obligations are not implemented or accepted merely by being listed.',
+    '',
+    '| Scenario | Owner | Required exercise |',
+    '|---|---|---|',
+    ...scenarioLedger.filter((scenario) => scenario.readiness === 'planned').map((scenario) =>
+      `| \`${scenario.id}\` | \`${scenario.owner}\` | ${scenario.activationRecipe} |`,
+    ),
     END,
   ].join('\n');
 }

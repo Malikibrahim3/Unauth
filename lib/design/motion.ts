@@ -1,8 +1,7 @@
 /**
  * The single JavaScript mirror of the authenticated product motion contract.
  *
- * CSS is the primary home for these values — `--ua-duration-*` and `--ua-ease-*`
- * in styles/operations/foundation.css. This module exists only for the call sites
+ * This module is the authority for timing values used by call sites
  * that genuinely need a number in JS: timers, delayed indicators, and any
  * animation library configuration.
  *

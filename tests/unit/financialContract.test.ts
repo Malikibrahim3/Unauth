@@ -87,6 +87,16 @@ describe('RUN-21 metric definitions', () => {
 describe('RUN-16 reconciliation', () => {
   const metrics = reconcile(GOLDEN, SCOPE);
 
+  it('uses a start-inclusive and end-exclusive scope', () => {
+    const atEnd = position({
+      requestedMinor: 1,
+      knownStates: ['requested'],
+      occurredAt: SCOPE.to,
+    });
+    const scoped = reconcile([GOLDEN[0], atEnd], SCOPE);
+    expect(scoped.requested_value.caseCount).toBe(1);
+  });
+
   it('reconciles the golden ledger to the penny', () => {
     expect(metrics.requested_value.minor).toBe(18000);
     expect(metrics.maximum_exposure.minor).toBe(18000);

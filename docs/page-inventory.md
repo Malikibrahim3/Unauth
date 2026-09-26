@@ -7,23 +7,25 @@ Generated from `lib/surfaces/manifest.ts`; do not edit this block by hand. The v
 
 | Route | Page module | Active renderer | Maturity |
 |---|---|---|---|
-| `/landing` | `app/(public)/landing/page.tsx` | `NeutralLanding` | standardize |
-| `/pricing` | `app/(public)/pricing/page.tsx` | `Challenge6Pricing` | standardize |
-| `/demo` | `app/(public)/demo/page.tsx` | `Challenge6ProductDemo` | standardize |
+| `/landing` | `app/(public)/landing/page.tsx` | `LandingPage` | standardize |
+| `/landing/data` | `app/(public)/landing/data/page.tsx` | `MerchantDataPage` | standardize |
+| `/pricing` | `app/(public)/pricing/page.tsx` | `PublicPricing` | standardize |
+| `/demo` | `app/(public)/demo/page.tsx` | `OperationalCaseDemo` | standardize |
 | `/signup` | `app/(public)/signup/page.tsx` | `SignupForm` | standardize |
-| `/login` | `app/(auth)/login/page.tsx` | `LoginForm` | standardize |
+| `/login` | `app/(auth)/login/page.tsx` | `LoginPageInner` | standardize |
 | `/reset` | `app/(auth)/reset/page.tsx` | `ResetForm` | standardize |
 | `/reset/update` | `app/(auth)/reset/update/page.tsx` | `UpdatePasswordForm` | standardize |
 | `/onboarding` | `app/onboarding/page.tsx` | `OnboardingClient` | standardize |
-| `/overview` | `app/(app)/overview/page.tsx` | `DashboardOverview` | standardize |
-| `/work` | `app/(app)/work/page.tsx` | `WorkQueueOperations` | standardize |
+| `/overview` | `app/(app)/overview/page.tsx` | `ExactDashboardOverview` | standardize |
+| `/work` | `app/(app)/work/page.tsx` | `ExactWorkQueueOperations` | standardize |
 | `/cases` | `app/(app)/cases/page.tsx` | `ClaimsPage` | standardize |
 | `/customers` | `app/(app)/customers/page.tsx` | `CustomersOverviewPageView` | standardize |
 | `/financials/losses` | `app/(app)/financials/losses/page.tsx` | `LossesPage` | standardize |
 | `/financials/recovery` | `app/(app)/financials/recovery/page.tsx` | `RecoveryPage` | standardize |
+| `/financials/recovery/new` | `app/(app)/financials/recovery/new/page.tsx` | `FileClaimPage` | standardize |
 | `/financials/reconciliation` | `app/(app)/financials/reconciliation/page.tsx` | `ExceptionQueue` | refine |
 | `/financials/reports` | `app/(app)/financials/reports/page.tsx` | `ReportsPage` | standardize |
-| `/financials/reports/records` | `app/(app)/financials/reports/records/page.tsx` | `PageFrame` | standardize |
+| `/financials/reports/records` | `app/(app)/financials/reports/records/page.tsx` | `ReportRecords` | standardize |
 | `/controls/rules` | `app/(app)/controls/rules/page.tsx` | `RulesPage` | standardize |
 | `/controls/rules/recovery` | `app/(app)/controls/rules/recovery/page.tsx` | `RecoveryRulebookClient` | standardize |
 | `/controls/flows` | `app/(app)/controls/flows/page.tsx` | `FlowsPage` | standardize |
@@ -61,23 +63,58 @@ Generated from `lib/surfaces/manifest.ts`; do not edit this block by hand. The v
 | `/settings/billing` | `app/(app)/settings/billing/page.tsx` | `BillingSettingsClient` | standardize |
 | `/help` | `app/(app)/help/page.tsx` | `HelpCentre` | standardize |
 | `/help/[articleSlug]` | `app/(app)/help/[articleSlug]/page.tsx` | `HelpArticlePage` | build |
-| `/legal/data-handling` | `app/(public)/legal/data-handling/page.tsx` | `Challenge6Legal` | standardize |
-| `/legal/dpa` | `app/(public)/legal/dpa/page.tsx` | `Challenge6Legal` | standardize |
-| `/legal/pilot-terms` | `app/(public)/legal/pilot-terms/page.tsx` | `Challenge6Legal` | standardize |
-| `/legal/privacy` | `app/(public)/legal/privacy/page.tsx` | `Challenge6Legal` | standardize |
+| `/legal/data-handling` | `app/(public)/legal/data-handling/page.tsx` | `PublicLegal` | standardize |
+| `/legal/dpa` | `app/(public)/legal/dpa/page.tsx` | `PublicLegal` | standardize |
+| `/legal/pilot-terms` | `app/(public)/legal/pilot-terms/page.tsx` | `PublicLegal` | standardize |
+| `/legal/privacy` | `app/(public)/legal/privacy/page.tsx` | `PublicLegal` | standardize |
 | `/controls` | `app/(app)/controls/page.tsx` | `ControlsIndexPage` | adapter |
 | `/financials` | `app/(app)/financials/page.tsx` | `FinancialsIndexPage` | adapter |
 | `/sources` | `app/(app)/sources/page.tsx` | `SourcesIndexPage` | adapter |
 | `/customers/[id]/claims` | `app/(app)/customers/[id]/claims/page.tsx` | `CustomerClaimReviewPage` | adapter |
 | `/financials/reports/[reportId]` | `app/(app)/financials/reports/[reportId]/page.tsx` | `NamedReportDetail` | build |
 | `/sources/imports/[jobId]` | `app/(app)/sources/imports/[jobId]/page.tsx` | `ImportJobDetail` | build |
+
+Current acceptance scope is governed by `GLOBAL_RULES.md`, `docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md` and the public-only `docs/product/PUBLIC_EXPERIENCE_TRANSFORMATION.md`. Historical cutover phases do not authorise replacement. Landing/pricing/legal support responsive marketing at 390/768. Auth/demo/onboarding/app remain desktop-only; verify 1024/1280/1440, short heights, zoom and safe destination/plan handoff independently. These are requirements, not a runtime-compliance claim.
+
+### Planned merchant-clarity scenarios
+
+Generated from the same scenario ledger. These obligations are not implemented or accepted merely by being listed.
+
+| Scenario | Owner | Required exercise |
+|---|---|---|
+| `account-volume-and-security-truth` | `/settings/workspace/account` | Verify monthly save/clear roundtrip, explicit correction of annual and unknown legacy bands, actual MFA verified/unverified/empty/unavailable states, unsupported enforcement and enrolment, permission denial and save failures. |
+| `audit-filtered-page-and-period` | `/settings/governance/audit-trail` | Change period, actor, action and page; both event streams, exact total, page summaries, dated rows, chart alternative and export use the declared scope. Narrow beyond the 1,000-event accessible boundary. Verify unavailable actor, request-versus-completion and dialog keyboard cancellation. |
+| `privacy-subject-and-workspace-boundaries` | `/settings/legal/data-privacy` | Subject lookup and scoped access remain separate from workspace deletion. Missing erasure preview blocks UI and server confirmation. Changing subject clears previous receipt. Review/cancel workspace deletion without writes; preserve scoped retry identity, permissions and append-only receipts. Use disposable loopback fixtures only. |
+| `notification-account-preference-and-preview` | `/notifications` | Verify retained subject/body, formatted amounts, meaningful destination, future-account preference save/failure, unscheduled digest preview links, unavailable email delivery and no enabled-looking informational switches. |
+| `work-lifecycle-and-selection` | `/work` | Exercise exact filtered totals, current-page selection, task review cancellation, partial retry, assignment, snooze, completion and case/recovery independence. Check cancelled exclusion in Work, loss detail and recovery detail. Persist and read back disposable fixtures; include permission, tenant and stale-version rejection. |
+| `recovery-stage-population` | `/financials/recovery` | Open each stage total at page 1 in the declared currency scope, clearing search explicitly. Check stage pagination, empty page versus empty population, unknown counts, separate received/reconciled stages and page-scoped money. |
+| `claim-draft-facts-and-notes` | `/financials/recovery/new` | Compare complete and incomplete source-backed narratives; keep missing gates actionable and merchant notes separately labelled. Save/replay a disposable draft and inspect the manifest; hard gates block final preparation and submission; verify pending pointer, keyboard and focus behaviour. |
+| `desktop-device-and-zoom-matrix` | `/landing` | Check responsive landing/pricing/legal at 390/768; phones/tablets must not mount auth/demo/onboarding/app workflows. Independently exercise 1024/1280/1440 desktop, short heights, zoom and plan/destination-preserving safe handoff links. |
+| `resolution-comparison-review` | `/cases/[caseId]` | Compare applicable resolutions with known/unknown costs and provenance; open/cancel without writes; permissioned versioned decision snapshot with audit and persisted read-back. |
+| `replacement-authorisation` | `/cases/[caseId]` | Authorise confirmed original-order same-SKU lines only; reject duplicates, invalid quantities, exhausted eligibility, foreign tenant, stale version and unreviewed prior refunds. Retry/concurrency cannot authorise twice; historical approval retains refund meaning. |
+| `replacement-manual-handoff` | `/cases/[caseId]` | Reload authorised order/items/budget/rationale; copy/open manual handoff without provider execution. Verify cancel, retry and partial failure independently. |
+| `replacement-outcome-corroboration` | `/cases/[caseId]` | Record merchant-confirmed dispatch, corroborate with source receipt without duplication, and keep authorisation/cost/recovery/reversal independent; verify exact cleanup. |
+| `demo-legitimate-causal-journey` | `/demo` | Inspect/Decide/Outcome for the legitimate claim; unknown costs, confirm/cancel, request review and separate simulated external stages; no database/provider/billing/network mutation. |
+| `demo-duplicate-causal-journey` | `/demo` | Inspect duplicate payout facts, compare choices and confirm only a local decision; exposure is not savings. Verify branch outcomes and repeated-click idempotency. |
+| `demo-recovery-causal-journey` | `/demo` | Inspect recoverable loss; simulate submission, approval, receipt, match and reconciliation separately; ceiling/residual/money arithmetic remains truthful. |
+| `demo-navigation-and-isolation` | `/demo` | Exercise known/invalid/legacy URLs, Back/Forward/refresh, versioned storage, per-case reset/switch and Outcome without a decision; forbid fabricated prerequisites and external calls. |
+| `policy-preview-scope-and-uncertainty` | `/controls/rules/[ruleId]` | Use Preview impact in create, edit or decision order. Compare complete published/proposed rulesets at a frozen cutoff: 7/30/90 days, 500-case cap, 50-row pages, per-currency exposure, relevant unknowns and shared AND/OR/priority interpretation. Editing invalidates the response; legacy monetary conditions require explicit threshold currency. |
+| `policy-preview-no-write-and-publication` | `/controls/rules/[ruleId]` | Observe zero business/provider/credit writes in preview; edits/evidence changes invalidate preview; reject stale or denied publication and require no-case acknowledgement. Confirm/cancel only against disposable fixtures. |
+| `claim-pattern-issue` | `/financials/reports` | Open /financials/reports?report=issue; inspect the submitted-case cohort, unknown issues, exact case drilldown and reviewed-response export. Read-only component checks are not database acceptance. |
+| `claim-pattern-carrier` | `/financials/reports` | Open /financials/reports?report=carrier; group by confirmed affected shipment carrier for the submitted-case cohort; show as-of/timezone/currency, unknown and unvalued data, exact drilldown and aligned export. |
+| `claim-pattern-sku` | `/financials/reports` | Open /financials/reports?report=sku; group confirmed claimed order lines by SKU; preserve multi-item non-additive counts, allocated/unallocated money and ambiguous associations; never duplicate whole-case money. |
+| `claim-pattern-warehouse` | `/financials/reports` | Open /financials/reports?report=warehouse; require canonical warehouse source or labelled merchant confirmation; origin is not fault. Keep unavailable groups, money allocation and cohort/export scope explicit. |
+| `claim-pattern-investigation` | `/financials/reports` | Show at most three concentrations with five-case/three-order threshold and supported ranking; exact case set, existing Work then deliberate permissioned deduplicated investigation. No automatic tasks or provider action. |
+| `onboarding-next-action-matrix` | `/onboarding` | Exercise seven actual source/import/case state destinations with secondary optional/held-row tasks; resume persisted setup without unsupported commerce detours or fixed times. Execute tests/current/merchant-clarity-repair-p06.spec.ts against disposable loopback fixtures; retain per-state observations and exact cleanup. |
+| `entry-keyboard-and-request-resilience` | `/signup` | Exercise native Enter submission, mouse submission, visible labels, field error association and pending guards on signup, login, reset and reset update. Empty/invalid inputs do not call authentication; safe isolated request rejection releases controls and preserves honest uncertain-outcome guidance. Keep real account creation, recovery email and password changes outside browser tests without a verified disposable local environment. |
+| `recovery-session-lifecycle` | `/reset/update` | Use disposable local auth fixtures to check valid session beyond lookup deadline, recovery event before stale lookup, invalid and success navigation without password mutation, pending duplicate guard, request rejection and successful password update with failed other-session revocation announced separately. Real credentials and sessions are not test targets. |
 <!-- active-renderer-inventory:end -->
 
 Audited 6 August 2026 and P00-reconciled 12 August 2026 against the executable Next.js App Router code in `app/`, its route-owned components in `components/`, and the canonical navigation/redirect tables in `lib/navigation/appRoutes.ts` and `lib/navigation/aliases.js`.
 
 ## Scope and counting rules
 
-- The repository contains **64 concrete `page.tsx` modules**. This document groups them by the product journey, then catalogs meaningful route-local overlays and state layouts.
+- The repository contains **65 concrete `page.tsx` modules**. This document groups them by the product journey, then catalogs meaningful route-local overlays and state layouts.
 - A redirect or compatibility alias is not counted as a UI surface. These are listed under **Routing references without a distinct surface**.
 - Repeated empty, loading, error, and not-found implementations are inventoried once per meaningfully different layout rather than once per route import.
 - “Real UI” means the surface renders product-specific data or an operable workflow. “Partial” means the route works but its content or visual model does not yet fulfill the route’s implied job. “Stub” means the route is only an adapter, redirect, or fallback copy.
@@ -197,7 +234,7 @@ Audited 6 August 2026 and P00-reconciled 12 August 2026 against the executable N
 
 ### [Overview dashboard]
 
-- Route/file path: `/overview` — `app/(app)/overview/page.tsx`, `components/dashboard/DashboardOverview.tsx`.
+- Route/file path: `/overview` — `app/(app)/overview/page.tsx`, `components/dashboard/ExactDashboardOverview.tsx`.
 - What it does: Gives an operator a current financial position and a prioritized starting point for work.
 - Primary data shown: Date range, comparison period and currency; exposure, recovered, prevented and realised-loss totals; case count; active, needs-action and ready counts; time-series values; attention category, count, SLA and exposure; source freshness, reconciliation confidence and data coverage.
 - Primary user action: Scan the operating position and open the highest-priority work.
@@ -206,7 +243,7 @@ Audited 6 August 2026 and P00-reconciled 12 August 2026 against the executable N
 
 ### [Overview data-trust details modal]
 
-- Route/file path: Overlay on `/overview` — `components/dashboard/DashboardOverview.tsx`.
+- Route/file path: Overlay on `/overview` — `components/dashboard/ExactDashboardOverview.tsx`.
 - What it does: Explains whether dashboard figures are safe to act on.
 - Primary data shown: Source name, coverage state, current/stale record counts, last freshness, financial validation issues and reconciliation issues.
 - Primary user action: Verify the trust boundary before acting on dashboard metrics.
@@ -215,7 +252,7 @@ Audited 6 August 2026 and P00-reconciled 12 August 2026 against the executable N
 
 ### [Overview unavailable and no-work states]
 
-- Route/file path: In-page states on `/overview` — `components/dashboard/DashboardOverview.tsx`.
+- Route/file path: In-page states on `/overview` — `components/dashboard/ExactDashboardOverview.tsx`.
 - What it does: Separately explains missing dated metric history, unavailable verified financial data, or a queue with no active work.
 - Primary data shown: Selected metric label, period total where available, missing-history reason, source-connection action, or zero-work confirmation.
 - Primary user action: Change the metric, inspect underlying records, connect sources, or continue with no intervention.

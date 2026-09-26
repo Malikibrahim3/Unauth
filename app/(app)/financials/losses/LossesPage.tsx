@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Link from '@/components/navigation/AppNavLink';
 import { PERMISSIONS } from '@/lib/permissions';
 import {
   getRequestServiceClient,
@@ -6,16 +7,12 @@ import {
   requirePagePermission,
 } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
-import { PageFrame } from '@/components/ui';
 import type { LossLedgerRow } from '@/components/losses/LossLedger';
 import { LossLedgerOperations } from '@/components/losses/LossLedgerOperations';
-import ExportMenu from '@/components/reports/ExportMenu';
-import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
-import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
+import { readLossLedgerIds } from '@/lib/losses/ledgerReads';
 import {
   isLossWrittenOff,
   lossFinancialDisplay,
-  summarizeKnownLossExposure,
 } from '@/lib/losses/financialDisplay';
 import {
   filterAndSortLossRows,
@@ -29,7 +26,11 @@ import {
   type ReportRange,
 } from '@/lib/reporting/intelligence';
 import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
+import { label } from '@/lib/ui/labels';
+import { LossLedgerFilters } from '@/components/losses/LossLedgerFilters';
 import { loadCanonicalFinancialAggregate } from '@/lib/financial/canonicalAggregates';
+import { FINANCIAL_TIMEZONE, describeFinancialScope } from '@/lib/financial/periods';
+import { acceptanceScenarioFromHeaders, throwForAcceptanceScenario } from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +71,7 @@ type FinancialQueryRow = Omit<FinancialRow, 'known_states'> & {
 type PayoutIdentityRow = {
   id: string;
   source_order_id: string | null;
+  submitted_at: string;
 };
 
 type OrderIdentityRow = {
@@ -112,6 +114,11 @@ function lossCauseKey(row: LossLedgerRow): string {
   return row.attribution ?? row.category ?? 'unattributed';
 }
 
+function freshnessFromTimestamp(value: string | null | undefined, referenceMs: number): LossLedgerRow['freshness'] {
+  if (!value || Number.isNaN(Date.parse(value))) return 'unknown';
+  return referenceMs - Date.parse(value) > 48 * 60 * 60 * 1000 ? 'stale' : 'current';
+}
+
 type LossQueryHref = {
   range?: ReportRange | null;
   currency?: string | null;
@@ -120,9 +127,10 @@ type LossQueryHref = {
   search?: string | null;
   sort?: LossQuerySort | null;
   page?: number | null;
+  asOf?: string | null;
 };
 
-function hrefForLosses({ range, currency, source, status, search, sort, page }: LossQueryHref) {
+function hrefForLosses({ range, currency, source, status, search, sort, page, asOf }: LossQueryHref) {
   const params = new URLSearchParams();
   if (range) params.set('range', range);
   if (currency) params.set('currency', currency);
@@ -131,6 +139,7 @@ function hrefForLosses({ range, currency, source, status, search, sort, page }: 
   if (search) params.set('search', search);
   if (sort && sort !== 'updated_desc') params.set('sort', sort);
   if (page && page > 1) params.set('page', String(page));
+  if (asOf) params.set('asOf', asOf);
   const query = params.toString();
   return query ? `/financials/losses?${query}` : '/financials/losses';
 }
@@ -167,6 +176,7 @@ export default async function LossesPage({
   const serviceClient = getRequestServiceClient();
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
   if (!ctx) redirect('/overview');
+  await throwForAcceptanceScenario('losses-error');
 
   const params = searchParams ? await searchParams : {};
   const range = parseReportRange(oneParam(params.range) ?? undefined);
@@ -183,8 +193,20 @@ export default async function LossesPage({
     : 'updated_desc';
   const pageParam = Number(oneParam(params.page));
   const selectedPage = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
-  const nowMs = Date.now();
+  const requestedAsOf = oneParam(params.asOf);
+  const parsedAsOf = requestedAsOf ? Date.parse(requestedAsOf) : Number.NaN;
+  const nowMs = Number.isFinite(parsedAsOf) ? parsedAsOf : Date.now();
+  const asOf = new Date(nowMs).toISOString();
   const cutoff = reportCutoff(range, new Date(nowMs));
+  const financialScope = {
+    from: cutoff,
+    to: asOf,
+    timezone: FINANCIAL_TIMEZONE,
+    timeBasis: 'case_submitted_at' as const,
+    population: 'merchant_support_payout_cases' as const,
+    boundary: 'start_inclusive_end_exclusive' as const,
+    asOf,
+  };
 
   const [lossResult, orphanResult, aggregate] = await Promise.all([
     serviceClient
@@ -203,7 +225,7 @@ export default async function LossesPage({
       .limit(500),
     loadCanonicalFinancialAggregate(serviceClient, ctx.merchantId, {
       from: cutoff,
-      to: new Date(nowMs).toISOString(),
+      to: asOf,
       currency: requestedCurrency && /^[A-Z]{3}$/.test(requestedCurrency) ? requestedCurrency : null,
     }),
   ]);
@@ -219,47 +241,32 @@ export default async function LossesPage({
   ])];
 
   const [financialResult, entriesByCaseResult, entriesByLossResult, payoutIdentityResult] = await Promise.all([
-    caseIds.length
-      ? serviceClient
-        .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+    readLossLedgerIds(caseIds, (batch, from, to) => serviceClient.from(TABLES.CASE_FINANCIAL_SUMMARIES)
         .select('support_payout_case_id,currency,confirmed_loss_minor,estimated_loss_minor,recoverable_minor,recovered_minor,prevented_minor,written_off_minor,known_states')
         .eq('merchant_id', ctx.merchantId)
-        .in('support_payout_case_id', caseIds)
-      : Promise.resolve({ data: [], error: null }),
-    caseIds.length
-      ? serviceClient
-        .from(TABLES.CASE_FINANCIAL_ENTRIES)
+        .in('support_payout_case_id', batch).order('support_payout_case_id', { ascending: true }).range(from, to)),
+    readLossLedgerIds<FinancialEntryRow>(caseIds, (batch, from, to) => serviceClient.from(TABLES.CASE_FINANCIAL_ENTRIES)
         .select('id,loss_case_id,support_payout_case_id,state,amount_minor,currency,effective_at')
         .eq('merchant_id', ctx.merchantId)
-        .in('support_payout_case_id', caseIds)
-        .order('effective_at', { ascending: true })
-      : Promise.resolve({ data: [], error: null }),
-    lossIds.length
-      ? serviceClient
-        .from(TABLES.CASE_FINANCIAL_ENTRIES)
+        .in('support_payout_case_id', batch)
+        .order('effective_at', { ascending: true }).order('id', { ascending: true }).range(from, to)),
+    readLossLedgerIds<FinancialEntryRow>(lossIds, (batch, from, to) => serviceClient.from(TABLES.CASE_FINANCIAL_ENTRIES)
         .select('id,loss_case_id,support_payout_case_id,state,amount_minor,currency,effective_at')
         .eq('merchant_id', ctx.merchantId)
-        .in('loss_case_id', lossIds)
-        .order('effective_at', { ascending: true })
-      : Promise.resolve({ data: [], error: null }),
-    caseIds.length
-      ? serviceClient
-        .from(TABLES.MERCHANT_CLAIMS)
-        .select('id,source_order_id')
+        .in('loss_case_id', batch)
+        .order('effective_at', { ascending: true }).order('id', { ascending: true }).range(from, to)),
+    readLossLedgerIds(caseIds, (batch, from, to) => serviceClient.from(TABLES.MERCHANT_CLAIMS)
+        .select('id,source_order_id,submitted_at')
         .eq('merchant_id', ctx.merchantId)
-        .in('id', caseIds)
-      : Promise.resolve({ data: [], error: null }),
+        .in('id', batch).order('id', { ascending: true }).range(from, to)),
   ]);
   let financialError = financialResult.error;
   let financialData = (financialResult.data ?? []) as FinancialQueryRow[];
   if (shouldRetryWithoutKnownStates(financialError)) {
-    const legacyFinancialResult = caseIds.length
-      ? await serviceClient
-        .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+    const legacyFinancialResult = await readLossLedgerIds(caseIds, (batch, from, to) => serviceClient.from(TABLES.CASE_FINANCIAL_SUMMARIES)
         .select('support_payout_case_id,currency,confirmed_loss_minor,estimated_loss_minor,recoverable_minor,recovered_minor,prevented_minor,written_off_minor')
         .eq('merchant_id', ctx.merchantId)
-        .in('support_payout_case_id', caseIds)
-      : { data: [], error: null };
+        .in('support_payout_case_id', batch).order('support_payout_case_id', { ascending: true }).range(from, to));
     financialData = (legacyFinancialResult.data ?? []) as FinancialQueryRow[];
     financialError = legacyFinancialResult.error;
   }
@@ -270,13 +277,10 @@ export default async function LossesPage({
 
   const payoutIdentities = (payoutIdentityResult.data ?? []) as PayoutIdentityRow[];
   const orderIds = [...new Set(payoutIdentities.flatMap((row) => row.source_order_id ? [row.source_order_id] : []))];
-  const orderIdentityResult = orderIds.length
-    ? await serviceClient
-      .from(TABLES.SOURCE_ORDERS)
+  const orderIdentityResult = await readLossLedgerIds(orderIds, (batch, from, to) => serviceClient.from(TABLES.SOURCE_ORDERS)
       .select('id,order_number,customer_name')
       .eq('merchant_id', ctx.merchantId)
-      .in('id', orderIds)
-    : { data: [], error: null };
+      .in('id', batch).order('id', { ascending: true }).range(from, to));
   if (orderIdentityResult.error) throw new Error(`loss_order_identity_failed: ${orderIdentityResult.error.message}`);
   const orderById = new Map(((orderIdentityResult.data ?? []) as OrderIdentityRow[]).map((row) => [row.id, row]));
   const identityByCase = new Map(payoutIdentities.map((row) => [row.id, row.source_order_id ? orderById.get(row.source_order_id) ?? null : null]));
@@ -284,12 +288,23 @@ export default async function LossesPage({
   const entries = [...new Map(
     [...(entriesByCaseResult.data ?? []), ...(entriesByLossResult.data ?? [])]
       .map((entry) => [entry.id, entry]),
-  ).values()] as FinancialEntryRow[];
+  ).values()].sort((left, right) => Date.parse(left.effective_at) - Date.parse(right.effective_at) || left.id.localeCompare(right.id)) as FinancialEntryRow[];
   const financialRows = normaliseFinancialRows(financialData, entries);
-  const financialByCase = new Map(financialRows.map((row) => [row.support_payout_case_id, row]));
-
+  const financialByCase = new Map<string, FinancialRow[]>();
+  for (const row of financialRows) {
+    const values = financialByCase.get(row.support_payout_case_id) ?? [];
+    values.push(row);
+    financialByCase.set(row.support_payout_case_id, values);
+  }
+  const summaryFor = (caseId: string | null, currency: string | null) => {
+    if (!caseId) return undefined;
+    const values = financialByCase.get(caseId) ?? [];
+    if (currency) return values.find((value) => value.currency.toUpperCase() === currency.toUpperCase());
+    return values.length === 1 ? values[0] : undefined;
+  };
+  const submittedByCase = new Map(payoutIdentities.map((row) => [row.id, row.submitted_at]));
   const canonicalRows: LossLedgerRow[] = raw.map((row) => {
-    const summary = row.support_payout_case_id ? financialByCase.get(row.support_payout_case_id) : undefined;
+    const summary = summaryFor(row.support_payout_case_id, row.currency);
     const display = lossFinancialDisplay(summary, row.estimated_recovery_minor);
     const lossMinor = display.realisedLossMinor ?? display.estimatedLossMinor;
     return {
@@ -321,17 +336,15 @@ export default async function LossesPage({
           ? row.source_metadata.source_label
           : null,
       freshness: freshnessFromTimestamp(row.updated_at, nowMs),
+      // Charts, rows and canonical KPIs share the case-submission population.
+      effectiveAt: row.support_payout_case_id ? submittedByCase.get(row.support_payout_case_id) ?? null : null,
       updatedAt: row.updated_at,
     };
   });
   const derivedRows: LossLedgerRow[] = orphanRecoveries.map((recovery) => {
-    const merchantLossMinor = Math.round(Number(recovery.merchant_loss_amount) * 100);
-    const recoveredMinor = recovery.amount_recovered == null ? null : Math.round(Number(recovery.amount_recovered) * 100);
-    const amounts = {
-      merchant_loss_amount: Number(recovery.merchant_loss_amount),
-      eligible_loss_amount: recovery.eligible_loss_amount == null ? null : Number(recovery.eligible_loss_amount),
-      estimated_recoverable_max: recovery.estimated_recoverable_max == null ? null : Number(recovery.estimated_recoverable_max),
-    };
+    const summary = summaryFor(recovery.support_payout_case_id, recovery.currency);
+    const display = lossFinancialDisplay(summary, null);
+    const lossMinor = display.realisedLossMinor ?? display.estimatedLossMinor;
     return {
       id: `recovery:${recovery.id}`,
       detailHref: `/financials/recovery/${recovery.id}`,
@@ -348,15 +361,16 @@ export default async function LossesPage({
       financialState: 'confirmed',
       preventionOnly: false,
       writtenOff: recovery.status === 'closed_unrecoverable',
-      realisedLossMinor: merchantLossMinor,
-      estimatedLossMinor: null,
-      netUnrecoveredMinor: recoveredMinor == null ? null : Math.max(0, merchantLossMinor - recoveredMinor),
-      recoverableMinor: Math.round(recoverySoughtAmount(amounts) * 100),
-      recoveredMinor,
+      realisedLossMinor: display.realisedLossMinor,
+      estimatedLossMinor: display.estimatedLossMinor,
+      netUnrecoveredMinor: lossMinor != null && display.recoveredMinor != null ? Math.max(0, lossMinor - display.recoveredMinor) : null,
+      recoverableMinor: display.recoverableMinor,
+      recoveredMinor: display.recoveredMinor,
       preventedMinor: null,
       currency: recovery.currency,
       source: 'recovery_case',
       freshness: freshnessFromTimestamp(recovery.updated_at, nowMs),
+      effectiveAt: submittedByCase.get(recovery.support_payout_case_id) ?? null,
       updatedAt: recovery.updated_at,
     };
   });
@@ -368,7 +382,8 @@ export default async function LossesPage({
   const selectedCurrency = requestedCurrency && currencies.includes(requestedCurrency) ? requestedCurrency : null;
   const currencyRows = selectedCurrency ? rows.filter((row) => row.currency?.toUpperCase() === selectedCurrency) : rows;
   const sourceCohort = filterAndSortLossRows(currencyRows, {
-    cutoff,
+    fromInclusive: cutoff,
+    toExclusive: asOf,
     source: null,
     status: 'all',
     search: null,
@@ -377,16 +392,15 @@ export default async function LossesPage({
   const sourceOptions = [...new Set(sourceCohort.map((row) => row.source ?? 'unavailable'))].sort();
   const selectedSourceValue = selectedSource && sourceOptions.includes(selectedSource) ? selectedSource : null;
   const preSearchRows = filterAndSortLossRows(currencyRows, {
-    cutoff,
+    fromInclusive: cutoff,
+    toExclusive: asOf,
     source: selectedSourceValue,
     status: selectedStatus,
     search: null,
     sort: selectedSort,
   });
 
-  const exposure = summarizeKnownLossExposure(preSearchRows);
-  const entryCurrencies = entries.filter((entry) => entry.currency).map((entry) => entry.currency.toUpperCase());
-  const displayCurrency = selectedCurrency ?? exposure.currency ?? entryCurrencies[0] ?? null;
+  const displayCurrency = selectedCurrency ?? (currencies.length === 1 ? currencies[0] : null);
   const priorRows = cutoff
     ? (() => {
         const currentStartMs = Date.parse(cutoff);
@@ -394,14 +408,15 @@ export default async function LossesPage({
         if (!Number.isFinite(currentStartMs) || !(periodMs > 0)) return [];
         const previousStart = new Date(currentStartMs - periodMs).toISOString();
         return filterAndSortLossRows(currencyRows, {
-          cutoff: previousStart,
+          fromInclusive: previousStart,
+          toExclusive: cutoff,
           source: selectedSourceValue,
           status: selectedStatus,
           search: null,
           sort: selectedSort,
         }).filter((row) => {
-          const updatedMs = row.updatedAt ? Date.parse(row.updatedAt) : Number.NaN;
-          return Number.isFinite(updatedMs) && updatedMs < currentStartMs;
+          const scopedMs = row.effectiveAt ? Date.parse(row.effectiveAt) : Number.NaN;
+          return Number.isFinite(scopedMs) && scopedMs < currentStartMs;
         });
       })()
     : [];
@@ -413,23 +428,29 @@ export default async function LossesPage({
     search: selectedSearch,
     sort: selectedSort,
     page: selectedPage,
+    asOf: requestedAsOf && Number.isFinite(parsedAsOf) ? asOf : null,
   };
   const lossHref = (patch: Partial<LossQueryHref>) => hrefForLosses({ ...queryState, ...patch });
   const causeKeys = new Set(preSearchRows.map((row) => lossCauseKey(row)));
   const selectedCauseKey = selectedSearch && causeKeys.has(selectedSearch) ? selectedSearch : null;
+  const forceUnavailable = await acceptanceScenarioFromHeaders() === 'loss-chart-ledger-unavailable-states';
 
   return (
-    <PageFrame
-      title="Loss ledger"
-      surfaceId="loss-ledger"
-      archetype="operations-loss-ledger"
-      breadcrumbs={[{ label: 'Unauth', href: '/overview' }, { label: 'Loss ledger' }]}
-      showCurrentBreadcrumb
-      actions={<div className="uo-header-actions"><span>{TIME_RANGE_LABELS[range]}</span><ExportMenu range={range} currency={displayCurrency} /></div>}
-    >
+    <>
+      <LossLedgerFilters
+        entryCount={preSearchRows.length}
+        exportHref={`/api/reports/claims?${new URLSearchParams({ range, view: 'records', timezone: FINANCIAL_TIMEZONE, asOf, ...(displayCurrency ? { currency: displayCurrency } : {}) }).toString()}`}
+        filters={[
+          { name: 'Date range', label: TIME_RANGE_LABELS[range], value: range, options: Object.entries(TIME_RANGE_LABELS).map(([value, label]) => ({ value, label, href: lossHref({ range: value as ReportRange, page: null }) })) },
+          { name: 'Cause', label: selectedCauseKey ? label('attribution', selectedCauseKey) : 'All causes', value: selectedCauseKey ?? '', options: [{value: '', label: 'All causes', href: lossHref({search: null, page: null})}, ...[...causeKeys].map((value) => ({value, label: label('attribution', value), href: lossHref({search: value, page: null})}))] },
+          { name: 'Status', label: selectedStatus === 'all' ? 'All statuses' : selectedStatus.replaceAll('_', ' '), value: selectedStatus, options: LOSS_QUERY_STATUSES.map((value) => ({value, label: value === 'all' ? 'All statuses' : value.replaceAll('_', ' '), href: lossHref({status: value, page: null})})) },
+          { name: 'Currency', label: displayCurrency ? `${displayCurrency} only` : 'Currencies separate', value: selectedCurrency ?? '', options: [{value: '', label: 'Currencies separate', href: lossHref({currency: null, page: null})}, ...currencies.map((value) => ({value, label: `${value} only`, href: lossHref({currency: value, page: null})}))] },
+        ]}
+      />
+      {forceUnavailable ? <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 22px' }}><Link href="/financials/losses?range=all" style={{ color: '#9b470d', fontWeight: 500 }}>Open the all-time ledger</Link></div> : null}
       <LossLedgerOperations
-        rows={preSearchRows}
-        priorRows={priorRows}
+        rows={forceUnavailable ? [] : preSearchRows}
+        priorRows={forceUnavailable ? [] : priorRows}
         currency={displayCurrency}
         rangeLabel={TIME_RANGE_LABELS[range]}
         selectedCause={selectedCauseKey}
@@ -437,10 +458,12 @@ export default async function LossesPage({
         page={selectedPage}
         hrefForPage={(nextPage) => lossHref({ page: nextPage })}
         aggregate={aggregate}
-        recordLimitation={(lossResult.count ?? raw.length) > raw.length || (orphanResult.count ?? orphanRecoveries.length) > orphanRecoveries.length
-          ? `Record-level charts and rows are partial: showing up to 500 loss records and 500 orphan recovery records. Canonical KPIs remain exact for the selected scope.`
-          : null}
+        recordLimitation={`${describeFinancialScope(financialScope)}. ${
+          (lossResult.count ?? raw.length) > raw.length || (orphanResult.count ?? orphanRecoveries.length) > orphanRecoveries.length
+            ? 'Record-level charts and rows are partial: showing up to 500 loss records and 500 orphan recovery records; canonical KPIs remain exact.'
+            : 'Rows, charts, causes and canonical KPIs use this scope; uncapped canonical totals remain separate from the record view.'
+        }`}
       />
-    </PageFrame>
+    </>
   );
 }

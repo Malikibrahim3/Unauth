@@ -46,7 +46,11 @@
     ".next-ci/types/**/*.ts",
     ".next-ci/dev/types/**/*.ts",
     ".next-candidate/types/**/*.ts",
-    ".next-candidate/dev/types/**/*.ts"
+    ".next-candidate/dev/types/**/*.ts",
+    ".next-p07/types/**/*.ts",
+    ".next-p07/dev/types/**/*.ts",
+    ".next-p12-closure/types/**/*.ts",
+    ".next-p12-closure/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
@@ -54,6 +58,7 @@
     "scripts",
     "tests",
     "synthetic-lab",
-    "extensions"
+    "extensions",
+    "artifacts"
   ]
 }

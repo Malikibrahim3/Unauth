@@ -84,11 +84,11 @@ export function RecoveryCaseCard({
         <div>
           <p
             className="text-caption font-semibold"
-            style={{ color: "var(--uo-route-text-secondary)" }}
+            style={{ color: "#64686d" }}
           >
             Recovery / Chase-Up
           </p>
-          <p className="ua-text-caption-role mt-1">
+          <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1">
             Linked operational tracking for eligible recovery.
           </p>
         </div>
@@ -119,34 +119,34 @@ export function RecoveryCaseCard({
 
       {recoveryCase ? (
         <>
-          <div className="ua-text-dense mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="text-[12px] leading-[1.45] text-[#40454a] mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
             <div>
-              <p className="ua-text-metadata">
+              <p className="text-[10.5px] leading-4 text-[#6f6a63]">
                 Status
               </p>
               <p
-                className="ua-text-working-title"
-                style={{ color: "var(--uo-route-text-primary)" }}
+                className="font-medium text-[13px] leading-5 text-[#1c1f23]"
+                style={{ color: "#1c1f23" }}
               >
                 {RECOVERY_STATUS_LABELS[recoveryCase.status]}
               </p>
             </div>
             <div>
-              <p className="ua-text-metadata">
+              <p className="text-[10.5px] leading-4 text-[#6f6a63]">
                 Owner
               </p>
               <p
-                className="ua-text-working-title"
-                style={{ color: "var(--uo-route-text-primary)" }}
+                className="font-medium text-[13px] leading-5 text-[#1c1f23]"
+                style={{ color: "#1c1f23" }}
               >
                 {RECOVERY_OWNER_LABELS[recoveryCase.owner_type]}
               </p>
             </div>
             <div>
-              <p className="ua-text-metadata">
+              <p className="text-[10.5px] leading-4 text-[#6f6a63]">
                 {financialStageLabel('eligible_recovery')}
               </p>
-              <p className="font-sans tabular-nums" style={{ color: "var(--uo-route-text-primary)" }}>
+              <p className="font-sans tabular-nums" style={{ color: "#1c1f23" }}>
                 {formatCurrencyNullable(
                   recoveryCase.estimated_recoverable_max,
                   recoveryCase.currency,
@@ -154,18 +154,18 @@ export function RecoveryCaseCard({
               </p>
             </div>
             <div>
-              <p className="ua-text-metadata">
+              <p className="text-[10.5px] leading-4 text-[#6f6a63]">
                 Deadline
               </p>
-              <p style={{ color: "var(--uo-route-text-primary)" }}>
+              <p style={{ color: "#1c1f23" }}>
                 {dateLabel(recoveryCase.deadline_at)}
               </p>
             </div>
             <div>
-              <p className="ua-text-metadata">
+              <p className="text-[10.5px] leading-4 text-[#6f6a63]">
                 Provider claim
               </p>
-              <p className="ua-text-working-title" style={{ color: "var(--uo-route-text-primary)" }}>
+              <p className="font-medium text-[13px] leading-5 text-[#1c1f23]" style={{ color: "#1c1f23" }}>
                 {(recoveryCase.provider_claim_stage ?? 'prepared').replaceAll('_', ' ')}
               </p>
             </div>
@@ -183,7 +183,7 @@ export function RecoveryCaseCard({
           </div>
           {recoveryCase.evidence_missing.length > 0 ? (
             <div className="mt-3">
-              <p className="ua-text-metadata mb-1">
+              <p className="text-[10.5px] leading-4 text-[#6f6a63] mb-1">
                 Missing items
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -195,23 +195,23 @@ export function RecoveryCaseCard({
           ) : null}
           <Link
             href="/financials/recovery"
-            className="ua-text-working-title mt-4 inline-flex items-center gap-1.5 hover:underline"
-            style={{ color: "var(--uo-route-action-primary)" }}
+            className="font-medium text-[13px] leading-5 text-[#1c1f23] mt-4 inline-flex items-center gap-1.5 hover:underline"
+            style={{ color: "#9f4f08" }}
           >
             Open recovery board{" "}
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </>
       ) : canOpenRecovery && recovery ? (
-        <div className="ua-text-body mt-4 space-y-3">
+        <div className="text-[13px] leading-5 text-[#40454a] mt-4 space-y-3">
           <div>
             <p
-              className="ua-text-working-title"
-              style={{ color: "var(--uo-route-text-primary)" }}
+              className="font-medium text-[13px] leading-5 text-[#1c1f23]"
+              style={{ color: "#1c1f23" }}
             >
               Recovery case can be opened
             </p>
-            <p className="ua-text-caption-role mt-1">
+            <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1">
               {RECOVERY_OWNER_LABELS[
                 recovery.likelyOwner as keyof typeof RECOVERY_OWNER_LABELS
               ] ?? recovery.likelyOwner}
@@ -221,7 +221,7 @@ export function RecoveryCaseCard({
           </div>
           {recovery.requiredEvidence.length > 0 ? (
             <div>
-              <p className="ua-text-metadata mb-1">
+              <p className="text-[10.5px] leading-4 text-[#6f6a63] mb-1">
                 Required for recovery
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -231,28 +231,28 @@ export function RecoveryCaseCard({
               </div>
             </div>
           ) : null}
-          <p className="text-xs" style={{ color: "var(--uo-route-text-tertiary)" }}>
+          <p className="text-xs" style={{ color: "#6f6a63" }}>
             Confirm responsibility and a canonical loss, then explicitly open
             the internal recovery handoff. Unauth will not submit a provider
             claim automatically.
           </p>
           {handoffMessage ? (
-            <p role="status" className="ua-text-caption-role">
+            <p role="status" className="text-[11.5px] leading-[1.45] text-[#64686d]">
               {handoffMessage}
             </p>
           ) : null}
         </div>
       ) : loading ? (
-        <p className="ua-text-body mt-4" style={{ color: "var(--uo-route-text-secondary)" }}>
+        <p className="text-[13px] leading-5 text-[#40454a] mt-4" style={{ color: "#64686d" }}>
           Loading recovery route…
         </p>
       ) : preventionOnly ? (
-        <p className="ua-text-body mt-4" style={{ color: "var(--uo-route-text-secondary)" }}>
+        <p className="text-[13px] leading-5 text-[#40454a] mt-4" style={{ color: "#64686d" }}>
           Prevention opportunity: this loss appears unrecoverable but can inform
           future policy or partner review.
         </p>
       ) : (
-        <p className="ua-text-body mt-4" style={{ color: "var(--uo-route-text-secondary)" }}>
+        <p className="text-[13px] leading-5 text-[#40454a] mt-4" style={{ color: "#64686d" }}>
           No external recovery route currently identified.
         </p>
       )}

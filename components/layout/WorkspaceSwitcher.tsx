@@ -2,64 +2,49 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Select } from '@/components/ui';
 
 export type WorkspaceOption = { id: string; name: string; role: string };
 
-export function WorkspaceSwitcher({
-  workspaces,
-  activeMerchantId,
-  fallbackName,
-}: {
-  workspaces: WorkspaceOption[];
-  activeMerchantId: string | null;
-  fallbackName?: string | null;
-}) {
+export function WorkspaceSwitcher({ workspaces, activeMerchantId, fallbackName }: { workspaces: WorkspaceOption[]; activeMerchantId: string | null; fallbackName?: string | null }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const label = fallbackName?.trim() || workspaces[0]?.name || 'Workspace';
 
   if (workspaces.length < 2) {
-    return <small title={fallbackName?.trim() || workspaces[0]?.name || 'Workspace'}>{fallbackName?.trim() || workspaces[0]?.name || 'Workspace'}</small>;
+    return <small title={label} style={{ font: "400 10px/1.3 'IBM Plex Mono',monospace", color: '#64686d' }}>{label}</small>;
   }
 
   return (
-    <label className="flex min-w-0 items-center gap-2" title={error ?? 'Switch active workspace'}>
-      <span className="sr-only">Active workspace</span>
-      <Select
+    <label title={error ?? 'Switch active workspace'} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <span style={{ font: "400 10.5px/1 'Inter',sans-serif", color: '#64686d' }}>Active workspace</span>
+      <select
         value={activeMerchantId ?? ''}
         disabled={pending}
         aria-label="Active workspace"
-        className="ua-text-dense min-w-0 max-w-full font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--uo-route-border-focus)]"
-        style={{ border: '1px solid transparent', background: 'transparent', color: error ? 'var(--uo-route-risk-critical)' : undefined }}
         onChange={async (event) => {
           const nextMerchantId = event.target.value;
           setPending(true);
           setError(null);
           try {
-            const response = await fetch('/api/workspace', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ merchantId: nextMerchantId }),
-            });
+            const response = await fetch('/api/workspace', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ merchantId: nextMerchantId }) });
             if (!response.ok) {
               const body = await response.json().catch(() => ({})) as { error?: string };
               throw new Error(body.error || 'Workspace could not be changed.');
             }
             router.refresh();
-            setPending(false);
           } catch (switchError) {
             setError(switchError instanceof Error ? switchError.message : 'Workspace could not be changed.');
+          } finally {
             setPending(false);
           }
         }}
+        style={{ width: '100%', minHeight: 38, border: 0, borderRadius: 9, padding: '0 30px 0 11px', background: '#ffffff', boxShadow: `inset 0 0 0 ${error ? '1.5px #d98b62' : '1px rgba(28,27,25,.13)'}`, color: error ? '#b0431a' : '#1c1f23', font: "400 12.5px/1 'Inter',sans-serif", outline: 0 }}
       >
         {activeMerchantId == null ? <option value="" disabled>Select a workspace…</option> : null}
-        {workspaces.map((workspace) => (
-          <option key={workspace.id} value={workspace.id}>{workspace.name} · {workspace.role}</option>
-        ))}
-      </Select>
-      {error ? <span className="sr-only" role="alert">{error}</span> : null}
+        {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name} · {workspace.role}</option>)}
+      </select>
+      {error ? <span role="alert" style={{ font: "400 10.5px/1.4 'Inter',sans-serif", color: '#b0431a' }}>{error}</span> : null}
     </label>
   );
 }

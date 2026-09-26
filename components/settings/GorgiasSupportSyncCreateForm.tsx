@@ -15,9 +15,9 @@ type Props = {
 };
 
 const INPUT_STYLE: CSSProperties = {
-  background: 'var(--uo-route-surface-secondary)',
-  border: '1px solid var(--uo-route-border-default)',
-  color: 'var(--uo-route-text-primary)',
+  background: '#f4f3f1',
+  border: '1px solid #e4e3e0',
+  color: '#1c1f23',
 };
 
 export function GorgiasSupportSyncCreateForm({
@@ -40,13 +40,13 @@ export function GorgiasSupportSyncCreateForm({
             alt="Gorgias"
             width={40}
             height={40}
-            className="h-9 w-9 rounded-[var(--uo-route-radius-control)] border border-[var(--uo-route-border-subtle)] object-contain p-1"
+            className="h-9 w-9 rounded-[8px] border border-[#eae8e5] object-contain p-1"
           />
           <div>
-            <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>
+            <p className="font-medium text-[13px] leading-5 text-[#1c1f23]" style={{ color: '#1c1f23' }}>
               Connect Gorgias
             </p>
-            <p className="ua-text-caption-role" style={{ color: 'var(--uo-route-text-secondary)' }}>
+            <p className="text-[11.5px] leading-[1.45] text-[#64686d]" style={{ color: '#64686d' }}>
               Registers the sidebar widget and ticket webhook automatically.
             </p>
           </div>
@@ -58,15 +58,15 @@ export function GorgiasSupportSyncCreateForm({
         <div>
           <label
             htmlFor="gorgias-account-domain"
-            className="ua-text-label block mb-1.5"
-            style={{ color: 'var(--uo-route-text-primary)' }}
+            className="text-[11px] font-medium leading-4 text-[#64686d] block mb-1.5"
+            style={{ color: '#1c1f23' }}
           >
             Gorgias account domain
           </label>
           <input
             id="gorgias-account-domain"
             required
-            className="h-8 w-full rounded-[var(--uo-route-radius-control)] px-3 text-[length:var(--uo-route-text-caption-size)] outline-none"
+            className="h-8 w-full rounded-[8px] px-3 text-[length:11.5px] outline-none"
             style={INPUT_STYLE}
             placeholder="acme or acme.gorgias.com"
             value={state.accountOrDomain}
@@ -74,7 +74,7 @@ export function GorgiasSupportSyncCreateForm({
             disabled={!canManage || state.busy}
           />
           {isCreate ? (
-            <p className="ua-text-caption-role mt-1.5" style={{ color: 'var(--uo-route-text-secondary)' }}>
+            <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1.5" style={{ color: '#64686d' }}>
               Your Gorgias subdomain — if your URL is <code>acme.gorgias.com</code>, enter <code>acme</code>.
             </p>
           ) : null}
@@ -85,14 +85,14 @@ export function GorgiasSupportSyncCreateForm({
           <div>
             <label
               htmlFor="gorgias-display-name"
-              className="ua-text-label block mb-1.5"
-              style={{ color: 'var(--uo-route-text-primary)' }}
+              className="text-[11px] font-medium leading-4 text-[#64686d] block mb-1.5"
+              style={{ color: '#1c1f23' }}
             >
-              Display name <span style={{ color: 'var(--uo-route-text-secondary)' }}>(optional)</span>
+              Display name <span style={{ color: '#64686d' }}>(optional)</span>
             </label>
             <input
               id="gorgias-display-name"
-              className="h-8 w-full rounded-[var(--uo-route-radius-control)] px-3 text-[length:var(--uo-route-text-caption-size)] outline-none"
+              className="h-8 w-full rounded-[8px] px-3 text-[length:11.5px] outline-none"
               style={INPUT_STYLE}
               placeholder="Acme Gorgias"
               value={state.displayName}
@@ -118,13 +118,13 @@ export function GorgiasSupportSyncCreateForm({
           <button
             type="submit"
             disabled={(!canManage && isCreate) || state.busy}
-            className="ua-text-working-title inline-flex h-8 items-center rounded-[var(--uo-route-radius-control)] px-3 disabled:opacity-50"
-            style={{ background: 'var(--uo-route-action-primary)', color: 'var(--uo-route-text-inverse)' }}
+            className="font-medium text-[13px] leading-5 text-[#1c1f23] inline-flex h-8 items-center rounded-[8px] px-3 disabled:opacity-50"
+            style={{ background: '#9f4f08', color: '#fff' }}
           >
             {state.busy ? 'Connecting…' : submitLabel}
           </button>
           {isCreate && !canManage ? (
-            <p className="ua-text-caption-role" style={{ color: 'var(--uo-route-text-secondary)' }}>
+            <p className="text-[11.5px] leading-[1.45] text-[#64686d]" style={{ color: '#64686d' }}>
               Manage settings permission required.
             </p>
           ) : null}

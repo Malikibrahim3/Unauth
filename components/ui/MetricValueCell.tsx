@@ -21,6 +21,6 @@ export function MetricValueCell({ value }: { value: ReactNode }) {
   const isPrimitive = typeof value === 'string' || typeof value === 'number';
   const highlighting = useChangedValueHighlight(isPrimitive ? value : null);
   return (
-    <dd className={cn('ua-metric-group__value', isPrimitive && highlighting && 'ua-value-wash')}>{value}</dd>
+    <dd className={cn('font-semibold tabular-nums text-[#1c1f23]', isPrimitive && highlighting && 'font-semibold tabular-nums text-[#1c1f23]')}>{value}</dd>
   );
 }

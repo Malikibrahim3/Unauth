@@ -14,7 +14,7 @@ test.afterEach(async ({ page }) => {
   expect(pageErrors.get(page) ?? []).toEqual([]);
 });
 
-async function useTheme(page: Page, theme: 'light' | 'dark') {
+async function useTheme(page: Page, theme: 'light') {
   await page.context().addCookies([{ name: 'unauth.auth-theme', value: theme, url: BASE_URL }]);
 }
 
@@ -23,7 +23,7 @@ async function expectNoOverflow(page: Page) {
 }
 
 test.describe('UX9-3 task-first onboarding, sources, imports, and setup', () => {
-  test('Sources leads with task groups and retains provider truth in light and dark', async ({ page }) => {
+  test('Sources leads with task groups and retains provider truth in light-only mode', async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1280, height: 720 });
     await useTheme(page, 'light');
@@ -47,11 +47,11 @@ test.describe('UX9-3 task-first onboarding, sources, imports, and setup', () => 
     await expect(page.getByRole('heading', { name: 'No sources match these filters' })).toBeVisible();
     await page.screenshot({ path: `${ARTIFACT_ROOT}/source-catalogue-no-results-light-1280x720.png`, fullPage: true });
 
-    await useTheme(page, 'dark');
+    await useTheme(page, 'light');
     await page.goto('/sources/connected');
-    await expect(page.locator('.uo-product.ua-desktop-boundary')).toHaveAttribute('data-auth-theme', 'dark');
+    await expect(page.locator('[data-unauth-ui="supplied-package"]')).not.toHaveAttribute('data-auth-theme', /.+/);
     await expect(page.getByRole('heading', { name: 'Ready to connect' })).toBeVisible();
-    await page.screenshot({ path: `${ARTIFACT_ROOT}/connected-sources-dark-1280x720.png`, fullPage: true });
+    await page.screenshot({ path: `${ARTIFACT_ROOT}/connected-sources-light-repeat-1280x720.png`, fullPage: true });
   });
 
   test('Source detail explains capability, configuration, usability, returned data, freshness, and safe actions', async ({ page }) => {
@@ -65,10 +65,10 @@ test.describe('UX9-3 task-first onboarding, sources, imports, and setup', () => 
     }
     await page.screenshot({ path: `${ARTIFACT_ROOT}/source-detail-light-1280x720.png`, fullPage: true });
 
-    await useTheme(page, 'dark');
+    await useTheme(page, 'light');
     await page.reload();
-    await expect(page.locator('.uo-product.ua-desktop-boundary')).toHaveAttribute('data-auth-theme', 'dark');
-    await page.screenshot({ path: `${ARTIFACT_ROOT}/source-detail-dark-1280x720.png`, fullPage: true });
+    await expect(page.locator('[data-unauth-ui="supplied-package"]')).not.toHaveAttribute('data-auth-theme', /.+/);
+    await page.screenshot({ path: `${ARTIFACT_ROOT}/source-detail-light-repeat-1280x720.png`, fullPage: true });
   });
 
   test('Generic setup keeps seven resumable steps and provider activation last', async ({ page }) => {

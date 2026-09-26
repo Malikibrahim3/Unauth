@@ -25,25 +25,25 @@ export function SectionCard({
   style,
   joined = false,
 }: SectionCardProps) {
-  const bodyPadding = density === "compact" ? "ua-section-card__body--compact" : "ua-section-card__body--default";
+  const bodyPadding = density === "compact" ? "p-3" : "p-4";
 
   return (
     <section
       id={id}
-      className={cn("ua-section-card", joined && "ua-section-card--joined", className)}
+      className={cn(joined ? "border-b border-[#eae8e5] bg-white last:border-b-0" : "overflow-hidden rounded-xl border border-[#e4e3e0] bg-white", className)}
       style={style}
     >
       {/* Header */}
       <div
-        className="ua-section-card__header flex flex-wrap items-start justify-between gap-3 sm:items-center"
+        className="flex flex-wrap items-start justify-between gap-3 border-b border-[#eae8e5] px-4 py-3 sm:items-center"
       >
         <div className="min-w-0 flex-1">
-          <div className="ua-section-card__title text-h3">
+          <h2 className="m-0 text-[13px] font-medium leading-5 text-[#1c1f23]">
             {title}
-          </div>
+          </h2>
           {description && (
             <p
-              className="ua-section-card__description mt-1 text-small"
+              className="mt-1 text-[11.5px] leading-[1.45] text-[#64686d]"
             >
               {description}
             </p>
@@ -57,7 +57,7 @@ export function SectionCard({
       </div>
 
       {/* Body */}
-      <div className={cn("ua-section-card__body", bodyPadding)}>{children}</div>
+      <div className={cn("flex flex-col gap-3", bodyPadding)}>{children}</div>
     </section>
   );
 }

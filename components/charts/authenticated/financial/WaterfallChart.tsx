@@ -12,11 +12,11 @@ export type FinancialWaterfallStep = {
 };
 
 const OUTCOME_VAR: Record<NonNullable<FinancialWaterfallStep['outcome']>, string> = {
-  prevented: 'var(--uo-route-outcome-prevented)',
-  recovered: 'var(--uo-route-outcome-recovered)',
-  realised: 'var(--uo-route-outcome-realised)',
-  open: 'var(--uo-route-outcome-open)',
-  identified: 'var(--uo-route-outcome-identified)',
+  prevented: '#247388',
+  recovered: '#1a6b43',
+  realised: '#b0431a',
+  open: '#7a5310',
+  identified: '#40454a',
 };
 
 export function FinancialWaterfallChart({
@@ -61,7 +61,7 @@ export function FinancialWaterfallChart({
       table={steps.length ? table : undefined}
     >
       {canRender ? (
-        <div className="ua-financial-waterfall" aria-label={question}>
+        <div aria-label={question}>
           {steps.map((step) => {
             const value = step.valueMinor ?? 0;
             const isVerifiedZero = step.valueMinor === 0;
@@ -83,7 +83,7 @@ export function FinancialWaterfallChart({
                 </strong>
               </>
             );
-            return step.href ? <a key={step.key} href={step.href} className="ua-financial-waterfall__row">{body}</a> : <div key={step.key} className="ua-financial-waterfall__row">{body}</div>;
+            return step.href ? <a key={step.key} href={step.href} className="border-t border-[#e4e3e0]">{body}</a> : <div key={step.key} className="border-t border-[#e4e3e0]">{body}</div>;
           })}
         </div>
       ) : (

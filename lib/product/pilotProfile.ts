@@ -41,7 +41,7 @@ export const MVP_PLUS_PILOT_PROFILE = {
     'No selected provider has a complete current controlled-runtime evidence matrix.',
     'Shopify Payments is the only selected payment authority; Stripe remains planned.',
     'UPS is read-only, on-demand carrier evidence with manual recovery handoff.',
-    'Refund issuance, request denial, and provider claim submission remain unsupported.',
+    'This certification setup does not yet support refund issuance, customer denial, or provider claim submission.',
     'A named real merchant, named human contacts, and signed legal/data agreements are required only before invitation or release to that merchant.',
   ],
 } as const;

@@ -1,5 +1,1 @@
-import { UploadLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
-
-export default function ImportsLoading() {
-  return <UploadLoadingSkeleton />;
-}
+export { default } from "@/components/visual-authority/SuppliedAuthenticatedRouteLoading";

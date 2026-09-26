@@ -38,6 +38,9 @@ export const TIER_ORDER: Record<Tier, number> = {
   pro: 1,
   growth: 2,
   enterprise: 3,
+  core_2026: 2,
+  scale_2026: 3,
+  enterprise_2026: 4,
 };
 
 export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
@@ -72,6 +75,30 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
     priceMonthlyGbp: PLANS.scale.priceGbp,
     features: PLANS.scale.entitlements,
     limits: PLANS.scale.limits,
+  },
+  core_2026: {
+    tier: 'core_2026',
+    label: PLANS.core.name,
+    tagline: PLANS.core.description,
+    priceMonthlyGbp: PLANS.core.priceGbp,
+    features: PLANS.core.entitlements,
+    limits: PLANS.core.limits,
+  },
+  scale_2026: {
+    tier: 'scale_2026',
+    label: PLANS.scale_2026.name,
+    tagline: PLANS.scale_2026.description,
+    priceMonthlyGbp: PLANS.scale_2026.priceGbp,
+    features: PLANS.scale_2026.entitlements,
+    limits: PLANS.scale_2026.limits,
+  },
+  enterprise_2026: {
+    tier: 'enterprise_2026',
+    label: PLANS.enterprise_2026.name,
+    tagline: PLANS.enterprise_2026.description,
+    priceMonthlyGbp: PLANS.enterprise_2026.priceGbp,
+    features: PLANS.enterprise_2026.entitlements,
+    limits: PLANS.enterprise_2026.limits,
   },
 };
 

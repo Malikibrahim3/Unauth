@@ -141,8 +141,11 @@ export async function GET(request: NextRequest) {
   const payload = data as unknown as {
     items?: SearchRow[];
     counts?: Record<string, number>;
-    total?: number;
+    total?: number | null;
     hasMore?: boolean;
+    sourcesAnswered?: string[];
+    sourcesFailed?: string[];
+    coverage?: 'complete' | 'partial';
   };
   const rows = Array.isArray(payload.items) ? payload.items : [];
   const publicRows = rows.map(({ sortAt: _sortAt, source, ...row }) => ({ ...row, source }));
@@ -150,15 +153,34 @@ export async function GET(request: NextRequest) {
     ? encodeCursor(rows[rows.length - 1]!)
     : null;
 
+  // The current canonical RPC is one merchant-scoped projection and therefore
+  // answers the requested families atomically. Keep the response contract
+  // ready for source fan-out implementations, but never manufacture a total
+  // when a future adapter reports a partial answer.
+  const sourcesFailed = Array.isArray(payload.sourcesFailed) ? payload.sourcesFailed : [];
+  const sourcesAnswered = Array.isArray(payload.sourcesAnswered)
+    ? payload.sourcesAnswered
+    : (parsed.data.source === 'all' ? authorized : [parsed.data.source]);
+  const coverage = payload.coverage === 'partial' || sourcesFailed.length > 0 ? 'partial' : 'complete';
+  const total = coverage === 'partial'
+    ? null
+    : (typeof payload.total === 'number' ? payload.total : rows.length);
+
   return NextResponse.json({
     results: publicRows,
     query: parsed.data.q,
     source: parsed.data.source,
     limit: parsed.data.limit,
-    total: Number(payload.total ?? 0),
+    returnedCount: publicRows.length,
+    total,
+    coverage,
+    sourcesAnswered,
+    sourcesFailed,
     counts: payload.counts ?? { all: 0 },
     nextCursor,
-    partialFailures: [],
+    // Compatibility field retained for one response window. It is derived
+    // from the canonical per-source failure list, never from a guessed count.
+    partialFailures: sourcesFailed,
     restrictedTypes: restricted,
   });
 }

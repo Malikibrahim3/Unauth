@@ -63,15 +63,15 @@ export function TeamMembersTable({
             <div className="flex min-w-0 items-center gap-2.5">
               <span
                 aria-hidden="true"
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-[var(--uo-route-radius-round)] bg-[var(--uo-route-surface-secondary)] text-[length:var(--uo-route-text-metadata-size)] font-medium text-[var(--uo-route-text-secondary)]"
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-[999px] bg-[#f4f3f1] text-[length:10.5px] font-medium text-[#64686d]"
               >
                 {initials(member.invited_email)}
               </span>
-              <span className="min-w-0 truncate text-[length:var(--uo-route-text-dense-size)] font-medium text-[var(--uo-route-text-primary)]">
+              <span className="min-w-0 truncate text-[length:12px] font-medium text-[#1c1f23]">
                 {member.invited_email}
               </span>
               {member.is_account_owner ? (
-                <span className="shrink-0 rounded-[var(--uo-route-badge-radius-meta)] border border-[var(--uo-route-border-subtle)] bg-[var(--uo-route-surface-secondary)] px-1.5 py-px text-[length:var(--uo-route-text-metadata-size)] font-medium text-[var(--uo-route-text-secondary)]">
+                <span className="shrink-0 rounded-[8px] border border-[#eae8e5] bg-[#f4f3f1] px-1.5 py-px text-[length:10.5px] font-medium text-[#64686d]">
                   Account owner
                 </span>
               ) : null}
@@ -92,7 +92,7 @@ export function TeamMembersTable({
               && (isAccountOwner || (currentUserRole === 'admin' && (member.role === 'analyst' || member.role === 'viewer')));
             if (!canChange) {
               return (
-                <span className="text-[length:var(--uo-route-text-dense-size)] text-[var(--uo-route-text-secondary)]">
+                <span className="text-[length:12px] text-[#64686d]">
                   {ROLE_LABELS[member.role]}
                 </span>
               );
@@ -130,7 +130,7 @@ export function TeamMembersTable({
           header: 'Joined',
           width: '160px',
           render: (member) => (
-            <span className="text-[length:var(--uo-route-text-dense-size)] tabular-nums text-[var(--uo-route-text-secondary)]">
+            <span className="text-[length:12px] tabular-nums text-[#64686d]">
               {formatTeamJoinState(member)}
             </span>
           ),

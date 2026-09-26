@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { LossActions } from '@/components/losses/LossActions';
 
 const refresh = jest.fn();
@@ -34,12 +34,13 @@ describe('LossActions', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /write off outstanding/i }));
     expect(screen.getByText('£12.34')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /confirm write-off/i })).toBeDisabled();
+    const dialog = screen.getByRole('dialog', { name: /Write off loss-1/i });
+    expect(within(dialog).getByRole('button', { name: /Write off £12.34/i })).toBeDisabled();
 
-    fireEvent.change(screen.getByRole('textbox', { name: /reason/i }), {
+    fireEvent.change(within(dialog).getByRole('textbox', { name: /reason/i }), {
       target: { value: 'Carrier deadline expired after final documented chase.' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /confirm write-off/i }));
+    fireEvent.click(within(dialog).getByRole('button', { name: /Write off £12.34/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(fetchMock).toHaveBeenCalledWith('/api/losses/loss-1', expect.objectContaining({ method: 'PATCH' }));

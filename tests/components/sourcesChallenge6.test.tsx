@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { SourcesOperations } from '@/components/sources/SourcesOperations';
 import type { CatalogueRowItem } from '@/lib/integrations/catalogueView';
 
@@ -44,7 +44,7 @@ function row(overrides: Partial<CatalogueRowItem> = {}): CatalogueRowItem {
 }
 
 describe('Sources catalogue surface', () => {
-  it('shows the five-layer readiness stack and every canonical catalogue item, including planned slots', () => {
+  it('shows the supplied catalogue hierarchy and every canonical catalogue item, including planned slots', () => {
     render(
       <SourcesOperations
         view="browse"
@@ -56,19 +56,18 @@ describe('Sources catalogue surface', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Minimum evidence stack' })).toBeInTheDocument();
-    expect(screen.getByText('2 of 5')).toBeInTheDocument();
-    expect(screen.getAllByText('Connected provider')).toHaveLength(2);
-    expect(screen.getByRole('heading', { name: 'Find a source to connect' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Working' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Ready to connect' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Not available yet' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Inspect Shopify source' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Inspect Stripe source' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Not available yet \d+$/ })).toBeInTheDocument();
+    expect(screen.getByText('One layer decides most answers')).toBeInTheDocument();
+    expect(screen.getByText('connected')).toBeInTheDocument();
+    expect(screen.getByText('you could connect today')).toBeInTheDocument();
+    expect(screen.getByText('planned, no date')).toBeInTheDocument();
+    expect(screen.getByText('ORDERS AND MONEY')).toBeInTheDocument();
+    expect(screen.getByText('SUPPORT AND EVIDENCE')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Shopify CONNECTED/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Stripe PLANNED/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Gorgias AVAILABLE/i })).toBeInTheDocument();
   });
 
-  it('filters by planned state and exposes truthful unknown record values in the inspector', () => {
+  it('filters connected source rows by evidence layer and status without inventing an inspector', () => {
     render(
       <SourcesOperations
         view="connected"
@@ -79,23 +78,19 @@ describe('Sources catalogue surface', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /^Not available yet \d+$/ }));
-    expect(screen.getByRole('button', { name: 'Inspect Adyen source' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Inspect Shopify source' })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Inspect Adyen source' }));
-    expect(screen.getByText(/no merchant connection, sync history, freshness, or record count/i)).toBeInTheDocument();
-    expect(screen.queryByText(/0 records/i)).not.toBeInTheDocument();
+    expect(screen.getByText('unknown')).toBeInTheDocument();
+    const statusFilter = screen.getByRole('combobox', { name: 'Filter connected sources by status' });
+    fireEvent.change(statusFilter, { target: { value: 'planned' } });
+    expect(screen.queryByRole('option', { name: /planned/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Adyen .*PLANNED$/i })).not.toBeInTheDocument();
   });
 
-  it('supports provider search and a no-results recovery state', () => {
-    render(<SourcesOperations view="browse" items={[row()]} />);
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Search providers' }), { target: { value: 'does-not-exist' } });
-    expect(screen.getByRole('heading', { name: 'No sources match these filters' })).toBeInTheDocument();
-    const emptyState = screen.getByText('No sources match these filters').closest('[data-state-id="source-catalogue-no-results"]');
+  it('supports a no-results catalogue recovery state', () => {
+    render(<SourcesOperations view="browse" items={[row()]} initialQuery="does-not-exist" />);
+    expect(screen.getByText('No providers match this catalogue view')).toBeInTheDocument();
+    const emptyState = screen.getByText('No providers match this catalogue view').closest('[data-state-id="source-catalogue-no-results"]');
     expect(emptyState).not.toBeNull();
-    fireEvent.click(within(emptyState!).getByRole('button', { name: 'Clear filters' }));
-    expect(screen.getByRole('button', { name: 'Inspect Shopify source' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View all providers' })).toHaveAttribute('href', '/sources/browse');
   });
 
   it('supports the ready and no-connectable scenarios without inventing actions', () => {
@@ -112,15 +107,16 @@ describe('Sources catalogue surface', () => {
       />,
     );
 
-    expect(screen.getByText('5 of 5')).toBeInTheDocument();
+    for (const label of ['Orders And Money', 'Support And Evidence', 'Carriers', 'Warehouse And Fulfilment', 'Returns']) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
   });
 
-  it('states when a required layer has no connectable provider and omits an action', () => {
+  it('states when a provider has no credentials without inventing a connect action', () => {
     const unavailable = row({ connectEnabled: false, connectionId: null, connectionCount: 0, status: 'not_connected', badge: 'disconnected' });
     render(<SourcesOperations view="browse" items={[unavailable]} />);
 
-    const commerce = screen.getAllByRole('heading', { name: 'Commerce and orders' })[0].closest('article');
-    expect(within(commerce!).getByText('No connectable provider is currently available for this layer.')).toBeInTheDocument();
-    expect(within(commerce!).queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Shopify NO CREDENTIALS/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /connect/i })).not.toBeInTheDocument();
   });
 });

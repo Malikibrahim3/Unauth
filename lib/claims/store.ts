@@ -187,6 +187,25 @@ export const recordCaseDecisionSchema = z.object({
   notes: z.string().trim().max(4000).nullable().optional(),
   recommended_payout_action: z.enum(PAYOUT_RECOMMENDATION_VALUES).nullable().optional(),
   followed_recommendation: z.boolean().nullable().optional(),
+  resolution: z.enum([
+    'full_refund',
+    'partial_refund',
+    'same_item_replacement',
+    'request_evidence',
+    'escalate',
+    'no_additional_payout',
+  ]).optional(),
+  comparison_token: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  comparison_version: z.literal('resolution-comparison-v1').optional(),
+  comparison_snapshot: z.record(z.unknown()).optional(),
+  replacement_items: z.array(z.object({
+    claimed_item_id: z.string().uuid(),
+    quantity: z.number().int().positive(),
+  }).strict()).min(1).max(100).optional(),
+  duplicate_concession_justification: z.preprocess(
+    (value) => typeof value === 'string' && value.trim().length === 0 ? undefined : value,
+    z.string().trim().min(3).max(2000).nullable().optional(),
+  ),
 });
 
 export type RecordMerchantCaseDecisionInput = z.input<typeof recordCaseDecisionSchema> & {
@@ -199,6 +218,40 @@ export type RecordMerchantCaseDecisionInput = z.input<typeof recordCaseDecisionS
   reversal?: boolean;
 };
 
+export async function resolveCaseDecisionExpectedVersion(
+  supabase: any,
+  input: {
+    merchantId: string;
+    caseId: string;
+    idempotencyKey: string;
+    currentVersion: number;
+  },
+): Promise<number> {
+  const { data: existingDecision, error: decisionError } = await supabase
+    .from('case_decisions')
+    .select('support_payout_case_id')
+    .eq('merchant_id', input.merchantId)
+    .eq('idempotency_key', input.idempotencyKey)
+    .maybeSingle();
+  if (decisionError) throw new Error(`case decision replay lookup failed: ${decisionError.message}`);
+  if (!existingDecision || existingDecision.support_payout_case_id !== input.caseId) {
+    return input.currentVersion;
+  }
+
+  const { data: transitionEvent, error: eventError } = await supabase
+    .from('domain_events')
+    .select('payload')
+    .eq('merchant_id', input.merchantId)
+    .eq('idempotency_key', `case-decision:${input.idempotencyKey}`)
+    .maybeSingle();
+  if (eventError) throw new Error(`case decision replay event lookup failed: ${eventError.message}`);
+  const originalVersion = Number(transitionEvent?.payload?.from_version);
+  if (!Number.isInteger(originalVersion) || originalVersion < 1) {
+    throw new Error('case decision replay version missing');
+  }
+  return originalVersion;
+}
+
 export async function recordMerchantCaseDecision(
   supabase: any,
   input: RecordMerchantCaseDecisionInput,
@@ -210,13 +263,16 @@ export async function recordMerchantCaseDecision(
     p_case_id: input.caseId,
     p_expected_version: input.expectedVersion,
     p_decision: decision,
-    p_action: payload.decision,
+    p_action: payload.resolution ?? payload.decision,
     p_amount_minor: payload.amount_minor ?? null,
     p_currency: payload.currency ?? null,
     p_reason: payload.notes ?? null,
     p_actor_user_id: input.actorUserId,
     p_recommendation_snapshot: {
       recommended_payout_action: payload.recommended_payout_action ?? null,
+      comparison_version: payload.comparison_version ?? null,
+      comparison_token: payload.comparison_token ?? null,
+      comparison: payload.comparison_snapshot ?? null,
     },
     p_followed_recommendation: payload.followed_recommendation ?? null,
     p_related_source_object: input.relatedSourceObject,

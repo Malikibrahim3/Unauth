@@ -32,13 +32,13 @@ function canonicalOrderToRow(order: CanonicalOrder): Record<string, unknown> {
   };
 }
 
-const PERSISTABLE: Partial<Record<CsvDatasetKey, { table: string; sourceEntityType: string; canonicalEntityType: string; eventType: 'order.created' | 'customer.created'; toRow: (entity: unknown) => Record<string, unknown> }>> = {
+const PERSISTABLE: Partial<Record<CsvDatasetKey, { table: string; sourceEntityType: string; canonicalEntityType: string; eventType: 'order.created' | 'customer.created'; conflictTarget: string; toRow: (entity: unknown) => Record<string, unknown> }>> = {
   orders: {
-    table: 'source_orders', sourceEntityType: 'order', canonicalEntityType: 'order', eventType: 'order.created',
+    table: 'source_orders', sourceEntityType: 'order', canonicalEntityType: 'order', eventType: 'order.created', conflictTarget: 'merchant_id,source,connection_id,source_account_id,external_id',
     toRow: (e) => canonicalOrderToRow(e as CanonicalOrder),
   },
   customers: {
-    table: 'source_customers', sourceEntityType: 'customer', canonicalEntityType: 'customer', eventType: 'customer.created',
+    table: 'source_customers', sourceEntityType: 'customer', canonicalEntityType: 'customer', eventType: 'customer.created', conflictTarget: 'merchant_id,source,connection_id,external_id',
     toRow: (e) => ({ raw_metadata: e as Record<string, unknown> }),
   },
 };
@@ -50,7 +50,7 @@ export async function commitCsvImport(
   merchantId: string,
   dataset: CsvDatasetKey,
   valid: ProcessedRow[],
-  jobId: string,
+  importKey: string,
 ): Promise<CommitResult> {
   const cfg = PERSISTABLE[dataset];
   if (!cfg) return { persisted: 0, skipped: valid.length, datasetSupported: false };
@@ -60,8 +60,8 @@ export async function commitCsvImport(
     await upsertCanonicalEntity(
       client,
       merchantId,
-      { table: cfg.table, sourceEntityType: cfg.sourceEntityType, canonicalEntityType: cfg.canonicalEntityType, eventType: cfg.eventType, conflictTarget: 'merchant_id,source,external_id' },
-      { externalId: row.externalId, row: cfg.toRow(row.entity), idempotencyKey: `csv:${jobId}:${row.externalId}` },
+      { table: cfg.table, sourceEntityType: cfg.sourceEntityType, canonicalEntityType: cfg.canonicalEntityType, eventType: cfg.eventType, conflictTarget: cfg.conflictTarget },
+      { externalId: row.externalId, row: cfg.toRow(row.entity), idempotencyKey: `csv:${importKey}:${row.externalId}` },
     );
     persisted += 1;
   }

@@ -3,13 +3,14 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { upsertMerchantForUser } from '@/lib/account/upsertMerchantForUser';
 import { safeRedirectPath } from '@/lib/auth/safeRedirect';
-import { parseRequestedPlanId } from '@/lib/billing/plans';
+import { parseBillingInterval, parseRequestedPlanId } from '@/lib/billing/plans';
 import { persistSubscriptionIntent } from '@/lib/billing/subscriptionIntent';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const queryPlan = parseRequestedPlanId(searchParams.get('plan'));
+  const queryBillingInterval = parseBillingInterval(searchParams.get('billingInterval'));
   const requestedNext = searchParams.get('next');
 
   if (code) {
@@ -34,6 +35,9 @@ export async function GET(request: NextRequest) {
       const requestedPlan = parseRequestedPlanId(
         typeof meta.requested_plan === 'string' ? meta.requested_plan : null,
       ) ?? queryPlan;
+      const requestedBillingInterval = typeof meta.requested_billing_interval === 'string'
+        ? parseBillingInterval(meta.requested_billing_interval)
+        : queryBillingInterval;
       if (requestedPlan) {
         const metadataKey = typeof meta.subscription_intent_key === 'string'
           ? meta.subscription_intent_key
@@ -41,6 +45,7 @@ export async function GET(request: NextRequest) {
         await persistSubscriptionIntent(serviceClient, {
           merchantId: merchant.id,
           planId: requestedPlan,
+          billingInterval: requestedBillingInterval,
           requestedBy: data.user.id,
           logicalOperationId: `signup:${data.user.id}:${metadataKey}`,
           source: 'signup',

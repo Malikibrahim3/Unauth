@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react';
-import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 interface WorkbenchActionBarProps {
   left?: ReactNode;
@@ -10,11 +9,11 @@ interface WorkbenchActionBarProps {
 export function WorkbenchActionBar({ left, middle, right }: WorkbenchActionBarProps) {
   return (
     <div
-      className={styles.toolbar}
+      style={{ display: 'flex', minWidth: 0, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
     >
-      <div className={styles.toolbarGroup}>{left}</div>
-      <div className={styles.toolbarGroup}>{middle}</div>
-      <div className={styles.toolbarGroup}>{right}</div>
+      <div style={{ display: 'flex', minWidth: 0, flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>{left}</div>
+      <div style={{ display: 'flex', minWidth: 0, flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>{middle}</div>
+      <div style={{ display: 'flex', minWidth: 0, flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>{right}</div>
     </div>
   );
 }

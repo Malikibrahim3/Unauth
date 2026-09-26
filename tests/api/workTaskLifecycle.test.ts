@@ -21,14 +21,14 @@ const MERCHANT_ID = '22222222-2222-4222-8222-222222222222';
 const TASK_ID = '33333333-3333-4333-8333-333333333333';
 const ACTION_ID = '44444444-4444-4444-8444-444444444444';
 
-function setup(error: string | null = null) {
+function setup(error: string | null = null, actionExists = true) {
   const rpc = jest.fn().mockResolvedValue(error
     ? { data: null, error: { message: error } }
     : { data: { task: { id: TASK_ID, state_version: 4 }, replayed: false }, error: null });
   (createClient as jest.Mock).mockReturnValue({
     auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: USER_ID } } }) },
   });
-  (createServiceClient as jest.Mock).mockReturnValue({ rpc });
+  (createServiceClient as jest.Mock).mockReturnValue({ rpc, from: (table: string) => ({ select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), maybeSingle: jest.fn().mockResolvedValue({ data: table === 'work_tasks' ? { owner_user_id: USER_ID, state_version: 3 } : table === 'connector_action_runs' && actionExists ? { capability_id: 'refund.manual_handoff' } : null, error: null }) }) });
   (requirePermission as jest.Mock).mockResolvedValue({
     denied: null,
     ctx: { merchantId: MERCHANT_ID, userId: USER_ID, role: 'analyst' },
@@ -119,6 +119,17 @@ describe('canonical Work lifecycle APIs', () => {
       p_external_reference: 'refund-42',
       p_method: 'shopify_admin',
     }));
+  });
+
+  it('does not transition an external action absent from the tenant lookup', async () => {
+    const rpc = setup(null, false);
+    const response = await POST(new NextRequest(`http://localhost/api/external-actions/${ACTION_ID}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'Idempotency-Key': 'external-action-missing' },
+      body: JSON.stringify({ expectedVersion: 1, method: 'shopify_admin', externalReference: 'refund-42' }),
+    }), { params: Promise.resolve({ actionId: ACTION_ID }) });
+    expect(response.status).toBe(404);
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it('honours a denied Work permission', async () => {

@@ -14,8 +14,8 @@ export function CommerceObjectRouteSkeleton({ title }: { title: string }) {
         <Bone className="h-6 w-64 max-w-full" />
         <Bone className="h-3 w-96 max-w-full" />
       </div>
-      <section className="ua-working-surface" aria-hidden="true">
-        <div className="ua-joined-section grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="rounded-xl border border-[#e4e3e0] bg-white" aria-hidden="true">
+        <div className="rounded-xl border border-[#e4e3e0] bg-white grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
             <div key={index} className="space-y-2">
               <Bone className="h-3 w-20" />
@@ -23,13 +23,13 @@ export function CommerceObjectRouteSkeleton({ title }: { title: string }) {
             </div>
           ))}
         </div>
-        <div className="ua-joined-section">
+        <div className="rounded-xl border border-[#e4e3e0] bg-white">
           <Bone className="h-4 w-28" />
           <div className="mt-3 space-y-3">
             {Array.from({ length: 4 }, (_, index) => <Bone key={index} className="h-10 w-full" />)}
           </div>
         </div>
-        <div className="ua-joined-section">
+        <div className="rounded-xl border border-[#e4e3e0] bg-white">
           <Bone className="h-4 w-36" />
           <Bone className="mt-3 h-14 w-full" />
         </div>

@@ -23,23 +23,23 @@ export function AuditTimeline({
 }) {
   if (items.length === 0) return <>{empty ?? null}</>;
   return (
-    <ol className={cn('ua-audit-timeline', className)} aria-label={ariaLabel}>
+    <ol className={cn('text-[11px] leading-[1.45] text-[#64686d]', className)} aria-label={ariaLabel}>
       {items.map((item) => (
-        <li key={item.id} className="ua-audit-timeline__item">
-          <span className="ua-audit-timeline__marker" aria-hidden="true" />
-          <div className="ua-audit-timeline__content">
-            <div className="ua-audit-timeline__heading">
+        <li key={item.id} className="text-[11px] leading-[1.45] text-[#64686d]">
+          <span className="text-[11px] leading-[1.45] text-[#64686d]" aria-hidden="true" />
+          <div className="text-[11px] leading-[1.45] text-[#64686d]">
+            <div className="font-semibold text-[#1c1f23]">
               <p>{item.label}</p>
               <time>{item.timestamp}</time>
             </div>
             {item.actor || item.source ? (
-              <p className="ua-audit-timeline__meta">
+              <p className="text-[11px] leading-[1.45] text-[#64686d]">
                 {item.actor ? <>Actor: {item.actor}</> : null}
                 {item.actor && item.source ? <span aria-hidden="true"> · </span> : null}
                 {item.source ? <>Source: {item.source}</> : null}
               </p>
             ) : null}
-            {item.detail ? <div className="ua-audit-timeline__detail">{item.detail}</div> : null}
+            {item.detail ? <div className="text-[11px] leading-[1.45] text-[#64686d]">{item.detail}</div> : null}
           </div>
         </li>
       ))}

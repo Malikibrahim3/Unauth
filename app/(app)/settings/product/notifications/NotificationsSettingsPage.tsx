@@ -22,7 +22,7 @@ export default async function NotificationPreferencesPage() {
         impact: "Changes which future events appear in your inbox; teammates are unaffected",
       }}
     >
-      <NotificationPreferencesForm initial={values} />
+      <div data-state-id="notification-email-unavailable"><NotificationPreferencesForm initial={values} /></div>
     </SettingsPageShell>
   );
 }

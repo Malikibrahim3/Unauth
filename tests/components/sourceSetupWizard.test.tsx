@@ -31,7 +31,7 @@ describe('SourceSetupWizard truth boundary', () => {
     const progress = screen.getByRole('list', { name: 'BigCommerce setup stages' });
     expect(progress).toHaveTextContent('Provider');
     expect(progress).toHaveTextContent('Permissions');
-    expect(progress).toHaveTextContent('Field mapping');
+    expect(progress).toHaveTextContent('Mapping');
     expect(progress).toHaveTextContent('History');
     expect(progress).toHaveTextContent('Schedule');
     expect(progress).toHaveTextContent('Review');
@@ -43,14 +43,26 @@ describe('SourceSetupWizard truth boundary', () => {
     render(<SourceSetupWizard {...base} initialStep="mapping" />);
 
     expect(screen.getByRole('heading', { name: 'Field mapping' })).toBeInTheDocument();
-    expect(screen.getByText('Mapped')).toBeInTheDocument();
+    expect(screen.getByText('Supported')).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
   it('does not claim a local configuration test verified provider credentials', () => {
     render(<SourceSetupWizard {...base} initialStep="verify" />);
 
-    expect(screen.getByText(/only marked healthy once every required check passes on real data/i)).toBeInTheDocument();
+    expect(screen.getByText(/declared adapter support, recorded configuration and measured health are separate/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Run configuration checks/i })).not.toBeInTheDocument();
   });
+});
+
+
+it('does not turn subscription support or viewed steps into granted reads', () => {
+  const { container } = render(<SourceSetupWizard {...base} initialStep="permissions" capabilities={[
+    { id: 'orders.subscribe', level: 'subscribe', description: 'Order events', support: 'supported' },
+    { id: 'case.link', level: 'link', description: 'Case handoff', support: 'partial' },
+  ]} />);
+  expect(screen.getByText('Receive provider events')).toBeInTheDocument();
+  expect(screen.getByText('Open a manual handoff')).toBeInTheDocument();
+  expect(screen.queryByText('Requested')).not.toBeInTheDocument();
+  expect(container.querySelector('[data-state="complete"]')).toBeNull();
 });

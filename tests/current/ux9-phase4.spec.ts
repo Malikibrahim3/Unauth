@@ -27,7 +27,7 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 test.describe('UX9-4 task-first financial operations', () => {
-  test('Overview leads with current attention before financial analysis in light and dark', async ({ page }) => {
+  test('Overview leads with current attention before financial analysis in light-only mode', async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto('/overview');
     await expect(page.getByRole('heading', { level: 1, name: 'Operating position' })).toBeVisible();
@@ -38,19 +38,17 @@ test.describe('UX9-4 task-first financial operations', () => {
 
     await page.context().addCookies([{ name: 'unauth.auth-theme', value: 'dark', url: BASE_URL }]);
     await page.reload();
-    await expect(page.locator('.uo-product.ua-desktop-boundary')).toHaveAttribute('data-auth-theme', 'dark');
-    await page.screenshot({ path: `${ARTIFACT_ROOT}/overview-task-first-dark-1280x720.png`, fullPage: true });
+    await expect(page.locator('[data-unauth-ui="supplied-package"]')).not.toHaveAttribute('data-auth-theme', /.+/);
+    await page.screenshot({ path: `${ARTIFACT_ROOT}/overview-task-first-legacy-cookie-light-1280x720.png`, fullPage: true });
   });
 
-  test('Work groups system and saved views while preserving URL-backed expert controls', async ({ page }) => {
+  test('Work uses the supplied direct queue and preserves URL-backed filters', async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto('/work?view=overdue&priority=high&sort=deadline');
-    await expect(page.getByRole('navigation', { name: 'Work views' })).toBeVisible();
-    await expect(page.getByText('System views', { exact: true })).toBeVisible();
-    const filters = page.locator('details').filter({ hasText: /^Filters/ });
-    await expect(filters).toHaveAttribute('open', '');
+    await expect(page.getByRole('region', { name: 'Work queue' })).toBeVisible();
     await expect(page.getByLabel('Priority')).toHaveValue('high');
-    await expect(page.getByRole('combobox', { name: 'Saved Work view' })).toBeVisible();
+    await expect(page.getByLabel('Sort work')).toHaveValue('deadline');
+    await expect(page.getByText('System views', { exact: true })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: `${ARTIFACT_ROOT}/work-grouped-views-light-1280x720.png`, fullPage: true });
   });

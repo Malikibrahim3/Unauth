@@ -113,6 +113,12 @@ export type IntelligenceReport = {
     mixedCurrencyPolicy:'separated';
     unknownPolicy:'withheld_not_zero';
     source:'canonical'|'compatibility';
+    from:string|null;
+    to:string;
+    timezone:string;
+    boundary:'start_inclusive_end_exclusive';
+    population:'merchant_support_payout_cases';
+    rowCap:number;
   };
 };
 export type DashboardPeriodComparison = {
@@ -705,6 +711,7 @@ export async function loadIntelligenceReport(
     .order('updated_at',{ascending:false})
     .limit(10000);
   if(cutoff)casesQuery=casesQuery.gte('submitted_at',cutoff);
+  casesQuery=casesQuery.lt('submitted_at',asOf.toISOString());
   const {data:caseData}=await casesQuery;
   const cases=(caseData??[]) as Array<Record<string,any>>;
   const caseIds=cases.map(c=>c.id);
@@ -860,6 +867,7 @@ export async function loadIntelligenceReport(
   const recoveryMap=new Map<string,RankedRow>();
   for(const r of (recoveryData??[]) as Array<Record<string,any>>){
     if(cutoff&&r.updated_at<cutoff)continue;
+    if(!r.updated_at||r.updated_at>=asOf.toISOString())continue;
     const currency=normaliseCurrencyOrNull(r.currency);
     if(!currency)continue;
     const status=String(r.status||'unknown');
@@ -945,6 +953,12 @@ export async function loadIntelligenceReport(
       mixedCurrencyPolicy:'separated',
       unknownPolicy:'withheld_not_zero',
       source:canonicalAggregate?.source==='canonical'?'canonical':'compatibility',
+      from:cutoff,
+      to:asOf.toISOString(),
+      timezone:normalizedTimezone,
+      boundary:'start_inclusive_end_exclusive',
+      population:'merchant_support_payout_cases',
+      rowCap:10000,
     },
   };
 }
@@ -953,7 +967,7 @@ export const REPORT_DEFINITIONS=[
   {id:'financial',name:'Financial performance',definition:'Ledger amounts by case submission period and ISO currency.',numerator:'Sum of each canonical financial entry category.',denominator:'Not applicable.',timeBasis:'Case submitted in selected period.'},
   {id:'loss-causes',name:'Loss causes',definition:'Realised loss grouped by canonical issue category.',numerator:'Confirmed loss in each category.',denominator:'All confirmed loss in the same currency and period.',timeBasis:'Case submitted in selected period.'},
   {id:'prevention',name:'Loss prevention',definition:'Recorded exposure that remained unpaid through the configured observation window.',numerator:'Confirmed prevented exposure after the observation window.',denominator:'Known exposed value in the same currency.',timeBasis:'Case submitted in selected period.'},
-  {id:'recovery',name:'Recovery performance',definition:'Recovered and outstanding amounts by recovery status.',numerator:'Reconciled recovered amount.',denominator:'Recoverable amount in the same currency.',timeBasis:'Recovery updated in selected period.'},
+  {id:'recovery',name:'Recovery performance',definition:'Eligible, received-and-matched, and outstanding amounts by recovery status.',numerator:'Source-backed received and matched credit.',denominator:'Eligible recovery in the same currency.',timeBasis:'Recovery updated in selected period.'},
   {id:'policy',name:'Policy effectiveness',definition:'Recorded merchant decisions grouped by policy result.',numerator:'Cases with the selected recorded result.',denominator:'Cases with a recorded policy result.',timeBasis:'Case submitted in selected period.'},
   {id:'operations',name:'Operations / SLA',definition:'Case workload grouped by canonical state.',numerator:'Cases in each state.',denominator:'All cases in the selected period.',timeBasis:'Case submitted in selected period.'},
   {id:'evidence',name:'Evidence gaps',definition:'Cases whose canonical workflow state identifies missing or awaited evidence.',numerator:'Cases in evidence-waiting states.',denominator:'Open cases in the selected period.',timeBasis:'Case submitted in selected period.'},

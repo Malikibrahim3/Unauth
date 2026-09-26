@@ -1,5 +1,5 @@
 import { projectBoundedWorkQueue, type RawWorkQueueRow } from '@/lib/work/store';
-import type { WorkQueueFilters } from '@/lib/work/types';
+import { isActiveWorkTask, validWorkActions, type WorkQueueFilters } from '@/lib/work/types';
 
 const nowMs = Date.parse('2026-08-23T12:00:00.000Z');
 
@@ -79,4 +79,19 @@ describe('bounded canonical Work projection', () => {
     expect(result.items.some((item) => item.snoozedUntil != null)).toBe(false);
     expect(result.viewCounts.snoozed).toBe(1);
   });
+});
+
+it('never promotes cancelled or completed tasks into open work or counts cancelled work as completed', () => {
+  const result = projectBoundedWorkQueue({ rows: [{ ...row(1), status: 'cancelled' }, { ...row(2), status: 'completed' }, row(3)], filters: baseFilters, currentUserId: 'user-1', canManage: true, canManageAnyAssignment: false, nowMs });
+  expect(result.items).toHaveLength(1);
+  expect(result.total).toBe(1);
+  expect(result.viewCounts.open).toBe(1);
+  expect(result.viewCounts.completed).toBe(1);
+});
+
+it('keeps cancelled work inactive and does not offer completion to an unassigned analyst task', () => {
+  expect(isActiveWorkTask('cancelled')).toBe(false);
+  expect(isActiveWorkTask('completed')).toBe(false);
+  expect(isActiveWorkTask('blocked')).toBe(true);
+  expect(validWorkActions({ item: { kind: 'task', status: 'in_progress', ownerUserId: null, snoozedUntil: null }, currentUserId: 'user-1', canManage: true, canManageAnyAssignment: false, nowMs })).not.toContain('complete');
 });

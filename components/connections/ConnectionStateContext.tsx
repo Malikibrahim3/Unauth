@@ -43,15 +43,19 @@ export function useConnectionState(): ConnectionState {
  * suppress themselves to avoid stacked banners.
  */
 const DemoModeContext = createContext<boolean>(false);
+const ScreenshotModeContext = createContext<boolean>(false);
+export function useScreenshotMode(): boolean { return useContext(ScreenshotModeContext); }
 
 export function DemoModeProvider({
+  screenshot = false,
   value,
   children,
 }: {
   value: boolean;
+  screenshot?: boolean;
   children: React.ReactNode;
 }) {
-  return <DemoModeContext.Provider value={value}>{children}</DemoModeContext.Provider>;
+  return <DemoModeContext.Provider value={value}><ScreenshotModeContext.Provider value={screenshot}>{children}</ScreenshotModeContext.Provider></DemoModeContext.Provider>;
 }
 
 export function useDemoMode(): boolean {

@@ -1,50 +1,47 @@
-import Image from 'next/image';
-import { FileUp, PlugZap } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getProviderLogoSrc } from '@/lib/integrations/registry';
+import type { CSSProperties } from 'react';
 
-function providerLogoSrc(provider: string | null | undefined) {
-  return getProviderLogoSrc(provider);
+function initials(value: string) {
+  const words = value
+    .replaceAll('_', ' ')
+    .replaceAll('-', ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!words.length) return 'S';
+  if (words.length === 1) return words[0]!.slice(0, 1).toUpperCase();
+  return `${words[0]![0] ?? ''}${words.at(-1)?.[0] ?? ''}`.toUpperCase();
 }
 
 export function ProviderLogo({
   provider,
   name,
   size = 'md',
-  className,
+  className: _className,
 }: {
   provider: string | null | undefined;
   name?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   className?: string;
 }) {
-  const src = providerLogoSrc(provider);
-  const dimensions = size === 'xs' ? 22 : size === 'sm' ? 30 : size === 'lg' ? 48 : 38;
-  const iconSize = size === 'xs' ? 11 : size === 'sm' ? 14 : size === 'lg' ? 22 : 18;
-  const label = name ?? provider ?? 'Provider';
-  const isDocument = provider === 'document_upload';
+  const dimensions = size === 'xs' ? 18 : size === 'sm' ? 22 : size === 'lg' ? 38 : 30;
+  const label = name ?? provider?.replaceAll('_', ' ') ?? 'Source';
+  const style: CSSProperties = {
+    width: dimensions,
+    height: dimensions,
+    flex: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: size === 'lg' ? 10 : 7,
+    background: '#efece7',
+    color: '#40454a',
+    font: `${size === 'lg' ? 10.5 : size === 'xs' ? 8 : 9.5}px/1 'IBM Plex Mono',monospace`,
+    textTransform: 'uppercase',
+  };
 
   return (
-    <span
-      className={cn('ua-identity-tile inline-flex shrink-0 items-center justify-center', className)}
-      style={{ width: dimensions, height: dimensions }}
-      title={label}
-      aria-hidden="true"
-    >
-      {src ? (
-        <Image
-          src={src}
-          alt=""
-          width={dimensions - 10}
-          height={dimensions - 10}
-          className="object-contain"
-          style={{ width: dimensions - 10, height: dimensions - 10 }}
-        />
-      ) : isDocument ? (
-        <FileUp size={iconSize} strokeWidth={1.8} />
-      ) : (
-        <PlugZap size={iconSize} strokeWidth={1.8} />
-      )}
+    <span style={style} title={label} aria-hidden="true" data-provider-mark={provider ?? 'manual'}>
+      {initials(label)}
     </span>
   );
 }
@@ -60,9 +57,13 @@ export function SourceMark({
 }) {
   const display = label ?? source?.replaceAll('_', ' ') ?? 'Manual';
   return (
-    <span className="inline-flex min-w-0 items-center gap-2">
+    <span style={{ minWidth: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
       <ProviderLogo provider={source} name={display} size="sm" />
-      {!compact ? <span className="truncate capitalize text-xs font-medium text-[var(--uo-route-text-secondary)]">{display}</span> : null}
+      {!compact ? (
+        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#64686d', font: "500 11px/1.3 'Inter',sans-serif", textTransform: 'capitalize' }}>
+          {display}
+        </span>
+      ) : null}
     </span>
   );
 }

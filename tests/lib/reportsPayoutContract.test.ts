@@ -34,7 +34,7 @@ describe("payout-control reports contract", () => {
     expect(combined).not.toContain("Identity signal match rate");
   });
 
-  it("keeps the Challenge 6 compact report figures drillable and accessible", () => {
+  it("keeps compact report figures drillable and accessible", () => {
     const view = read("components/reporting/IntelligenceReportView.tsx");
     const commandIndex = read("components/reporting/ReportCommandIndex.tsx");
 
@@ -56,11 +56,10 @@ describe("payout-control reports contract", () => {
     const records = read("app/(app)/financials/reports/records/page.tsx");
 
     expect(ladder).toContain("finalUnreconciled");
-    expect(ladder).toContain("Cannot be computed — one or more stages fail the source-to-ledger reconciliation contract");
-    expect(records).toContain("RegistrySurface");
-    expect(records).toContain("DataTableServer");
-    expect(records).toContain("ExportMenu");
-    expect(records).toContain("Financial metric");
+    expect(ladder).toContain("Cannot be computed — unreconciled");
+    expect(records).toContain('data-screen-label="Report records"');
+    expect(records).toContain('data-surface-id="report-supporting-records"');
+    expect(records).toContain('ReportRecordActions');
   });
 
   it("keeps every Reports breadcrumb on the canonical loss-ledger route", () => {

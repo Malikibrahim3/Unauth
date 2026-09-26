@@ -1,2 +1,1 @@
-import { CommerceObjectRouteSkeleton } from '@/components/relationships/CommerceObjectRouteSkeleton';
-export default function Loading() { return <CommerceObjectRouteSkeleton title="Loading order source record" />; }
+export { default } from "@/components/visual-authority/SuppliedAuthenticatedRouteLoading";

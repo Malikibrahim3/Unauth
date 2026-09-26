@@ -2,7 +2,7 @@ import type { LabelFamily } from '@/lib/ui/labels';
 
 /**
  * The five canonical visual outcomes from §14.4 / §15.1 of the visual polish
- * plan. Each corresponds 1:1 to a `--ua-outcome-*` token; nothing else may
+ * plan. Each corresponds 1:1 to an approved semantic outcome colour; nothing else may
  * consume those tokens.
  */
 export type OutcomeRole = 'prevented' | 'recovered' | 'realised' | 'open' | 'identified';
@@ -55,7 +55,7 @@ const OUTCOME_MAPS: Partial<Record<LabelFamily, Partial<Record<string, OutcomeRo
 /**
  * Map an enum value to its canonical visual outcome. `null` means "this
  * value is not an outcome" — the consumer must then fall back to the
- * workflow, urgency, or trust axis instead of an `--ua-outcome-*` token.
+ * workflow, urgency, or trust axis instead of an outcome colour.
  */
 export function outcomeRole(family: LabelFamily, value: string): OutcomeRole | null {
   return OUTCOME_MAPS[family]?.[value] ?? null;

@@ -46,7 +46,9 @@ export async function upsertMerchantForUser(
   const platform =
     cleanValue(input.platform) ?? cleanValue(existingProfile?.platform);
   const monthlyOrderVolume =
-    cleanValue(input.monthlyOrderVolume) ?? cleanValue(existingProfile?.monthly_order_volume);
+    input.monthlyOrderVolume === undefined
+      ? cleanValue(existingProfile?.monthly_order_volume)
+      : cleanValue(input.monthlyOrderVolume);
   const primaryFraudConcern =
     cleanValue(input.primaryFraudConcern) ?? cleanValue(existingProfile?.primary_fraud_concern);
   const setupComplete =

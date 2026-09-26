@@ -3,7 +3,11 @@
 import { useClaimReviewWorkbench } from '@/components/claims/claimReviewState';
 import type { CaseFinancialSummary } from '@/components/claims/payout/CaseFinancialHistoryCard';
 import type { ClaimRecord } from '@/components/claims/claimReviewTypes';
-import { CaseDetailOperations } from '@/components/claims/CaseDetailOperations';
+import {
+  CaseDetailOperations,
+  type CaseDetailAction,
+  type CaseDetailTab,
+} from '@/components/claims/CaseDetailOperations';
 import type { CaseEvidenceFile } from '@/lib/claims/caseEvidenceFile';
 
 export default function ClaimReviewPanel({
@@ -17,6 +21,7 @@ export default function ClaimReviewPanel({
   caseBackHref = '/cases',
   initialTab,
   investigationId,
+  initialAction,
   caseEvidenceFile,
 }: {
   profileId: string;
@@ -27,8 +32,9 @@ export default function ClaimReviewPanel({
   canManage?: boolean;
   financialSummaries?: CaseFinancialSummary[];
   caseBackHref?: string;
-  initialTab?: 'evidence' | 'responsibility' | 'recovery' | 'activity' | null;
+  initialTab?: CaseDetailTab | null;
   investigationId?: string | null;
+  initialAction?: CaseDetailAction;
   caseEvidenceFile?: CaseEvidenceFile | null;
 }) {
   const wb = useClaimReviewWorkbench(
@@ -47,6 +53,7 @@ export default function ClaimReviewPanel({
       caseBackHref={caseBackHref}
       initialTab={initialTab}
       investigationId={investigationId}
+      initialAction={initialAction}
       caseEvidenceFile={caseEvidenceFile}
     />
   );

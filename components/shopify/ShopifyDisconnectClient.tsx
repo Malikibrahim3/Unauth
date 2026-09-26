@@ -28,17 +28,17 @@ export default function ShopifyDisconnectClient() {
   return (
     <section
       className="rounded-md border p-5 space-y-3"
-      style={{ borderColor: 'var(--uo-route-border-default)', background: 'var(--uo-route-surface-primary)' }}
+      style={{ borderColor: '#e4e3e0', background: '#fff' }}
     >
       <div>
-        <p className="ua-text-working-title" style={{ color: 'var(--uo-route-text-primary)' }}>Disconnect Shopify</p>
-        <p className="ua-text-caption-role mt-0.5 leading-relaxed" style={{ color: 'var(--uo-route-text-secondary)' }}>
+        <p className="font-medium text-[13px] leading-5 text-[#1c1f23]" style={{ color: '#1c1f23' }}>Disconnect Shopify</p>
+        <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-0.5 leading-relaxed" style={{ color: '#64686d' }}>
           Removes the link between this workspace and your Shopify store. Existing synced orders are kept - only live syncing stops.
         </p>
       </div>
 
       {error && (
-        <p className="ua-text-caption-role rounded-[var(--uo-route-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--uo-route-critical-border)', background: 'var(--uo-route-critical-bg)', color: 'var(--uo-route-critical)' }} role="alert">{error} Retry the disconnect or reconnect Shopify if the link state is uncertain.</p>
+        <p className="text-[11.5px] leading-[1.45] text-[#64686d] rounded-[8px] border px-3 py-2" style={{ borderColor: '#edc6b5', background: '#fdf0e6', color: '#b0431a' }} role="alert">{error} Retry the disconnect or reconnect Shopify if the link state is uncertain.</p>
       )}
 
       {confirming ? (

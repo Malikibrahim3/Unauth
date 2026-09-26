@@ -1,7 +1,7 @@
 /**
  * Plot-geometry SSOT for the authenticated chart language (T1–T10).
  * Every hardcoded plot dimension in a chart component must come from here —
- * panel-level chrome (radii, shadows, control heights) still comes from --uo-route-* tokens.
+ * panel-level chrome (radii, shadows, control heights) still comes from --authority-* tokens.
  */
 
 // T3 — trend line
@@ -15,7 +15,7 @@ export const TREND_MAX_SERIES = 3;
 /** Spec §8.3: bars carry a 4px radius at the data end only. */
 export const BAR_END_RADIUS = 4;
 /*
- * Instrument Grade bar weight. A bar that reads as a hairline reads as
+ * Evidence Operations bar weight. A bar that reads as a hairline reads as
  * decoration: bandwidth (72–82% target, 65% floor) takes precedence over
  * stretching a few columns across a wide plot, and no desktop bar goes below
  * 12px. The previous 30px cap with a 28% category gap produced ~65% bandwidth
@@ -47,7 +47,7 @@ export const FORECAST_DASH: [number, number] = [2, 3];
 /** §18.4 — reference/maximum/threshold rule: 1px dash 6 3. */
 export const REFERENCE_DASH: [number, number] = [6, 3];
 export const REFERENCE_LINE_WIDTH = 1;
-/** §18.4 — selected/hovered mark: +2px ring in --uo-route-analytical-selected. */
+/** §18.4 — selected/hovered mark: +2px ring in --authority-analytical-selected. */
 export const SELECTED_RING_WIDTH = 2;
 
 // T5 — dot-matrix

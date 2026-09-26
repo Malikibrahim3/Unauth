@@ -110,4 +110,23 @@ describe('account setup workspace authorization', () => {
     );
     expect(mockUpdateUserById).toHaveBeenCalledTimes(1);
   });
+  it.each(['under_10k', '10k_50k', '50k_250k', 'over_250k', 'unknown', 1200])('rejects ambiguous or invalid volume %s before persistence', async (volume) => {
+    mockResolveCallerContext.mockResolvedValue({ userId: 'user-1', merchantId: 'm1', role: 'owner' });
+    mockMembershipMaybeSingle.mockResolvedValue({ data: { id: 'member-1' }, error: null });
+    mockHasPermission.mockResolvedValue(true);
+    const response = await POST(request({ monthlyOrderVolume: volume }));
+    expect(response.status).toBe(400);
+    expect(mockUpsertMerchantForUser).not.toHaveBeenCalled();
+  });
+
+  it.each(['under_1000', '1000_8000', '8000_15000', 'over_15000', null])('passes an explicit monthly correction or clear %s to persistence', async (volume) => {
+    mockResolveCallerContext.mockResolvedValue({ userId: 'user-1', merchantId: 'm1', role: 'owner' });
+    mockMembershipMaybeSingle.mockResolvedValue({ data: { id: 'member-1' }, error: null });
+    mockHasPermission.mockResolvedValue(true);
+    mockUpsertMerchantForUser.mockResolvedValue({ id: 'm1', setup_complete: false });
+    const response = await POST(request({ monthlyOrderVolume: volume }));
+    expect(response.status).toBe(200);
+    expect(mockUpsertMerchantForUser).toHaveBeenCalledWith(serviceClient, expect.objectContaining({ monthlyOrderVolume: volume }));
+  });
+
 });

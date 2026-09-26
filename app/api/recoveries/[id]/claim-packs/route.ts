@@ -1,3 +1,4 @@
+import { claimNarrative } from '@/lib/recoveries/claimNarrative';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { loadCaseEvidenceFile, claimPackSourcesFromCaseFile } from '@/lib/claims/caseEvidenceFile';
@@ -54,7 +55,8 @@ export async function POST(
     amountSoughtMinor: recoveryCase.amount_sought_minor,
     readiness: file.providerClaimReadiness,
     ruleVersionId: file.partnerRule?.id ?? null,
-    issueSummary: file.claim.issueSummary,
+    issueSummary: claimNarrative(file),
+    merchantNotes: parsed.data.notes ?? null,
     chronology: file.custodyChain.map((event) => ({ stage: event.label, occurredAt: event.occurredAt, summary: event.summary, evidenceIds: event.evidenceIds })),
     sources: claimPackSourcesFromCaseFile(file),
     generatedAt: new Date().toISOString(),

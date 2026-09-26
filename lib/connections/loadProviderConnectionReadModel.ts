@@ -16,9 +16,13 @@ export async function loadProviderConnectionReadModel(input: {
   merchantId: string;
   item: Pick<
     ConnectorCatalogueItem,
-    'id' | 'status' | 'syncState' | 'freshness' | 'lastVerifiedAt' | 'importedRecords'
+    'id' | 'status' | 'syncState' | 'freshness' | 'lastVerifiedAt' | 'importedRecords' | 'screenshotFixture' | 'liveVerification'
   >;
 }): Promise<LoadedProviderConnectionReadModel> {
+  if (input.item.screenshotFixture === 'asterlane-screenshots-v1') {
+    const readModel = connectionReadModel({ providerId: input.item.id, ...input.item });
+    return { readModel, badge: readModel.badge, displayNote: null };
+  }
   const connectionState = await getCachedConnectionState(input.merchantId);
   const isOrderSource = input.item.id === connectionState.orderSourcePlatform;
   const isHelpdesk = input.item.id === connectionState.helpdeskProvider;

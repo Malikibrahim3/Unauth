@@ -2,10 +2,9 @@ import Link from 'next/link';
 import { formatNumber } from '@/lib/utils/format';
 import { ChartFrame, ChartState, simpleChartTable } from './ChartFrame';
 import { finiteNonNegative, type AuthChartDatum } from './types';
-import styles from './AuthenticatedCharts.module.css';
 import { proportionalLength } from '@/lib/visualisation/proportionalLength';
 
-const CAUSE_RAMP_TOKENS = ['--uo-route-cause-1', '--uo-route-cause-2', '--uo-route-cause-3', '--uo-route-cause-4', '--uo-route-cause-5'] as const;
+const CAUSE_RAMP = ['#3c3935', '#625e58', '#6f6a63', '#b7b1aa', '#d8d4cf'] as const;
 
 export function RankedContributionChart({
   id,
@@ -67,7 +66,7 @@ export function RankedContributionChart({
       kind="ranked-contribution"
       question={title}
       summary={description}
-      control={annotation ? <div className={styles.annotation}><strong>{annotation.value}</strong>{annotation.label}</div> : undefined}
+      control={annotation ? <div style={{ display: 'grid', justifyItems: 'end', color: '#6f6a63', fontSize: 10 }}><strong style={{ color: '#1c1f23', font: "500 15px/1.3 'IBM Plex Mono',monospace" }}>{annotation.value}</strong>{annotation.label}</div> : undefined}
       records={records}
       table={simpleChartTable(rows.map((row) => ({
         label: row.label,
@@ -78,40 +77,38 @@ export function RankedContributionChart({
       compact={compact}
     >
       {rows.length === 0 ? <ChartState kind="empty" title="No attributable value" description="No compatible financial rows are available for this ranked view." /> : rows.length === 1 ? (
-        <div className={styles.singleRank} role="group" data-selected={selectedLabel === rows[0].label ? 'true' : undefined} aria-label={`${rows[0].label}: ${rows[0].displayValue ?? rows[0].value}`}>
+        <div role="group" data-selected={selectedLabel === rows[0].label ? 'true' : undefined} aria-label={`${rows[0].label}: ${rows[0].displayValue ?? rows[0].value}`} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 8, padding: '12px 0' }}>
           <span>
             {rows[0].href ? <Link href={rows[0].href}>{rows[0].label}</Link> : rows[0].label}
           </span>
-          <strong className={styles.mono}>{rows[0].displayValue ?? formatNumber(rows[0].value)}</strong>
+          <strong style={{ fontFamily: "'IBM Plex Mono',monospace" }}>{rows[0].displayValue ?? formatNumber(rows[0].value)}</strong>
           {rows[0].detail ? <small>{rows[0].detail}</small> : null}
         </div>
       ) : (
-        <div className={styles.rankedChart} role="group" aria-label={rows.map((row) => `${row.label}: ${row.displayValue ?? row.value}`).join(', ')}>
+        <div style={{ display: 'grid', gap: 9 }} role="group" aria-label={rows.map((row) => `${row.label}: ${row.displayValue ?? row.value}`).join(', ')}>
           {rows.map((row, index) => (
-            <div className={styles.rankedRow} key={row.label} data-selected={selectedLabel === row.label ? 'true' : undefined}>
-              <span className={styles.rankedName}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px,.7fr) minmax(100px,1fr) auto', gap: 10, alignItems: 'center', padding: selectedLabel === row.label ? '5px 7px' : '5px 0', borderRadius: 7, background: selectedLabel === row.label ? '#fff3e9' : 'transparent' }} key={row.label} data-selected={selectedLabel === row.label ? 'true' : undefined}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#40454a', fontSize: 11 }}>
                 {index + 1}. {row.href ? <Link href={row.href}>{row.label}</Link> : row.label}
               </span>
               {row.href ? (
                 <Link
                   href={row.href}
-                  className={styles.rankedTrack}
+                  style={{ height: 7, overflow: 'hidden', borderRadius: 4, background: '#ece9e4' }}
                   aria-label={`Open ${row.label}: ${row.displayValue ?? row.value}`}
                 >
                   <span
-                    className={causeRamp ? styles.rankedFill : `${styles.rankedFill} ${styles[row.tone ?? (index === 0 ? 'primary' : 'neutral')]}`}
-                    style={{ width: `${proportionalLength(row.value, max)}%`, background: causeRamp ? `var(${CAUSE_RAMP_TOKENS[index] ?? '--uo-route-cause-other'})` : undefined }}
+                    style={{ display: 'block', height: '100%', width: `${proportionalLength(row.value, max)}%`, borderRadius: 4, background: causeRamp ? (CAUSE_RAMP[index] ?? '#d8d4cf') : index === 0 ? '#1c1f23' : '#6f6a63' }}
                   />
                 </Link>
               ) : (
-                <div className={styles.rankedTrack}>
+                <div style={{ height: 7, overflow: 'hidden', borderRadius: 4, background: '#ece9e4' }}>
                   <div
-                    className={causeRamp ? styles.rankedFill : `${styles.rankedFill} ${styles[row.tone ?? (index === 0 ? 'primary' : 'neutral')]}`}
-                    style={{ width: `${proportionalLength(row.value, max)}%`, background: causeRamp ? `var(${CAUSE_RAMP_TOKENS[index] ?? '--uo-route-cause-other'})` : undefined }}
+                    style={{ height: '100%', width: `${proportionalLength(row.value, max)}%`, borderRadius: 4, background: causeRamp ? (CAUSE_RAMP[index] ?? '#d8d4cf') : index === 0 ? '#1c1f23' : '#6f6a63' }}
                   />
                 </div>
               )}
-              <span className={`${styles.rankedValue} ${styles.mono}`}>{row.displayValue ?? formatNumber(row.value)}</span>
+              <span style={{ color: '#1c1f23', font: "500 11px/1 'IBM Plex Mono',monospace" }}>{row.displayValue ?? formatNumber(row.value)}</span>
             </div>
           ))}
         </div>

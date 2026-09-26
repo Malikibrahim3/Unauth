@@ -21,7 +21,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
     <SectionCard joined title="Workspace profile" description="Saved workspace identity and future review defaults">
       <form onSubmit={onSave} className="space-y-5">
         <div>
-          <label htmlFor="account-email" className="ua-text-label block mb-1" style={{ color: 'var(--uo-route-text-primary)' }}>
+          <label htmlFor="account-email" className="text-[11px] font-medium leading-4 text-[#64686d] block mb-1" style={{ color: '#1c1f23' }}>
             Email address
           </label>
           <Input
@@ -31,15 +31,15 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
             value={state.userEmail}
             disabled
           />
-          <p className="ua-text-caption-role mt-1" style={{ color: 'var(--uo-route-text-secondary)' }}>
+          <p className="text-[11.5px] leading-[1.45] text-[#64686d] mt-1" style={{ color: '#64686d' }}>
             To change your email, contact{' '}
-            <a href="mailto:support@unauth.app" className="underline" style={{ color: 'var(--uo-focus)' }}>support@unauth.app</a>.
+            <a href="mailto:support@unauth.app" className="underline" style={{ color: '#40454a' }}>support@unauth.app</a>.
           </p>
         </div>
 
         <div>
-          <label htmlFor="account-store-name" className="ua-text-label block mb-1" style={{ color: 'var(--uo-route-text-primary)' }}>
-            Store / business name <span style={{ color: 'var(--uo-route-risk-critical)' }}>*</span>
+          <label htmlFor="account-store-name" className="text-[11px] font-medium leading-4 text-[#64686d] block mb-1" style={{ color: '#1c1f23' }}>
+            Store / business name <span style={{ color: '#b0431a' }}>*</span>
           </label>
           <Input
             id="account-store-name"
@@ -53,7 +53,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         <div>
-          <label htmlFor="account-monthly-volume" className="ua-text-label block mb-1" style={{ color: 'var(--uo-route-text-primary)' }}>
+          <label htmlFor="account-monthly-volume" className="text-[11px] font-medium leading-4 text-[#64686d] block mb-1" style={{ color: '#1c1f23' }}>
             Monthly order volume
           </label>
           <div className="max-w-sm">
@@ -71,7 +71,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         <div>
-          <label htmlFor="account-loss-concern" className="ua-text-label block mb-1" style={{ color: 'var(--uo-route-text-primary)' }}>
+          <label htmlFor="account-loss-concern" className="text-[11px] font-medium leading-4 text-[#64686d] block mb-1" style={{ color: '#1c1f23' }}>
             Primary review focus
           </label>
           <div className="max-w-sm">
@@ -89,7 +89,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         {state.saveError ? (
-          <p className="ua-text-caption-role" style={{ color: 'var(--uo-route-risk-critical)' }}>{state.saveError}</p>
+          <p className="text-[11.5px] leading-[1.45] text-[#64686d]" style={{ color: '#b0431a' }}>{state.saveError}</p>
         ) : null}
 
         <div className="flex items-center gap-3">
@@ -97,7 +97,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
             {state.saving ? 'Saving…' : dirty ? 'Save changes' : 'Changes saved'}
           </Button>
           {state.saveSuccess ? (
-            <span className="ua-text-caption-role flex items-center gap-1" style={{ color: 'var(--uo-route-success)' }}>
+            <span className="text-[11.5px] leading-[1.45] text-[#64686d] flex items-center gap-1" style={{ color: '#1a6b43' }}>
               <Check className="h-3.5 w-3.5" /> Saved
             </span>
           ) : null}

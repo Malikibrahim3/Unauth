@@ -1,31 +1,33 @@
 'use client';
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { MailCheck, RotateCw } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { FormField } from '@/components/ui/FormField';
-import { Input } from '@/components/ui/Input';
-import { AuthError } from '../AuthShell';
+import { AuthShell, PublicNotice } from '@/components/public/PublicUI';
+import styles from '@/components/public/public.module.css';
 import { createClient } from '@/lib/supabase/client';
 import { safeRedirectPath } from '@/lib/auth/safeRedirect';
-
-function validateEmail(email: string) {
-  return /^\S+@\S+\.\S+$/.test(email.trim()) ? '' : 'Enter a valid email address.';
-}
+import { parseBillingInterval, parseRequestedPlanId } from '@/lib/billing/plans';
 
 function ResetForm() {
   const searchParams = useSearchParams();
+
   const requestedNext = searchParams.get('next');
   const nextPath = safeRedirectPath(requestedNext);
-  const loginHref = requestedNext ? `/login?next=${encodeURIComponent(nextPath)}` : '/login';
+  const plan = parseRequestedPlanId(searchParams.get('plan'));
+  const billingInterval = parseBillingInterval(searchParams.get('billingInterval'));
+  const loginParams = new URLSearchParams();
+  if(requestedNext) loginParams.set('next',nextPath);
+  if(plan) loginParams.set('plan',plan);
+  if(plan) loginParams.set('billingInterval',billingInterval);
+  const loginHref = `/login${loginParams.size?`?${loginParams}`:''}`;
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState('');
   const emailRef = useRef<HTMLInputElement>(null);
+  const sendingRef = useRef(false);
+  const [submittedEmail, setSubmittedEmail] = useState('');
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -35,57 +37,52 @@ function ResetForm() {
   }, [cooldown]);
 
   async function sendReset() {
-    const validation = validateEmail(email);
-    if (validation) {
-      setError(validation);
+    if (sendingRef.current || cooldown > 0) return;
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      setError('Enter a valid email address.');
       emailRef.current?.focus();
       return;
     }
     setLoading(true);
+    sendingRef.current = true;
+    setSent(false);
     setError('');
     const updateParams = new URLSearchParams();
     if (requestedNext) updateParams.set('next', nextPath);
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset/update${updateParams.size ? `?${updateParams.toString()}` : ''}`,
+    if (plan) updateParams.set('plan', plan);
+    if (plan) updateParams.set('billingInterval', billingInterval);
+    try {
+    const requestedEmail = email.trim();
+    const result = await supabase.auth.resetPasswordForEmail(requestedEmail, {
+      redirectTo: `${window.location.origin}/reset/update${updateParams.size ? `?${updateParams}` : ''}`,
     });
-    setLoading(false);
-    if (resetError) {
-      setError('We could not send the link. Wait a moment and try again.');
+    if (result.error) {
+      setError(/rate|too many/i.test(result.error.message)
+        ? 'Too many requests. Wait before asking for another link.'
+        : 'We could not send the link. Wait a moment and try again.');
       return;
     }
     setSent(true);
+    setSubmittedEmail(requestedEmail);
     setCooldown(30);
+    } catch {
+      setError('We could not request the link. Check your connection and try again.');
+    } finally {
+      sendingRef.current = false;
+      setLoading(false);
+    }
   }
 
-  if (sent) {
-    return (
-      <section className="ua-auth-card" data-surface-id="password-reset-sent-state" data-state-id="password-reset-sent-state" data-archetype="P2">
-        <header><span className="ua-auth-card__mark"><MailCheck size={18} aria-hidden="true" /></span><div><h1>Check your email</h1><p>If an account can be recovered, a reset link is on its way.</p></div></header>
-        <p className="text-sm leading-6 text-[var(--uo-route-text-secondary)]">We sent recovery instructions to the address you entered: <strong className="font-medium text-[var(--uo-route-text-primary)]">{email.trim()}</strong>. Delivery can take a minute.</p>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Button variant="secondary" size="md" disabled={cooldown > 0} loading={loading} leadingIcon={<RotateCw size={14} />} onClick={sendReset}>{cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend link'}</Button>
-          <Link className="text-xs font-medium text-[var(--uo-route-text-link)] hover:underline" href={loginHref}>Back to sign in</Link>
-        </div>
-        <AuthError>{error}</AuthError>
-      </section>
-    );
-  }
-
-  return (
-    <section className="ua-auth-card" data-surface-id="request-password-reset" data-state-id="password-reset-request" data-archetype="P2">
-      <header><span className="ua-auth-card__mark"><RotateCw size={18} aria-hidden="true" /></span><div><h1>Reset your password</h1><p>We will send a time-limited recovery link.</p></div></header>
-      <form noValidate onSubmit={(event) => { event.preventDefault(); void sendReset(); }}>
-        <FormField label="Email" hint="Use the address associated with your workspace." error={error}>
-          <Input ref={emailRef} name="email" type="email" autoComplete="email" value={email} onChange={(event) => { setEmail(event.target.value); setError(''); }} />
-        </FormField>
-        <AuthError>{error}</AuthError>
-        <Button type="submit" size="lg" loading={loading}>Send reset link</Button>
-      </form>
-      <footer><Link href={loginHref}>Back to sign in</Link><span>Remembered it? <Link href={loginHref}>Sign in</Link></span></footer>
-    </section>
-  );
+  return <AuthShell surfaceId="request-password-reset" title="Reset your password" description="Request recovery instructions. You will see the same response whether or not an account exists." stateId={loading?'password-reset-submitting':sent?'password-reset-sent-state':error?'password-reset-error':'password-reset-initial'}>
+    {error&&<PublicNotice error id="reset-error">{error}</PublicNotice>}
+    {sent&&<PublicNotice>If {submittedEmail} has an account, check its inbox and spam for recovery instructions. Use the latest valid link.</PublicNotice>}
+    <form className={styles.form} aria-label="Reset your password" noValidate onSubmit={e=>{e.preventDefault();void sendReset();}}>
+      <div className={styles.field}><label htmlFor="reset-email">Email</label><input className={styles.input} id="reset-email" name="email" ref={emailRef} type="email" autoComplete="email" value={email} aria-invalid={!!error} aria-describedby={error?'reset-error':undefined} onChange={e=>{setEmail(e.target.value);setError('');}}/></div>
+      <button className={styles.button} type="submit" disabled={loading||cooldown>0} aria-busy={loading}>{loading?'Requesting instructions…':cooldown>0?`Request again in ${cooldown}s`:sent?'Request another link':'Send recovery link'}</button>
+    </form><a href={loginHref}>Back to sign in</a>
+  </AuthShell>;
 }
 
 export default function ResetPage() {
-  return <Suspense fallback={<section className="ua-auth-card" aria-busy="true">Preparing password recovery…</section>}><ResetForm /></Suspense>;
+  return <Suspense fallback={<AuthShell title="Loading account access" description="Preparing the form…"><p role="status">Loading…</p></AuthShell>}><ResetForm /></Suspense>;
 }

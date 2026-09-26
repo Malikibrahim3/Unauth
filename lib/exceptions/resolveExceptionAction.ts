@@ -25,6 +25,7 @@ export type ResolveExceptionActionInput = {
   resolution?: string | null;
   expectedStateVersion?: number | null;
   actorUserId: string;
+  idempotencyKey?: string | null;
 };
 
 export async function resolveExceptionAction(client: SupabaseClient, input: ResolveExceptionActionInput) {
@@ -79,7 +80,16 @@ export async function resolveExceptionAction(client: SupabaseClient, input: Reso
       aggregateType: 'case',
       aggregateId: exception.support_payout_case_id,
       idempotencyKey: `case.exception_resolved:${input.exceptionId}`,
-      payload: { exception_id: input.exceptionId, exception_type: exception.exception_type, action: input.action, settle_status: settleStatus, match_status: matchStatus },
+      payload: {
+        exception_id: input.exceptionId,
+        exception_type: exception.exception_type,
+        action: input.action,
+        settle_status: settleStatus,
+        match_status: matchStatus,
+        resolution: input.resolution ?? null,
+        selected_candidate_id: input.selectedCandidateId ?? null,
+        request_idempotency_key: input.idempotencyKey ?? null,
+      },
       actorType: 'user',
       actorId: input.actorUserId,
       handlers: ['exceptionProjection'],

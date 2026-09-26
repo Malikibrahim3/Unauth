@@ -6,6 +6,13 @@ import { merchantHasEntitlement } from '@/lib/product/requireEntitlement';
 import { loadIntelligenceReport, parseReportRange, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
 import { NamedReportDetail } from '@/components/reports/NamedReportDetail';
 import type { NamedReportMeasure } from '@/lib/reporting/namedReportContracts';
+import { isNamedReportId } from '@/lib/reporting/namedReportContracts';
+import { loadLatestReportRun, scopeIntelligenceReport, type ReportRunScope } from '@/lib/reporting/reportRuns';
+import {
+  acceptanceScenarioFromHeaders,
+  delayForAcceptanceScenario,
+  throwForAcceptanceScenario,
+} from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,11 +37,17 @@ export default async function ReportDetailPage({
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.VIEW_AUDIT);
   if (denied) redirect(await resolveDefaultAppPath(service, user.id));
   if (!(await merchantHasEntitlement(service, ctx.merchantId, 'REPORTS_ADVANCED'))) redirect('/settings/billing?required=REPORTS_ADVANCED');
+  await delayForAcceptanceScenario('reports-and-records-loading');
+  await throwForAcceptanceScenario('named-report-error');
 
   const range = parseReportRange(one(incoming.range));
   const timezoneCandidate = one(incoming.timezone);
   const timezone = timezoneCandidate && timezoneCandidate.length < 80 ? timezoneCandidate : 'UTC';
-  const report = await loadIntelligenceReport(service, ctx.merchantId, range, timezone);
+  const loadedReport = await loadIntelligenceReport(service, ctx.merchantId, range, timezone);
+  const forceUnavailable = await acceptanceScenarioFromHeaders() === 'named-report-unavailable';
+  const report = forceUnavailable
+    ? { ...loadedReport, bridges: [], trend: [], causes: [], recoveries: [], recordCount: 0 }
+    : loadedReport;
   const requestedCurrency = one(incoming.currency)?.toUpperCase();
   const availableCurrencies = report.bridges.map((bridge) => bridge.currency);
   const selectedCurrency = requestedCurrency && report.bridges.some((bridge) => bridge.currency === requestedCurrency)
@@ -42,16 +55,11 @@ export default async function ReportDetailPage({
     : null;
   const measure: NamedReportMeasure = one(incoming.measure) === 'count' ? 'count' : 'amount';
   const page = Math.max(1, Number(one(incoming.page)) || 1);
-  const scopedReport = selectedCurrency
-    ? {
-        ...report,
-        bridges: report.bridges.filter((bridge) => bridge.currency === selectedCurrency),
-        trend: report.trend.filter((point) => point.currency === selectedCurrency),
-        causes: report.causes.filter((row) => row.currency === selectedCurrency),
-        recoveries: report.recoveries.filter((row) => row.currency === selectedCurrency),
-        operations: report.operations.map((row) => ({ ...row, exposureByCurrency: row.exposureByCurrency.filter((entry) => entry.currency === selectedCurrency) })),
-      }
-    : report;
+  const scopedReport = scopeIntelligenceReport(report, selectedCurrency);
+  const runScope: ReportRunScope = { range, timezone, currency: selectedCurrency, measure };
+  const previousRun = isNamedReportId(reportId)
+    ? await loadLatestReportRun(service, ctx.merchantId, reportId, runScope)
+    : null;
 
-  return <NamedReportDetail reportId={reportId} report={scopedReport} availableCurrencies={availableCurrencies} selectedCurrency={selectedCurrency} measure={measure} page={page} />;
+  return <NamedReportDetail reportId={reportId} report={scopedReport} availableCurrencies={availableCurrencies} selectedCurrency={selectedCurrency} measure={measure} page={page} previousRun={previousRun} runScope={runScope} />;
 }

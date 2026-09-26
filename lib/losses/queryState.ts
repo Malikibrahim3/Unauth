@@ -28,6 +28,9 @@ type LossQueryRow = {
   estimatedLossMinor: number | null;
   netUnrecoveredMinor?: number | null;
   source: string | null;
+  /** Canonical financial population timestamp: support case submitted_at. */
+  scopeAt?: string | null;
+  effectiveAt?: string | null;
   updatedAt?: string | null;
   supportPayoutCaseId: string | null;
 };
@@ -87,7 +90,10 @@ function amountFor(row: LossQueryRow, key: 'loss' | 'outstanding') {
 export function filterAndSortLossRows<T extends LossQueryRow>(
   rows: T[],
   input: {
-    cutoff: string | null;
+    /** @deprecated use fromInclusive; retained for compatibility callers. */
+    cutoff?: string | null;
+    fromInclusive?: string | null;
+    toExclusive?: string | null;
     source: string | null;
     status: LossQueryStatus;
     search: string | null;
@@ -97,8 +103,11 @@ export function filterAndSortLossRows<T extends LossQueryRow>(
 ): T[] {
   const search = input.search?.trim().toLowerCase() ?? '';
   const otherCauseKeys = new Set(input.otherCauseKeys ?? []);
+  const fromInclusive = input.fromInclusive ?? input.cutoff ?? null;
   const filtered = rows.filter((row) => {
-    if (input.cutoff && (!row.updatedAt || row.updatedAt < input.cutoff)) return false;
+    const scopedAt = row.scopeAt ?? row.effectiveAt ?? row.updatedAt;
+    if (fromInclusive && (!scopedAt || scopedAt < fromInclusive)) return false;
+    if (input.toExclusive && (!scopedAt || scopedAt >= input.toExclusive)) return false;
     if (input.source && (row.source ?? 'unavailable') !== input.source) return false;
     if (!matchesStatus(row, input.status)) return false;
     if (!search) return true;

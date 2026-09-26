@@ -222,7 +222,10 @@ export async function upsertMerchantIntegration(
       merchantId,
       providerId: provider.id,
       category: provider.category,
-      authMode: provider.authMode,
+      // `manual_upload` is the product capability vocabulary. The canonical
+      // connection table's existing storage vocabulary represents local,
+      // non-provider mechanisms as `custom`.
+      authMode: provider.authMode === 'manual_upload' ? 'custom' : provider.authMode,
       status: status === 'not_connected' || status === 'connection_error' ? 'error' : status,
       providerAccountId: fields.providerAccountId ?? null,
       providerAccountName: fields.providerAccountName ?? null,

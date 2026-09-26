@@ -33,6 +33,18 @@ export async function ensureMerchantContextForUser(
 
   if (!canRehydrateMerchantFromAuth(user)) return null;
 
+  // A local acceptance workspace can be intentionally deleted while its
+  // authentication identity remains available for the durable receipt. Do
+  // not silently recreate a merchant from that synthetic identity after the
+  // deletion boundary; production users retain the normal rehydration path.
+  const localAcceptanceMarker = user.user_metadata?.acceptance_remaining_closure;
+  if (process.env.RELEASE_E2E_LOCAL === '1'
+    && localAcceptanceMarker
+    && typeof localAcceptanceMarker === 'object'
+    && localAcceptanceMarker.localOnly === true) {
+    return null;
+  }
+
   const setupComplete = user.user_metadata?.setup_complete === true;
   const deferredAt = user.user_metadata?.onboarding_deferred_at;
 

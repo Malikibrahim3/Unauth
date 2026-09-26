@@ -23,20 +23,20 @@ export function DeliveryEvidenceCard({
     <section
       className="rounded-md p-4 border"
       style={{
-        borderColor: "var(--uo-route-border-subtle)",
-        background: "var(--uo-route-surface-primary)",
+        borderColor: "#eae8e5",
+        background: "#fff",
       }}
     >
       <p
-        className="ua-text-label mb-3"
-        style={{ color: "var(--uo-route-text-secondary)" }}
+        className="text-[11px] font-medium leading-4 text-[#64686d] mb-3"
+        style={{ color: "#64686d" }}
       >
         Delivery evidence
       </p>
-      <p className="ua-text-working-title" style={{ color: "var(--uo-route-text-primary)" }}>
+      <p className="font-medium text-[13px] leading-5 text-[#1c1f23]" style={{ color: "#1c1f23" }}>
         {line}
       </p>
-      <dl className="ua-text-metadata mt-3 grid gap-2 sm:grid-cols-2">
+      <dl className="text-[10.5px] leading-4 text-[#6f6a63] mt-3 grid gap-2 sm:grid-cols-2">
         <Detail label="Carrier" value={delivery.carrier ?? "—"} />
         <Detail
           label="Tracking number"
@@ -58,8 +58,8 @@ export function DeliveryEvidenceCard({
         />
       </dl>
       <div
-        className="mt-3 flex flex-wrap gap-2 text-[length:var(--uo-route-text-metadata-size)]"
-        style={{ color: "var(--uo-route-text-tertiary)" }}
+        className="mt-3 flex flex-wrap gap-2 text-[length:10.5px]"
+        style={{ color: "#6f6a63" }}
       >
         <CapabilityPill
           label="Delivery photo"
@@ -109,8 +109,8 @@ export function DeliveryEvidenceCard({
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt style={{ color: "var(--uo-route-text-tertiary)" }}>{label}</dt>
-      <dd className="font-medium" style={{ color: "var(--uo-route-text-secondary)" }}>
+      <dt style={{ color: "#6f6a63" }}>{label}</dt>
+      <dd className="font-medium" style={{ color: "#64686d" }}>
         {value}
       </dd>
     </div>
@@ -135,7 +135,7 @@ function CapabilityPill({
   return (
     <span
       className="rounded-full border px-2 py-0.5"
-      style={{ borderColor: "var(--uo-route-border-subtle)" }}
+      style={{ borderColor: "#eae8e5" }}
     >
       {copy}
     </span>

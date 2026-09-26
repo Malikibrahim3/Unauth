@@ -1,24 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import {
-  Button,
-  AuthorityStamp,
-  FilterChip,
-  Input,
-  Modal,
-  MoneyValue,
-  OperationalState,
-  StatusBadge,
-  Textarea,
-  UnavailableValue,
-} from '@/components/ui';
-import { formatConfidencePercent, formatDateTime } from '@/lib/utils/format';
+import { formatConfidencePercent, formatDateTime, formatMoney } from '@/lib/utils/format';
 import { hashId } from '@/lib/ui/displayRef';
-import { label } from '@/lib/ui/labels';
-import { ENTITY_LABELS, providerLabel } from '@/lib/ui/merchantCopy';
+import { providerLabel } from '@/lib/ui/merchantCopy';
 
 type Candidate = {
   id: string;
@@ -52,11 +39,11 @@ type ReconciliationException = {
 type ResolutionAction = 'confirm' | 'reject' | 'resolve' | 'dismiss';
 
 const FACTS = [
-  { key: 'record_id', label: 'Record reference' },
-  { key: 'record_type', label: 'Record type' },
-  { key: 'amount_minor', label: 'Amount' },
-  { key: 'state', label: 'Financial state' },
-  { key: 'effective_at', label: 'Effective time' },
+  ['record_id', 'Record reference'],
+  ['record_type', 'Record type'],
+  ['amount_minor', 'Amount'],
+  ['state', 'Financial state'],
+  ['effective_at', 'Effective time'],
 ] as const;
 
 function candidateRows(row: ReconciliationException): Candidate[] {
@@ -67,40 +54,34 @@ function candidateRows(row: ReconciliationException): Candidate[] {
 
 function candidateEntityLabel(value: string | null | undefined) {
   if (!value) return 'Record';
-  if (value in ENTITY_LABELS) return ENTITY_LABELS[value as keyof typeof ENTITY_LABELS].singular;
   const words = value.replace(/[_-]+/g, ' ').trim().toLowerCase();
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Record';
 }
 
 function nestedValue(context: Record<string, unknown> | null, side: 'source' | 'ledger', key: string): unknown {
   if (!context) return null;
-  const directKeys = [`${side}_${key}`, `${side}Record${key.replace(/(^|_)([a-z])/g, (_, __, letter: string) => letter.toUpperCase())}`];
-  for (const directKey of directKeys) {
+  const camel = key.replace(/(^|_)([a-z])/g, (_, __, letter: string) => letter.toUpperCase());
+  for (const directKey of [`${side}_${key}`, `${side}Record${camel}`]) {
     if (context[directKey] != null) return context[directKey];
   }
-  const nested = context[side];
-  if (nested && typeof nested === 'object' && (nested as Record<string, unknown>)[key] != null) return (nested as Record<string, unknown>)[key];
-  const nestedRecord = context[`${side}_record`];
-  if (nestedRecord && typeof nestedRecord === 'object' && (nestedRecord as Record<string, unknown>)[key] != null) return (nestedRecord as Record<string, unknown>)[key];
+  for (const nestedKey of [side, `${side}_record`]) {
+    const nested = context[nestedKey];
+    if (nested && typeof nested === 'object' && (nested as Record<string, unknown>)[key] != null) return (nested as Record<string, unknown>)[key];
+  }
   return null;
 }
 
 function currencyFor(row: ReconciliationException, side: 'source' | 'ledger') {
-  const scoped = nestedValue(row.context, side, 'currency');
-  if (typeof scoped === 'string') return scoped;
-  return typeof row.context?.currency === 'string' ? row.context.currency : null;
+  const value = nestedValue(row.context, side, 'currency');
+  if (typeof value === 'string' && /^[A-Za-z]{3}$/.test(value)) return value.toUpperCase();
+  return typeof row.context?.currency === 'string' && /^[A-Za-z]{3}$/.test(row.context.currency) ? row.context.currency.toUpperCase() : null;
 }
 
 function renderFact(row: ReconciliationException, side: 'source' | 'ledger', key: string) {
   const value = nestedValue(row.context, side, key);
-  if (key === 'amount_minor') {
-    return typeof value === 'number' && Number.isSafeInteger(value)
-      ? <MoneyValue minorUnits={value} currency={currencyFor(row, side)} />
-      : <UnavailableValue reason={`${side === 'source' ? 'Source' : 'Ledger'} amount is not available for this exception`} />;
-  }
+  if (key === 'amount_minor') return typeof value === 'number' && Number.isSafeInteger(value) && currencyFor(row, side) ? formatMoney(value, currencyFor(row, side)!) : 'Unavailable';
   if (key === 'effective_at' && typeof value === 'string') return formatDateTime(value);
-  if (typeof value === 'string' || typeof value === 'number') return String(value);
-  return <UnavailableValue reason={`${side === 'source' ? 'Source' : 'Ledger'} ${key.replaceAll('_', ' ')} is unavailable`} />;
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : 'Unavailable';
 }
 
 function factsDiffer(row: ReconciliationException, key: string) {
@@ -109,13 +90,22 @@ function factsDiffer(row: ReconciliationException, key: string) {
   return source != null && ledger != null && String(source) !== String(ledger);
 }
 
-function actionCopy(action: ResolutionAction, matchException: boolean) {
-  if (action === 'confirm') return 'Confirm this candidate as the source-to-ledger match. This can update linked records, case financials and audit history.';
-  if (action === 'reject') return 'Reject the proposed match. The exception is settled as unmatched and the source record remains separate.';
-  if (action === 'resolve') return 'Resolve this exception with the recorded note. Only confirmed results can enter the ledger.';
-  return matchException
-    ? 'Dismiss this exception without confirming a match. The source record remains separate and the dismissal is audited.'
-    : 'Dismiss this exception without creating or changing a financial result. The dismissal and note are audited.';
+function actionLabel(action: ResolutionAction) {
+  if (action === 'confirm') return 'Confirm match';
+  if (action === 'reject') return 'Reject match';
+  if (action === 'resolve') return 'Resolve exception';
+  return 'Dismiss exception';
+}
+
+function actionCopy(action: ResolutionAction) {
+  if (action === 'confirm') return 'Confirm the selected source-to-ledger match. The decision and note are retained in the audit trail.';
+  if (action === 'reject') return 'Reject the proposed match. The source record stays separate and the rejection is audited.';
+  if (action === 'resolve') return 'Record the reason this difference is resolved. Only confirmed results enter the ledger.';
+  return 'Dismiss without changing a financial result. The dismissal and note are audited.';
+}
+
+function CloseGlyph() {
+  return <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#64686d" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true"><path d="M2.6 2.6 9.4 9.4M9.4 2.6 2.6 9.4"/></svg>;
 }
 
 export function ExceptionQueue() {
@@ -124,28 +114,27 @@ export function ExceptionQueue() {
   const searchParams = useSearchParams();
   const requestedStatus = searchParams.get('status');
   const status = ['open', 'resolved', 'dismissed', 'all'].includes(requestedStatus ?? '') ? requestedStatus! : 'open';
-  const source = searchParams.get('source');
-  const requestedSearch = searchParams.get('search') ?? '';
+  const requestedSelectedRef = useRef(searchParams.get('selected'));
+  requestedSelectedRef.current = searchParams.get('selected');
   const [rows, setRows] = useState<ReconciliationException[]>([]);
   const [selected, setSelected] = useState<ReconciliationException | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'assign' | ResolutionAction | null>(null);
-  const [query, setQuery] = useState(requestedSearch);
   const [candidateId, setCandidateId] = useState('');
   const [note, setNote] = useState('');
   const [pendingAction, setPendingAction] = useState<ResolutionAction | null>(null);
   const [receipt, setReceipt] = useState<string | null>(null);
-  const requestedSelectedRef = useRef(searchParams.get('selected'));
-  requestedSelectedRef.current = searchParams.get('selected');
 
-  function updateLocation(input: { status?: string | null; source?: string | null; search?: string | null; selected?: string | null }) {
+  function updateLocation(input: { selected?: string | null }) {
     const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(input)) {
-      if (value && !(key === 'status' && value === 'open')) params.set(key, value); else params.delete(key);
-    }
-    const queryString = params.toString();
-    router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    if (input.selected) params.set('selected', input.selected); else params.delete('selected');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
+  function close() {
+    if (!busy) updateLocation({ selected: null });
   }
 
   const load = useCallback(async () => {
@@ -153,30 +142,30 @@ export function ExceptionQueue() {
     setError(null);
     try {
       const statuses = status === 'all' ? ['open', 'resolved', 'dismissed'] : [status];
-      const responses = await Promise.all(statuses.map(async (status) => {
-        const response = await fetch(`/api/ops/exceptions?status=${status}`);
+      const responses = await Promise.all(statuses.map(async (scope) => {
+        const response = await fetch(`/api/ops/exceptions?status=${scope}`);
         const body = await response.json();
         if (!response.ok) throw new Error(body.error ?? 'Unable to load reconciliation exceptions');
         return (body.exceptions ?? []) as ReconciliationException[];
       }));
       const nextRows = responses.flat();
       setRows(nextRows);
-      const requestedSelected = requestedSelectedRef.current;
-      setSelected((current) => nextRows.find((row) => row.id === requestedSelected)
-        ?? (current && nextRows.some((row) => row.id === current.id) ? current : nextRows[0] ?? null));
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Unable to load reconciliation exceptions');
+      const requested = requestedSelectedRef.current;
+      setSelected(nextRows.find((row) => row.id === requested) ?? nextRows[0] ?? null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to load reconciliation exceptions');
     } finally {
       setLoading(false);
     }
   }, [status]);
 
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => setQuery(requestedSearch), [requestedSearch]);
   useEffect(() => {
-    const requestedSelected = searchParams.get('selected');
-    const next = rows.find((row) => row.id === requestedSelected);
-    if (!next || next.id === selected?.id) return;
+    const requested = searchParams.get('selected');
+    const next = rows.find((row) => row.id === requested)
+      ?? (!requested && selected && rows.some((row) => row.id === selected.id) ? selected : null)
+      ?? (!requested ? rows[0] ?? null : null);
+    if (next?.id === selected?.id) return;
     setSelected(next);
     setCandidateId('');
     setNote('');
@@ -184,27 +173,9 @@ export function ExceptionQueue() {
     setPendingAction(null);
   }, [rows, searchParams, selected?.id]);
 
-  const sourceOptions = useMemo(() => [...new Set(rows.map((row) => row.source_system ?? 'unavailable'))].sort(), [rows]);
-  const visibleRows = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return rows.filter((row) => {
-      if (source && (row.source_system ?? 'unavailable') !== source) return false;
-      return !normalized || [row.title, row.detail, row.exception_type, row.source_system, row.support_payout_case_id, row.id].filter(Boolean).join(' ').toLowerCase().includes(normalized);
-    });
-  }, [query, rows, source]);
-
-  const candidates = selected ? candidateRows(selected) : [];
+  const candidates = useMemo(() => selected ? candidateRows(selected) : [], [selected]);
   const isMatch = selected?.context?.is_match_exception === true || selected?.exception_type === 'match_uncertainty';
   const isSettled = selected != null && selected.status !== 'open';
-
-  function choose(row: ReconciliationException) {
-    setSelected(row);
-    setCandidateId('');
-    setNote('');
-    setReceipt(null);
-    setPendingAction(null);
-    updateLocation({ selected: row.id });
-  }
 
   async function assign(release = false) {
     if (!selected) return;
@@ -221,8 +192,8 @@ export function ExceptionQueue() {
       const assignedTo = body.assignment?.assigned_to ?? null;
       setRows((items) => items.map((item) => item.id === selected.id ? { ...item, assigned_to: assignedTo } : item));
       setSelected({ ...selected, assigned_to: assignedTo });
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Unable to update assignment');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to update assignment');
     } finally {
       setBusy(null);
     }
@@ -246,161 +217,67 @@ export function ExceptionQueue() {
       const response = await fetch(`/api/ops/exceptions/${selected.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': `reconciliation-${selected.id}-${pendingAction}` },
-        body: JSON.stringify({
-          action: pendingAction,
-          selectedCandidateId: candidateId || null,
-          resolution: note.trim(),
-          expectedStateVersion: selected.state_version ?? null,
-        }),
+        body: JSON.stringify({ action: pendingAction, selectedCandidateId: candidateId || null, resolution: note.trim(), expectedStateVersion: selected.state_version ?? null }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'Unable to settle reconciliation exception');
       const settledStatus = body.exception?.status ?? (pendingAction === 'dismiss' ? 'dismissed' : 'resolved');
-      setRows((items) => items.filter((item) => item.id !== selected.id));
+      setRows((items) => items.map((item) => item.id === selected.id ? { ...item, status: settledStatus } : item));
       setSelected({ ...selected, status: settledStatus });
-      setReceipt(`${pendingAction === 'dismiss' || pendingAction === 'reject' ? 'Dismissal' : 'Resolution'} recorded. Audit receipt ${hashId(selected.id)} retains the note and decision boundary.`);
+      setReceipt(`${pendingAction === 'dismiss' || pendingAction === 'reject' ? 'Dismissal' : 'Resolution'} recorded · audit receipt ${hashId(selected.id)}`);
       setPendingAction(null);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Unable to settle reconciliation exception');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to settle reconciliation exception');
     } finally {
       setBusy(null);
     }
   }
 
-  function advance() {
-    const next = visibleRows.find((row) => row.id !== selected?.id) ?? null;
-    setSelected(next);
-    setCandidateId('');
-    setNote('');
-    setReceipt(null);
-    updateLocation({ selected: next?.id ?? null });
-  }
-
-  if (loading) {
-    return (
-      <div className="grid min-h-[520px] gap-0 overflow-hidden rounded-[var(--uo-route-radius-surface)] border border-[var(--uo-route-border-default)] lg:grid-cols-[340px_minmax(0,1fr)]" data-state-id="reconciliation-loading-empty-states" aria-busy="true">
-        <div className="border-b border-[var(--uo-route-border-subtle)] p-4 lg:border-b-0 lg:border-r"><div className="skeleton h-9 w-full" /><div className="mt-4 space-y-2">{Array.from({ length: 6 }, (_, index) => <div key={index} className="skeleton h-16 w-full" />)}</div></div>
-        <div className="p-5"><div className="skeleton h-6 w-56" /><div className="mt-5 grid grid-cols-2 gap-3">{Array.from({ length: 10 }, (_, index) => <div key={index} className="skeleton h-12 w-full" />)}</div></div>
-      </div>
-    );
-  }
-
-  if (error && rows.length === 0) {
-    return <div data-state-id="reconciliation-error"><OperationalState kind="error" title="Reconciliation exceptions could not be loaded" description="No source match, ledger result or audit decision was changed." action={<Button variant="secondary" onClick={() => void load()}>Try again</Button>} /></div>;
-  }
-
-  if (rows.length === 0 && !selected) {
-    return <div data-state-id="reconciliation-zero-work"><OperationalState kind="zero" title={status === 'open' ? 'No reconciliation exceptions need review' : 'No exceptions exist in this status scope'} description={status === 'open' ? 'Connected source records and confirmed ledger entries have no open differences in this queue.' : 'The query completed without a matching resolved or dismissed exception. This is a verified zero, not unavailable data.'} action={<Link href="/financials/reports" className="ua-text-working-title text-[var(--uo-route-action-primary)] underline underline-offset-2">Open financial reports</Link>} /></div>;
-  }
+  const shell: CSSProperties = { width: 760, maxWidth: 'calc(100vw - 40px)', maxHeight: 'calc(100vh - 40px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 14, background: '#fff', boxShadow: '0 30px 70px rgba(28,22,14,.34),0 2px 8px rgba(28,22,14,.18)' };
 
   return (
-    <div>
-      <div className="grid min-h-[560px] overflow-hidden rounded-[var(--uo-route-radius-surface)] border border-[var(--uo-route-border-default)] bg-[var(--uo-route-surface-primary)] lg:grid-cols-[340px_minmax(0,1fr)]">
-      <section className="min-w-0 border-b border-[var(--uo-route-border-subtle)] lg:border-b-0 lg:border-r" aria-label="Reconciliation exception queue">
-        <div className="border-b border-[var(--uo-route-border-subtle)] p-3">
-          <Input aria-label="Search reconciliation exceptions" placeholder="Search source, case or exception" value={query} onChange={(event) => { setQuery(event.target.value); updateLocation({ search: event.target.value }); }} />
-          <div className="mt-2 flex flex-wrap items-center gap-1"><span className="ua-text-metadata mr-1">Status</span>{['open', 'resolved', 'dismissed', 'all'].map((item) => <FilterChip key={item} active={status === item} onClick={() => updateLocation({ status: item, selected: null })}>{item === 'all' ? 'All' : item.charAt(0).toUpperCase() + item.slice(1)}</FilterChip>)}</div>
-          <div className="mt-2 flex flex-wrap items-center gap-1"><span className="ua-text-metadata mr-1">Source</span><FilterChip active={!source} onClick={() => updateLocation({ source: null, selected: null })}>All</FilterChip>{sourceOptions.map((item) => <FilterChip key={item} active={source === item} onClick={() => updateLocation({ source: item, selected: null })}>{item === 'unavailable' ? 'Unavailable' : providerLabel(item)}</FilterChip>)}</div>
-          <p className="ua-text-metadata mt-2" role="status">{visibleRows.length} {visibleRows.length === 1 ? 'exception' : 'exceptions'} in this URL scope</p>
-        </div>
-        {visibleRows.length ? (
-          <ol className="max-h-[680px] overflow-y-auto">
-            {visibleRows.map((row) => (
-              <li key={row.id} className="border-b border-[var(--uo-route-border-hairline)]">
-                <button type="button" onClick={() => choose(row)} className="w-full px-4 py-3 text-left hover:bg-[var(--uo-route-surface-hover)] focus-visible:shadow-[var(--uo-route-shadow-focus)]" aria-current={selected?.id === row.id ? 'true' : undefined} data-signal-rail={selected?.id === row.id ? 'true' : undefined}>
-                  <span className="flex items-start justify-between gap-3">
-                    <span className="min-w-0"><span className="ua-text-working-title block truncate text-[var(--uo-route-text-primary)]">{row.title}</span><span className="ua-text-caption-role mt-1 block">{label('exceptionType', row.exception_type)} · {row.source_system ? providerLabel(row.source_system) : 'Source unavailable'}</span></span>
-                    <StatusBadge family="workflowStatus" value={row.status} size="sm" />
-                  </span>
-                  <span className="ua-text-metadata mt-2 flex flex-wrap gap-x-3 gap-y-1"><span>{row.assigned_to ? 'Assigned' : 'Unassigned'}</span><span>{formatDateTime(row.created_at)}</span></span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        ) : <div data-state-id="reconciliation-no-result"><OperationalState kind="filtered-empty" title="No exception matches these controls" description="Clear search or source, or choose another status. No reconciliation decision was changed." /></div>}
-      </section>
+    <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }} style={{ position: 'fixed', inset: 0, zIndex: 96, padding: 20, background: 'rgba(34,29,23,.30)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <section data-overlay-id="reconciliation-resolution-drawer" role="dialog" aria-modal="true" aria-labelledby="reconciliation-resolution-title" style={shell}>
+        <header style={{ padding: '17px 18px 15px', borderBottom: '1px solid #eae8e5', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}><div id="reconciliation-resolution-title" style={{ font: "500 15px/1.3 'Inter',sans-serif", color: '#1c1f23' }}>{selected?.title ?? (loading ? 'Loading difference…' : 'Difference unavailable')}</div><div style={{ marginTop: 4, font: "400 12px/1.5 'Inter',sans-serif", color: '#64686d' }}>{selected ? `Exception ${hashId(selected.id)} · ${selected.status} · ${selected.source_system ? providerLabel(selected.source_system) : 'source unavailable'}` : 'No ledger or source decision has been changed.'}</div></div>
+          {selected && !isSettled ? <button type="button" disabled={busy === 'assign'} onClick={() => void assign(Boolean(selected.assigned_to))} style={{ padding: '6px 10px', border: 0, borderRadius: 8, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', font: "400 11.5px/1 'Inter',sans-serif", color: '#40454a', cursor: busy ? 'wait' : 'pointer' }}>{selected.assigned_to ? 'Release' : 'Assign to me'}</button> : null}
+          <button type="button" aria-label="Close reconciliation review" disabled={Boolean(busy)} onClick={close} style={{ width: 18, height: 18, padding: 0, border: 0, background: 'transparent', cursor: busy ? 'wait' : 'pointer' }}><CloseGlyph/></button>
+        </header>
 
-      <section className="min-w-0" aria-label="Selected reconciliation comparison">
-        {selected ? (
-          <div data-signal-rail="true" className="ua-reconciliation-selection">
-            <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--uo-route-border-subtle)] px-4 py-4 sm:px-5">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2"><StatusBadge family="workflowStatus" value={selected.status} size="sm" /><span className="ua-text-metadata">Exception {hashId(selected.id)}</span></div>
-                <h2 className="ua-text-section-title mt-2">{selected.title}</h2>
-                {selected.detail ? <p className="ua-text-body mt-1 max-w-[72ch] text-[var(--uo-route-text-secondary)]">{selected.detail}</p> : null}
-              </div>
-              {!isSettled ? <Button variant="secondary" size="sm" loading={busy === 'assign'} onClick={() => void assign(Boolean(selected.assigned_to))}>{selected.assigned_to ? 'Release' : 'Assign to me'}</Button> : null}
-            </header>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+          {loading ? <div data-state-id="reconciliation-loading-empty-states" aria-busy="true" style={{ minHeight: 420, borderRadius: 12, background: '#f4f3f1', display: 'flex', alignItems: 'center', justifyContent: 'center', font: "400 11px/1.4 'IBM Plex Mono',monospace", color: '#64686d' }}>loading the source and ledger facts…</div> : null}
+          {!loading && error && !selected ? <div data-state-id="reconciliation-error" role="alert" style={{ padding: 14, borderRadius: 12, background: '#fdf0e6', font: "400 12px/1.5 'Inter',sans-serif", color: '#b0431a' }}>{error}<button type="button" onClick={() => void load()} style={{ display: 'block', marginTop: 10, padding: '6px 10px', border: 0, borderRadius: 8, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a' }}>Try again</button></div> : null}
+          {!loading && !selected ? <div data-state-id="reconciliation-zero-work" style={{ minHeight: 340, borderRadius: 12, background: '#f4f3f1', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}><div><strong style={{ display: 'block', font: "500 13px/1.4 'Inter',sans-serif", color: '#1c1f23' }}>This difference is no longer in the queue</strong><span style={{ display: 'block', marginTop: 5, font: "400 11px/1.5 'Inter',sans-serif", color: '#64686d' }}>It may have been resolved in another session. No new decision was recorded here.</span></div></div> : null}
 
-            <div className="p-4 sm:p-5">
-              <div className="grid grid-cols-[minmax(110px,0.7fr)_minmax(0,1fr)_minmax(0,1fr)] border-y border-[var(--uo-route-border-subtle)]" role="table" aria-label="Source versus confirmed ledger">
-                <div className="ua-text-metadata p-3" role="columnheader">Compared fact</div>
-                <div className="ua-text-label border-l border-[var(--uo-route-border-subtle)] p-3" role="columnheader"><AuthorityStamp authority="source" /> <span className="mt-2 block">Source record</span></div>
-                <div className="ua-text-label border-l border-[var(--uo-route-border-subtle)] p-3" role="columnheader"><AuthorityStamp authority="ledger-outcome" /> <span className="mt-2 block">Confirmed ledger</span></div>
-                {FACTS.map((fact) => {
-                  const differs = factsDiffer(selected, fact.key);
-                  return (
-                    <div key={fact.key} className="contents" role="row">
-                      <div className="ua-text-metadata border-t border-[var(--uo-route-border-hairline)] p-3" role="rowheader">{fact.label}</div>
-                      <div className={`ua-text-dense border-l border-t border-[var(--uo-route-border-hairline)] p-3 ${differs ? 'bg-[var(--uo-route-warning-bg)]' : ''}`} role="cell">{renderFact(selected, 'source', fact.key)}</div>
-                      <div className={`ua-text-dense border-l border-t border-[var(--uo-route-border-hairline)] p-3 ${differs ? 'bg-[var(--uo-route-warning-bg)]' : ''}`} role="cell">{renderFact(selected, 'ledger', fact.key)}</div>
-                    </div>
-                  );
+          {selected ? <>
+            <section style={{ padding: 11, borderRadius: 12, background: '#f4f3f1', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '1px 3px 0' }}><span style={{ flex: 1, font: "600 10px/1 'Inter',sans-serif", letterSpacing: '.09em', color: '#64686d' }}>SOURCE AND LEDGER FACTS</span><span style={{ font: "400 9.5px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>unknown stays unavailable</span></div>
+              <div role="table" aria-label="Source and ledger comparison" style={{ overflow: 'hidden', borderRadius: 10, background: '#fff', boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' }}>
+                <div role="row" style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr', gap: 0 }}><span/><span style={{ padding: '9px 11px', borderLeft: '1px solid #eae8e5', font: "500 10.5px/1.4 'Inter',sans-serif", color: '#64686d' }}>SOURCE RECORD</span><span style={{ padding: '9px 11px', borderLeft: '1px solid #eae8e5', font: "500 10.5px/1.4 'Inter',sans-serif", color: '#64686d' }}>CONFIRMED LEDGER</span></div>
+                {FACTS.map(([key, factLabel]) => {
+                  const differs = factsDiffer(selected, key);
+                  return <div role="row" key={key} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr', gap: 0, borderTop: '1px solid #eae8e5' }}><span style={{ padding: '9px 11px', font: "400 10.5px/1.4 'IBM Plex Mono',monospace", color: '#64686d' }}>{factLabel}</span><span style={{ padding: '9px 11px', borderLeft: '1px solid #eae8e5', background: differs ? '#fff3e9' : '#fff', font: "400 11.5px/1.45 'Inter',sans-serif", color: '#40454a' }}>{renderFact(selected, 'source', key)}</span><span style={{ padding: '9px 11px', borderLeft: '1px solid #eae8e5', background: differs ? '#fff3e9' : '#fff', font: "400 11.5px/1.45 'Inter',sans-serif", color: '#40454a' }}>{renderFact(selected, 'ledger', key)}</span></div>;
                 })}
               </div>
-              <p className="ua-text-caption-role mt-2">Highlighted rows contain two known values that differ. An unavailable side is never treated as zero or as a confirmed match.</p>
+              <span style={{ font: "400 10.5px/1.45 'IBM Plex Mono',monospace", color: '#64686d' }}>{selected.detail ?? 'Two known values are highlighted only when they differ.'} · raised {formatDateTime(selected.created_at)}</span>
+            </section>
 
-              {isMatch ? (
-                <section className="mt-5" aria-labelledby="candidate-matches-title">
-                  <div className="flex flex-wrap items-end justify-between gap-2"><div><h3 id="candidate-matches-title" className="ua-text-working-title">Candidate matches</h3><p className="ua-text-caption-role mt-1">Candidates are advisory until an operator confirms one.</p></div><span className="ua-text-metadata">{candidates.length} candidates</span></div>
-                  {candidates.length ? (
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      {candidates.map((candidate) => (
-                        <label key={candidate.id} className={`grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-[var(--uo-route-radius-control)] border p-3 ${candidateId === candidate.id ? 'border-[var(--uo-route-border-focus)] bg-[var(--uo-route-accent-soft)]' : 'border-[var(--uo-route-border-default)]'}`}>
-                          <input type="radio" name="candidate" value={candidate.id} checked={candidateId === candidate.id} onChange={() => setCandidateId(candidate.id)} />
-                          <span className="min-w-0"><span className="ua-text-dense block font-medium">{candidateEntityLabel(candidate.entity_type)} {candidate.entity_id ? hashId(candidate.entity_id) : hashId(candidate.id)}</span><span className="ua-text-metadata mt-1 block">{candidate.confidence == null ? 'Confidence unavailable' : `${formatConfidencePercent(candidate.confidence)} confidence`}{candidate.source_system ? ` · ${providerLabel(candidate.source_system)}` : ''}</span>{candidate.amount_minor != null ? <span className="mt-1 block"><MoneyValue minorUnits={candidate.amount_minor} currency={candidate.currency ?? currencyFor(selected, 'source')} /></span> : null}</span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : <div className="mt-3"><OperationalState kind="unavailable" title="No candidate match is available" description="Reject or dismiss the exception, or repair source coverage. Unauth will not infer a financial relationship." /></div>}
-                </section>
-              ) : null}
+            {isMatch ? <section style={{ padding: 11, borderRadius: 12, background: '#f4f3f1', display: 'flex', flexDirection: 'column', gap: 9 }}><div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '1px 3px 0' }}><span style={{ flex: 1, font: "600 10px/1 'Inter',sans-serif", letterSpacing: '.09em', color: '#64686d' }}>CANDIDATE MATCHES</span><span style={{ font: "400 9.5px/1 'IBM Plex Mono',monospace", color: '#64686d' }}>{candidates.length} candidates · advisory until confirmed</span></div><div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8 }}>{candidates.length ? candidates.map((candidate) => <label key={candidate.id} style={{ padding: '11px 12px', borderRadius: 10, background: '#fff', boxShadow: candidateId === candidate.id ? 'inset 0 0 0 1.3px rgba(159,79,8,.6)' : '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)', display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer' }}><input type="radio" name="candidate" checked={candidateId === candidate.id} onChange={() => setCandidateId(candidate.id)}/><span style={{ minWidth: 0 }}><span style={{ display: 'block', font: "500 12px/1.4 'Inter',sans-serif", color: '#1c1f23' }}>{candidateEntityLabel(candidate.entity_type)} {hashId(candidate.entity_id ?? candidate.id)}</span><span style={{ display: 'block', marginTop: 3, font: "400 10px/1.4 'IBM Plex Mono',monospace", color: '#64686d' }}>{candidate.confidence == null ? 'confidence unavailable' : `${formatConfidencePercent(candidate.confidence)} confidence`}{candidate.amount_minor != null && candidate.currency ? ` · ${formatMoney(candidate.amount_minor, candidate.currency)}` : ''}</span></span></label>) : <div style={{ gridColumn: '1 / -1', padding: '11px 12px', borderRadius: 10, background: '#fff', font: "400 11.5px/1.5 'Inter',sans-serif", color: '#64686d' }}>No candidate is available. Unauth will not infer a financial relationship.</div>}</div></section> : null}
 
-              <section className="mt-5 border-t border-[var(--uo-route-border-subtle)] pt-4" aria-labelledby="reconciliation-decision-title">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div><AuthorityStamp authority="merchant-decision" /><h3 id="reconciliation-decision-title" className="ua-text-working-title mt-2">Decision boundary</h3><p className="ua-text-caption-role mt-1">Every resolution records the operator note, selected candidate where applicable, state version and audit consequence.</p></div>
-                  {selected.support_payout_case_id ? <Link href={`/cases/${selected.support_payout_case_id}`} className="ua-text-label text-[var(--uo-route-action-primary)] underline underline-offset-2">Open linked case</Link> : null}
-                </div>
-                {error && !pendingAction ? <p role="alert" className="ua-text-body mt-3 text-[var(--uo-route-critical)]">{error}</p> : null}
-                {receipt ? <div className="mt-3 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-success-bg)] p-3 text-[var(--uo-route-success-text)]" role="status"><p className="ua-text-working-title">Decision recorded</p><p className="ua-text-body mt-1">{receipt}</p></div> : null}
-                {isSettled ? (
-                  <div className="mt-4"><Button variant="primary" onClick={advance} disabled={rows.length === 0}>{rows.length ? 'Advance to next exception' : 'Queue complete'}</Button></div>
-                ) : (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {isMatch ? <><Button variant="commit" disabled={!candidateId} onClick={() => requestResolution('confirm')}>Confirm selected match</Button><Button variant="secondary" onClick={() => requestResolution('reject')}>Reject match</Button></> : <><Button variant="commit" onClick={() => requestResolution('resolve')}>Resolve exception</Button><Button variant="secondary" onClick={() => requestResolution('dismiss')}>Dismiss</Button></>}
-                  </div>
-                )}
-              </section>
-            </div>
-          </div>
-        ) : <OperationalState kind="empty" title="Choose an exception to compare" description="Select one unresolved record from the queue. No financial result is inferred before review." />}
+            {receipt ? <div role="status" style={{ padding: '10px 12px', borderRadius: 10, background: '#eef6f1', font: "400 11.5px/1.5 'Inter',sans-serif", color: '#1a6b43' }}>{receipt}</div> : null}
+            {error ? <div role="alert" style={{ padding: '10px 12px', borderRadius: 10, background: '#fdf0e6', font: "400 11.5px/1.5 'Inter',sans-serif", color: '#b0431a' }}>{error}</div> : null}
+          </> : null}
+        </div>
+
+        <footer style={{ padding: '13px 18px', borderTop: '1px solid #eae8e5', background: '#ffffff', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ flex: 1, minWidth: 0, font: "400 10.5px/1.45 'IBM Plex Mono',monospace", color: '#64686d' }}>{selected?.assigned_to ? 'assigned · decision is recorded against the operator' : 'unassigned · every decision creates an audit consequence'}</span>
+          {selected?.support_payout_case_id ? <Link href={`/cases/${selected.support_payout_case_id}`} style={{ padding: '7px 11px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', font: "400 12px/1 'Inter',sans-serif", color: '#40454a', textDecoration: 'none' }}>Open linked case</Link> : null}
+          {selected && !isSettled ? isMatch ? <><button type="button" disabled={!candidateId || Boolean(busy)} onClick={() => requestResolution('confirm')} style={{ padding: '7px 11px', border: 0, borderRadius: 9, background: candidateId ? '#1c1f23' : '#f2f0ed', color: candidateId ? '#fff' : '#64686d', font: "500 12px/1 'Inter',sans-serif" }}>Confirm selected match</button><button type="button" disabled={Boolean(busy)} onClick={() => requestResolution('reject')} style={{ padding: '7px 11px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12px/1 'Inter',sans-serif" }}>Reject match</button></> : <><button type="button" disabled={Boolean(busy)} onClick={() => requestResolution('resolve')} style={{ padding: '7px 11px', border: 0, borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12px/1 'Inter',sans-serif" }}>Resolve exception</button><button type="button" disabled={Boolean(busy)} onClick={() => requestResolution('dismiss')} style={{ padding: '7px 11px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12px/1 'Inter',sans-serif" }}>Dismiss</button></> : null}
+          <button type="button" disabled={Boolean(busy)} onClick={close} style={{ padding: '7px 12px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12px/1 'Inter',sans-serif" }}>Close</button>
+        </footer>
       </section>
 
-      <Modal
-        open={pendingAction != null}
-        onClose={() => { if (!busy) setPendingAction(null); }}
-        title={pendingAction ? `${pendingAction === 'confirm' ? 'Confirm match' : pendingAction === 'reject' ? 'Reject match' : pendingAction === 'resolve' ? 'Resolve exception' : 'Dismiss exception'}` : 'Confirm reconciliation decision'}
-        description={pendingAction ? actionCopy(pendingAction, isMatch) : undefined}
-        overlayId="reconciliation-resolution-drawer"
-        actions={pendingAction ? [{ label: busy ? 'Recording…' : 'Record decision', variant: pendingAction === 'dismiss' || pendingAction === 'reject' ? 'secondary' : 'commit', disabled: Boolean(busy) || note.trim().length < 3, onClick: () => void resolve() }] : []}
-      >
-        <div className="space-y-4">
-          {error ? <p role="alert" className="ua-text-body rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-critical-bg)] p-3 text-[var(--uo-route-critical)]">{error}</p> : null}
-          <dl className="ua-text-dense grid gap-3 rounded-[var(--uo-route-radius-control)] bg-[var(--uo-route-surface-muted)] p-3 sm:grid-cols-2"><div><dt className="ua-text-metadata">Exception</dt><dd className="mt-1 font-mono">{selected ? hashId(selected.id) : '—'}</dd></div><div><dt className="ua-text-metadata">Candidate</dt><dd className="mt-1">{candidateId ? hashId(candidateId) : 'No candidate selected'}</dd></div></dl>
-          <label className="ua-text-label block">Audit note <span aria-hidden="true">*</span><Textarea value={note} onChange={(event) => setNote(event.target.value)} className="mt-1 min-h-24" placeholder="Record the source evidence and decision rationale" required /><span className="ua-text-metadata mt-1 block font-normal">Required. This note is retained with the resolution or dismissal.</span></label>
-        </div>
-      </Modal>
-      </div>
+      {pendingAction && selected ? <div role="presentation" style={{ position: 'fixed', inset: 0, zIndex: 97, padding: 40, background: 'rgba(34,29,23,.30)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><section role="alertdialog" aria-modal="true" aria-labelledby="reconciliation-confirm-title" style={{ width: 560, maxWidth: 'calc(100vw - 40px)', borderRadius: 14, background: '#fff', boxShadow: '0 30px 70px rgba(28,22,14,.34),0 2px 8px rgba(28,22,14,.18)', overflow: 'hidden' }}><header style={{ padding: '17px 18px 15px', borderBottom: '1px solid #eae8e5' }}><div id="reconciliation-confirm-title" style={{ font: "500 15px/1.3 'Inter',sans-serif", color: '#1c1f23' }}>{actionLabel(pendingAction)}</div><div style={{ marginTop: 4, font: "400 12px/1.5 'Inter',sans-serif", color: '#64686d' }}>{actionCopy(pendingAction)}</div></header><div style={{ padding: '14px 18px' }}><label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}><span style={{ font: "400 9.5px/1 'IBM Plex Mono',monospace", letterSpacing: '.05em', color: '#64686d' }}>AUDIT NOTE · REQUIRED</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Record the source evidence and decision rationale" style={{ minHeight: 96, resize: 'vertical', padding: '9px 10px', border: 0, outline: 0, borderRadius: 9, background: '#f4f3f1', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.09)', font: "400 12px/1.5 'Inter',sans-serif", color: '#1c1f23' }}/></label>{error ? <div role="alert" style={{ marginTop: 10, color: '#b0431a', font: "400 11.5px/1.5 'Inter',sans-serif" }}>{error}</div> : null}</div><footer style={{ padding: '13px 18px', borderTop: '1px solid #eae8e5', background: '#ffffff', display: 'flex', justifyContent: 'flex-end', gap: 8 }}><button type="button" disabled={Boolean(busy)} onClick={() => setPendingAction(null)} style={{ padding: '7px 12px', border: 0, borderRadius: 9, background: '#fff', boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12.5px/1 'Inter',sans-serif" }}>Cancel</button><button type="button" disabled={Boolean(busy) || note.trim().length < 3} onClick={() => void resolve()} style={{ padding: '7px 13px', border: 0, borderRadius: 9, background: note.trim().length >= 3 ? '#1c1f23' : '#f2f0ed', color: note.trim().length >= 3 ? '#fff' : '#64686d', font: "500 12.5px/1 'Inter',sans-serif" }}>{busy ? 'Recording…' : 'Record decision'}</button></footer></section></div> : null}
     </div>
   );
 }

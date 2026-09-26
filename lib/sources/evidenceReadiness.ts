@@ -1,4 +1,5 @@
 import type { EvidenceCapability } from '@/lib/integrations/types';
+import type { ConnectorFreshness } from '@/lib/connections/freshness';
 
 export type RequiredEvidenceLayerId = 'commerce' | 'support' | 'fulfilment' | 'delivery' | 'payments';
 
@@ -72,6 +73,7 @@ export type ReadinessSource = {
   connectionId?: string | null;
   connectionCount?: number;
   connectEnabled?: boolean;
+  freshness?: ConnectorFreshness;
   capabilities?: Array<{
     id: string;
     support: string;
@@ -83,6 +85,9 @@ export type ReadinessSource = {
   readModel?: {
     configuration?: 'configured' | 'not_configured';
     operational?: 'healthy' | 'attention' | 'unknown';
+    freshnessConfidence?: 'measured' | 'unavailable';
+    deliveryModel?: ConnectorFreshness['deliveryModel'];
+    lastDataReceivedAt?: string | null;
   };
 };
 
@@ -93,6 +98,7 @@ export type LayerReadiness = RequiredEvidenceLayer & {
   ready: boolean;
   needsAttention: boolean;
   readyProviders: ReadinessSource[];
+  currentProviders: ReadinessSource[];
   configuredProviders: ReadinessSource[];
   availableProviders: ReadinessSource[];
 };
@@ -100,6 +106,7 @@ export type LayerReadiness = RequiredEvidenceLayer & {
 export type SourceReadiness = {
   layers: LayerReadiness[];
   readyCount: number;
+  currentCount: number;
   missingLayers: LayerReadiness[];
   firstMissingLayer: LayerReadiness | null;
   ready: boolean;
@@ -147,6 +154,18 @@ function isSourceAttention(source: ReadinessSource): boolean {
   return source.readModel?.operational === 'attention' || source.readModel?.operational === 'unknown';
 }
 
+/** Enabled capability is configuration, not an observation of current data. */
+export function sourceFreshnessState(source: ReadinessSource): 'current' | 'stale' | 'on_demand' | 'unavailable' {
+  if (!isSourceConfigured(source)) return 'unavailable';
+  if (source.badge === 'stale') return 'stale';
+  const delivery = source.freshness?.deliveryModel ?? source.readModel?.deliveryModel;
+  if (delivery === 'on_demand') return 'on_demand';
+  const confidence = source.freshness?.confidence ?? source.readModel?.freshnessConfidence;
+  const observed = source.freshness?.lastDataReceivedAt ?? source.readModel?.lastDataReceivedAt;
+  if (confidence !== 'measured' || !observed || !Number.isFinite(Date.parse(observed)) || isSourceAttention(source)) return 'unavailable';
+  return source.badge === 'healthy' || source.readModel?.operational === 'healthy' ? 'current' : 'unavailable';
+}
+
 function layerAppliesToSource(source: ReadinessSource, layer: RequiredEvidenceLayer): boolean {
   return supportedEvidence(source, layer).length > 0;
 }
@@ -172,6 +191,7 @@ export function evaluateSourceReadiness(sources: ReadinessSource[]): SourceReadi
     const candidates = sources.filter((source) => layerAppliesToSource(source, layer));
     const configuredProviders = candidates.filter(isSourceConfigured);
     const readyProviders = configuredProviders.filter((source) => enabledEvidence(source, layer).length > 0);
+    const currentProviders = readyProviders.filter(source => sourceFreshnessState(source) === 'current');
     const availableProviders = candidates.filter(
       (source) => source.stage !== 'planned' && source.connectEnabled !== false,
     );
@@ -187,6 +207,7 @@ export function evaluateSourceReadiness(sources: ReadinessSource[]): SourceReadi
       ready: readyProviders.length > 0,
       needsAttention,
       readyProviders,
+      currentProviders,
       configuredProviders,
       availableProviders,
     };
@@ -196,6 +217,7 @@ export function evaluateSourceReadiness(sources: ReadinessSource[]): SourceReadi
   return {
     layers,
     readyCount,
+    currentCount: layers.filter(layer => layer.currentProviders.length > 0).length,
     missingLayers,
     firstMissingLayer: missingLayers[0] ?? null,
     ready: readyCount === REQUIRED_EVIDENCE_LAYERS.length,

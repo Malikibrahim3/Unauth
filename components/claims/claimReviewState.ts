@@ -11,6 +11,8 @@ import {
   submitClaim,
   submitEvidence,
   submitOutcome,
+  reportExternalAction,
+  submitReplacementCost,
   updateClaimStatus as submitClaimStatus,
 } from '@/lib/claims/workflowClient';
 import { buildCustomerResponse } from '@/lib/claims/customerResponses';
@@ -500,8 +502,12 @@ export function useClaimReviewWorkbench(
       showMsg('Choose a decision before recording it.', 'error');
       return { ok: false, externalHandoff: null };
     }
-    const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
-    const currency = selectedClaim?.currency ?? null;
+    const monetaryDecision = state.resolution
+      ? ['partial_refund', 'full_refund', 'same_item_replacement'].includes(state.resolution)
+      : ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
+    const currency = state.resolution === 'same_item_replacement'
+      ? ((decisionData?.resolutionComparison as { replacement?: { order?: { currency?: string | null } | null } } | undefined)?.replacement?.order?.currency ?? null)
+      : selectedClaim?.currency ?? null;
     const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
     if (monetaryDecision && (amountMinor == null || amountMinor < 0 || !currency)) {
       showMsg('Enter the decision amount and confirm its currency before recording this decision.', 'error');
@@ -517,6 +523,21 @@ export function useClaimReviewWorkbench(
       amount_minor: amountMinor,
       currency: monetaryDecision ? currency : null,
       notes: state.notes,
+      resolution: state.resolution || undefined,
+      comparison_token: state.resolution
+        ? (decisionData?.resolutionComparison as { token?: string } | undefined)?.token
+        : undefined,
+      comparison_version: state.resolution
+        ? (decisionData?.resolutionComparison as { version?: string } | undefined)?.version
+        : undefined,
+      replacement_items: state.resolution === 'same_item_replacement'
+        ? Object.entries(state.replacementQuantities)
+          .map(([claimed_item_id, quantity]) => ({ claimed_item_id, quantity: Number(quantity) }))
+          .filter((item) => Number.isInteger(item.quantity) && item.quantity > 0)
+        : undefined,
+      duplicate_concession_justification: state.resolution === 'same_item_replacement'
+        ? state.duplicateConcessionJustification.trim() || undefined
+        : undefined,
     }, idempotencyKey);
     patch({ busy: false });
     const saved = r.message.toLowerCase().includes('saved');
@@ -525,6 +546,17 @@ export function useClaimReviewWorkbench(
       : null;
     if (saved) {
       decisionRequestKeyRef.current = null;
+      const clearedDecisionState: ClaimReviewState = {
+        ...state,
+        decision: '' as ClaimReviewState['decision'],
+        outcome: 'pending',
+        decisionAmount: '',
+        notes: '',
+        resolution: '',
+        replacementQuantities: {},
+        duplicateConcessionJustification: '',
+      };
+      patch(clearedDecisionState);
       const handoffStatus = externalHandoff?.status;
       const handoffReason = typeof externalHandoff?.reason === 'string' ? externalHandoff.reason : null;
       showMsg(
@@ -537,7 +569,7 @@ export function useClaimReviewWorkbench(
               : 'Merchant decision recorded.',
         'success',
       );
-      saveClaimDraft(profileId, pickDraftFields(state, resolvedActiveClaimId));
+      saveClaimDraft(profileId, pickDraftFields(clearedDecisionState, resolvedActiveClaimId));
       const next = await fetch(
         `/api/claims?queue=active&sort=age&limit=1&excludeId=${encodeURIComponent(resolvedActiveClaimId)}`,
       )
@@ -551,10 +583,84 @@ export function useClaimReviewWorkbench(
       }
     } else {
       showMsg(r.message, 'error');
+      if (r.data.code === 'stale_resolution_comparison') {
+        decisionRequestKeyRef.current = null;
+        void reloadDecision(resolvedActiveClaimId);
+      }
     }
     await refreshHistory();
     scheduleReloadDecision(resolvedActiveClaimId);
     return { ok: saved, externalHandoff };
+  }
+
+  async function onReplacementDispatch(actionId: string, stateVersion: number) {
+    const externalReference = state.replacementExternalReference.trim();
+    const receiptNote = state.replacementReceiptNote.trim();
+    if (!externalReference && !receiptNote) {
+      showMsg('Record the Shopify replacement reference or a retained receipt note.', 'error');
+      return false;
+    }
+    patch({ busy: true });
+    const result = await reportExternalAction(actionId, {
+      expectedVersion: stateVersion,
+      method: 'manual_shopify_handoff',
+      externalReference: externalReference || null,
+      receiptEvidence: receiptNote ? { note: receiptNote, retained_by: 'merchant' } : null,
+    });
+    patch({ busy: false });
+    const saved = result.message === 'Replacement dispatch recorded';
+    showMsg(
+      saved
+        ? 'Merchant-confirmed dispatch recorded. Source corroboration, actual cost, recovery, and reconciliation remain separate.'
+        : result.message,
+      saved ? 'success' : 'error',
+    );
+    if (saved) {
+      patch({ replacementExternalReference: '', replacementReceiptNote: '' });
+      await reloadDecision(resolvedActiveClaimId);
+      await refreshHistory();
+    }
+    return saved;
+  }
+
+  async function onReplacementCost(action: { id: string; externalReference: string | null; currency: string | null }) {
+    if (!resolvedActiveClaimId || !action.currency) {
+      showMsg('The replacement action currency is unavailable.', 'error');
+      return false;
+    }
+    const amountMinor = parseMajorUnitInput(state.replacementActualCost, action.currency);
+    const note = state.replacementCostNote.trim();
+    if (amountMinor == null || amountMinor < 0 || note.length < 3) {
+      showMsg('Enter the nonnegative actual cost and a receipt evidence note.', 'error');
+      return false;
+    }
+    patch({ busy: true });
+    const result = await submitReplacementCost(resolvedActiveClaimId, {
+      outcome_type: 'replacement',
+      state: 'merchant_confirmed',
+      source_system: 'merchant_manual',
+      source_external_id: action.externalReference ?? action.id,
+      correlation_method: 'receipt_backed_manual_record',
+      match_status: 'matched',
+      amount_minor: amountMinor,
+      currency: action.currency,
+      override_reason: note,
+      metadata: { external_action_id: action.id },
+    });
+    patch({ busy: false });
+    const saved = result.message === 'Replacement cost recorded';
+    showMsg(
+      saved
+        ? 'Actual replacement cost recorded separately from authorisation, dispatch, source corroboration, recovery, and reconciliation.'
+        : result.message,
+      saved ? 'success' : 'error',
+    );
+    if (saved) {
+      patch({ replacementActualCost: '', replacementCostNote: '' });
+      await reloadDecision(resolvedActiveClaimId);
+      await refreshHistory();
+    }
+    return saved;
   }
 
   async function onEvidence() {
@@ -626,7 +732,7 @@ export function useClaimReviewWorkbench(
     }
     const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.reverseDecision);
     const currency = selectedClaim?.currency ?? null;
-    const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
+    const amountMinor = monetaryDecision ? parseMajorUnitInput(state.reverseAmount, currency) : null;
     if (monetaryDecision && (amountMinor == null || amountMinor < 0 || !currency)) {
       showMsg('Enter the replacement decision amount and confirm its currency before recording the reversal.', 'error');
       return;
@@ -646,7 +752,7 @@ export function useClaimReviewWorkbench(
     showMsg(r.message, r.message.toLowerCase().includes('reversed') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('reversed')) {
       reversalRequestKeyRef.current = null;
-      patch({ reverseNote: '' });
+      patch({ reverseNote: '', reverseAmount: '' });
     }
     await refreshHistory();
     scheduleReloadDecision(resolvedActiveClaimId);
@@ -745,6 +851,8 @@ export function useClaimReviewWorkbench(
     handlePrimaryCta,
     onClaim,
     onOutcome,
+    onReplacementDispatch,
+    onReplacementCost,
     onEvidence,
     onStatusChange,
     onReopen,

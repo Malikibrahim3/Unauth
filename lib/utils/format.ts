@@ -143,6 +143,15 @@ const dateShortFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
 });
 
 const dayMonthInTimeZoneFormatterCache = new Map<string, Intl.DateTimeFormat>();
+const zonedDisplayFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+function getZonedDisplayFormatter(key: string, options: Intl.DateTimeFormatOptions) {
+  const cached = zonedDisplayFormatterCache.get(key);
+  if (cached) return cached;
+  const formatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, options);
+  zonedDisplayFormatterCache.set(key, formatter);
+  return formatter;
+}
 
 /** Compact chart/date label in the workspace timezone, with an optional weekday. */
 export function formatDayMonthInTimeZone(
@@ -165,6 +174,34 @@ export function formatDayMonthInTimeZone(
     dayMonthInTimeZoneFormatterCache.set(cacheKey, formatter);
   }
   return formatter.format(date);
+}
+
+/** Long-form day and month in an explicitly supplied workspace timezone. */
+export function formatDayMonthLongInTimeZone(value: Date | string, timeZone: string): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+  return getZonedDisplayFormatter(`${timeZone}:day-month-long`, { day: 'numeric', month: 'long', timeZone }).format(date);
+}
+
+/** Month name only, used by compact chart axes. */
+export function formatMonthInTimeZone(value: Date | string, timeZone: string, length: 'short' | 'long' = 'short'): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+  return getZonedDisplayFormatter(`${timeZone}:month:${length}`, { month: length, timeZone }).format(date);
+}
+
+/** Unambiguous accounting-period label in the workspace timezone. */
+export function formatMonthYearInTimeZone(value: Date | string, timeZone: string): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+  return getZonedDisplayFormatter(`${timeZone}:month-year`, { month: 'long', year: 'numeric', timeZone }).format(date);
+}
+
+/** 24-hour clock label in the workspace timezone. */
+export function formatTimeInTimeZone(value: Date | string, timeZone: string): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+  return getZonedDisplayFormatter(`${timeZone}:time`, { hour: '2-digit', minute: '2-digit', hour12: false, timeZone }).format(date);
 }
 
 // ── Canonical money renderers (WS0.1) ────────────────────────────────────────
@@ -387,6 +424,13 @@ export function formatDateAbsolute(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return String(date);
   return dayMonthYearFormatter.format(d);
+}
+
+/** Full report boundary timestamp in its explicit workspace timezone. */
+export function formatDateTimeInTimeZone(value: Date | string, timeZone: string): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+  return getZonedDisplayFormatter(`${timeZone}:full-timestamp`, { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false, timeZone }).format(date);
 }
 
 /** Timestamp for timelines/audit only. "14 Jun, 09:42" */

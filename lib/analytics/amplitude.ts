@@ -46,10 +46,10 @@ export function track(
     console.log('[Analytics]', event, properties ?? '')
     return
   }
-  const root = document.querySelector<HTMLElement>('.ua-app')
+  const root = document.querySelector<HTMLElement>('[data-ui-version="supplied-package"]')
   const surfaceProperties = root
     ? {
-        ui_version: root.dataset.uiVersion ?? 'decision-ledger-instrument-grade',
+        ui_version: root.dataset.uiVersion ?? 'supplied-package',
         ui_surface_family: root.dataset.uiSurfaceFamily ?? 'unknown',
       }
     : {}

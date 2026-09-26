@@ -36,7 +36,7 @@ export const shopifyProvider: IntegrationProvider = {
     { id: 'reconnect', applicability: 'applicable', evidence: 'implemented', detail: 'Re-running the OAuth install flow re-establishes the connection; no dedicated automated reconnect test.' },
     { id: 'disconnect', applicability: 'applicable', evidence: 'automated_tested', detail: 'Disconnect behaviour covered by tests/unit/connectors/disconnect.test.ts. Controlled run pending.' },
     { id: 'freshness_health', applicability: 'applicable', evidence: 'automated_tested', detail: 'Health-probe logic covered by tests/unit/liveConnectionVerification.test.ts. Controlled run pending.' },
-    { id: 'bounded_writeback', applicability: 'not_applicable', evidence: 'unavailable', detail: 'Automatic refund issuance is an explicit MVP+ boundary — not offered.' },
+    { id: 'bounded_writeback', applicability: 'not_applicable', evidence: 'unavailable', detail: 'Refund execution is an MVP target, but no verified Shopify action contract is currently offered.' },
   ],
 };
 

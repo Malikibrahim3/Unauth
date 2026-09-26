@@ -18,6 +18,14 @@ export type Decision =
   | 'internal_watch'
   | 'no_action';
 
+export type ResolutionAction =
+  | 'full_refund'
+  | 'partial_refund'
+  | 'same_item_replacement'
+  | 'request_evidence'
+  | 'escalate'
+  | 'no_additional_payout';
+
 export type Outcome =
   | 'loss'
   | 'recovered'

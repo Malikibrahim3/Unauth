@@ -21,6 +21,7 @@ const outputDir = path.resolve(String(args.get("output") ?? "artifacts/unauth-ui
 const storagePath = path.resolve(String(args.get("storage-state") ?? "tests/current/.auth/storage-state.json"));
 const routeTimeout = Number(args.get("timeout") ?? 30_000);
 const overlaysOnly = args.has("overlays-only");
+const authenticatedOnly = args.has("authenticated-only");
 
 const publicRoutes = [
   { path: "/reset", identity: "password-reset-request" },
@@ -194,7 +195,7 @@ const authState = await ensureAuthenticatedState();
 const browser = await chromium.launch();
 const manifest = { generatedAt: new Date().toISOString(), baseURL, routes: [], overlays: [], authenticatedSweep: Boolean(authState) };
 try {
-  if (!overlaysOnly) {
+  if (!overlaysOnly && !authenticatedOnly) {
     const publicContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const publicPage = await publicContext.newPage();
     for (const route of publicRoutes) {

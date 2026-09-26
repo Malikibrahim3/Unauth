@@ -23,19 +23,19 @@ export function EvidenceRow({
   return (
     <div
       className={cn(
-        'flex min-h-[var(--uo-route-table-row-height)] items-center gap-[var(--uo-route-space-2-5)] text-[length:var(--uo-route-text-dense-size)] leading-[var(--uo-route-text-dense-leading)] text-[var(--uo-route-text-secondary)]',
+        'flex min-h-11 items-center gap-3 text-[12px] leading-5 text-[#64686d]',
         className,
       )}
     >
       {confirmed ? (
-        <Check size={14} strokeWidth={1.5} className="shrink-0 text-[var(--uo-route-success)]" aria-hidden="true" />
+        <Check size={14} strokeWidth={1.5} className="shrink-0 text-[#1a6b43]" aria-hidden="true" />
       ) : (
-        <Circle size={14} strokeWidth={1.5} className="shrink-0 text-[var(--uo-route-icon-secondary)]" aria-hidden="true" />
+        <Circle size={14} strokeWidth={1.5} className="shrink-0 text-[#64686d]" aria-hidden="true" />
       )}
       <span className="sr-only">{confirmed ? 'Confirmed:' : 'Outstanding:'}</span>
       <span className="min-w-0 flex-1 truncate">{text}</span>
       {timestamp ? (
-        <span className="shrink-0 text-[length:var(--uo-route-text-caption-size)] leading-[var(--uo-route-text-caption-leading)] text-[var(--uo-route-text-tertiary)]">
+        <span className="shrink-0 text-[length:11.5px] leading-[1.45] text-[#6f6a63]">
           {timestamp}
         </span>
       ) : null}

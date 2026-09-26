@@ -25,18 +25,18 @@ function knownMinor(
 
 /**
  * Converts the zero-defaulted financial projection into display values without
- * turning an absent stage into a proven zero. The loss-case estimate is an
- * independent nullable source and remains a valid fallback for recoverability.
+ * turning an absent stage into a proven zero. Recovery estimates remain
+ * separate inputs and never become a confirmed eligibility ceiling.
  */
 export function lossFinancialDisplay(
   summary: LossFinancialSummary | null | undefined,
-  estimatedRecoveryMinor: number | null,
+  _estimatedRecoveryMinor: number | null,
 ): LossFinancialDisplay {
   if (!summary) {
     return {
       realisedLossMinor: null,
       estimatedLossMinor: null,
-      recoverableMinor: estimatedRecoveryMinor,
+      recoverableMinor: null,
       recoveredMinor: null,
     };
   }
@@ -52,9 +52,7 @@ export function lossFinancialDisplay(
       'estimated_loss',
       summary.estimated_loss_minor,
     ),
-    recoverableMinor:
-      knownMinor(summary, 'recoverable', summary.recoverable_minor) ??
-      estimatedRecoveryMinor,
+    recoverableMinor: knownMinor(summary, 'recoverable', summary.recoverable_minor),
     recoveredMinor: knownMinor(
       summary,
       'recovered',

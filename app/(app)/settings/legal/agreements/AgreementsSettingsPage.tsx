@@ -4,7 +4,7 @@ import { getRequestUser, requirePagePermission } from '@/lib/auth/requestContext
 import { PERMISSIONS } from '@/lib/permissions';
 import { createServiceClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKETS, TABLES } from '@/lib/supabase/tables';
-import { SettingsPageShell } from '@/components/settings/SettingsPageShell';
+import { acceptanceScenarioFromHeaders } from '@/lib/testing/acceptanceStateInjector';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,26 +22,12 @@ export default async function AgreementSettingsPage() {
     .eq('merchant_id', ctx.merchantId)
     .order('created_at', { ascending: false });
   if (error) throw new Error('Unable to load agreements.');
-  const agreements = await Promise.all(((data ?? []) as Array<AgreementSummary & { document_url?: string | null }>).map(async ({ document_url, ...agreement }) => {
+  const forceEmpty = await acceptanceScenarioFromHeaders() === 'agreements-empty';
+  const agreements = await Promise.all((forceEmpty ? [] : (data ?? []) as Array<AgreementSummary & { document_url?: string | null }>).map(async ({ document_url, ...agreement }) => {
     if (!document_url) return { ...agreement, source_url: null };
     const { data: signed } = await service.storage.from(STORAGE_BUCKETS.INTEGRATION_DOCUMENTS).createSignedUrl(document_url, 3600);
     return { ...agreement, source_url: signed?.signedUrl ?? null };
   }));
 
-  return (
-    <SettingsPageShell
-      title="Agreements"
-      subtitle="Partner and service agreements, the recovery terms extracted from them, and the surfaces that depend on those terms being approved."
-      surfaceId="agreements"
-      layout="wide"
-      truth={{
-        access: "Members with Manage settings permission",
-        currentState: "Stored source documents and separately approved recovery terms",
-        saveBehavior: "Upload stores a source only; each verified term needs a separate approval",
-        impact: "Only approved terms can guide future recovery work; existing submitted claims retain their version",
-      }}
-    >
-      <AgreementSettingsClient initialAgreements={agreements} />
-    </SettingsPageShell>
-  );
+  return <AgreementSettingsClient initialAgreements={agreements} />;
 }

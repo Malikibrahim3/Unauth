@@ -62,9 +62,9 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
 
   return (
     <>
-      <div className="uo-customers-table-scroll" data-testid="customers-table">
-        <div className="uo-customers-table">
-          <div className="uo-customers-grid uo-table-columns" aria-hidden="true">
+      <div data-testid="customers-table">
+        <div className="w-full border-collapse text-[11.5px]">
+          <div className="grid gap-4 grid gap-4" aria-hidden="true">
             <span>Customer</span><span>Orders</span><span>Lifetime</span><span>Refunded</span><span>Refund rate vs cohort</span><span>Cases</span><span>Last order</span>
           </div>
           {rows.map((row) => {
@@ -73,21 +73,21 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
             const isSelected = activePreviewId === row.id;
             return <button
               type="button"
-              className="uo-customers-grid uo-customer-row"
+              className="grid gap-4 border-t border-[#e4e3e0]"
               key={row.id}
               data-testid="customer-row"
               data-row-key={row.id}
               onClick={() => setPreview(row.id)}
               data-selected={isSelected ? 'true' : undefined}
-              style={isSelected ? { background: 'var(--uo-route-selection-fill)', boxShadow: 'inset 2px 0 0 var(--uo-route-selection-border)' } : undefined}
+              style={isSelected ? { background: '#40454a', boxShadow: 'inset 2px 0 0 #9f4f08' } : undefined}
             >
-              <span className="uo-person"><i>{customerInitials(row)}</i><b><strong>{name}</strong><small>{row.primary_email ?? 'Contact unavailable'}</small></b></span>
+              <span><i>{customerInitials(row)}</i><b><strong>{name}</strong><small>{row.primary_email ?? 'Contact unavailable'}</small></b></span>
               <span data-align="right" title={`${row.order_coverage} order coverage`}>{observedCount(row.total_orders, row.order_coverage)}</span>
               <span data-align="right" title={row.has_mixed_currency ? 'Currencies are never combined' : `${row.order_coverage} order-value coverage`}>{lifetimeValue(row)}</span>
-              <span data-align="right" className="uo-unavailable-value">—</span>
-              <span className="uo-customer-rate" title="Refunded value is not available from the current customer read model"><i /><b /><em>Unavailable</em></span>
-              <span style={{ overflow: 'visible', whiteSpace: 'normal' }}>{cases}{row.payout_cases_open && row.payout_cases_open > 0 ? <small style={{ overflow: 'visible', whiteSpace: 'normal', textOverflow: 'clip', background: 'var(--uo-route-surface-muted)', color: 'var(--uo-route-text-secondary)' }}>{row.payout_cases_open} open{row.case_coverage === 'complete' ? '' : ' · partial'}</small> : null}</span>
-              <span className="uo-muted">{row.last_order_at ? formatDate(row.last_order_at) : row.order_coverage === 'complete' ? 'No order date' : 'Unavailable'}</span>
+              <span data-align="right" className="font-semibold tabular-nums text-[#1c1f23]">—</span>
+              <span title="Refunded value is not available from the current customer read model"><i /><b /><em>Unavailable</em></span>
+              <span style={{ overflow: 'visible', whiteSpace: 'normal' }}>{cases}{row.payout_cases_open && row.payout_cases_open > 0 ? <small style={{ overflow: 'visible', whiteSpace: 'normal', textOverflow: 'clip', background: '#f4f3f1', color: '#64686d' }}>{row.payout_cases_open} open{row.case_coverage === 'complete' ? '' : ' · partial'}</small> : null}</span>
+              <span className="text-[#64686d]">{row.last_order_at ? formatDate(row.last_order_at) : row.order_coverage === 'complete' ? 'No order date' : 'Unavailable'}</span>
             </button>;
           })}
         </div>

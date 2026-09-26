@@ -1,3 +1,5 @@
+import { verifyImpactProof, readImpactRevision } from '@/lib/rules/impactToken';
+import { impactHash } from '@/lib/rules/impactRead';
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
@@ -36,7 +38,7 @@ export async function POST(
   ).data;
   if (!draft)
     return NextResponse.json({ error: "No draft to publish" }, { status: 409 });
-  const active =
+  const activeResult =
     (
       await service
         .from(TABLES.MERCHANT_RULES)
@@ -44,11 +46,13 @@ export async function POST(
         .eq("merchant_id", ctx.merchantId)
         .eq("is_active", true)
         .is("archived_at", null)
-    ).data ?? [];
+    );
+  if (activeResult.error) return NextResponse.json({ error: "Published policy unavailable." }, { status: 503 });
+  const active = activeResult.data ?? [];
   const candidate = mapRuleRow({
+    ...draft,
     id,
     merchant_id: ctx.merchantId,
-    ...draft,
     is_active: true,
   } as never);
   const conflicts = findRuleConflicts(
@@ -57,9 +61,29 @@ export async function POST(
   );
   const dataRequirements = requiredFields(candidate.conditions);
 
-  if (!body.confirm)
+  const proof = verifyImpactProof(body.impactToken, ctx.merchantId, id);
+  if (!proof) return NextResponse.json({ error: 'Save your draft and run Preview impact before publication. The preview may have expired.' }, { status: 409 });
+  let revision: string;
+  try { revision = await readImpactRevision(service, ctx.merchantId); }
+  catch { return NextResponse.json({ error: 'Publication version tracking is unavailable.' }, { status: 503 }); }
+  const currentRules = (active as unknown[]).map((rule: unknown) => mapRuleRow(rule as never)).sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id));
+  const proposed = [...currentRules.filter(rule => rule.id !== id), candidate];
+  if (proof.revision !== revision || proof.proposedHash !== impactHash(proposed)) {
+    return NextResponse.json({ error: 'Draft, policy or source evidence changed. Run Preview impact again.' }, { status: 409 });
+  }
+  let noCases = false;
+  if (proof.evaluatedCount === 0) {
+    const { count, error } = await service.from(TABLES.MERCHANT_CLAIMS).select('id', { count: 'exact', head: true }).eq('merchant_id', ctx.merchantId);
+    if (error || count == null) return NextResponse.json({ error: 'Case population is unavailable.' }, { status: 503 });
+    if (count > 0) return NextResponse.json({ error: 'No cases in this preview window. Choose a window containing cases before publishing.' }, { status: 409 });
+    noCases = true;
+  }
+  if (body.confirm === true && noCases && body.acknowledgeNoCases !== true) return NextResponse.json({ error: 'Acknowledge that no case-based preview is available.' }, { status: 409 });
+
+  if (body.confirm !== true)
     return NextResponse.json({
       confirmationRequired: true,
+      noCases,
       version: draft.version,
       dataRequirements,
       conflicts,
@@ -71,11 +95,14 @@ export async function POST(
     );
 
   const { data, error } = await (service as any).rpc(
-    "publish_merchant_rule_version",
+    "publish_previewed_merchant_rule",
     {
       p_merchant_id: ctx.merchantId,
       p_rule_id: id,
       p_actor_id: user.id,
+      p_revision: proof.revision,
+      p_draft_id: draft.id,
+      p_no_cases_ack: body.acknowledgeNoCases === true,
     },
   );
   if (error)
@@ -84,9 +111,9 @@ export async function POST(
         error:
           error.code === "P0002"
             ? "Draft or rule no longer exists"
-            : "Atomic publish failed; no configuration was changed",
+            : "Publication could not complete. Refresh versions and run Preview impact again.",
       },
-      { status: error.code === "P0002" ? 409 : 500 },
+      { status: ["P0002", "40001", "40P01"].includes(error.code) ? 409 : error.code === "42501" ? 403 : 500 },
     );
   return NextResponse.json({ published: data, dataRequirements, conflicts });
 }

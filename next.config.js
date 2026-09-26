@@ -44,6 +44,13 @@ const nextConfig = {
   serverExternalPackages: ['papaparse'],
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1'],
+  webpack(config, { dev }) {
+    // Full visual-authority captures run in a disk-constrained, disposable
+    // build. The compiled output is evidence; a multi-gigabyte Webpack cache
+    // is not. Normal developer and production builds retain their cache.
+    if (!dev && process.env.UNAUTH_DISABLE_WEBPACK_CACHE === '1') config.cache = false;
+    return config;
+  },
   // The Chrome download route reads extension files from disk at runtime.
   // Next's tracer can't follow the dynamic process.cwd() reads, so include them
   // explicitly or the route 404s on Vercel's serverless filesystem.

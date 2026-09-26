@@ -11,7 +11,7 @@ describe('MR4 financial export boundary', () => {
   });
 
   it('preserves metric, category, currency, and date scope for supporting records', () => {
-    for (const scope of ['p_cutoff: cutoff', 'p_currency: currency', 'p_metric: recordMetric', 'p_category: category']) {
+    for (const scope of ['get_financial_report_records_v2', 'p_merchant_id: permission.ctx.merchantId', 'p_from: cutoff', 'p_to: asOf.toISOString()', 'p_currency: currency', 'p_metric: recordMetric', 'p_category: category']) {
       expect(route).toContain(scope);
     }
   });

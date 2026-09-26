@@ -13,7 +13,12 @@ reconciliation, and source health.
 
 ## Canonical owners
 
-`ARCHITECTURE.md` is the authority index. Product semantics and truth boundaries
+Read [GLOBAL_RULES.md](GLOBAL_RULES.md) before every IDE task. It is the permanent
+app-wide contract, loaded through `AGENTS.md` and `CLAUDE.md`. The current combined
+overhaul is [MERCHANT_CLARITY_IMPLEMENTATION.md](docs/product/MERCHANT_CLARITY_IMPLEMENTATION.md),
+with one named phase per authorised implementation task.
+
+`ARCHITECTURE.md` is the authority index under that contract. Product semantics and truth boundaries
 live in `PRODUCT.md`; visual, responsive, and theme rules live in `DESIGN.md`;
 MVP+ scope lives in `docs/product/MVP_PLUS_SCOPE.md`; routes and redirects live
 in the files listed by the authority index; page ownership is the executable
@@ -39,7 +44,8 @@ immutable files under `supabase/migrations`.
 
 ## Deployment boundary
 
-A preview may be created for read-only smoke testing. Production deployment,
+A preview may be created when its publication is explicitly authorised; read-only
+smoke testing does not itself authorise deployment. Production deployment,
 merge, remote migrations, provider writes, real-user invitations, and legal or
 release approval are separate decisions. Current external blockers and UX9
 acceptance status are recorded in `docs/product/DEPLOYMENT_READINESS.md`,

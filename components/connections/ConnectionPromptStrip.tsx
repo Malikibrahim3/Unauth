@@ -34,26 +34,26 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
 
   return (
     <div
-      className="ua-text-body flex items-center justify-between gap-4 px-4 py-2.5 border-b"
+      className="text-[13px] leading-5 text-[#40454a] flex items-center justify-between gap-4 px-4 py-2.5 border-b"
       style={{
-        background: 'color-mix(in srgb, var(--uo-route-warning) 8%, var(--uo-route-surface-primary))',
-        borderColor: 'color-mix(in srgb, var(--uo-route-warning) 20%, transparent)',
-        color: 'var(--uo-route-text-secondary)',
-        fontFamily: 'var(--uo-route-font-sans)',
+        background: 'color-mix(in srgb, #7a5310 8%, #fff)',
+        borderColor: 'color-mix(in srgb, #7a5310 20%, transparent)',
+        color: '#64686d',
+        fontFamily: 'Inter,ui-sans-serif,system-ui,sans-serif',
       }}
     >
       <div className="flex items-center gap-2 min-w-0">
         <span
           className="h-1.5 w-1.5 rounded-full shrink-0"
-          style={{ background: 'var(--uo-route-warning)' }}
+          style={{ background: '#7a5310' }}
           aria-hidden="true"
         />
-        <span className="leading-snug" style={{ color: 'var(--uo-route-text-primary)' }}>{message}</span>
+        <span className="leading-snug" style={{ color: '#1c1f23' }}>{message}</span>
       </div>
       <Link
         href="/sources/connected"
-        className="ua-text-working-title shrink-0 whitespace-nowrap hover:opacity-80 transition-opacity"
-        style={{ color: 'var(--uo-route-text-link)' }}
+        className="font-medium text-[13px] leading-5 text-[#1c1f23] shrink-0 whitespace-nowrap hover:opacity-80 transition-opacity"
+        style={{ color: '#9f4f08' }}
       >
         Complete setup
       </Link>

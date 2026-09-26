@@ -25,10 +25,13 @@ import {
 import { claimEventSummary } from "@/lib/claims/events";
 import { createRequestLogger, withRequestLogging } from "@/lib/log";
 import { hashId } from "@/lib/ui/displayRef";
+import { isRemainingClosureFixtureRequest } from "@/lib/testing/remainingClosureGuard";
+import { buildActorActionSummary } from "@/lib/capabilities/derived";
 
 function csvCell(value: unknown) {
-  const text = String(value ?? "");
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  const raw = String(value ?? "");
+  const text = /^[=+@\-\t\r]/.test(raw) ? `'${raw}` : raw;
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 export const dynamic = "force-dynamic";
@@ -49,7 +52,6 @@ async function GETHandler(request: NextRequest) {
     PERMISSIONS.VIEW_AUDIT_TRAIL,
   );
   if (denied) return denied;
-  const scopedService = createScopedClient(ctx.merchantId, service);
 
   const { searchParams } = new URL(request.url);
   const format = searchParams.get("format") ?? "json";
@@ -64,14 +66,34 @@ async function GETHandler(request: NextRequest) {
   const startDate = searchParams.get("startDate") ?? null;
   const endDate = searchParams.get("endDate") ?? null;
 
+  if (!Number.isSafeInteger(page) || !Number.isSafeInteger(limit) || page * limit > 1_000
+    || (startDate && !Number.isFinite(Date.parse(startDate)))
+    || (endDate && !Number.isFinite(Date.parse(endDate)))
+    || (startDate && endDate && Date.parse(startDate) > Date.parse(endDate))) {
+    return NextResponse.json({ error: "Invalid audit period or page. Narrow the period for results beyond 1,000 entries." }, { status: 400 });
+  }
+
   const from = (page - 1) * limit;
   const to = from + limit - 1;
+
+  if (await isRemainingClosureFixtureRequest({
+    request,
+    service,
+    merchantId: ctx.merchantId,
+    scenarioId: 'audit-trail-empty',
+    fixtureKind: 'settings',
+  })) {
+    return NextResponse.json({ rows: [], total: 0, page, limit, pages: 0, actorSummary: [], actorSummaryState: "unavailable" });
+  }
+
+  const scopedService = createScopedClient(ctx.merchantId, service);
 
   let query = scopedService
     .from("user_action_log")
     .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
-    .range(from, to);
+    .order("id", { ascending: false })
+    .range(0, to);
 
   if (action) query = query.eq("action", action);
   if (actorUserId) query = query.eq("actor_user_id", actorUserId);
@@ -101,18 +123,20 @@ async function GETHandler(request: NextRequest) {
     .from("claim_events")
     .select(
       "id,claim_id,merchant_id,event_type,from_status,to_status,note,actor_user_id,metadata,created_at",
+      { count: "exact" },
     )
     .eq("merchant_id", ctx.merchantId)
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .order("id", { ascending: false })
+    .limit(to + 1);
   if (action) claimEventQuery = claimEventQuery.eq("event_type", action);
   if (actorUserId)
     claimEventQuery = claimEventQuery.eq("actor_user_id", actorUserId);
   if (startDate) claimEventQuery = claimEventQuery.gte("created_at", startDate);
   if (endDate) claimEventQuery = claimEventQuery.lte("created_at", endDate);
-  const { data: claimEvents, error: claimEventError } =
+  const { data: claimEvents, error: claimEventError, count: claimCount } =
     resourceType && resourceType !== "claim"
-      ? { data: [], error: null }
+      ? { data: [], error: null, count: 0 }
       : await claimEventQuery;
   if (claimEventError) {
     logger.error("audit_trail.claim_events_query_failed", {
@@ -170,10 +194,12 @@ async function GETHandler(request: NextRequest) {
 
   const rows = [...(actionRows ?? []), ...mappedClaimEvents]
     .sort((a: any, b: any) =>
-      String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")),
+      String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")) || String(b.id).localeCompare(String(a.id)),
     )
-    .slice(0, limit);
-  const total = (count ?? 0) + mappedClaimEvents.length;
+    .slice(from, to + 1);
+  const total = count != null && claimCount != null ? count + claimCount : null;
+  // Summaries describe exactly this merged page under the request filters.
+  const actorSummary = buildActorActionSummary(rows);
 
   if (format === "csv") {
     const exportDenied = await requirePermission(
@@ -213,7 +239,7 @@ async function GETHandler(request: NextRequest) {
     ): string {
       if (!actorUserId) return "system";
       const known = actorMap[actorUserId];
-      if (known) return `${known.email} (${known.role})`;
+      if (known) return `${known.email} (${actorRole ? `recorded role: ${actorRole}` : "role not retained"})`;
       return `${hashId(actorUserId)} (${actorRole ?? "user"})`;
     }
 
@@ -305,7 +331,11 @@ async function GETHandler(request: NextRequest) {
     total,
     page,
     limit,
-    pages: Math.ceil(total / limit),
+    pages: total == null ? null : Math.ceil(total / limit),
+    actorSummary,
+    actorSummaryState: "available",
+    actorSummaryScope: "loaded_page",
+    actorSummaryWindow: { start: startDate, end: endDate },
   });
 }
 

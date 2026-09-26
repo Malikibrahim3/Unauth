@@ -20,6 +20,10 @@ import type {
 } from '@/lib/payouts/types';
 
 export type ClaimDecisionSignals = IdentitySignals & {
+  unavailable_rule_inputs?: string[];
+  order_value_usd_currency?: string | null;
+  amount_at_risk_currency?: string | null;
+  total_estimated_loss_currency?: string | null;
   claim_type?: string | null;
   amount_at_risk?: number | null;
   delivery_status?: string | null;
@@ -58,7 +62,6 @@ export function claimDecisionContextToSignals(
   const { claim, order, delivery, history, evidence, identity } = context;
 
   const orderValue =
-    claim.amountAtRisk ??
     order?.totalAmount ??
     null;
 
@@ -77,6 +80,13 @@ export function claimDecisionContextToSignals(
 
   return {
     ...payoutSignals,
+    unavailable_rule_inputs: [...(context.unavailableRuleInputs ?? []),
+      ...(!payoutCase?.exposure.components.length ? ['total_estimated_loss'] : []),
+      ...(payoutCase?.exposure.reviewThreshold == null ? ['above_review_threshold'] : []),
+    ],
+    order_value_usd_currency: order?.currency ?? null,
+    amount_at_risk_currency: claim.currency,
+    total_estimated_loss_currency: payoutCase?.exposure.total.currency ?? null,
     merchant_claim_count: history.merchantClaimCount,
     days_since_last_claim: history.daysSinceLastClaim,
     claim_types: history.claimTypes,

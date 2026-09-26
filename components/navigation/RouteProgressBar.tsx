@@ -6,7 +6,7 @@ import { DELAY, ROUTE_PROGRESS } from '@/lib/design/motion';
 import { useMotionAllowed } from '@/lib/design/useMotionAllowed';
 
 /**
- * Instrument Grade route-feedback contract. The line:
+ * Evidence Operations route-feedback contract. The line:
  *
  *   1. stays hidden for navigations below 120ms;
  *   2. enters at 12%;
@@ -55,7 +55,7 @@ export default function RouteProgressBar({ active }: { active: boolean }) {
     <div
       className={cn(
         'pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden',
-        'transition-opacity duration-[var(--uo-route-duration-fast)] ease-[var(--uo-route-ease-exit)]',
+        'transition-opacity duration-[120ms] ease-[ease]',
         visible ? 'opacity-100' : 'opacity-0',
       )}
       aria-hidden="true"
@@ -63,11 +63,11 @@ export default function RouteProgressBar({ active }: { active: boolean }) {
       <div
         className="h-full origin-left"
         style={{
-          background: 'var(--uo-route-accent-500)',
+          background: '#9f4f08',
           width: `${percent}%`,
           // Reduced motion (and capture mode) keep the state change but drop the travel.
           transition: motionAllowed
-            ? `width ${ROUTE_PROGRESS.firstAtMs}ms var(--uo-route-ease-standard)`
+            ? `width ${ROUTE_PROGRESS.firstAtMs}ms ease`
             : 'none',
         }}
       />

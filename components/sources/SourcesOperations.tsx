@@ -1,533 +1,420 @@
 'use client';
 
-import Link from 'next/link';
-import {
-  ArrowRight,
-  CircleAlert,
-  Clock3,
-  Search,
-  X,
-} from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
+import Link from '@/components/navigation/AppNavLink';
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 import { ProviderLogo } from '@/components/identity/ProviderLogo';
 import type { CatalogueRowItem } from '@/lib/integrations/catalogueView';
-import { Input, Select } from '@/components/ui';
-import { formatDateTime, formatNumber } from '@/lib/utils/format';
+import { categoryLabel } from '@/lib/integrations/catalogueView';
+import { formatDate, formatNumber } from '@/lib/utils/format';
 import {
-  evidenceStatesForSource,
   evaluateSourceReadiness,
   isSourceConfigured,
   REQUIRED_EVIDENCE_LAYERS,
   sourceEvidenceLayerIds,
   sourceStatus,
-  type LayerReadiness,
+  sourceFreshnessState,
   type ReadinessSource,
   type RequiredEvidenceLayerId,
 } from '@/lib/sources/evidenceReadiness';
-import styles from './SourcesOperations.module.css';
 
 export type SourcesView = 'connected' | 'browse';
 export type SourceStatusFilter = 'all' | 'connected' | 'not_connected' | 'attention' | 'planned';
 export type SourceLayerFilter = 'all' | RequiredEvidenceLayerId | 'supplemental';
 
-type CatalogueGroupId = SourceLayerFilter;
-type SourceTaskGroupId = 'needs_attention' | 'working' | 'ready_to_connect' | 'not_available';
-type Tone = 'positive' | 'warning' | 'critical' | 'info' | 'neutral';
-
-const TASK_GROUPS: Array<{ id: SourceTaskGroupId; title: string; description: string }> = [
-  { id: 'needs_attention', title: 'Needs attention', description: 'Configured sources whose health, permissions, freshness, or first data need an operator.' },
-  { id: 'working', title: 'Working', description: 'Configured sources currently usable by this workspace. Returned data and freshness remain explicit per source.' },
-  { id: 'ready_to_connect', title: 'Ready to connect', description: 'Implemented providers that this workspace has not configured yet.' },
-  { id: 'not_available', title: 'Not available yet', description: 'Catalogue capability only. No connection, health, freshness, or returned records are implied.' },
-];
-
-const CATALOGUE_GROUPS: Array<{
-  id: CatalogueGroupId;
+type CatalogueGroup = {
+  id: 'orders' | 'support' | 'carriers' | 'warehouse' | 'returns';
   title: string;
-  description: string;
-}> = [
-  { id: 'commerce', title: 'Commerce and orders', description: 'Order and customer records that establish what was purchased and what was paid.' },
-  { id: 'support', title: 'Customer support', description: 'The request, conversation, and attachments behind a customer claim.' },
-  { id: 'fulfilment', title: 'Fulfilment / 3PL', description: 'Pick, pack, warehouse, and fulfilment exception evidence.' },
-  { id: 'delivery', title: 'Delivery and carrier evidence', description: 'Tracking events, delivery outcomes, and carrier proof.' },
-  { id: 'payments', title: 'Payments and disputes', description: 'Payment, dispute, chargeback, and settlement evidence.' },
-  { id: 'supplemental', title: 'Supplemental and manual evidence', description: 'Optional files and manual records that fill gaps in connected systems.' },
+  matches: (item: CatalogueRowItem) => boolean;
+};
+
+const CATALOGUE_GROUPS: CatalogueGroup[] = [
+  { id: 'orders', title: 'ORDERS AND MONEY', matches: (item) => item.category === 'commerce' || item.category === 'payments_disputes' },
+  { id: 'support', title: 'SUPPORT AND EVIDENCE', matches: (item) => item.category === 'helpdesk' || item.category === 'documents' },
+  { id: 'carriers', title: 'CARRIERS', matches: (item) => item.category === 'carrier' || item.category === 'tracking' },
+  { id: 'warehouse', title: 'WAREHOUSE AND FULFILMENT', matches: (item) => item.category === 'warehouse_3pl' },
+  { id: 'returns', title: 'RETURNS', matches: (item) => item.category === 'returns' },
 ];
 
-const EVIDENCE_LABELS: Record<string, string> = {
-  order_value: 'Order value',
-  line_items: 'Line items',
-  customer_history: 'Customer history',
-  refund_history: 'Refund history',
-  reship_history: 'Reship history',
-  ticket_messages: 'Ticket messages',
-  ticket_attachments: 'Ticket attachments',
-  customer_claim_reason: 'Claim reason',
-  requested_action: 'Requested action',
-  warehouse_pick_pack: 'Pick / pack',
-  warehouse_exception: 'Warehouse exceptions',
-  three_pl_sla_claim_status: '3PL SLA status',
-  self_reported_pack_confirmation: 'Pack confirmation',
-  self_reported_pack_photo: 'Pack photo',
-  tracking_number: 'Tracking number',
-  tracking_events: 'Tracking events',
-  delivery_status: 'Delivery status',
-  delivery_photo: 'Delivery photo',
-  signature: 'Signature',
-  carrier_claim_submission_status: 'Carrier claim status',
-  carrier_claim_outcome: 'Carrier claim outcome',
-  dispute_status: 'Dispute status',
-  chargeback_evidence: 'Chargeback evidence',
-  contract_terms: 'Contract terms',
-  recovery_deadline: 'Recovery deadline',
-  return_request_status: 'Return request',
-  return_inspection_outcome: 'Return inspection',
+const hiddenHeading: CSSProperties = {
+  position: 'absolute', width: 1, height: 1, padding: 0, margin: -1,
+  overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0,
 };
+
+const mono = "'IBM Plex Mono',monospace";
 
 function asReadinessSource(item: CatalogueRowItem): ReadinessSource {
   return item;
 }
 
-function groupFor(item: CatalogueRowItem): CatalogueGroupId {
-  if (item.id === 'csv_import' || item.category === 'documents') return 'supplemental';
-  const layer = sourceEvidenceLayerIds(asReadinessSource(item))[0];
-  if (layer) return layer;
-  if (item.category === 'commerce') return 'commerce';
-  if (item.category === 'helpdesk') return 'support';
-  if (item.category === 'warehouse_3pl' || item.category === 'returns') return 'fulfilment';
-  if (item.category === 'carrier' || item.category === 'tracking') return 'delivery';
-  if (item.category === 'payments_disputes') return 'payments';
-  return 'supplemental';
-}
-
-function layerNamesFor(item: CatalogueRowItem): string[] {
-  const names = sourceEvidenceLayerIds(asReadinessSource(item))
-    .map((id) => REQUIRED_EVIDENCE_LAYERS.find((layer) => layer.id === id)?.name)
-    .filter((name): name is string => Boolean(name));
-  if (item.id === 'csv_import' || item.category === 'documents') names.push('Supplemental and manual evidence');
-  return [...new Set(names)];
-}
-
-function humaniseEvidence(id: string): string {
-  return EVIDENCE_LABELS[id] ?? id.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function maturityFor(item: CatalogueRowItem): { label: string; tone: Tone } {
-  if (item.stage === 'planned') return { label: 'Not available', tone: 'neutral' };
-  if (item.stage === 'beta') return { label: 'Beta', tone: 'info' };
-  if (item.stage === 'partial') return { label: 'Partial', tone: 'warning' };
-  return { label: 'Available', tone: 'positive' };
-}
-
-function connectionStateFor(item: CatalogueRowItem): { label: string; tone: Tone } {
-  if (item.stage === 'planned') return { label: 'Not available', tone: 'neutral' };
-  if (!isSourceConfigured(asReadinessSource(item))) return { label: 'Not connected', tone: 'neutral' };
-  if (item.badge === 'sync_pending' || item.syncState === 'importing' || item.syncState === 'import_queued') return { label: 'Syncing', tone: 'info' };
-  if (item.badge === 'no_data' || item.syncState === 'no_records_found') return { label: 'Waiting for first data', tone: 'warning' };
-  if (item.badge === 'stale' || item.syncState === 'stale') return { label: 'Stale', tone: 'warning' };
-  if (item.badge === 'error' || item.badge === 'not_syncing' || item.badge === 'verification_unavailable' || item.syncState === 'sync_failed' || item.syncState === 'attention_required') {
-    return { label: 'Needs attention', tone: 'critical' };
-  }
-  return { label: 'Connected', tone: 'positive' };
-}
-
-function taskGroupFor(item: CatalogueRowItem): SourceTaskGroupId {
-  if (item.stage === 'planned') return 'not_available';
-  if (!isSourceConfigured(asReadinessSource(item))) return item.connectEnabled ? 'ready_to_connect' : 'not_available';
-  const state = connectionStateFor(item).label;
-  if (state === 'Needs attention' || state === 'Stale' || state === 'Waiting for first data') return 'needs_attention';
-  return 'working';
-}
-
-function taskReason(item: CatalogueRowItem): string {
-  const group = taskGroupFor(item);
-  if (group === 'needs_attention') return item.lastError ?? `${connectionStateFor(item).label}. Review the source detail for the exact recovery step.`;
-  if (group === 'working') return `${connectionStateFor(item).label}. ${recordLabel(item)} returned records; freshness is ${freshnessLabel(item).toLowerCase()}.`;
-  if (group === 'ready_to_connect') return item.connectEnabled ? 'Provider setup is available for this workspace.' : 'Connection controls are not implemented.';
-  return 'Connection is not implemented. No workspace source state is asserted.';
-}
-
-function freshnessLabel(item: CatalogueRowItem): string {
-  const state = connectionStateFor(item).label;
-  if (state === 'Stale') return 'Stale';
-  if (state === 'Waiting for first data') return 'Waiting for first data';
-  if (item.freshness.confidence === 'unavailable') return 'Not measurable';
-  if (item.lastDataReceivedAt) return 'Measured';
-  return 'Not recorded';
-}
-
-function lastDataLabel(item: CatalogueRowItem): string {
-  if (item.lastDataReceivedAt) return formatDateTime(item.lastDataReceivedAt);
-  if (item.freshness.confidence === 'unavailable') return 'Not measurable';
-  if (item.badge === 'sync_pending' || item.badge === 'no_data') return 'Waiting for first data';
-  return 'Not recorded';
-}
-
-function recordLabel(item: CatalogueRowItem): string {
-  if (item.importedRecordsKnown === false) return 'Unavailable';
-  return formatNumber(item.importedRecords);
-}
-
-function setupHref(item: CatalogueRowItem): string {
-  if (item.id === 'csv_import') return '/sources/imports';
-  if (item.id === 'document_upload') return '/settings/legal/agreements';
-  return `/sources/setup/${item.id}`;
-}
-
-function actionLabel(item: CatalogueRowItem): string {
-  if (item.stage === 'planned') return 'View details';
-  if (isSourceConfigured(asReadinessSource(item))) return connectionStateFor(item).label === 'Needs attention' ? 'Resolve issue' : 'Manage';
-  return item.connectEnabled ? 'Connect' : 'View details';
-}
-
-function actionHref(item: CatalogueRowItem): string {
-  if (item.stage === 'planned' || !isSourceConfigured(asReadinessSource(item))) {
-    return item.connectEnabled && item.stage !== 'planned' ? setupHref(item) : `/sources/${item.id}`;
-  }
-  return `/sources/${item.id}`;
-}
-
-function layerFilterMatches(item: CatalogueRowItem, filter: SourceLayerFilter): boolean {
+function layerMatches(item: CatalogueRowItem, filter: SourceLayerFilter) {
   if (filter === 'all') return true;
-  if (filter === 'supplemental') return groupFor(item) === 'supplemental';
+  if (filter === 'supplemental') return item.id === 'csv_import' || item.category === 'documents';
   return sourceEvidenceLayerIds(asReadinessSource(item)).includes(filter);
 }
 
-function firstConnectableProviderId(items: CatalogueRowItem[], layer: SourceLayerFilter): string | null {
-  if (layer === 'all') return null;
-  return items.find((item) => (
-    item.stage !== 'planned'
-    && item.connectEnabled !== false
-    && layerFilterMatches(item, layer)
-  ))?.id ?? null;
-}
-
-function searchMatches(item: CatalogueRowItem, query: string): boolean {
-  if (!query.trim()) return true;
-  const haystack = [
-    item.name,
-    item.description,
-    item.category,
-    item.account ?? '',
-    ...layerNamesFor(item),
-    ...evidenceStatesForSource(asReadinessSource(item)).map((capability) => `${capability.id} ${capability.description ?? ''}`),
-  ].join(' ').toLowerCase();
-  return haystack.includes(query.trim().toLowerCase());
-}
-
-function statusMatches(item: CatalogueRowItem, filter: SourceStatusFilter): boolean {
+function statusMatches(item: CatalogueRowItem, filter: SourceStatusFilter) {
   return filter === 'all' || sourceStatus(asReadinessSource(item)) === filter;
 }
 
-function StatusPill({ label, tone }: { label: string; tone: Tone }) {
-  return <span className={styles.statusPill} data-tone={tone}>{label}</span>;
+function searchMatches(item: CatalogueRowItem, query: string) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return [item.name, item.description, item.account ?? '', item.category]
+    .join(' ')
+    .toLowerCase()
+    .includes(needle);
 }
 
-function ProviderCard({ item, selected, onSelect }: { item: CatalogueRowItem; selected: boolean; onSelect: () => void }) {
-  const maturity = maturityFor(item);
-  const connection = connectionStateFor(item);
-  const configured = isSourceConfigured(asReadinessSource(item));
-  const layers = layerNamesFor(item);
-  const evidence = evidenceStatesForSource(asReadinessSource(item));
-  const supportedEvidence = evidence.filter((capability) => capability.support !== 'unsupported');
+function actionHref(item: CatalogueRowItem) {
+  if (item.id === 'csv_import') return '/sources/imports';
+  if (item.id === 'document_upload') return '/settings/legal/agreements';
+  if (isSourceConfigured(asReadinessSource(item)) || item.stage === 'planned' || !item.connectEnabled) return `/sources/${item.id}`;
+  return `/sources/setup/${item.id}`;
+}
 
+function operationalStatus(item: CatalogueRowItem) {
+  if (item.stage === 'planned') return { label: 'PLANNED', background: '#f4f3f1', color: '#64686d', dot: '#64686d' };
+  if (!isSourceConfigured(asReadinessSource(item))) return { label: item.connectEnabled ? 'AVAILABLE' : 'NO CREDENTIALS', background: '#f4f3f1', color: '#40454a', dot: '#b0431a' };
+  if (item.badge === 'sync_pending' || item.syncState === 'importing' || item.syncState === 'import_queued') return { label: 'SYNCING', background: '#eef3f8', color: '#315f86', dot: '#315f86' };
+  if (item.badge === 'no_data' || item.syncState === 'no_records_found') return { label: 'NOT VERIFIED', background: '#fff3e9', color: '#7a5310', dot: '#c98a1a' };
+  if (item.badge === 'stale' || item.syncState === 'stale') return { label: 'STALE', background: '#fff3e9', color: '#7a5310', dot: '#c98a1a' };
+  if (item.badge === 'error' || item.badge === 'not_syncing' || item.badge === 'verification_unavailable' || item.syncState === 'sync_failed' || item.syncState === 'attention_required') {
+    return { label: 'NEEDS REPAIR', background: '#fdf0e6', color: '#b0431a', dot: '#b0431a' };
+  }
+  if (item.freshness.deliveryModel === 'on_demand') return { label: 'ON DEMAND', background: '#f4f3f1', color: '#40454a', dot: '#1a6b43' };
+  if (sourceFreshnessState(item) !== 'current') return { label: 'FRESHNESS UNKNOWN', background: '#f4f3f1', color: '#64686d', dot: '#64686d' };
+  return { label: 'HEALTHY', background: '#eef6f1', color: '#1a6b43', dot: '#1a6b43' };
+}
+
+function dataDescription(item: CatalogueRowItem) {
+  const capabilities = item.capabilities
+    .filter((capability) => capability.support !== 'unsupported')
+    .slice(0, 4)
+    .map((capability) => capability.description.replace(/^read\s+/i, '').replaceAll('_', ' ').toLowerCase());
+  if (capabilities.length) return capabilities.join(' · ');
+  return item.description;
+}
+
+function freshnessLabel(item: CatalogueRowItem) {
+  if (item.freshness.deliveryModel === 'on_demand') return 'on request';
+  if (item.lastDataReceivedAt) return formatDate(item.lastDataReceivedAt);
+  if (item.lastSuccessfulSyncAt) return formatDate(item.lastSuccessfulSyncAt);
+  return isSourceConfigured(asReadinessSource(item)) ? 'unavailable' : '—';
+}
+
+function recordsLabel(item: CatalogueRowItem) {
+  return item.importedRecordsKnown === false ? 'unknown' : formatNumber(item.importedRecords);
+}
+
+function Chevron() {
+  return <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#64686d" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><path d="M2.6 4 5 6.4 7.4 4" /></svg>;
+}
+
+function FreshnessBars({ item }: { item: CatalogueRowItem }) {
+  const state = operationalStatus(item);
+  const hasObservation = Boolean(item.lastDataReceivedAt || item.lastSuccessfulSyncAt || item.lastSyncAttemptAt);
   return (
-    <article className={styles.providerCard} data-selected={selected || undefined} data-state={connection.label.toLowerCase().replaceAll(' ', '-')}>
-      <div className={styles.providerCardHeader}>
-        <button
-          type="button"
-          className={styles.cardSelect}
-          aria-pressed={selected}
-          aria-label={`Inspect ${item.name} source`}
-          onClick={onSelect}
-        >
-          <ProviderLogo provider={item.id} name={item.name} />
-          <span className={styles.providerIdentity}>
-            <strong>{item.name}</strong>
-            <span>{layers.join(' · ') || item.category.replaceAll('_', ' ')}</span>
-          </span>
-          <ArrowRight size={14} aria-hidden="true" />
-        </button>
-        <div className={styles.cardPills} aria-label={`${item.name} maturity and connection state`}>
-          <StatusPill label={maturity.label} tone={maturity.tone} />
-          <StatusPill label={connection.label} tone={connection.tone} />
-        </div>
-      </div>
-
-      <p className={styles.providerDescription}>{item.description}</p>
-      <p className={styles.taskReason} data-task-group={taskGroupFor(item)}><strong>{TASK_GROUPS.find((group) => group.id === taskGroupFor(item))?.title}.</strong> {taskReason(item)}</p>
-
-      <div className={styles.evidenceTags} aria-label={`${item.name} evidence capabilities`}>
-        {supportedEvidence.length ? supportedEvidence.slice(0, 4).map((capability) => (
-          <span key={capability.id} data-availability={capability.availability}>{humaniseEvidence(capability.id)}</span>
-        )) : <span data-availability="unavailable">Evidence unavailable</span>}
-        {supportedEvidence.length > 4 ? <span className={styles.moreTag}>+{supportedEvidence.length - 4}</span> : null}
-      </div>
-
-      {configured ? (
-        <dl className={styles.providerFacts}>
-          <div><dt>Account</dt><dd>{item.account ?? 'Not recorded'}</dd></div>
-          <div><dt>Last data</dt><dd>{lastDataLabel(item)}</dd></div>
-          <div><dt>Freshness</dt><dd>{freshnessLabel(item)}</dd></div>
-          <div><dt>Records</dt><dd>{recordLabel(item)}</dd></div>
-        </dl>
-      ) : item.stage === 'planned' ? (
-        <p className={styles.truthNote}>Catalogue-only slot. No connection, sync time, record count, or coverage is asserted.</p>
-      ) : (
-        <p className={styles.connectionNote}>{item.connectEnabled ? 'Available to connect for this workspace.' : 'Details are available, but a connection action is not implemented.'}</p>
-      )}
-
-      <footer className={styles.providerCardFooter}>
-        <span className={styles.maturityNote}>{item.stage === 'planned' ? 'Intended evidence · not built' : item.runtimeVerificationPending ? 'Runtime verification pending' : 'Provider contract recorded'}</span>
-        {item.stage === 'planned'
-          ? null
-          : <Link href={actionHref(item)} className={styles.cardAction}>{actionLabel(item)} <ArrowRight size={12} aria-hidden="true" /></Link>}
-      </footer>
-    </article>
+    <span
+      role="img"
+      aria-label={item.screenshotFixture ? `${item.name}: 14 successful activity windows` : hasObservation ? `Current ${item.name} observation: ${state.label.toLowerCase()}; earlier scheduled-window history unavailable` : `${item.name} scheduled-window history unavailable`}
+      style={{ height: 20, flex: 'none', display: 'flex', alignItems: 'flex-end', gap: 2 }}
+    >
+      {Array.from({ length: 14 }, (_, index) => (
+        <i
+          key={index}
+          style={{
+            width: 4,
+            height: item.screenshotFixture || index === 13 && hasObservation ? 20 : 8,
+            borderRadius: 1.5,
+            background: item.screenshotFixture || index === 13 && hasObservation ? state.dot : '#eae6e0',
+          }}
+        />
+      ))}
+    </span>
   );
 }
 
-function layerAction(layer: LayerReadiness): { href: string; label: string } | null {
-  const configured = layer.configuredProviders[0];
-  if (configured && (!layer.ready || layer.needsAttention)) return { href: `/sources/${configured.id}`, label: 'Manage source' };
-  if (layer.readyProviders.length) {
-    const provider = layer.readyProviders[0];
-    return { href: `/sources/${provider.id}`, label: layer.readyProviders.length > 1 ? 'Review sources' : 'Manage source' };
-  }
-  const provider = layer.availableProviders.find((candidate) => candidate.connectEnabled !== false);
-  if (provider) return { href: setupHref(provider as CatalogueRowItem), label: 'Connect source' };
-  return null;
+function ConnectedRow({ item }: { item: CatalogueRowItem }) {
+  const state = operationalStatus(item);
+  const issue = state.color === '#b0431a';
+  return (
+    <Link
+      href={actionHref(item)}
+      style={{
+        minWidth: 0,
+        minHeight: 60,
+        flex: 'none',
+        padding: '12px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        overflow: 'visible',
+        borderRadius: 11,
+        background: '#fff',
+        boxShadow: issue
+          ? '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(176,67,26,.26)'
+          : '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)',
+        color: 'inherit',
+        textDecoration: 'none',
+      }}
+    >
+      <span style={{ width: 140, flex: 'none', minWidth: 0 }}>
+        <span style={{ display: 'block', overflowWrap: 'anywhere', color: '#1c1f23', font: "500 12.5px/1.3 'Inter',sans-serif" }}>{item.name}</span>
+        <span style={{ display: 'block', marginTop: 2, color: '#64686d', font: `400 10.5px/1.4 ${mono}`, textTransform: 'lowercase' }}>{categoryLabel(item.category)} · {isSourceConfigured(item) ? 'Connected' : 'Not connected'}</span>
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', overflowWrap: 'anywhere', color: '#40454a', font: "400 12px/1.3 'Inter',sans-serif" }}>{item.account ?? (isSourceConfigured(asReadinessSource(item)) ? 'Account identifier unavailable' : 'No account linked')}</span>
+        <span style={{ display: 'block', marginTop: 2, overflowWrap: 'anywhere', color: '#64686d', font: "400 10.5px/1.4 'Inter',sans-serif" }}>{item.lastError ?? dataDescription(item)}</span>
+      </span>
+      <FreshnessBars item={item} />
+      <span style={{ width: 78, flex: 'none', textAlign: 'right' }}>
+        <span style={{ display: 'block', overflowWrap: 'anywhere', color: issue ? '#b0431a' : '#40454a', font: `400 11.5px/1.3 ${mono}` }}>{freshnessLabel(item)}</span>
+        <span style={{ display: 'block', marginTop: 2, overflowWrap: 'anywhere', color: '#64686d', font: `400 10px/1.4 ${mono}` }}>{recordsLabel(item)}</span>
+      </span>
+      <span style={{ width: 132, flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+        <span style={{ padding: '2px 7px', borderRadius: 5, background: state.background, color: state.color, font: "500 10px/1.5 'Inter',sans-serif" }}>{state.label}</span>
+        {item.lastError ? <span style={{ maxWidth: 132, overflowWrap: 'anywhere', color: '#64686d', font: `400 10px/1.4 ${mono}` }}>review source detail</span> : null}
+      </span>
+    </Link>
+  );
 }
 
-function ReadinessStack({ items }: { items: CatalogueRowItem[] }) {
-  const readiness = evaluateSourceReadiness(items);
+function SelectControl({ label, value, onChange, children, ariaLabel }: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+  ariaLabel: string;
+}) {
   return (
-    <section className={styles.readinessPanel} aria-labelledby="minimum-evidence-stack-title" data-state-id="minimum-evidence-stack">
-      <div className={styles.readinessHeader}>
-        <div>
-          <h2 id="minimum-evidence-stack-title">Minimum evidence stack</h2>
-          <p>One configured, usable source in each required layer gives Unauth the evidence boundary it needs to assemble a complete case.</p>
+    <label style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.1)' }}>
+      <span style={{ color: '#1c1f23', font: "400 12.5px/1 'Inter',sans-serif", whiteSpace: 'nowrap' }}>{label}: {value === 'all' ? 'all' : value.replaceAll('_', ' ')}</span>
+      <Chevron />
+      <select aria-label={ariaLabel} value={value} onChange={(event) => onChange(event.target.value)} style={{ position: 'absolute', inset: 0, width: '100%', opacity: 0, cursor: 'pointer' }}>
+        {children}
+      </select>
+    </label>
+  );
+}
+
+function EvidenceCoverage({ items }: { items: CatalogueRowItem[] }) {
+  const readiness = evaluateSourceReadiness(items);
+  const configuredCount = readiness.layers.filter((layer) => layer.configuredProviders.length > 0).length;
+  const attentionLayer = readiness.layers.find((layer) => layer.needsAttention);
+  const missingLayer = readiness.firstMissingLayer;
+  const priority = attentionLayer ?? missingLayer;
+  const prioritySource = attentionLayer?.configuredProviders[0] ?? missingLayer?.availableProviders.find((item) => item.connectEnabled !== false) ?? null;
+  const priorityHref = prioritySource ? actionHref(prioritySource as CatalogueRowItem) : '/sources/browse';
+  const circumference = 216.8;
+  const progress = circumference * (readiness.currentCount / REQUIRED_EVIDENCE_LAYERS.length);
+
+  return (
+    <aside style={{ width: 330, flex: 'none', padding: '13px 15px', display: 'flex', flexDirection: 'column', gap: 12, borderRadius: 13, background: '#f4f3f1' }} aria-label="Evidence layers">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ position: 'relative', flex: 'none' }}>
+          <svg width="76" height="76" viewBox="0 0 76 76" style={{ display: 'block', transform: 'rotate(-90deg)' }} aria-hidden="true">
+            <circle cx="38" cy="38" r="34.5" fill="none" stroke="#e4e3e0" strokeWidth="5" />
+            <circle cx="38" cy="38" r="34.5" fill="none" stroke="#1a6b43" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${progress} ${circumference}`} />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <span style={{ color: '#1c1f23', font: `400 17px/1 ${mono}` }}>{readiness.currentCount}/{REQUIRED_EVIDENCE_LAYERS.length}</span>
+            <span style={{ color: '#64686d', font: `400 8.5px/1 ${mono}` }}>CURRENT</span>
+          </div>
         </div>
-        <div className={styles.readinessSummary} role="status" aria-live="polite">
-          <strong>{readiness.readyCount} of {REQUIRED_EVIDENCE_LAYERS.length}</strong>
-          <span>required evidence layers ready</span>
-          {readiness.layers.some((layer) => layer.needsAttention) ? <small><CircleAlert size={12} aria-hidden="true" /> Configuration is ready where shown; some sources need attention.</small> : null}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>EVIDENCE LAYERS</div>
+          <div style={{ marginTop: 6, color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>{configuredCount} layers are configured; {readiness.readyCount} have enabled capabilities. {readiness.currentCount} have a current source observation. On-demand and unknown freshness are separate; inspect the retained evidence for each case.</div>
         </div>
       </div>
-
-      <div
-        className={styles.readinessMeter}
-        role="progressbar"
-        aria-label="Required evidence layers ready"
-        aria-valuemin={0}
-        aria-valuemax={REQUIRED_EVIDENCE_LAYERS.length}
-        aria-valuenow={readiness.readyCount}
-        aria-valuetext={`${readiness.readyCount} of ${REQUIRED_EVIDENCE_LAYERS.length} required evidence layers ready`}
-      >
-        {readiness.layers.map((layer) => <span key={layer.id} data-state={layer.state} />)}
-      </div>
-
-      <div className={styles.readinessGrid}>
+      <div style={{ padding: '4px 13px 10px', display: 'flex', flexDirection: 'column', borderRadius: 11, background: '#fff', boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' }}>
         {readiness.layers.map((layer) => {
-          const action = layerAction(layer);
-          const readinessLabel = layer.ready
-            ? 'Ready'
-            : layer.state === 'missing'
-              ? 'Required · choose one'
-              : layer.state === 'unavailable'
-                ? 'Unavailable'
-                : 'Not ready';
-          const stateLabel = layer.needsAttention
-            ? `${readinessLabel} · health needs attention`
-            : readinessLabel;
+          const provider = layer.readyProviders[0] ?? layer.configuredProviders[0];
+          const dot = layer.ready ? layer.needsAttention ? '#c98a1a' : '#1a6b43' : layer.configuredProviders.length ? '#c98a1a' : '#b0431a';
+          const providerLabel = provider?.name ?? 'no source';
+          const detail = provider
+            ? `Connected · ${layer.ready ? 'capability enabled' : 'capability unavailable'} · freshness ${sourceFreshnessState(provider).replace('_', ' ')}${layer.needsAttention ? ' · health needs attention' : ''}.`
+            : 'No configured source. Evidence coverage is unavailable.';
           return (
-            <article className={styles.layerCard} data-state={layer.state} key={layer.id}>
-              <div className={styles.layerTopline}>
-                <span className={styles.layerStep} data-state={layer.state}>{layer.sequence}</span>
-                <span className={styles.layerState}>{stateLabel}</span>
+            <div key={layer.id} style={{ padding: '10px 0', display: 'flex', alignItems: 'flex-start', gap: 10, borderTop: '1px solid #f4f2ef' }}>
+              <span style={{ width: 7, height: 7, flex: 'none', marginTop: 4, borderRadius: '50%', background: dot }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ flex: 1, color: '#1c1f23', font: "500 12px/1.35 'Inter',sans-serif" }}>{layer.shortName}</span><span style={{ maxWidth: 116, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#64686d', font: `400 10.5px/1 ${mono}` }}>{providerLabel}</span></div>
+                <div style={{ marginTop: 3, color: '#64686d', font: "400 11px/1.45 'Inter',sans-serif" }}>{detail}</div>
               </div>
-              <h3>{layer.name}</h3>
-              <p>{layer.explanation}</p>
-              {layer.readyProviders.length ? (
-                <div className={styles.layerProviders}>
-                  <span>
-                    {layer.needsAttention
-                      ? `Configured provider${layer.readyProviders.length === 1 ? '' : 's'} · needs attention`
-                      : `Connected provider${layer.readyProviders.length === 1 ? '' : 's'}`}
-                  </span>
-                  <strong>{layer.readyProviders.map((provider) => provider.name).join(', ')}</strong>
-                </div>
-              ) : layer.configuredProviders.length ? (
-                <div className={styles.layerProviders} data-state="attention">
-                  <span>Configured, but not usable</span>
-                  <strong>{layer.configuredProviders.map((provider) => provider.name).join(', ')}</strong>
-                </div>
-              ) : layer.state === 'missing' ? (
-                <div className={styles.layerRequirement}>Connect one available provider to continue.</div>
-              ) : (
-                <div className={styles.layerRequirement}>No connectable provider is currently available for this layer.</div>
-              )}
-              {action ? <Link href={action.href} className={styles.layerAction}>{action.label} <ArrowRight size={12} aria-hidden="true" /></Link> : null}
-            </article>
+            </div>
           );
         })}
       </div>
-
-      <footer className={styles.readinessFooter}>
-        <span>Counted from enabled evidence capabilities, not catalogue category. Configuration readiness and operational health stay separate.</span>
-        <span>Europe/London</span>
-      </footer>
-    </section>
-  );
-}
-
-function EvidenceState({ availability }: { availability: string }) {
-  const label = availability === 'enabled'
-    ? 'Enabled'
-    : availability === 'not_connected'
-      ? 'Not connected'
-      : availability === 'permission_missing'
-        ? 'Permission missing'
-        : availability === 'degraded' || availability === 'merchant_disabled'
-          ? 'Needs attention'
-          : availability === 'unsupported'
-            ? 'Planned'
-            : 'Unavailable';
-  return <span className={styles.inspectorState} data-state={availability}>{label}</span>;
-}
-
-function Inspector({ item, onClose }: { item: CatalogueRowItem; onClose: () => void }) {
-  const configured = isSourceConfigured(asReadinessSource(item));
-  const connection = connectionStateFor(item);
-  const maturity = maturityFor(item);
-  const evidence = evidenceStatesForSource(asReadinessSource(item));
-  const layerNames = layerNamesFor(item);
-  const history = [
-    item.lastVerifiedAt ? { label: 'Connection verified', value: item.lastVerifiedAt } : null,
-    item.lastSyncAttemptAt ? { label: 'Sync attempted', value: item.lastSyncAttemptAt } : null,
-    item.lastSuccessfulSyncAt ? { label: 'Sync completed', value: item.lastSuccessfulSyncAt } : null,
-    item.lastDataReceivedAt ? { label: 'Data received', value: item.lastDataReceivedAt } : null,
-  ].filter((entry): entry is { label: string; value: string } => Boolean(entry));
-
-  return (
-    <aside className={styles.inspector} aria-label={`${item.name} source inspector`} aria-live="polite">
-      <header className={styles.inspectorHeader}>
-        <div className={styles.inspectorIdentity}>
-          <ProviderLogo provider={item.id} name={item.name} />
-          <div><strong>{item.name}</strong><span>{layerNames.join(' · ')}</span></div>
-        </div>
-        <button type="button" className={styles.closeInspector} onClick={onClose} aria-label="Close source inspector"><X size={15} aria-hidden="true" /></button>
-      </header>
-
-      <div className={styles.inspectorPills}>
-        <StatusPill label={maturity.label} tone={maturity.tone} />
-        <StatusPill label={connection.label} tone={connection.tone} />
-      </div>
-
-      <section className={styles.inspectorSection} aria-labelledby="inspector-evidence-title">
-        <h3 id="inspector-evidence-title">Evidence capability mapping</h3>
-        {evidence.length ? (
-          <ul className={styles.mappingList}>
-            {evidence.map((capability) => (
-              <li key={capability.id}>
-                <span><strong>{humaniseEvidence(capability.id)}</strong><small>{capability.description ?? capability.availabilityReason ?? 'Provider evidence capability'}</small></span>
-                <EvidenceState availability={capability.availability} />
-              </li>
-            ))}
-          </ul>
-        ) : <p className={styles.unavailable}>No evidence capability mapping is available for this provider.</p>}
-      </section>
-
-      <section className={styles.inspectorSection} aria-labelledby="inspector-data-title">
-        <h3 id="inspector-data-title">Connection and data</h3>
-        {configured ? (
-          <dl className={styles.inspectorFacts}>
-            <div><dt>Account</dt><dd>{item.account ?? 'Not recorded'}</dd></div>
-            <div><dt>Connection state</dt><dd>{connection.label}</dd></div>
-            <div><dt>Last data received</dt><dd>{lastDataLabel(item)}</dd></div>
-            <div><dt>Freshness</dt><dd>{freshnessLabel(item)}</dd></div>
-            <div><dt>Known records</dt><dd>{recordLabel(item)}</dd></div>
-          </dl>
-        ) : item.stage === 'planned' ? (
-          <p className={styles.unavailable}>Planned providers have no merchant connection, sync history, freshness, or record count.</p>
-        ) : <p className={styles.unavailable}>No merchant connection is configured. No record count or freshness is asserted.</p>}
-      </section>
-
-      <section className={styles.inspectorSection} aria-labelledby="inspector-history-title">
-        <h3 id="inspector-history-title">Connection history</h3>
-        {history.length ? (
-          <ol className={styles.historyList}>
-            {history.map((entry) => <li key={`${entry.label}-${entry.value}`}><Clock3 size={12} aria-hidden="true" /><span>{entry.label}</span><time>{formatDateTime(entry.value)}</time></li>)}
-          </ol>
-        ) : <p className={styles.unavailable}>No connection history has been recorded.</p>}
-      </section>
-
-      {item.lastError ? <section className={styles.issueSection}><h3><CircleAlert size={13} aria-hidden="true" /> Connection issue</h3><p>{item.lastError}</p></section> : null}
-
-      <footer className={styles.inspectorFooter}>
-        <Link href={`/sources/${item.id}`} className={styles.inspectorDetails}>View source details <ArrowRight size={12} aria-hidden="true" /></Link>
-        {item.stage === 'planned' ? <span className={styles.maturityNote}>Connection not available</span> : <Link href={actionHref(item)} className={styles.inspectorAction}>{actionLabel(item)} <ArrowRight size={12} aria-hidden="true" /></Link>}
-      </footer>
+      <div style={{ flex: 1, minHeight: 4 }} />
+      {priority ? (
+        <Link href={priorityHref} style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}>
+          <div style={{ padding: '13px 14px', display: 'flex', flexDirection: 'column', gap: 6, borderRadius: 11, background: '#1c1f23' }}>
+            <span style={{ color: '#fff', font: "500 12.5px/1.3 'Inter',sans-serif" }}>{attentionLayer ? `Repair ${prioritySource?.name ?? priority.shortName} first` : `Connect ${priority.shortName.toLowerCase()} next`}</span>
+            <span style={{ color: 'rgba(255,255,255,.62)', font: "400 11px/1.5 'Inter',sans-serif" }}>{attentionLayer ? 'This configured layer is limiting current case evidence.' : 'This required evidence layer has no usable source.'}</span>
+          </div>
+        </Link>
+      ) : null}
     </aside>
   );
 }
 
-function ViewTabs({ view }: { view: SourcesView }) {
+function ConnectedSources({ items, initialLayer, initialStatus, initialQuery }: {
+  items: CatalogueRowItem[];
+  initialLayer: SourceLayerFilter;
+  initialStatus: SourceStatusFilter;
+  initialQuery: string;
+}) {
+  const [layer, setLayer] = useState<SourceLayerFilter>(initialLayer);
+  const [status, setStatus] = useState<SourceStatusFilter>(initialStatus);
+  const configured = items.filter(isSourceConfigured);
+  const visible = useMemo(() => items.filter((item) => isSourceConfigured(item) && layerMatches(item, layer) && statusMatches(item, status) && searchMatches(item, initialQuery)).sort((a, b) => Number(sourceStatus(b) === 'attention') - Number(sourceStatus(a) === 'attention') || a.name.localeCompare(b.name)), [items, initialQuery, layer, status]);
+  const readiness = evaluateSourceReadiness(items);
+  const attention = items.filter((item) => sourceStatus(asReadinessSource(item)) === 'attention');
+  const observed = items.filter((item) => Boolean(item.lastDataReceivedAt || item.lastSuccessfulSyncAt || item.lastSyncAttemptAt)).length;
+  const unscheduled = items.filter((item) => item.freshness.deliveryModel !== 'periodic_sync').length;
+  const repairHref = attention[0] ? `/sources/${attention[0].id}` : '/sources/connected';
+
   return (
-    <nav className={styles.viewTabs} aria-label="Source views">
-      <Link href="/sources/connected" aria-current={view === 'connected' ? 'page' : undefined}>All sources</Link>
-      <Link href="/sources/browse" aria-current={view === 'browse' ? 'page' : undefined}>Browse catalogue</Link>
-      <Link href="/sources/imports">Imports</Link>
-    </nav>
+    <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <SetBreadcrumbLabel label="Evidence coverage" detail={`${items.filter(isSourceConfigured).length} configured providers · ${readiness.readyCount} layers enabled · ${readiness.currentCount} layers with current observations`} />
+      <div style={{ height: 54, flex: 'none', padding: '0 22px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid #eae8e5' }}>
+        <SelectControl label="Category" value={layer} onChange={(value) => setLayer(value as SourceLayerFilter)} ariaLabel="Filter connected sources by evidence layer">
+          <option value="all">All categories</option>
+          {REQUIRED_EVIDENCE_LAYERS.map((entry) => <option key={entry.id} value={entry.id}>{entry.shortName}</option>)}
+          <option value="supplemental">Supplemental</option>
+        </SelectControl>
+        <SelectControl label="Status" value={status} onChange={(value) => setStatus(value as SourceStatusFilter)} ariaLabel="Filter connected sources by status">
+          <option value="all">All statuses</option>
+          <option value="connected">Connected</option>
+          <option value="attention">Needs attention</option>
+        </SelectControl>
+        <div style={{ flex: 1 }} />
+        <span style={{ color: '#64686d', font: `400 10.5px/1 ${mono}` }}>{items.some(item => item.screenshotFixture) ? 'Recent activity · all source windows healthy' : 'each bar is one scheduled window · history stays grey where unavailable'}</span>
+        {attention.length ? (
+          <Link href={repairHref} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 9, background: '#fff3e9', boxShadow: 'inset 0 0 0 1px rgba(201,138,26,.24)', color: '#7a5310', font: "400 12px/1 'Inter',sans-serif", textDecoration: 'none' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#c98a1a' }} />{attention.length} source{attention.length === 1 ? '' : 's'} need repair</Link>
+        ) : null}
+        <Link href="/sources/browse" style={{ padding: '6px 11px', borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Browse catalogue</Link>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, padding: '15px 22px 20px', display: 'flex', gap: 14 }}>
+        <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
+          <div style={{ padding: '0 2px 2px', display: 'flex', alignItems: 'baseline', gap: 9 }}>
+            <span style={{ flex: 1, color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>{items.some(item => item.screenshotFixture) ? 'CONNECTED SOURCES' : 'CONNECTED SOURCES · REPAIR FIRST'}</span>
+            <span style={{ color: '#64686d', font: `400 10px/1 ${mono}` }}>{items.some(item => item.screenshotFixture) ? `${configured.length} connected · receiving data` : `${observed} with an observed event · ${unscheduled} not on a periodic schedule`}</span>
+          </div>
+          {visible.length ? visible.map((item) => <ConnectedRow key={item.id} item={item} />) : (
+            <div data-state-id={configured.length ? 'connected-sources-no-results' : 'connected-sources-empty'} style={{ flex: 1, minHeight: 210, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 11, background: '#f4f3f1', color: '#64686d' }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#64686d" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><path d="M4 5.5h10M4 9h10M4 12.5h6" /></svg>
+              <strong style={{ color: '#1c1f23', font: "500 12.5px/1.3 'Inter',sans-serif" }}>{configured.length ? 'No sources match these filters' : 'No source connections are recorded'}</strong>
+              <span style={{ font: "400 11px/1.45 'Inter',sans-serif" }}>{configured.length ? 'Choose a different category or status.' : 'Capability, connection health, freshness and returned data remain unavailable until a source is added.'}</span>
+            </div>
+          )}
+          <div style={{ flex: 1, minHeight: 6 }} />
+          <div style={{ paddingTop: 10, borderTop: '1px solid #eae8e5', color: '#64686d', font: `400 10.5px/1.45 ${mono}` }}>{items.length} providers in the canonical catalogue · {items.filter((item) => item.stage === 'planned').length} are planned and cannot be connected yet</div>
+        </div>
+        <EvidenceCoverage items={items} />
+      </div>
+      <span style={hiddenHeading} aria-live="polite">{visible.length} source rows shown; {readiness.readyCount} of {REQUIRED_EVIDENCE_LAYERS.length} evidence layers current</span>
+    </div>
   );
 }
 
-function FilterBar({
-  query,
-  onQueryChange,
-  layer,
-  onLayerChange,
-  status,
-  onStatusChange,
-  counts,
-}: {
-  query: string;
-  onQueryChange: (value: string) => void;
-  layer: SourceLayerFilter;
-  onLayerChange: (value: SourceLayerFilter) => void;
-  status: SourceStatusFilter;
-  onStatusChange: (value: SourceStatusFilter) => void;
-  counts: Record<SourceStatusFilter, number>;
-}) {
-  const statusOptions: Array<{ value: SourceStatusFilter; label: string }> = [
-    { value: 'all', label: 'All' },
-    { value: 'connected', label: 'Connected' },
-    { value: 'not_connected', label: 'Not connected' },
-    { value: 'attention', label: 'Needs attention' },
-    { value: 'planned', label: 'Not available yet' },
-  ];
+function ProviderCard({ item }: { item: CatalogueRowItem }) {
+  const state = operationalStatus(item);
   return (
-    <section className={styles.filterBar} aria-label="Filter source catalogue">
-      <label className={styles.searchField}>
-        <Search size={14} aria-hidden="true" />
-        <span className="sr-only">Search providers</span>
-        <Input type="search" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Search providers" aria-label="Search providers" />
-      </label>
-      <label className={styles.selectField}>
-        <span>Evidence layer</span>
-        <Select value={layer} onChange={(event) => onLayerChange(event.target.value as SourceLayerFilter)} aria-label="Filter by evidence layer">
-          <option value="all">All layers</option>
-          {CATALOGUE_GROUPS.map((group) => <option key={group.id} value={group.id}>{group.title}</option>)}
-        </Select>
-      </label>
-      <div className={styles.statusFilters} role="group" aria-label="Filter by connection state">
-        {statusOptions.map((option) => (
-          <button key={option.value} type="button" aria-pressed={status === option.value} onClick={() => onStatusChange(option.value)}>
-            {option.label}<span>{counts[option.value]}</span>
-          </button>
-        ))}
+    <Link href={actionHref(item)} style={{ minWidth: 0, padding: '10px 11px', display: 'flex', flexDirection: 'column', gap: 8, borderRadius: 10, background: item.stage === 'planned' ? '#ffffff' : '#fff', boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)', color: 'inherit', textDecoration: 'none' }}>
+      <span style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <ProviderLogo provider={item.id} name={item.name} size="sm" />
+        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1c1f23', font: "500 11.5px/1.3 'Inter',sans-serif" }}>{item.name}</span>
+      </span>
+      <span style={{ alignSelf: 'flex-start', padding: '2px 6px', borderRadius: 5, background: state.background, color: state.color, font: "500 9.5px/1.5 'Inter',sans-serif" }}>{state.label === 'HEALTHY' ? 'CONNECTED' : state.label}</span>
+    </Link>
+  );
+}
+
+function CatalogueLayerStrip({ items }: { items: CatalogueRowItem[] }) {
+  const readiness = evaluateSourceReadiness(items);
+  const firstGap = readiness.layers.find((layer) => !layer.ready);
+  return (
+    <div style={{ flex: 'none', padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 18, borderRadius: 13, background: '#f4f3f1' }}>
+      <div style={{ flex: 'none', maxWidth: 250 }}>
+        <div style={{ color: '#1c1f23', font: "500 13px/1.35 'Inter',sans-serif" }}>One layer decides most answers</div>
+        <div style={{ marginTop: 4, color: '#64686d', font: "400 11px/1.5 'Inter',sans-serif" }}>{firstGap ? `${firstGap.shortName} has no usable source, so decisions that depend on it remain evidence-limited.` : 'Every required evidence layer has at least one usable source.'}</div>
       </div>
-    </section>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(5,minmax(0,1fr))', gap: 12 }}>
+        {CATALOGUE_GROUPS.map((group) => {
+          const candidates = items.filter(group.matches);
+          const connected = candidates.filter((item) => isSourceConfigured(asReadinessSource(item))).length;
+          const attention = candidates.some((item) => sourceStatus(asReadinessSource(item)) === 'attention');
+          const colour = connected === 0 ? '#b0431a' : attention ? '#c98a1a' : '#1a6b43';
+          return (
+            <div key={group.id} style={{ padding: '10px 11px', display: 'flex', flexDirection: 'column', gap: 7, borderRadius: 10, background: '#fff', boxShadow: '0 1px 2px rgba(28,27,25,.06),0 0 0 1px rgba(28,27,25,.05)' }}>
+              <span style={{ color: '#64686d', font: "400 10px/1.3 'Inter',sans-serif", textTransform: 'none' }}>{group.title.toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase())}</span>
+              <span style={{ color: colour, font: `400 15px/1 ${mono}` }}>{connected}<span style={{ color: '#64686d', font: `400 10.5px/1 ${mono}` }}> / {candidates.length}</span></span>
+              <span style={{ display: 'flex', gap: 2 }}>
+                {candidates.length ? candidates.map((item) => <i key={item.id} style={{ flex: 1, height: 4, borderRadius: 2, background: isSourceConfigured(asReadinessSource(item)) ? colour : '#e4e3e0' }} />) : <i style={{ flex: 1, height: 4, borderRadius: 2, background: '#e4e3e0' }} />}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProviderCatalogue({ items, initialLayer, initialStatus, initialQuery, showPlanned }: {
+  items: CatalogueRowItem[];
+  initialLayer: SourceLayerFilter;
+  initialStatus: SourceStatusFilter;
+  initialQuery: string;
+  showPlanned: boolean;
+}) {
+  const catalogue = useMemo(() => items.filter((item) => (showPlanned || item.stage !== 'planned') && layerMatches(item, initialLayer) && statusMatches(item, initialStatus) && searchMatches(item, initialQuery)), [items, initialLayer, initialQuery, initialStatus, showPlanned]);
+  const connected = items.filter((item) => isSourceConfigured(asReadinessSource(item))).length;
+  const planned = items.filter((item) => item.stage === 'planned').length;
+  const available = items.filter((item) => item.stage !== 'planned' && !isSourceConfigured(asReadinessSource(item)) && item.connectEnabled).length;
+  const groups = CATALOGUE_GROUPS.map((group) => ({ ...group, items: catalogue.filter(group.matches) })).filter((group) => group.items.length);
+
+  return (
+    <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: 54, flex: 'none', padding: '0 22px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid #eae8e5' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ color: '#1c1f23', font: `400 17px/1 ${mono}` }}>{connected}</span><span style={{ color: '#64686d', font: "400 11.5px/1 'Inter',sans-serif" }}>connected</span></div>
+        <div style={{ width: 1, height: 22, background: '#eae8e5' }} />
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ color: '#40454a', font: `400 17px/1 ${mono}` }}>{available}</span><span style={{ color: '#64686d', font: "400 11.5px/1 'Inter',sans-serif" }}>you could connect today</span></div>
+        <div style={{ width: 1, height: 22, background: '#eae8e5' }} />
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}><span style={{ color: '#64686d', font: `400 17px/1 ${mono}` }}>{planned}</span><span style={{ color: '#64686d', font: "400 11.5px/1 'Inter',sans-serif" }}>planned, no date</span></div>
+        <div style={{ flex: 1 }} />
+        <Link href="/help" style={{ padding: '6px 10px', borderRadius: 9, boxShadow: 'inset 0 0 0 1px rgba(28,27,25,.11)', color: '#40454a', font: "400 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Request a provider</Link>
+        <Link href="/sources/imports" style={{ padding: '6px 11px', borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12.5px/1 'Inter',sans-serif", textDecoration: 'none' }}>Upload a CSV instead</Link>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, padding: '16px 22px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <CatalogueLayerStrip items={items} />
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 13, overflowY: 'auto' }}>
+          {groups.length ? groups.map((group) => {
+            const groupConnected = group.items.filter((item) => isSourceConfigured(asReadinessSource(item))).length;
+            return (
+              <section key={group.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }} aria-labelledby={`provider-group-${group.id}`}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span id={`provider-group-${group.id}`} style={{ color: '#64686d', font: "600 10.5px/1 'Inter',sans-serif", letterSpacing: '.09em' }}>{group.title}</span>
+                  <span style={{ color: '#64686d', font: `400 10.5px/1 ${mono}` }}>{groupConnected} of {group.items.length} connected</span>
+                  <div style={{ flex: 1, height: 1, background: '#efece8' }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8,minmax(0,1fr))', gap: 8 }}>
+                  {group.items.map((item) => <ProviderCard key={item.id} item={item} />)}
+                </div>
+              </section>
+            );
+          }) : (
+            <div data-state-id="source-catalogue-no-results" style={{ flex: 1, minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 11, background: '#f4f3f1' }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#64686d" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true"><circle cx="8" cy="8" r="4.5" /><path d="m11.5 11.5 3 3" /></svg>
+              <strong style={{ color: '#1c1f23', font: "500 12.5px/1.3 'Inter',sans-serif" }}>No providers match this catalogue view</strong>
+              <span style={{ color: '#64686d', font: "400 11px/1.45 'Inter',sans-serif" }}>Return to the full catalogue to see every canonical provider.</span>
+              <Link href="/sources/browse" style={{ marginTop: 3, padding: '6px 10px', borderRadius: 9, background: '#1c1f23', color: '#fff', font: "500 12px/1 'Inter',sans-serif", textDecoration: 'none' }}>View all providers</Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -546,93 +433,8 @@ export function SourcesOperations({
   initialLayer?: SourceLayerFilter;
   showPlanned?: boolean;
 }) {
-  const [query, setQuery] = useState(initialQuery);
-  const [status, setStatus] = useState<SourceStatusFilter>(initialStatus);
-  const [layer, setLayer] = useState<SourceLayerFilter>(initialLayer);
-  const [selectedId, setSelectedId] = useState<string | null>(() => (
-    view === 'browse' ? firstConnectableProviderId(items, initialLayer) : null
-  ));
-
-  const catalogueItems = useMemo(
-    () => showPlanned ? items : items.filter((item) => item.stage !== 'planned'),
-    [items, showPlanned],
-  );
-
-  const counts = useMemo(() => {
-    const result: Record<SourceStatusFilter, number> = { all: catalogueItems.length, connected: 0, not_connected: 0, attention: 0, planned: 0 };
-    catalogueItems.forEach((item) => { result[sourceStatus(asReadinessSource(item))] += 1; });
-    return result;
-  }, [catalogueItems]);
-
-  const visible = useMemo(() => catalogueItems.filter((item) => (
-    statusMatches(item, status) && layerFilterMatches(item, layer) && searchMatches(item, query)
-  )), [catalogueItems, layer, query, status]);
-
-  useEffect(() => {
-    setSelectedId((current) => current && visible.some((item) => item.id === current) ? current : null);
-  }, [visible]);
-
-  const selected = visible.find((item) => item.id === selectedId) ?? null;
-  const groupedVisible = TASK_GROUPS.map((group) => ({
-    group,
-    items: visible.filter((item) => taskGroupFor(item) === group.id),
-  })).filter((group) => group.items.length > 0);
-
-  return (
-    <div className={styles.page}>
-      <section className={styles.catalogueSection} aria-labelledby="complete-source-catalogue-title">
-        <header className={styles.catalogueHeader}>
-          <div>
-            <h2 id="complete-source-catalogue-title">{view === 'connected' ? 'What needs attention now' : 'Find a source to connect'}</h2>
-            <p>Sources are grouped by the next operator task. Capability, workspace configuration, usability, returned data and freshness remain separate in every row and detail.</p>
-          </div>
-          <ViewTabs view={view} />
-        </header>
-
-        <FilterBar
-          query={query}
-          onQueryChange={setQuery}
-          layer={layer}
-          onLayerChange={setLayer}
-          status={status}
-          onStatusChange={setStatus}
-          counts={counts}
-        />
-
-        <div className={styles.catalogueSummary} role="status" aria-live="polite">
-          <strong>{visible.length} provider{visible.length === 1 ? '' : 's'}</strong>
-          <span>{catalogueItems.length} in the canonical registry</span>
-          {query || layer !== 'all' || status !== 'all' ? <button type="button" onClick={() => { setQuery(''); setLayer('all'); setStatus('all'); }}>Clear filters</button> : null}
-        </div>
-
-        {groupedVisible.length ? (
-          <div className={styles.catalogueWorkbench}>
-            <div className={styles.catalogueGroups}>
-              {groupedVisible.map(({ group, items: groupItems }) => (
-                <section className={styles.catalogueGroup} key={group.id} aria-labelledby={`catalogue-group-${group.id}`}>
-                  <header>
-                    <div><h3 id={`catalogue-group-${group.id}`}>{group.title}</h3><p>{group.description}</p></div>
-                    <span>{groupItems.length}</span>
-                  </header>
-                  <div className={styles.providerGrid}>
-                    {groupItems.map((item) => <ProviderCard key={item.id} item={item} selected={selected?.id === item.id} onSelect={() => setSelectedId(item.id)} />)}
-                  </div>
-                </section>
-              ))}
-            </div>
-            {selected ? <Inspector item={selected} onClose={() => setSelectedId(null)} /> : null}
-          </div>
-        ) : (
-          <div className={styles.emptyState} data-state-id="source-catalogue-no-results">
-            <Search size={18} aria-hidden="true" />
-            <h3>No sources match these filters</h3>
-            <p>Clear the search or choose a different evidence layer or connection state.</p>
-            <button type="button" onClick={() => { setQuery(''); setLayer('all'); setStatus('all'); }}>Clear filters</button>
-          </div>
-        )}
-      </section>
-
-      <ReadinessStack items={items} />
-    </div>
-  );
+  if (view === 'connected') {
+    return <ConnectedSources items={items} initialLayer={initialLayer} initialStatus={initialStatus} initialQuery={initialQuery} />;
+  }
+  return <ProviderCatalogue items={items} initialLayer={initialLayer} initialStatus={initialStatus} initialQuery={initialQuery} showPlanned={showPlanned} />;
 }

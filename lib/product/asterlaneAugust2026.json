@@ -1,0 +1,21 @@
+{
+  "datasetId": "asterlane-august-2026-loss-desk",
+  "merchantId": "4f5a8c25-6dcb-4b90-9e16-3a91c27d8f44",
+  "period": "2026-08",
+  "currency": "GBP",
+  "grossExposureMinor": 4120842,
+  "grossEntryCount": 218,
+  "recoveredAndMatchedMinor": 1894050,
+  "absorbedMinor": 2226792,
+  "writtenOffMinor": 241200,
+  "netUnrecoveredMinor": 1985592,
+  "held": {
+    "rowCount": 16,
+    "amountMinor": 210418
+  },
+  "nonGbpRowCount": 17,
+  "workQueue": {
+    "itemCount": 23,
+    "amountMinor": 1000600
+  }
+}

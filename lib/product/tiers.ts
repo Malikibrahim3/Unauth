@@ -12,4 +12,7 @@ export const TIER_LABELS: Record<Tier, string> = {
   pro: TIER_CONFIG.pro.label,
   growth: TIER_CONFIG.growth.label,
   enterprise: TIER_CONFIG.enterprise.label,
+  core_2026: TIER_CONFIG.core_2026.label,
+  scale_2026: TIER_CONFIG.scale_2026.label,
+  enterprise_2026: TIER_CONFIG.enterprise_2026.label,
 };
